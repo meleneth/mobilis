@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+
+require 'pry'
+
+require "mobilis/command_line"
+require "mobilis/interactive_designer"
+
+# options parsing is TODO
+#options = Mobilis::CommandLine.parse_args(ARGV)
+program = Mobilis::InteractiveDesigner.new
+program.go_main_menu
+
+loop do
+  puts ""
+  puts ""
+  puts("  --> Starting loop!! <--")
+  program.choose_destination
+end
