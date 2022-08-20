@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.summary = "Generate and scaffold multiple projects and a docker compose file"
   spec.homepage = "https://github.com/meleneth/mobilis"
   spec.required_ruby_version = ">= 2.6.0"
-
+  spec.licenses    = ['MIT']
   #spec.metadata["allowed_push_host"] = "TODO: Set to your gem server 'https://example.com'"
 
   spec.metadata["homepage_uri"] = spec.homepage
@@ -34,6 +34,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency "awesome_print"
   spec.add_dependency "state_machine"
   spec.add_dependency "tty-prompt"
+  spec.add_dependency "pry"
+  spec.add_dependency "optimist"
 
   spec.add_development_dependency "super_diff"
 
