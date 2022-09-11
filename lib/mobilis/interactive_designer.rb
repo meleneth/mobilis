@@ -274,7 +274,7 @@ state_machine :state, initial: :intialize do
 
   state :toggle_rails_api_mode do
     def display
-      Mobilis.logger.info "Toggled rails API mode for '#{@selected_rails_project.name}'"
+      Mobilis.logger.info "Toggled rails API mode for '#{ @selected_rails_project.name }'"
     end
     def choices = false
     def action
@@ -347,10 +347,10 @@ def initialize
   @project = Project.new
 end
 
-
+##
+# display, choices, and action methods all change per-state
 def choose_destination
   Mobilis.logger.info "#choose_destination"
-
   blank_space
   spacer
   display

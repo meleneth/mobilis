@@ -34,6 +34,7 @@ RSpec.describe "Acceptance" do
             "image" => "postgres:14.1-alpine",
             "restart" => "always",
             "environment" => [
+              "POSTGRES_DB=prime_production",
               "POSTGRES_USER=testp-db",
               "POSTGRES_PASSWORD=testp-db_password"
             ],

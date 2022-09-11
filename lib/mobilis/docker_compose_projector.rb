@@ -73,10 +73,7 @@ def postgresql_service service
   {
     "image" => "postgres:14.1-alpine",
     "restart" => "always",
-    "environment" => [
-      "POSTGRES_USER=#{ service.name }",
-      "POSTGRES_PASSWORD=#{ service.password }"
-    ],
+    "environment" => service.env_vars,
     "ports" => ["#{ attributes[keyname] }:5432"],
     "volumes" => [
       "#{ service.data_dir }:/var/lib/postgresql/data"

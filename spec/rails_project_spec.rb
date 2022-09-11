@@ -38,4 +38,23 @@ RSpec.describe "Rails Project" do
       expect(result).to eq(expected)
     end
   end
+
+  describe "#wait_until_line" do
+    it "Generates correct line for MySQL" do
+      prime_stack = project.add_rails_project "prime", [:rspec, :api, :simplecov, :standard, :factorybot]
+      project.add_mysql_instance "testm-db"
+      prime_stack.set_links(["testm-db"])
+      expect(prime_stack.wait_until_line).to eq <<MYSQL_LINE
+/myapp/wait-until "mysql -D prime_production -h testm-db -u testm-db -ptestm-db_password -e 'select 1'"
+MYSQL_LINE
+    end
+    it "Generates correct line for Postgres" do
+      prime_stack = project.add_rails_project "prime", [:rspec, :api, :simplecov, :standard, :factorybot]
+      project.add_postgresql_instance "testp-db"
+      prime_stack.set_links(["testp-db"])
+      expect(prime_stack.wait_until_line).to eq <<POSTGRES_LINE
+/myapp/wait-until "psql postgres://testp-db:testp-db_password@testp-db/prime_production -c 'select 1'"
+POSTGRES_LINE
+    end
+  end
 end

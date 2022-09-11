@@ -81,6 +81,7 @@ def generate
     install_rspec if options.include? :rspec
     install_factory_bot if options.include? :factory_bot
     git_commit_all "add Gems"
+    generate_wait_until
     generate_Dockerfile
     generate_entrypoint_sh
     generate_build_sh
@@ -96,10 +97,36 @@ def rails_master_key
   @data[:attributes][:rails_master_key]
 end
 
+def generate_wait_until
+  set_file_contents 'wait-until', <<WAITUNTIL
+#!/usr/bin/env bash
+# https://github.com/nickjj/wait-until under MIT license
+
+command="${1}"
+timeout="${2:-30}"
+
+i=1
+until eval "${command}"
+do
+    ((i++))
+
+    if [ "${i}" -gt "${timeout}" ]; then
+        echo "command was never successful, aborting due to ${timeout}s timeout!"
+        exit 1
+    fi
+
+    sleep 1
+done
+WAITUNTIL
+end
+
+
 def generate_Dockerfile
-  set_file_contents "Dockerfile", 'FROM ruby:latest
-RUN apt-get update -qq && apt-get install -y nodejs postgresql-client dos2unix
+  set_file_contents "Dockerfile", <<DOCKER_END
+FROM ruby:latest
+RUN apt-get update -qq && apt-get install -y nodejs postgresql-client default-mysql-client dos2unix
 WORKDIR /myapp
+COPY wait-until /myapp/wait-until
 COPY Gemfile /myapp/Gemfile
 COPY Gemfile.lock /myapp/Gemfile.lock
 RUN bundle install
@@ -113,11 +140,12 @@ RUN dos2unix /myapp/entrypoint.sh
 
 # Configure the main process to run when running the image
 CMD ["rails", "server", "-b", "0.0.0.0"]
-'
+DOCKER_END
 end
 
 def generate_entrypoint_sh
-  set_file_contents "entrypoint.sh", "#!/bin/sh
+  set_file_contents "entrypoint.sh", <<ENTRYPOINT_SH
+#!/bin/sh
 
 # https://stackoverflow.com/a/38732187/1935918
 set -e
@@ -125,11 +153,25 @@ set -e
 if [ -f /app/tmp/pids/server.pid ]; then
   rm /app/tmp/pids/server.pid
 fi
-
+#{ wait_until_line }
 bundle exec rake db:migrate 2>/dev/null || bundle exec rake db:setup
 
-exec bundle exec \"$@\"
-"
+exec bundle exec "$@"
+ENTRYPOINT_SH
+end
+
+def wait_until_line
+  if database.instance_of? Mobilis::PostgresqlInstance
+    return <<POSTGRES_LINE
+/myapp/wait-until "psql postgres://#{ database.username }:#{ database.password }@#{ database.name }/#{ name }_production -c 'select 1'"
+POSTGRES_LINE
+  end
+# instance_of? is a code smell - maybe this should be database.wait_until_line ?
+  if database.instance_of? Mobilis::MysqlInstance
+    return <<MYSQL_LINE
+/myapp/wait-until "mysql -D #{ name }_production -h #{ database.name } -u #{ database.username } -p#{ database.password } -e 'select 1'"
+MYSQL_LINE
+  end
 end
 
 def install_rspec

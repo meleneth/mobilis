@@ -1,8 +1,10 @@
 PATH
   remote: .
   specs:
-    mobilis (0.1.0)
+    mobilis (0.0.4)
       awesome_print
+      optimist
+      pry
       state_machine
       tty-prompt
 
