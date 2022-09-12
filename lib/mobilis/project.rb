@@ -159,6 +159,11 @@ def build_rails_builder
   run_docker "build -t #{ rails_builder_image } ."
 end
 
+def load_from_file filename
+  data = File.read filename
+  @data = JSON.parse data, {:symbolize_names => true}
+end
+
 def save_project
   File.open("mproj.json", "w") do |f|
     f.write(JSON.pretty_generate(@data))
@@ -181,7 +186,7 @@ def projects
     redis: RedisInstance,
     rack: RackProject
   }
-  @data[:projects].map {|p| mapping[p[:type]].new p, self}
+  @data[:projects].map {|p| mapping[p[:type].to_sym].new p, self}
 end
 
 def project_by_name name

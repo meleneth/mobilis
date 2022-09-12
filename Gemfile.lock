@@ -6,6 +6,7 @@ PATH
       optimist
       pry
       state_machine
+      table_print
       tty-prompt
 
 GEM
@@ -43,6 +44,7 @@ GEM
       attr_extras (>= 6.2.4)
       diff-lcs
       patience_diff
+    table_print (1.5.7)
     tty-color (0.6.0)
     tty-cursor (0.7.1)
     tty-prompt (0.23.1)

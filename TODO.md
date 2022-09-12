@@ -15,3 +15,4 @@ add ability to re-load old configuration
 if generate/data exists already with data, have an option to keep or wipe the data
 fix git integration so we have proper commit points between each step
 add command line builder, so you can generate a tree based on an existing config
+in a complex config, it feels bad when the config gets big

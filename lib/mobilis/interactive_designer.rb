@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
-require 'state_machine'
-require 'tty-prompt'
 require 'awesome_print'
 require 'forwardable'
+require 'state_machine'
+require 'table_print'
+require 'tty-prompt'
 
 require 'mobilis/logger'
 require 'mobilis/project'
@@ -16,7 +17,7 @@ extend Forwardable
 attr_accessor :project
 attr_reader :prompt
 
-def_delegators :@project, :projects, :display
+def_delegators :@project, :projects, :load_from_file
 
 state_machine :state, initial: :intialize do
 
@@ -42,6 +43,11 @@ state_machine :state, initial: :intialize do
 
   event :go_add_redis_instance do
     transition [:main_menu] => :add_redis_instance
+  end
+
+  event :go_back do
+    transition [:edit_rails_project] => :main_menu
+    transition [:edit_generic_project] => :main_menu
   end
 
   event :go_add_rack_project do
@@ -107,7 +113,10 @@ state_machine :state, initial: :intialize do
 
   state :main_menu do
     def display
-      project.display
+      puts
+      tp.set :max_width, 160
+      tp projects, 'name', 'type', 'options': lambda {|p| p.options.join ", "}
+      puts
     end
     def choices
       project_choices = projects.map do |project|
@@ -141,12 +150,18 @@ state_machine :state, initial: :intialize do
   end
 
   state :edit_links_select_project do
-    def display = false
+    def display
+      puts
+      tp.set :max_width, 160
+      tp projects, 'name', 'type', 'links': lambda {|p| p.links.join ", "}
+      puts
+    end
     def choices
       [
         {name: "return to Main Menu",          value: -> { go_main_menu }},
         *( projects.map do |project|
-             { name: "Edit '#{ project.name }' links", value: -> { @selected_project = project ; go_edit_links } }
+            links_txt = project.links.join ", "
+             { name: "Edit '#{ project.name }' links (#{ links_txt })", value: -> { @selected_project = project ; go_edit_links } }
            end)
       ]
     end

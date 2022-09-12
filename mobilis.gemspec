@@ -32,10 +32,11 @@ Gem::Specification.new do |spec|
 
   # Uncomment to register a new dependency of your gem
   spec.add_dependency "awesome_print"
-  spec.add_dependency "state_machine"
-  spec.add_dependency "tty-prompt"
-  spec.add_dependency "pry"
   spec.add_dependency "optimist"
+  spec.add_dependency "pry"
+  spec.add_dependency "state_machine"
+  spec.add_dependency "table_print"
+  spec.add_dependency "tty-prompt"
 
   spec.add_development_dependency "super_diff"
 

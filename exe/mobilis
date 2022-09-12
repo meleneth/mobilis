@@ -5,9 +5,11 @@ require 'pry'
 require "mobilis/command_line"
 require "mobilis/interactive_designer"
 
-# options parsing is TODO
-#options = Mobilis::CommandLine.parse_args(ARGV)
+options = Mobilis::CommandLine.parse_args(ARGV)
 program = Mobilis::InteractiveDesigner.new
+if options[:subcommand] == :load
+  program.load_from_file options[:filename]
+end
 program.go_main_menu
 
 loop do
