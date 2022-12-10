@@ -7,6 +7,10 @@ RSpec.describe "Rails Project" do
     project.add_rails_project "prime", [:rspec, :api, :simplecov, :standard, :factorybot]
   end
 
+  before do
+    allow(project).to receive(:username).and_return("testuser")
+  end
+
   describe "docker-compose" do
     let(:expected) do
       {
@@ -16,7 +20,7 @@ RSpec.describe "Rails Project" do
             "build" => {
               "context" => "./prime"
             },
-            "image"=>"melen/prime",
+            "image"=>"testuser/prime",
             "environment"=> [
               "RAILS_ENV=production",
               "RAILS_MASTER_KEY=",

@@ -4,6 +4,9 @@ RSpec.describe "Generic Project" do
   let(:project) { Mobilis::Project.new }
   let(:prime_stack) { project.add_prime_stack_rails_project "prime" }
   let(:mysql_instance) { project.add_mysql_instance "testm-db" }
+  before do
+    allow(project).to receive(:username).and_return("testuser")
+  end
 
   describe "#children" do
     it "has linked projects" do
@@ -39,7 +42,7 @@ RSpec.describe "Generic Project" do
             "build" => {
               "context" => "./prime"
             },
-            "image"=>"melen/prime",
+            "image"=>"testuser/prime",
             "environment"=> [
               "RAILS_ENV=production",
               "RAILS_MASTER_KEY=",

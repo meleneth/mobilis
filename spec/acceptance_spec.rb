@@ -10,7 +10,7 @@ RSpec.describe "Acceptance" do
         "services" => {
           "prime" => {
             "links" => [ "testp-db", "testm-db", "cache" ],
-            "image" => "melen/prime",
+            "image" => "testuser/prime",
             "build" => {
               "context" => "./prime",
             },
@@ -69,7 +69,7 @@ RSpec.describe "Acceptance" do
             ],
           },
           "somerack" => {
-            "image" => "melen/somerack",
+            "image" => "testuser/somerack",
             "ports" => [
               "10400:9292"
             ],
@@ -82,7 +82,9 @@ RSpec.describe "Acceptance" do
         }
       }
     end
-
+    before do
+      allow(project).to receive(:username).and_return("testuser")
+    end
     it "Generates correct service" do
       prime_stack = project.add_prime_stack_rails_project "prime"
       project.add_postgresql_instance "testp-db"
