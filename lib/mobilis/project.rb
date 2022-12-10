@@ -99,17 +99,15 @@ source "https://rubygems.org"
 # FIXME
 #git_source(:github) { |repo| "https://github.com/repo.git" }
 
-ruby "3.1.2"
-
-gem "rails", "~> 7.0.3", ">= 7.0.3.1"
-gem "sqlite3", "~> 1.4"
-gem "puma", "~> 5.0"
+gem "rails"
+gem "sqlite3"
+gem "puma"
 gem "jbuilder"
-gem "redis", "~> 4.0"
+gem "redis"
 gem "kredis"
-gem "bcrypt", "~> 3.1.7"
+gem "bcrypt"
 gem "bootsnap", require: false
-gem "image_processing", "~> 1.2"
+gem "image_processing"
 gem "rack-cors"
 gem "pg"
 gem "mysql2"
@@ -130,7 +128,7 @@ end
 
 def has_rails_project?
   projects.each do |p|
-    return true if p.type == :rails
+    return true if p.type.to_sym == :rails
   end
   return false
 end

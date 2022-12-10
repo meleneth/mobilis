@@ -26,28 +26,37 @@ state_machine :state, initial: :intialize do
   end
 
   event :go_add_omakase_stack_rails_project do
-    transition [:main_menu] => :add_omakase_stack_rails_project
+    transition [:add_project_menu] => :add_omakase_stack_rails_project
   end
 
   event :go_add_prime_stack_rails_project do
-    transition [:main_menu] => :add_prime_stack_rails_project
+    transition [:add_project_menu] => :add_prime_stack_rails_project
   end
 
   event :go_add_postgresql_instance do
-    transition [:main_menu] => :add_postgresql_instance
+    transition [:add_project_menu] => :add_postgresql_instance
+  end
+
+  event :go_add_project_menu do
+    transition [:main_menu] => :add_project_menu
+  end
+
+  event :go_edit_project_menu do
+    transition [:main_menu] => :edit_project_menu
   end
 
   event :go_add_mysql_instance do
-    transition [:main_menu] => :add_mysql_instance
+    transition [:add_project_menu] => :add_mysql_instance
   end
 
   event :go_add_redis_instance do
-    transition [:main_menu] => :add_redis_instance
+    transition [:add_project_menu] => :add_redis_instance
   end
 
   event :go_back do
-    transition [:edit_rails_project] => :main_menu
+    transition [:edit_rails_project] => :edit_project_menu
     transition [:edit_generic_project] => :main_menu
+    transition [:add_project_menu] => :main_menu
   end
 
   event :go_add_rack_project do
@@ -56,12 +65,7 @@ state_machine :state, initial: :intialize do
 
   event :go_edit_rails_project do
     transition [
-      :add_omakase_stack_rails_project,
-      :add_prime_stack_rails_project,
-      :edit_rails_controller,
-      :edit_rails_model,
-      :toggle_rails_api_mode,
-      :main_menu
+      :edit_project_menu, :add_omakase_stack_rails_project, :add_prime_stack_rails_project
     ] => :edit_rails_project
   end
 
@@ -99,6 +103,7 @@ state_machine :state, initial: :intialize do
 
   event :go_edit_links_select_project do
     transition [:main_menu] => :edit_links_select_project
+    transition [:edit_links] => :edit_links_select_project
   end
 
   event :go_edit_links do
@@ -119,10 +124,55 @@ state_machine :state, initial: :intialize do
       puts
     end
     def choices
-      project_choices = projects.map do |project|
-        { name: "Edit '#{ project.name }' project", value: -> { @selected_rails_project = project ; go_edit_rails_project } }
+      menu_items = [
+        { name: "reload all code",           value: -> { reload! }},
+        { name: "[m] Add project",           value: -> { go_add_project_menu }},
+        { name: "[m] Edit existing project", value: -> { go_edit_project_menu }}
+      ]
+      if projects.length > 1
+        menu_items.concat([
+          { name: "[m] edit links",                value: -> { go_edit_links_select_project }}
+        ])
       end
+      if projects.length > 0
+        menu_items.concat([
+          { name: "Save mproj.json",           value: -> { go_save_project }},
+          { name: "Generate",                  value: -> { go_generate }},
+          { name: "Build",                     value: -> { go_build }}
+        ])
+      end
+      menu_items
+    end
+    def action = false
+  end
+
+  state :edit_project_menu do
+    def display
+      puts
+      tp.set :max_width, 160
+      tp projects, 'name', 'type', 'options': lambda {|p| p.options.join ", "}
+      puts
+    end
+    def choices
       [
+        {name: "return to Main Menu",          value: -> { go_main_menu }},
+        *(projects.map { |project| { name: "Edit '#{ project.name }' project", value: -> { @selected_rails_project = project ; go_edit_rails_project } } })
+      ]
+    end
+    def action = false
+  end
+
+  state :add_project_menu do
+    def display
+      puts
+      tp.set :max_width, 160
+      tp projects, 'name', 'type', 'options': lambda {|p| p.options.join ", "}
+      puts
+    end
+
+    def choices
+      [
+        {name: "return to Main Menu",          value: -> { go_main_menu }},
         {name: "Add prime stack rails project",    value: -> { go_add_prime_stack_rails_project }},
         {name: "Add omakase stack rails project",  value: -> { go_add_omakase_stack_rails_project }},
         {name: "Add rack3 project",                value: -> { go_add_rack_project }},
@@ -138,12 +188,7 @@ state_machine :state, initial: :intialize do
         #{ name: "Add couchdb instance",            value: -> { go_add_couchdb_instance }},
         #{ name: "Add kafka instance",              value: -> { go_add_kafka_instance }},
         #{ name: "Add graphql instance",            value: -> { go_add_grapql_instance }},
-        #{ name: "Add gitlab instance w/workers",   value: -> { go_add_gitlab_instance }},
-        *project_choices,
-        { name: "edit links", value: -> { go_edit_links_select_project }},
-        { name: "Save mproj.json", value: -> { go_save_project }},
-        { name: "Generate", value: -> { go_generate }},
-        { name: "Build", value: -> { go_build }}
+        #{ name: "Add gitlab instance w/workers",   value: -> { go_add_gitlab_instance }}
       ]
     end
     def action = false
@@ -179,7 +224,7 @@ state_machine :state, initial: :intialize do
         end
       end
       @selected_project.set_links selected
-      go_main_menu
+      go_edit_links_select_project
     end
   end
 
@@ -217,7 +262,8 @@ state_machine :state, initial: :intialize do
 
   state :add_prime_stack_rails_project do
     def display
-      spacer
+      puts "Creates a new rails project, using the prime stack"
+      puts "includes rspec haml factory_bot"
     end
     def choices = false
     def action
@@ -229,7 +275,7 @@ state_machine :state, initial: :intialize do
 
   state :add_rack_project do
     def display
-      spacer
+      puts "Creates a new rack project, with a minimal script"
     end
     def choices = false
     def action
@@ -390,6 +436,20 @@ end
 
 def blank_space
   puts ""
+end
+
+def reload!(print = true)
+  puts 'Reloading ...' if print
+  # Main project directory.
+  root_dir = File.expand_path('../..', __dir__)
+  # Directories within the project that should be reloaded.
+  reload_dirs = %w{lib}
+  # Loop through and reload every file in all relevant project directories.
+  reload_dirs.each do |dir|
+    Dir.glob("#{root_dir}/#{dir}/**/*.rb").each { |f| load(f) }
+  end
+  # Return true when complete.
+  true
 end
 
 end

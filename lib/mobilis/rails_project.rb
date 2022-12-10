@@ -126,7 +126,7 @@ def generate_Dockerfile
 FROM ruby:latest
 RUN apt-get update -qq && apt-get install -y nodejs postgresql-client default-mysql-client dos2unix
 WORKDIR /myapp
-COPY wait-until /myapp/wait-until
+COPY --chmod=0755 wait-until /myapp/wait-until
 COPY Gemfile /myapp/Gemfile
 COPY Gemfile.lock /myapp/Gemfile.lock
 RUN bundle install
