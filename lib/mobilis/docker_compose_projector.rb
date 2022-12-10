@@ -99,7 +99,7 @@ def redis_service service
   attributes = @project.attributes
   port_key = "#{service.name}_internal_port_no".to_sym
   {
-    "image" => "redis:6.2-alpine",
+    "image" => "redis:7.0.5-alpine",
     "restart" => "always",
     "command" => "redis-server --save 20 1 --loglevel warning --requirepass #{ service.password }",
     "environment" => [

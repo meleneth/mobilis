@@ -58,7 +58,7 @@ RSpec.describe "Acceptance" do
             ],
           },
           "cache" => {
-            "image" => "redis:6.2-alpine",
+            "image" => "redis:7.0.5-alpine",
             "restart" => "always",
             "environment" => [
             ],
