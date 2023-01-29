@@ -28,6 +28,11 @@ RSpec.describe "FSM Acceptance" do
       select_choice 'return to Main Menu'
   end
 
+  def edit_project name
+      select_choice 'Edit existing'
+      select_choice name
+  end
+
   describe "Simplest Rails project" do
     it "allows adding a rails project" do
       add_prime_rails_project 'someprime'
@@ -35,6 +40,21 @@ RSpec.describe "FSM Acceptance" do
       add_prime_rails_project 'otherprime'
       expect(fsm.project.projects[1].name).to eq 'otherprime'
 #      whereami
+    end
+  end
+
+  describe "Edit existing project" do
+    it "Allows selecting an existing project" do
+      add_prime_rails_project 'someprime'
+      edit_project 'someprime'
+      expect(fsm.state).to eq 'edit_rails_project'
+    end
+    it "Allows toggling API mode for a rails project" do
+      add_prime_rails_project 'someprime'
+      edit_project 'someprime'
+      select_choice 'Toggle API mode'
+      fsm.action
+      expect(fsm.state).to eq 'edit_rails_project'
     end
   end
 end

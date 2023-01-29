@@ -65,7 +65,7 @@ state_machine :state, initial: :initialize do
 
   event :go_edit_rails_project do
     transition [
-      :edit_project_menu, :add_omakase_stack_rails_project, :add_prime_stack_rails_project
+      :edit_project_menu, :add_omakase_stack_rails_project, :add_prime_stack_rails_project, :toggle_rails_api_mode
     ] => :edit_rails_project
   end
 
