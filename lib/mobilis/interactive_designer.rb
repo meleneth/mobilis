@@ -19,7 +19,7 @@ attr_reader :prompt
 
 def_delegators :@project, :projects, :load_from_file
 
-state_machine :state, initial: :intialize do
+state_machine :state, initial: :initialize do
 
   event :go_build do
     transition [:main_menu] => :build
