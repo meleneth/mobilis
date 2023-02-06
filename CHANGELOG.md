@@ -1,4 +1,7 @@
 ## [Unreleased]
+- minor markdown syntax fixes
+- FSM tests
+- bugfixes in interactive designer
 
 ## [0.0.5] - 2022-12-09
 - fixed a bug when loading a project that made the rails builder not update

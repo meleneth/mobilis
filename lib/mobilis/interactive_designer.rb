@@ -60,7 +60,7 @@ state_machine :state, initial: :initialize do
   end
 
   event :go_add_rack_project do
-    transition [:main_menu] => :add_rack_project
+    transition [:add_project_menu] => :add_rack_project
   end
 
   event :go_edit_rails_project do

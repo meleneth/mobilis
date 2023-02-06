@@ -1,4 +1,7 @@
 # frozen_string_literal: true
+require 'simplecov'
+SimpleCov.start
+
 require "super_diff/rspec"
 
 require "mobilis"

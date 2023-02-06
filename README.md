@@ -52,9 +52,9 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/Melene
 
 ## Plans
 
-Adding more project types + smart integrations
-Instrumenting generated projects with New Relic
-Smoothing out the flow of the UI
-Be able to load a previous configured set of projects for further editing
-~~Make generated rails projects wait at startup until the database is usable~~
-More details in TODO.md
+- Adding more project types + smart integrations
+- Instrumenting generated projects with New Relic
+- Smoothing out the flow of the UI
+- Be able to load a previous configured set of projects for further editing
+- ~~Make generated rails projects wait at startup until the database is usable~~
+- More details in TODO.md

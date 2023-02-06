@@ -42,7 +42,7 @@ source "https://rubygems.org"
 
 # gem "rails"
 
-gem "rack", "= 3.0.0.beta1"
+gem "rack", "= 3.0.2"
 
 gem "rackup", "~> 0.2.2"
 GEMFILE
@@ -53,9 +53,9 @@ def generate_Gemfile_lock
 GEM
   remote: https://rubygems.org/
   specs:
-    rack (3.0.0.beta1)
+    rack (3.0.2)
     rackup (0.2.2)
-      rack (>= 3.0.0.beta1)
+      rack (>= 3.0.2)
       webrick
     webrick (1.7.0)
 
@@ -63,7 +63,7 @@ PLATFORMS
   x64-mingw-ucrt
 
 DEPENDENCIES
-  rack (= 3.0.0.beta1)
+  rack (= 3.0.2)
   rackup (~> 0.2.2)
 
 BUNDLED WITH
