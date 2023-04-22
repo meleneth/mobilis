@@ -91,6 +91,7 @@ RSpec.describe "Acceptance" do
       project.add_mysql_instance "testm-db"
       project.add_redis_instance "cache"
       project.add_rack_project "somerack"
+      project.add_localgem_project "some_local_gem"
       prime_stack.set_links(["testp-db", "testm-db", "cache"])
       project.new_relic do
         set_license_key "some_invalid_key_NREAL"

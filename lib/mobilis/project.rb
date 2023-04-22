@@ -12,6 +12,7 @@ require "mobilis/postgresql_instance"
 require "mobilis/rails_project"
 require "mobilis/rack_project"
 require "mobilis/redis_instance"
+require "mobilis/localgem_project"
 
 module Mobilis
 
@@ -182,7 +183,8 @@ def projects
     postgresql: PostgresqlInstance,
     mysql: MysqlInstance,
     redis: RedisInstance,
-    rack: RackProject
+    rack: RackProject,
+    localgem: LocalgemProject
   }
   @data[:projects].map {|p| mapping[p[:type].to_sym].new p, self}
 end
@@ -241,6 +243,16 @@ def add_rails_project name, options
   }
   @data[:projects] << data
   RailsProject.new data, self
+end
+
+def add_localgem_project name
+  data = {
+    name: name,
+    type: :localgem,
+    attributes: {}
+  }
+  @data[:projects] << data
+  LocalgemProject.new data, self
 end
 
 def add_rack_project name

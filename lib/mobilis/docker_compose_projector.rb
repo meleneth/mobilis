@@ -12,14 +12,17 @@ def self.project project
 
   services = {}
   project.projects.each_with_index do |service, index|
-    services[service.name] = projector.send "#{service.type}_service", service
-    if service.links.count > 0 then
-      services[service.name]["links"] = service.links.map(&:to_s)
-      services[service.name]["depends_on"] = service.links.map(&:to_s)
-      service.links.each do |link|
-        linked_service = project.project_by_name link
-        linked_service.child_env_vars.each do |var|
-          services[service.name]["environment"] << var
+    service_definition = projector.send "#{service.type}_service", service
+    if service_definition
+      services[service.name] = service_definition
+      if service.links.count > 0 then
+        services[service.name]["links"] = service.links.map(&:to_s)
+        services[service.name]["depends_on"] = service.links.map(&:to_s)
+        service.links.each do |link|
+          linked_service = project.project_by_name link
+          linked_service.child_env_vars.each do |var|
+            services[service.name]["environment"] << var
+          end
         end
       end
     end
@@ -110,6 +113,10 @@ def redis_service service
       "#{ service.data_dir }:/data"
     ],
   }
+end
+
+def localgem_service service
+  # nothing here, because it doesn't integrate directly
 end
 
 def get_cwd_path
