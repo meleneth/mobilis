@@ -63,6 +63,10 @@ state_machine :state, initial: :initialize do
     transition [:add_project_menu] => :add_rack_project
   end
 
+  event :go_add_localgem_project do
+    transition [:add_project_menu] => :add_localgem_project
+  end
+
   event :go_edit_rails_project do
     transition [
       :edit_project_menu, :add_omakase_stack_rails_project, :add_prime_stack_rails_project, :toggle_rails_api_mode
@@ -176,6 +180,7 @@ state_machine :state, initial: :initialize do
         {name: "Add prime stack rails project",    value: -> { go_add_prime_stack_rails_project }},
         {name: "Add omakase stack rails project",  value: -> { go_add_omakase_stack_rails_project }},
         {name: "Add rack3 project",                value: -> { go_add_rack_project }},
+        {name: "Add localgem project",             value: -> { go_add_localgem_project }},
         #{ name: "Add airflow server project",      value: -> { go_add_airflow_server }},
         #{ name: "Add airflow job project",         value: -> { go_add_airflow_job_project }},
         #{ name: "Add Docker registry",             value: -> { go_add_docker_registry }},
@@ -281,6 +286,18 @@ state_machine :state, initial: :initialize do
     def action
       project_name = prompt.ask("new Rack project name:")
       project.add_rack_project project_name
+      go_main_menu
+    end
+  end
+
+  state :add_localgem_project do
+    def display
+      puts "Creates a new local gem project, generated via native bundler gem"
+    end
+    def choices = false
+    def action
+      project_name = prompt.ask("new local gem project name:")
+      project.add_localgem_project project_name
       go_main_menu
     end
   end

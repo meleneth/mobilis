@@ -12,11 +12,12 @@ def append_line filename, line
   end
 end
 
-def run_command command
+def run_command command, ignore_errors=false
   # fixme
   #Mobilis.logger.info "$ #{command.join " "}"
   puts "-> Running --> #{command}"
   system command
+  return if ignore_errors
   if $? then
     puts "-> Error running command!"
     exit(1)
