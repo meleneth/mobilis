@@ -12,7 +12,8 @@ RSpec.describe "Acceptance" do
             "links" => [ "testp-db", "testm-db", "cache" ],
             "image" => "testuser/prime",
             "build" => {
-              "context" => "./prime",
+              "context" => "./",
+              "dockerfile" => "./prime/Dockerfile"
             },
             "depends_on" => [ "testp-db", "testm-db", "cache" ],
             "environment" => [
@@ -31,7 +32,7 @@ RSpec.describe "Acceptance" do
             "ports" => ["10000:3000"],
           },
           "testp-db" => {
-            "image" => "postgres:14.1-alpine",
+            "image" => "postgres:15.2-alpine",
             "restart" => "always",
             "environment" => [
               "POSTGRES_DB=prime_production",
@@ -92,7 +93,7 @@ RSpec.describe "Acceptance" do
       project.add_redis_instance "cache"
       project.add_rack_project "somerack"
       project.add_localgem_project "some_local_gem"
-      prime_stack.set_links(["testp-db", "testm-db", "cache"])
+      prime_stack.set_links(["testp-db", "testm-db", "cache", "some_local_gem"])
       project.new_relic do
         set_license_key "some_invalid_key_NREAL"
         enable_distributed_tracing

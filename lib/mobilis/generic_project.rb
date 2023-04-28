@@ -36,6 +36,11 @@ def env_vars
   []
 end
 
+def links_to_actually_link
+  children.filter {|l| not l.instance_of? Mobilis::LocalgemProject}
+    .map {|l| l.name}
+end
+
 def children
   links.map {|name| @metaproject.project_by_name name }
 end
@@ -46,6 +51,15 @@ end
 
 def linked_to_rails_project
   parents.find {|l| l.instance_of? Mobilis::RailsProject}
+end
+
+def linked_to_localgem_project
+  linked = children.find {|l| l.instance_of? Mobilis::LocalgemProject}
+  !!linked
+end
+
+def localgem_links
+  parents.find_all {|l| l.instance_of? Mobilis::LocalgemProject}
 end
 
 def display

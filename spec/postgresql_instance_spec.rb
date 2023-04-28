@@ -13,7 +13,7 @@ RSpec.describe "Postgresql Instance" do
         "version" => "3.8",
         "services" => {
           "test-db" => {
-            "image" => "postgres:14.1-alpine",
+            "image" => "postgres:15.2-alpine",
             "restart" => "always",
             "environment" => [
               "POSTGRES_USER=test-db",

@@ -14,10 +14,16 @@ def self.project project
   project.projects.each_with_index do |service, index|
     service_definition = projector.send "#{service.type}_service", service
     if service_definition
+      if service.linked_to_localgem_project
+        service_definition["build"] = {
+          "context" => "./",
+          "dockerfile" => "./#{service.name}/Dockerfile"
+        }
+      end
       services[service.name] = service_definition
       if service.links.count > 0 then
-        services[service.name]["links"] = service.links.map(&:to_s)
-        services[service.name]["depends_on"] = service.links.map(&:to_s)
+        services[service.name]["links"] = service.links_to_actually_link.map(&:to_s)
+        services[service.name]["depends_on"] = service.links_to_actually_link.map(&:to_s)
         service.links.each do |link|
           linked_service = project.project_by_name link
           linked_service.child_env_vars.each do |var|
@@ -74,7 +80,7 @@ def postgresql_service service
   attributes = @project.attributes
   keyname = "#{service.name}_internal_port_no".to_sym
   {
-    "image" => "postgres:14.1-alpine",
+    "image" => "postgres:15.2-alpine",
     "restart" => "always",
     "environment" => service.env_vars,
     "ports" => ["#{ attributes[keyname] }:5432"],
