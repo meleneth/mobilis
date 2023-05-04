@@ -75,29 +75,56 @@ def generate_Dockerfile
   set_file_contents "Dockerfile", get_Dockerfile
 end
 
-def get_Dockerfile
-  localgem_lines = "FROM ruby:latest\n"
-  localgem_lines = <<LOCALGEM_END if linked_to_localgem_project
-FROM ruby:latest as gem-cache
-RUN mkdir -p /usr/local/bundle
-RUN gem install bundler:2.4.12
-FROM gem-cache AS gems
-WORKDIR /myapp
-COPY localgems/* /myapp
-WORKDIR /myapp/some_nifty_gem
-RUN bundle install
-RUN rake install
-FROM gem-cache as final
-COPY --from=gems /usr/local/bundle /usr/local/bundle
-LOCALGEM_END
+def localgem_prefix
+  return "" unless linked_to_localgem_project
+  "#{name}/"
+end
 
+def get_Dockerfile
+  if linked_to_localgem_project
+    get_Dockerfile_with_localgems
+  else
+    get_Dockerfile_default
+  end
+end
+
+def get_Dockerfile_default
   docker_lines = <<DOCKER_END
-#{localgem_lines}RUN apt-get update -qq && apt-get install -y nodejs postgresql-client
+FROM ruby:latest
+RUN apt-get update -qq && apt-get install -y postgresql-client
 WORKDIR /myapp
 COPY Gemfile /myapp/Gemfile
 COPY Gemfile.lock /myapp/Gemfile.lock
 RUN bundle install
 COPY . /myapp
+# Add a script to be executed every time the container starts.
+ENTRYPOINT ["rackup", "-o", "#{ name }"]
+EXPOSE 9292
+DOCKER_END
+ docker_lines
+end
+def get_Dockerfile_with_localgems
+  localgem_lines = []
+  linked_localgem_projects.each do |p|
+    localgem_lines << "COPY localgems/#{p.name} /myapp/localgems/#{p.name}"
+    localgem_lines << "WORKDIR /myapp/localgems/#{p.name}"
+    localgem_lines << "RUN bundle install"
+    localgem_lines << "RUN rake install"
+  end
+
+  docker_lines = <<DOCKER_END
+FROM ruby:latest as gem-cache
+RUN gem install bundler:2.4.12
+RUN mkdir -p /myapp/localgems
+#{localgem_lines.join "\n"}
+FROM gem-cache as final
+COPY --from=gem-cache /usr/local/bundle /usr/local/bundle
+RUN apt-get update -qq && apt-get install -y postgresql-client
+WORKDIR /myapp
+COPY #{localgem_prefix}Gemfile /myapp/Gemfile
+COPY #{localgem_prefix}Gemfile.lock /myapp/Gemfile.lock
+RUN bundle install
+COPY #{localgem_prefix}. /myapp
 # Add a script to be executed every time the container starts.
 ENTRYPOINT ["rackup", "-o", "#{ name }"]
 EXPOSE 9292

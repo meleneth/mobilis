@@ -41,10 +41,12 @@ def links_to_actually_link
     .map {|l| l.name}
 end
 
+# projects who are linked to us
 def children
   links.map {|name| @metaproject.project_by_name name }
 end
 
+# projects we are linked to
 def parents
   @metaproject.projects.filter {|l| l.links.include? name}
 end
@@ -54,12 +56,11 @@ def linked_to_rails_project
 end
 
 def linked_to_localgem_project
-  linked = children.find {|l| l.instance_of? Mobilis::LocalgemProject}
-  !!linked
+  linked_localgem_projects.length > 0
 end
 
-def localgem_links
-  parents.find_all {|l| l.instance_of? Mobilis::LocalgemProject}
+def linked_localgem_projects
+  children.find_all {|l| l.instance_of? Mobilis::LocalgemProject}
 end
 
 def display
@@ -89,8 +90,6 @@ end
 def docker_image_name
   return "#{ @metaproject.username }/#{ name }"
 end
-
-
 
 def generate_build_sh
   write_file "build.sh" do |f|
