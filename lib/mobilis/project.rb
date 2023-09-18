@@ -89,8 +89,15 @@ RUN apt-get update -qq \\
   && truncate -s 0 /var/log/*log
 RUN gem update bundle
 RUN gem update --system
+
 COPY Gemfile .
 RUN bundle install
+
+ARG USER_ID
+ARG GROUP_ID
+RUN addgroup --gid $GROUP_ID rubyuser
+RUN adduser --disabled-password --gecos '' --uid $USER_ID --gid $GROUP_ID rubyuser
+USER rubyuser
 EOF
 end
 
@@ -155,7 +162,7 @@ def rails_builder_image
 end
 
 def build_rails_builder
-  run_docker "build -t #{ rails_builder_image } ."
+  run_docker "build -t #{ rails_builder_image } --build-arg USER_ID=#{Process.uid} --build-arg GROUP_ID=#{Process.gid} ."
 end
 
 def load_from_file filename

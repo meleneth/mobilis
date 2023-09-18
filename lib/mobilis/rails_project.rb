@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "fileutils"
+
 require "mobilis/generic_project"
 require "mobilis/os"
 
@@ -75,16 +77,27 @@ end
 def generate
   rails_run_command rails_new_command_line
   Dir.chdir name do
+    Mobilis.logger.info "-- commiting rails new"
     git_commit_all "rails new"
+    Mobilis.logger.info "-- generating bundle run"
     generate_bundle_run
+    Mobilis.logger.info "-- reading rails master key"
     read_rails_master_key
+    Mobilis.logger.info "-- installing rspec (maybe)"
     install_rspec if options.include? :rspec
+    Mobilis.logger.info "-- installing factory bot (maybe)"
     install_factory_bot if options.include? :factory_bot
+    Mobilis.logger.info "-- git commit add Gems"
     git_commit_all "add Gems"
+    Mobilis.logger.info "-- generate_wait_until"
     generate_wait_until
+    Mobilis.logger.info "-- generate_Dockerfile"
     generate_Dockerfile
+    Mobilis.logger.info "-- generate_entrypoint_sh"
     generate_entrypoint_sh
+    Mobilis.logger.info "-- generate_build_sh"
     generate_build_sh
+    Mobilis.logger.info "-- git commit add Dockerfile and build script etc"
     git_commit_all "add Dockerfile and build script etc"
   end
 end
@@ -129,6 +142,7 @@ WORKDIR /myapp
 COPY --chmod=0755 wait-until /myapp/wait-until
 COPY Gemfile /myapp/Gemfile
 COPY Gemfile.lock /myapp/Gemfile.lock
+RUN bundle config set --local path 'vendor/bundle'
 RUN bundle install
 COPY . /myapp
 
@@ -194,9 +208,10 @@ def generate_bundle_run
 
   set_file_contents "bundle_run.sh", "#!/bin/bash
 set -euo pipefail
-bundle install
+bundle install --path vendor/bundle
 $@
 "
+  FileUtils.chmod("+x", "bundle_run.sh")
 end
 
 def install_super_diff
@@ -205,14 +220,11 @@ def install_super_diff
 end
 
 def rails_new_command_line
-  pieces = ["bundle", "exec", "rails", "new", name, "."]
+  pieces = ["bundle", "exec", "rails", "new", name, ".", "--skip-bundle"]
   pieces << "--api" if options.include? :api
   my_db = database
   if my_db then
     pieces << "--database=#{ my_db.type }"
-  end
-  if Mobilis::OS.linux?
-    pieces << "-u #{ Process.uid }:#{ Process.gid }"
   end
   pieces.join " "
 end
