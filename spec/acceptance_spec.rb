@@ -21,7 +21,7 @@ RSpec.describe "Acceptance" do
               "RAILS_MASTER_KEY=",
               "RAILS_MIN_THREADS=5",
               "RAILS_MAX_THREADS=5",
-              "DATABASE_URL_TESTP_DB=postgres://testp-db:testp-db_password@testp-db:5432/",
+              "POSTGRES_DB_TESTP_DB=postgres://testp-db:testp-db_password@testp-db:5432/",
               "REDIS_HOST_CACHE=cache",
               "REDIS_PORT_CACHE=6379",
               "REDIS_PASSWORD_CACHE=cache_password",
