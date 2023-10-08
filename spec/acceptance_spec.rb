@@ -21,10 +21,10 @@ RSpec.describe "Acceptance" do
               "RAILS_MASTER_KEY=",
               "RAILS_MIN_THREADS=5",
               "RAILS_MAX_THREADS=5",
-              "DATABASE_URL=postgres://testp-db:testp-db_password@testp-db:5432/",
-              "REDIS_HOST=cache",
-              "REDIS_PORT=6379",
-              "REDIS_PASSWORD=cache_password",
+              "DATABASE_URL_TESTP_DB=postgres://testp-db:testp-db_password@testp-db:5432/",
+              "REDIS_HOST_CACHE=cache",
+              "REDIS_PORT_CACHE=6379",
+              "REDIS_PASSWORD_CACHE=cache_password",
 #              "NEW_RELIC_APP_NAME=prime",
 #              "NEW_RELIC_LICENSE_KEY=some_invalid_key_NREAL",
 #              "NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true"
@@ -35,9 +35,9 @@ RSpec.describe "Acceptance" do
             "image" => "postgres:15.2-alpine",
             "restart" => "always",
             "environment" => [
-              "POSTGRES_DB=prime_production",
-              "POSTGRES_USER=testp-db",
-              "POSTGRES_PASSWORD=testp-db_password"
+              "POSTGRES_DB_TESTP_DB=prime_production",
+              "POSTGRES_USER_TESTP_DB=testp-db",
+              "POSTGRES_PASSWORD_TESTP_DB=testp-db_password"
             ],
             "ports" => ["10100:5432"],
             "volumes" => [

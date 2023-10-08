@@ -16,8 +16,8 @@ RSpec.describe "Postgresql Instance" do
             "image" => "postgres:15.2-alpine",
             "restart" => "always",
             "environment" => [
-              "POSTGRES_USER=test-db",
-              "POSTGRES_PASSWORD=test-db_password"
+              "POSTGRES_USER_TEST_DB=test-db",
+              "POSTGRES_PASSWORD_TEST_DB=test-db_password"
             ],
             "ports" => ["10000:5432"],
             "volumes" => [

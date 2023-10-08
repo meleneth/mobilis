@@ -47,7 +47,7 @@ def rails_service service
 
   database = service.database
   if database then
-    vars << "DATABASE_URL=#{ database.url }"
+    vars << "#{database.env_var}=#{ database.url }"
   end
 
   #vars << "NEW_RELIC_APP_NAME=#{ service.name }"

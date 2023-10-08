@@ -11,10 +11,14 @@ end
 
 def child_env_vars
   [
-    "REDIS_HOST=#{ name }",
-    "REDIS_PORT=6379",
-    "REDIS_PASSWORD=#{ password }"
+    "REDIS_HOST_#{env_name}=#{ name }",
+    "REDIS_PORT_#{env_name}=6379",
+    "REDIS_PASSWORD_#{env_name}=#{ password }"
   ]
+end
+
+def env_name
+  name.upcase
 end
 
 def data_dir
