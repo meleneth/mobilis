@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require 'pry'
+require "pry"
 
 require "mobilis/command_line"
 require "mobilis/interactive_designer"

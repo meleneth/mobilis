@@ -21,7 +21,7 @@ module Mobilis
       when :help
         puts "I think we'd all like a little help."
       else
-        Optimist::die "unknown subcommand #{cmd.inspect}"
+        Optimist.die "unknown subcommand #{cmd.inspect}"
       end
       options
     end

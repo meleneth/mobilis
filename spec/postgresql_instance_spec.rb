@@ -22,7 +22,7 @@ RSpec.describe "Postgresql Instance" do
             "ports" => ["10000:5432"],
             "volumes" => [
               "./data/test-db:/var/lib/postgresql/data"
-            ],
+            ]
           }
         }
       }

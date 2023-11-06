@@ -20,17 +20,17 @@ RSpec.describe "Rails Project" do
             "build" => {
               "context" => "./prime"
             },
-            "image"=>"testuser/prime",
-            "environment"=> [
+            "image" => "testuser/prime",
+            "environment" => [
               "RAILS_ENV=production",
               "RAILS_MASTER_KEY=",
-#              "NEW_RELIC_APP_NAME=prime",
-#              "NEW_RELIC_LICENSE_KEY=some_invalid_key_NREAL",
-#              "NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true",
+              #              "NEW_RELIC_APP_NAME=prime",
+              #              "NEW_RELIC_LICENSE_KEY=some_invalid_key_NREAL",
+              #              "NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true",
               "RAILS_MIN_THREADS=5",
-              "RAILS_MAX_THREADS=5",
+              "RAILS_MAX_THREADS=5"
             ],
-            "ports" => ["10000:3000"],
+            "ports" => ["10000:3000"]
           }
         }
       }
@@ -48,17 +48,17 @@ RSpec.describe "Rails Project" do
       prime_stack = project.add_rails_project "prime", [:rspec, :api, :simplecov, :standard, :factorybot]
       project.add_mysql_instance "testm-db"
       prime_stack.set_links(["testm-db"])
-      expect(prime_stack.wait_until_line).to eq <<MYSQL_LINE
-/myapp/wait-until "mysql -D prime_production -h testm-db -u testm-db -ptestm-db_password -e 'select 1'"
-MYSQL_LINE
+      expect(prime_stack.wait_until_line).to eq <<~MYSQL_LINE
+        /myapp/wait-until "mysql -D prime_production -h testm-db -u testm-db -ptestm-db_password -e 'select 1'"
+      MYSQL_LINE
     end
     it "Generates correct line for Postgres" do
       prime_stack = project.add_rails_project "prime", [:rspec, :api, :simplecov, :standard, :factorybot]
       project.add_postgresql_instance "testp-db"
       prime_stack.set_links(["testp-db"])
-      expect(prime_stack.wait_until_line).to eq <<POSTGRES_LINE
-/myapp/wait-until "psql postgres://testp-db:testp-db_password@testp-db/prime_production -c 'select 1'"
-POSTGRES_LINE
+      expect(prime_stack.wait_until_line).to eq <<~POSTGRES_LINE
+        /myapp/wait-until "psql postgres://testp-db:testp-db_password@testp-db/prime_production -c 'select 1'"
+      POSTGRES_LINE
     end
   end
 end

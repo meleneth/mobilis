@@ -20,7 +20,7 @@ RSpec.describe "Redis Instance" do
             "ports" => ["10000:6379"],
             "volumes" => [
               "./data/cache:/data"
-            ],
+            ]
           }
         }
       }

@@ -9,13 +9,13 @@ RSpec.describe "Acceptance" do
         "version" => "3.8",
         "services" => {
           "prime" => {
-            "links" => [ "testp-db", "testm-db", "cache" ],
+            "links" => ["testp-db", "testm-db", "cache"],
             "image" => "testuser/prime",
             "build" => {
               "context" => "./",
               "dockerfile" => "./prime/Dockerfile"
             },
-            "depends_on" => [ "testp-db", "testm-db", "cache" ],
+            "depends_on" => ["testp-db", "testm-db", "cache"],
             "environment" => [
               "RAILS_ENV=production",
               "RAILS_MASTER_KEY=",
@@ -24,12 +24,12 @@ RSpec.describe "Acceptance" do
               "POSTGRES_DB_TESTP_DB=postgres://testp-db:testp-db_password@testp-db:5432/",
               "REDIS_HOST_CACHE=cache",
               "REDIS_PORT_CACHE=6379",
-              "REDIS_PASSWORD_CACHE=cache_password",
-#              "NEW_RELIC_APP_NAME=prime",
-#              "NEW_RELIC_LICENSE_KEY=some_invalid_key_NREAL",
-#              "NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true"
+              "REDIS_PASSWORD_CACHE=cache_password"
+              #              "NEW_RELIC_APP_NAME=prime",
+              #              "NEW_RELIC_LICENSE_KEY=some_invalid_key_NREAL",
+              #              "NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true"
             ],
-            "ports" => ["10000:3000"],
+            "ports" => ["10000:3000"]
           },
           "testp-db" => {
             "image" => "postgres:15.2-alpine",
@@ -42,7 +42,7 @@ RSpec.describe "Acceptance" do
             "ports" => ["10100:5432"],
             "volumes" => [
               "./data/testp-db:/var/lib/postgresql/data"
-            ],
+            ]
           },
           "testm-db" => {
             "image" => "mysql:debian",
@@ -56,18 +56,17 @@ RSpec.describe "Acceptance" do
             "ports" => ["10200:3306"],
             "volumes" => [
               "./data/testm-db:/var/lib/mysql"
-            ],
+            ]
           },
           "cache" => {
             "image" => "redis:7.0.11-alpine",
             "restart" => "always",
-            "environment" => [
-            ],
+            "environment" => [],
             "ports" => ["10300:6379"],
             "command" => "redis-server --save 20 1 --loglevel warning --requirepass cache_password",
             "volumes" => [
               "./data/cache:/data"
-            ],
+            ]
           },
           "somerack" => {
             "image" => "testuser/somerack",

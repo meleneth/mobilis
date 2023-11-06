@@ -23,18 +23,18 @@ RSpec.describe "Rack Project" do
   describe "Dockerfile" do
     it "Generates basic Dockerfile" do
       project.add_rack_project "some_rack_project"
-      expected = <<EXPECTED_DOCKERFILE
-FROM ruby:latest
-RUN apt-get update -qq && apt-get install -y postgresql-client
-WORKDIR /myapp
-COPY Gemfile /myapp/Gemfile
-COPY Gemfile.lock /myapp/Gemfile.lock
-RUN bundle install
-COPY . /myapp
-# Add a script to be executed every time the container starts.
-ENTRYPOINT ["rackup", "-o", "some_rack_project"]
-EXPOSE 9292
-EXPECTED_DOCKERFILE
+      expected = <<~EXPECTED_DOCKERFILE
+        FROM ruby:latest
+        RUN apt-get update -qq && apt-get install -y postgresql-client
+        WORKDIR /myapp
+        COPY Gemfile /myapp/Gemfile
+        COPY Gemfile.lock /myapp/Gemfile.lock
+        RUN bundle install
+        COPY . /myapp
+        # Add a script to be executed every time the container starts.
+        ENTRYPOINT ["rackup", "-o", "some_rack_project"]
+        EXPOSE 9292
+      EXPECTED_DOCKERFILE
       expect(project.projects[0].get_Dockerfile).to eq(expected)
     end
     it "Generates complicated Dockerfile for localgems" do
@@ -42,26 +42,26 @@ EXPECTED_DOCKERFILE
       project.add_localgem_project "some_nifty_gem"
       rack.set_links(["some_nifty_gem"])
 
-      expected = <<EXPECTED_DOCKERFILE
-FROM ruby:latest as gem-cache
-RUN gem install bundler:2.4.12
-RUN mkdir -p /myapp/localgems
-COPY localgems/some_nifty_gem /myapp/localgems/some_nifty_gem
-WORKDIR /myapp/localgems/some_nifty_gem
-RUN bundle install
-RUN rake install
-FROM gem-cache as final
-COPY --from=gem-cache /usr/local/bundle /usr/local/bundle
-RUN apt-get update -qq && apt-get install -y postgresql-client
-WORKDIR /myapp
-COPY some_rack_project/Gemfile /myapp/Gemfile
-COPY some_rack_project/Gemfile.lock /myapp/Gemfile.lock
-RUN bundle install
-COPY some_rack_project/. /myapp
-# Add a script to be executed every time the container starts.
-ENTRYPOINT ["rackup", "-o", "some_rack_project"]
-EXPOSE 9292
-EXPECTED_DOCKERFILE
+      expected = <<~EXPECTED_DOCKERFILE
+        FROM ruby:latest as gem-cache
+        RUN gem install bundler:2.4.12
+        RUN mkdir -p /myapp/localgems
+        COPY localgems/some_nifty_gem /myapp/localgems/some_nifty_gem
+        WORKDIR /myapp/localgems/some_nifty_gem
+        RUN bundle install
+        RUN rake install
+        FROM gem-cache as final
+        COPY --from=gem-cache /usr/local/bundle /usr/local/bundle
+        RUN apt-get update -qq && apt-get install -y postgresql-client
+        WORKDIR /myapp
+        COPY some_rack_project/Gemfile /myapp/Gemfile
+        COPY some_rack_project/Gemfile.lock /myapp/Gemfile.lock
+        RUN bundle install
+        COPY some_rack_project/. /myapp
+        # Add a script to be executed every time the container starts.
+        ENTRYPOINT ["rackup", "-o", "some_rack_project"]
+        EXPOSE 9292
+      EXPECTED_DOCKERFILE
       expect(project.projects[0].get_Dockerfile).to eq(expected)
     end
   end
@@ -91,5 +91,4 @@ EXPECTED_DOCKERFILE
       expect(result).to eq(expected)
     end
   end
-
 end

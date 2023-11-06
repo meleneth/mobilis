@@ -23,7 +23,7 @@ RSpec.describe "MySQL Instance" do
             "ports" => ["10000:3306"],
             "volumes" => [
               "./data/test-db:/var/lib/mysql"
-            ],
+            ]
           }
         }
       }

@@ -11,8 +11,8 @@ Gem::Specification.new do |spec|
   spec.summary = "Generate and scaffold multiple projects and a docker compose file"
   spec.homepage = "https://github.com/meleneth/mobilis"
   spec.required_ruby_version = ">= 2.6.0"
-  spec.licenses    = ['MIT']
-  #spec.metadata["allowed_push_host"] = "TODO: Set to your gem server 'https://example.com'"
+  spec.licenses = ["MIT"]
+  # spec.metadata["allowed_push_host"] = "TODO: Set to your gem server 'https://example.com'"
 
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = "https://github.com/meleneth/mobilis"
@@ -28,7 +28,7 @@ Gem::Specification.new do |spec|
   spec.bindir = "exe"
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
-  spec.executables << 'mobilis'
+  spec.executables << "mobilis"
 
   # Uncomment to register a new dependency of your gem
   spec.add_dependency "awesome_print"

@@ -42,17 +42,17 @@ RSpec.describe "Generic Project" do
             "build" => {
               "context" => "./prime"
             },
-            "image"=>"testuser/prime",
-            "environment"=> [
+            "image" => "testuser/prime",
+            "environment" => [
               "RAILS_ENV=production",
               "RAILS_MASTER_KEY=",
-#              "NEW_RELIC_APP_NAME=prime",
-#              "NEW_RELIC_LICENSE_KEY=some_invalid_key_NREAL",
-#              "NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true",
+              #              "NEW_RELIC_APP_NAME=prime",
+              #              "NEW_RELIC_LICENSE_KEY=some_invalid_key_NREAL",
+              #              "NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true",
               "RAILS_MIN_THREADS=5",
-              "RAILS_MAX_THREADS=5",
+              "RAILS_MAX_THREADS=5"
             ],
-            "ports" => ["10000:3000"],
+            "ports" => ["10000:3000"]
           }
         }
       }

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
-require 'simplecov'
-require 'debug'
+
+require "simplecov"
+require "debug"
 require "super_diff/rspec"
 
 SimpleCov.start
