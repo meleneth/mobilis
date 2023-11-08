@@ -21,6 +21,15 @@ module Mobilis
       @data[:models]
     end
 
+    def add_linked_postgresql_instance(dbname = nil)
+      dbname ||= "#{name}_db"
+      postgres_db = @metaproject.add_postgresql_instance dbname
+      new_links = links.clone
+      new_links << postgres_db.name
+      set_links new_links
+      postgres_db
+    end
+
     def database
       links.each do |link|
         project = @metaproject.project_by_name link
@@ -37,6 +46,14 @@ module Mobilis
       else
         add_rails_option :api
         remove_rails_option :haml
+      end
+    end
+
+    def toggle_uuid_primary_keys
+      if options.include? :uuid_primary_keys
+        remove_rails_option :uuid_primary_keys
+      else
+        add_rails_option :uuid_primary_keys
       end
     end
 

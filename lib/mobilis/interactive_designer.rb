@@ -67,7 +67,12 @@ module Mobilis
 
       event :go_edit_rails_project do
         transition [
-          :edit_project_menu, :add_omakase_stack_rails_project, :add_prime_stack_rails_project, :toggle_rails_api_mode
+          :edit_project_menu,
+          :add_omakase_stack_rails_project,
+          :add_prime_stack_rails_project,
+          :toggle_rails_api_mode,
+          :toggle_rails_uuid_primary_keys,
+          :rails_add_linked_postgres
         ] => :edit_rails_project
       end
 
@@ -87,6 +92,10 @@ module Mobilis
         transition [:edit_rails_project] => :rails_add_controller
       end
 
+      event :go_rails_add_linked_postgres do
+        transition [:edit_rails_project] => :rails_add_linked_postgres
+      end
+
       event :go_rails_edit_controller do
         transition [:rails_add_controller] => :edit_rails_controller
       end
@@ -101,6 +110,10 @@ module Mobilis
 
       event :go_toggle_rails_api_mode do
         transition [:edit_rails_project] => :toggle_rails_api_mode
+      end
+
+      event :go_toggle_rails_uuid_primary_keys do
+        transition [:edit_rails_project] => :toggle_rails_uuid_primary_keys
       end
 
       event :go_edit_links_select_project do
@@ -279,8 +292,10 @@ module Mobilis
           [
             {name: "return to Main Menu", value: -> { go_main_menu }},
             {name: "Toggle API mode", value: -> { go_toggle_rails_api_mode }},
+            {name: "Toggle UUID primary keys mode", value: -> { go_toggle_rails_uuid_primary_keys }},
             {name: "Add Model", value: -> { go_rails_add_model }},
-            {name: "Add Controller", value: -> { go_rails_add_controller }}
+            {name: "Add Controller", value: -> { go_rails_add_controller }},
+            {name: "Add postgres database", value: -> { go_rails_add_linked_postgres }}
           ]
         end
 
@@ -358,6 +373,20 @@ module Mobilis
         end
       end
 
+      state :rails_add_linked_postgres do
+        def display
+          spacer
+        end
+
+        def choices = false
+
+        def action
+          db_name = prompt.ask("new linked postgresql instance name:", default: "#{@selected_rails_project}.name}-db")
+          @selected_rails_project.add_linked_postgresql_instance db_name
+          go_edit_rails_project
+        end
+      end
+
       state :add_mysql_instance do
         def display
           spacer
@@ -395,6 +424,19 @@ module Mobilis
 
         def action
           @selected_rails_project.toggle_rails_api_mode
+          go_edit_rails_project
+        end
+      end
+
+      state :toggle_rails_uuid_primary_keys do
+        def display
+          Mobilis.logger.info "Toggled UUID primary keys for '#{@selected_rails_project.name}'"
+        end
+
+        def choices = false
+
+        def action
+          @selected_rails_project.toggle_rails_uuid_primary_keys
           go_edit_rails_project
         end
       end

@@ -41,15 +41,19 @@ module Mobilis
       @data[:username]
     end
 
+    def target_directory
+      "generate"
+    end
+
     def generate_files
-      if Dir.exist? "generate"
-        puts "Removing existing generate directory"
-        FileUtils.rm_rf("generate")
+      if Dir.exist? target_directory
+        puts "Removing existing #{target_directory} directory"
+        FileUtils.rm_rf(target_directory)
       end
 
-      Dir.mkdir "generate"
+      Dir.mkdir target_directory
 
-      Dir.chdir "generate" do
+      Dir.chdir target_directory do
         save_project
         create_rails_builder if has_rails_project?
         projects.each_with_index do |project, index|
