@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    mobilis (0.0.6pre)
+    mobilis (0.0.7pre)
       awesome_print
       optimist
       pry

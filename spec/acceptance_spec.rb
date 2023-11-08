@@ -3,6 +3,23 @@
 RSpec.describe "Acceptance" do
   let(:project) { Mobilis::Project.new }
 
+  describe "simple prime account service with default postgres db" do
+    let(:expected) do
+      {
+      }
+    end
+
+    before do
+      allow(project).to receive(:username).and_return("testuser")
+    end
+    it "Generates correct service" do
+      prime_stack = project.add_prime_stack_rails_project "account"
+      prime_stack.add_linked_postgresql_instance "account-db"
+      result = Mobilis::DockerComposeProjector.project project
+      expect(result).to eq(expected)
+    end
+  end
+
   describe "docker-compose" do
     let(:expected) do
       {

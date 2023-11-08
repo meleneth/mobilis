@@ -18,13 +18,13 @@ module Mobilis
         vars << "#{env_var}=#{linked_to_rails_project.name}_production"
       end
       vars.concat [
-        "POSTGRES_USER_#{env_name}=#{name}",
-        "POSTGRES_PASSWORD_#{env_name}=#{password}"
+        "POSTGRES_USER=#{name}",
+        "POSTGRES_PASSWORD=#{password}"
       ]
     end
 
     def env_var
-      "POSTGRES_DB_#{env_name}"
+      "POSTGRES_DB"
     end
 
     def env_name

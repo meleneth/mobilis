@@ -57,4 +57,15 @@ RSpec.describe "FSM Acceptance" do
       expect(fsm.state).to eq "edit_rails_project"
     end
   end
+  
+  describe "Add linked postgres project" do
+    it "allows creating linked postgres" do
+      add_prime_rails_project "account"
+      edit_project "account"
+      allow(prompt).to receive(:ask).and_return "account-db"
+      select_choice "Add postgres database"
+      fsm.action
+      expect(fsm.state).to eq "edit_rails_project"
+    end
+  end
 end
