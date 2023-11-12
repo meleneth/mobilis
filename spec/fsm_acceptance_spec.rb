@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require "mobilis/interactive_designer"
+require "mobilis/interactive_designer/main_menu"
 
 RSpec.describe "FSM Acceptance" do
   let(:fsm) do
-    id = Mobilis::InteractiveDesigner.new
+    id = Mobilis::InteractiveDesigner::MainMenu.new
     id.go_main_menu
     id
   end

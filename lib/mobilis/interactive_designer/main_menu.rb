@@ -9,8 +9,8 @@ require "tty-prompt"
 require "mobilis/logger"
 require "mobilis/project"
 
-module Mobilis
-  class InteractiveDesigner
+module Mobilis::InteractiveDesigner
+  class MainMenu
     extend Forwardable
 
     attr_accessor :project
@@ -65,43 +65,12 @@ module Mobilis
         transition [:add_project_menu] => :add_localgem_project
       end
 
-      event :go_edit_rails_project do
-        transition [
-          :edit_project_menu,
-          :add_omakase_stack_rails_project,
-          :add_prime_stack_rails_project,
-          :toggle_rails_api_mode,
-          :toggle_rails_uuid_primary_keys,
-          :rails_add_linked_postgres
-        ] => :edit_rails_project
-      end
-
       event :go_generate do
         transition [:main_menu] => :generate
       end
 
       event :go_main_menu do
         transition to: :main_menu
-      end
-
-      event :go_rails_add_model do
-        transition [:edit_rails_project] => :rails_add_model
-      end
-
-      event :go_rails_add_controller do
-        transition [:edit_rails_project] => :rails_add_controller
-      end
-
-      event :go_rails_add_linked_postgres do
-        transition [:edit_rails_project] => :rails_add_linked_postgres
-      end
-
-      event :go_rails_edit_controller do
-        transition [:rails_add_controller] => :edit_rails_controller
-      end
-
-      event :go_rails_edit_model do
-        transition [:rails_add_model] => :edit_rails_model
       end
 
       event :go_save_project do
@@ -373,19 +342,6 @@ module Mobilis
         end
       end
 
-      state :rails_add_linked_postgres do
-        def display
-          spacer
-        end
-
-        def choices = false
-
-        def action
-          db_name = prompt.ask("new linked postgresql instance name:", default: "#{@selected_rails_project}.name}-db")
-          @selected_rails_project.add_linked_postgresql_instance db_name
-          go_edit_rails_project
-        end
-      end
 
       state :add_mysql_instance do
         def display
@@ -412,60 +368,6 @@ module Mobilis
           project_name = prompt.ask("new redis instance name:")
           project.add_redis_instance project_name
           go_main_menu
-        end
-      end
-
-      state :toggle_rails_api_mode do
-        def display
-          Mobilis.logger.info "Toggled rails API mode for '#{@selected_rails_project.name}'"
-        end
-
-        def choices = false
-
-        def action
-          @selected_rails_project.toggle_rails_api_mode
-          go_edit_rails_project
-        end
-      end
-
-      state :toggle_rails_uuid_primary_keys do
-        def display
-          Mobilis.logger.info "Toggled UUID primary keys for '#{@selected_rails_project.name}'"
-        end
-
-        def choices = false
-
-        def action
-          @selected_rails_project.toggle_rails_uuid_primary_keys
-          go_edit_rails_project
-        end
-      end
-
-      state :rails_add_model do
-        def display
-          ap @selected_rails_project.models.collect { |x| x[:name] }
-        end
-
-        def choices = false
-
-        def action
-          name = prompt.ask("new model name")
-          @selected_rails_model = add_model name
-          go_edit_rails_model
-        end
-      end
-
-      state :rails_add_controller do
-        def display
-          ap @selected_rails_project.controllers.collect { |x| x[:name] }
-        end
-
-        def choices = false
-
-        def action
-          name = prompt.ask("new controller name:")
-          @selected_rails_controller = answer.add_controller name
-          go_edit_rails_controller
         end
       end
 

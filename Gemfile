@@ -16,3 +16,5 @@ gem "simplecov", require: false, group: :test
 gem "debug", ">= 1.0.0"
 
 gem "standard", group: [:development, :test]
+
+gem "mel-scene-fsm", "~> 0.1.0"
