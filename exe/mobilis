@@ -3,18 +3,13 @@
 require "pry"
 
 require "mobilis/command_line"
-require "mobilis/interactive_designer"
+require "mobilis/interactive_designer/main_menu"
 
 options = Mobilis::CommandLine.parse_args(ARGV)
-program = Mobilis::InteractiveDesigner.new
+program = Mobilis::InteractiveDesigner::MainMenu.new
 if options[:subcommand] == :load
   program.load_from_file options[:filename]
 end
 program.go_main_menu
 
-loop do
-  puts ""
-  puts ""
-  puts("  --> Starting loop!! <--")
-  program.choose_destination
-end
+program.visit_submachine program
