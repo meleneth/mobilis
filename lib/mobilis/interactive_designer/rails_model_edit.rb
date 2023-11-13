@@ -3,7 +3,7 @@
 require "mel/scene-fsm"
 
 module Mobilis::InteractiveDesigner
-  class RailsAppEdit < Mel::SceneFSM
+  class RailsModelEdit < Mel::SceneFSM
     def initialize(rails_model)
       @rails_model = rails_model
       super()

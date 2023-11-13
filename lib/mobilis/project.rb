@@ -22,15 +22,22 @@ module Mobilis
     include ActionsProjectsTake
     include Mobilis::NewRelic
 
-    attr_reader :name
-
     def initialize
       @data = {
         projects: [],
         username: ENV.fetch("USER", ENV.fetch("USERNAME", "")),
         starting_port_no: 10000,
+        name: 'generate',
         port_gap: 100
       }
+    end
+
+    def name
+      @data[:name]
+    end
+
+    def name=(name)
+      @data[:name] = name
     end
 
     def attributes

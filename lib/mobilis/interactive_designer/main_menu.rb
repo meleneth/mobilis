@@ -2,21 +2,19 @@
 
 require "awesome_print"
 require "forwardable"
-require "state_machine"
 require "table_print"
-require "tty-prompt"
+
+require "mel/scene-fsm"
 
 require "mobilis/logger"
 require "mobilis/project"
 
 module Mobilis::InteractiveDesigner
-  class MainMenu
+  class MainMenu < Mel::SceneFSM
     extend Forwardable
 
-    attr_accessor :project
     attr_reader :prompt
-
-    def_delegators :@project, :projects, :load_from_file
+    def_delegators :project, :projects, :load_from_file
 
     state_machine :state, initial: :initialize do
       event :go_build do
@@ -55,6 +53,10 @@ module Mobilis::InteractiveDesigner
         transition [:edit_rails_project] => :edit_project_menu
         transition [:edit_generic_project] => :main_menu
         transition [:add_project_menu] => :main_menu
+      end
+
+      event :go_finished do
+        transition any => :finished
       end
 
       event :go_add_rack_project do
@@ -144,11 +146,11 @@ module Mobilis::InteractiveDesigner
           [
             {name: "return to Main Menu", value: -> { go_main_menu }},
             *(projects.map { |project|
-                {name: "Edit '#{project.name}' project", value: -> {
-                                                                  @selected_rails_project = project
-                                                                  go_edit_rails_project
-                                                                }}
-              })
+              {
+                name: "Edit '#{project.name}' project",
+                value: -> { visit_submachine editor_machine_for(project) }
+              }
+            })
           ]
         end
 
@@ -200,13 +202,13 @@ module Mobilis::InteractiveDesigner
         def choices
           [
             {name: "return to Main Menu", value: -> { go_main_menu }},
-            *(projects.map do |project|
+            *(projects.map { |project|
                 links_txt = project.links.join ", "
-                {name: "Edit '#{project.name}' links (#{links_txt})", value: -> {
-                                                                               @selected_project = project
-                                                                               go_edit_links
-                                                                             }}
-              end)
+                {
+                  name: "Edit '#{project.name}' links (#{links_txt})",
+                  value: -> { visit_submachine Mobilis::InteractiveDesigner::EditLinks.new(project) }
+                }
+              })
           ]
         end
 
@@ -230,6 +232,18 @@ module Mobilis::InteractiveDesigner
         end
       end
 
+      state :finished do
+        def display = false
+
+        def choices = false
+
+        def action = false
+
+        def still_running?
+          false
+        end
+      end
+
       state :edit_rails_model do
         def display
           ap @selected_rails_project.models.collect { |x| x[:name] }
@@ -238,14 +252,14 @@ module Mobilis::InteractiveDesigner
         def choices
           [
             {name: "return to Main Menu", value: -> { go_main_menu }},
-            {name: "return to rails project edit", value: -> { go_edit_rails_project }},
+            {name: "return to rails project edit", value: -> { visit_submachine editor_machine_for(project) }},
             {name: "Toggle timestamps", value: -> { go_toggle_rails_model_timestamps }},
-            *(@selected_rails_project.models.map do |model|
-                {name: "Edit '#{model.name}' model", value: -> {
-                                                              @selected_rails_model = model
-                                                              go_edit_rails_model
-                                                            }}
-              end)
+            *(@selected_rails_project.models.map { |model|
+                {
+                  name: "Edit '#{model.name}' model",
+                  value: -> { visit_submachine Mobilis::InteractiveDesigner::EditRailsModel.new(model) }
+                }
+              })
           ]
         end
 
@@ -281,8 +295,9 @@ module Mobilis::InteractiveDesigner
 
         def action
           project_name = prompt.ask("new Prime Stack Rails project name:")
-          @selected_rails_project = project.add_prime_stack_rails_project project_name
-          go_edit_rails_project
+          rails_project = project.add_prime_stack_rails_project project_name
+          visit_submachine editor_machine_for(rails_project)
+          go_main_menu
         end
       end
 
@@ -341,7 +356,6 @@ module Mobilis::InteractiveDesigner
           go_main_menu
         end
       end
-
 
       state :add_mysql_instance do
         def display
@@ -411,40 +425,9 @@ module Mobilis::InteractiveDesigner
       end
     end
 
-    def initialize
-      super()
-      @prompt = TTY::Prompt.new
-      @project = Project.new
-    end
-
-    ##
     # display, choices, and action methods all change per-state
-    def choose_destination
-      Mobilis.logger.info "#choose_destination"
-      blank_space
-      spacer
-      display
-      spacer
-      blank_space
-
-      if some_choices = choices
-        prompt.select("Choose your Path", some_choices, per_page: 20)
-      else
-        Mobilis.logger.info "No choices found, running action instead"
-        action
-      end
-    end
-
     def new_relic_license_key
       ENV.fetch "NEW_RELIC_LICENSE_KEY", false
-    end
-
-    def spacer
-      puts "|+--------------------------------------------------------+|"
-    end
-
-    def blank_space
-      puts ""
     end
 
     def reload!(print = true)
@@ -459,6 +442,14 @@ module Mobilis::InteractiveDesigner
       end
       # Return true when complete.
       true
+    end
+
+    def editor_machine_for(project)
+      ::Mobilis::InteractiveDesigner::RailsAppEdit.new project
+    end
+
+    def project
+      @project ||= Mobilis::Project.new
     end
   end
 end
