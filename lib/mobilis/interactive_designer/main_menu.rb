@@ -13,12 +13,15 @@ module Mobilis::InteractiveDesigner
   class MainMenu < Mel::SceneFSM
     extend Forwardable
 
-    attr_reader :prompt
     def_delegators :project, :projects, :load_from_file
 
-    state_machine :state, initial: :initialize do
+    state_machine :state, initial: :main_menu do
       event :go_build do
         transition [:main_menu] => :build
+      end
+
+      event :go_quit do
+        transition [:main_menu] => :quit
       end
 
       event :go_add_omakase_stack_rails_project do
@@ -114,7 +117,8 @@ module Mobilis::InteractiveDesigner
           menu_items = [
             {name: "reload all code", value: -> { reload! }},
             {name: "[m] Add project", value: -> { go_add_project_menu }},
-            {name: "[m] Edit existing project", value: -> { go_edit_project_menu }}
+            {name: "[m] Edit existing project", value: -> { go_edit_project_menu }},
+            {name: "quit", value: -> { go_quit }}
           ]
           if projects.length > 1
             menu_items.concat([
@@ -423,6 +427,18 @@ module Mobilis::InteractiveDesigner
           go_main_menu
         end
       end
+
+      state :quit do
+        def display = false
+
+        def choices = false
+
+        def action = false
+
+        def still_running?
+          false
+        end
+      end
     end
 
     # display, choices, and action methods all change per-state
@@ -445,11 +461,11 @@ module Mobilis::InteractiveDesigner
     end
 
     def editor_machine_for(project)
-      ::Mobilis::InteractiveDesigner::RailsAppEdit.new project
+      RailsAppEdit.new project
     end
 
     def project
-      @project ||= Mobilis::Project.new
+      @project ||= ::Mobilis::Project.new
     end
   end
 end
