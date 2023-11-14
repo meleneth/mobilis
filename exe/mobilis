@@ -7,9 +7,5 @@ require "mobilis/interactive_designer/main_menu"
 
 options = Mobilis::CommandLine.parse_args(ARGV)
 program = Mobilis::InteractiveDesigner::MainMenu.new
-if options[:subcommand] == :load
-  program.load_from_file options[:filename]
-end
-program.go_main_menu
-
+program.load_from_file options[:filename] if options[:subcommand] == :load
 program.visit_submachine program
