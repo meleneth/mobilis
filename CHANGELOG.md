@@ -1,4 +1,7 @@
 ## [Unreleased]
+
+- changed uid / gid to hardcoded value of '200' in the rails builder image
+  to let it work in Windows.  Will need to re-test linux and mac
 - minor markdown syntax fixes
 - FSM tests
 - bugfixes in interactive designer
