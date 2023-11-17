@@ -27,9 +27,13 @@ module Mobilis
         projects: [],
         username: ENV.fetch("USER", ENV.fetch("USERNAME", "")),
         starting_port_no: 10000,
-        name: 'generate',
-        port_gap: 100
+        port_gap: 100,
+        name: "generate"
       }
+    end
+
+    def show
+      ap @data
     end
 
     def name

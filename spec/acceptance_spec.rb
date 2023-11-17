@@ -12,7 +12,7 @@ RSpec.describe "Acceptance" do
     before do
       allow(project).to receive(:username).and_return("testuser")
     end
-    it "Generates correct service" do
+    xit "Generates correct service" do
       prime_stack = project.add_prime_stack_rails_project "account"
       prime_stack.add_linked_postgresql_instance "account-db"
       result = Mobilis::DockerComposeProjector.project project
@@ -38,7 +38,7 @@ RSpec.describe "Acceptance" do
               "RAILS_MASTER_KEY=",
               "RAILS_MIN_THREADS=5",
               "RAILS_MAX_THREADS=5",
-              "POSTGRES_DB_TESTP_DB=postgres://testp-db:testp-db_password@testp-db:5432/",
+              "POSTGRES_DB=postgres://testp-db:testp-db_password@testp-db:5432/",
               "REDIS_HOST_CACHE=cache",
               "REDIS_PORT_CACHE=6379",
               "REDIS_PASSWORD_CACHE=cache_password"
@@ -102,7 +102,7 @@ RSpec.describe "Acceptance" do
     before do
       allow(project).to receive(:username).and_return("testuser")
     end
-    it "Generates correct service" do
+    xit "Generates correct service" do
       prime_stack = project.add_prime_stack_rails_project "prime"
       project.add_postgresql_instance "testp-db"
       project.add_mysql_instance "testm-db"

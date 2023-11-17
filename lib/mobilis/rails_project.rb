@@ -5,6 +5,8 @@ require "fileutils"
 require "mobilis/generic_project"
 require "mobilis/os"
 
+
+# rubocop:disable Matrics/ClassLength
 module Mobilis
   class RailsProject < GenericProject
     def child_env_vars

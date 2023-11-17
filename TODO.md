@@ -2,6 +2,10 @@
 name your meta project prompt to start with
 Seeing what happens when trying to make a small complicated system
 author-service post-service
+The UI FSM is wildly overgrown.  Need to split it into multiple, task-specifc FSM's
+  * rails
+  * metaproject
+  * ???
 
 # The Backlog
 - make links look better ( table_print )

@@ -6,9 +6,6 @@ require "table_print"
 
 require "mel/scene-fsm"
 
-require "mobilis/logger"
-require "mobilis/project"
-
 module Mobilis::InteractiveDesigner
   class MainMenu < Mel::SceneFSM
     extend Forwardable
@@ -22,6 +19,10 @@ module Mobilis::InteractiveDesigner
 
       event :go_quit do
         transition [:main_menu] => :quit
+      end
+      
+      event :go_show_configuration do
+        transition [:main_menu] => :show_configuration
       end
 
       event :go_add_omakase_stack_rails_project do
@@ -70,6 +71,15 @@ module Mobilis::InteractiveDesigner
         transition [:add_project_menu] => :add_localgem_project
       end
 
+      event :go_edit_rails_project do
+        transition [
+          :edit_project_menu,
+          :add_omakase_stack_rails_project,
+          :add_prime_stack_rails_project,
+          :toggle_rails_api_mode
+        ] => :edit_rails_project
+      end
+
       event :go_generate do
         transition [:main_menu] => :generate
       end
@@ -99,12 +109,6 @@ module Mobilis::InteractiveDesigner
         transition [:edit_links_select_project] => :edit_links
       end
 
-      after_transition any => any do |designer|
-        puts "o0o VVVV ---- VVVV o0o"
-        puts "-- Switched state to #{designer.state_name} --"
-        puts "o0o ^^^^ ---- ^^^^ o0o"
-      end
-
       state :main_menu do
         def display
           puts
@@ -118,6 +122,7 @@ module Mobilis::InteractiveDesigner
             {name: "reload all code", value: -> { reload! }},
             {name: "[m] Add project", value: -> { go_add_project_menu }},
             {name: "[m] Edit existing project", value: -> { go_edit_project_menu }},
+            {name: "[m] Show configuration", value: -> { go_show_configuration }},
             {name: "quit", value: -> { go_quit }}
           ]
           if projects.length > 1
@@ -300,7 +305,8 @@ module Mobilis::InteractiveDesigner
         def action
           project_name = prompt.ask("new Prime Stack Rails project name:")
           rails_project = project.add_prime_stack_rails_project project_name
-          visit_submachine editor_machine_for(rails_project)
+          editor_machine = editor_machine_for(rails_project)
+          visit_submachine editor_machine
           go_main_menu
         end
       end
@@ -424,6 +430,19 @@ module Mobilis::InteractiveDesigner
 
         def action
           project.save_project
+          go_main_menu
+        end
+      end
+
+      state :show_configuration do
+        def display
+          spacer
+        end
+
+        def choices = false
+
+        def action
+          project.show
           go_main_menu
         end
       end
