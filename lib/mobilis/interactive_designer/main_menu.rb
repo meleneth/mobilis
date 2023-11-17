@@ -1,11 +1,5 @@
 # frozen_string_literal: true
 
-require "awesome_print"
-require "forwardable"
-require "table_print"
-
-require "mel/scene-fsm"
-
 module Mobilis::InteractiveDesigner
   class MainMenu < Mel::SceneFSM
     extend Forwardable
