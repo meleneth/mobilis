@@ -2,8 +2,7 @@
 
 require "pry"
 
-require "mobilis/command_line"
-require "mobilis/interactive_designer/main_menu"
+require "mobilis"
 
 options = Mobilis::CommandLine.parse_args(ARGV)
 program = Mobilis::InteractiveDesigner::MainMenu.new

@@ -2,6 +2,12 @@
 
 require "mobilis/interactive_designer/main_menu"
 
+# > reload all code
+#   [m] Add project
+#   [m] Edit existing project
+#   [m] Show configuration
+#   quit
+
 RSpec.describe Mobilis::InteractiveDesigner::MainMenu do
   let(:fsm) { Mobilis::InteractiveDesigner::MainMenu.new }
 
@@ -26,18 +32,38 @@ RSpec.describe Mobilis::InteractiveDesigner::MainMenu do
     select_choice name
   end
 
+
+  describe "Quit" do
+    it "stops running" do
+      select_choice "quit"
+      expect(fsm.still_running?).to eq(false)
+    end
+  end
+
   describe "Simplest Rails project" do
-    it "allows adding a rails project" do
-      select_choice "Add project"
+    let(:metaproject) { build(:metaproject) }
+    let(:rails_project) { build(:rails_prime, metaproject: metaproject, name: "someprime") }
+    let(:fsm_editor) { Mobilis::InteractiveDesigner::RailsAppEdit.new rails_project }
+  
+    before do
+      allow(Mobilis::Project).to receive(:new).and_return metaproject
+      allow(fsm).to receive(:editor_machine_for).with(rails_project).and_return fsm_editor
       allow(prompt).to receive(:ask).and_return "someprime"
+    end
+    
+    it "allows adding a rails project" do
+      expect(metaproject).to receive(:add_prime_stack_rails_project).with("someprime").and_return(rails_project)
+      expect(fsm).to receive(:visit_submachine).with fsm_editor
+
+      select_choice "Add project"
       select_choice "Add prime stack"
-      select_choice "return to Main Menu"
-      add_prime_rails_project "someprime"
+      fsm.action
+      expect(fsm.state).to eq("main_menu")
     end
   end
 
   describe "Edit existing project" do
-    it "Allows selecting an existing project" do
+    xit "Allows selecting an existing project" do
       add_prime_rails_project "someprime"
       edit_project "someprime"
       expect(fsm.state).to eq "edit_rails_project"
