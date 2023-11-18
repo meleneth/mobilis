@@ -35,6 +35,18 @@ module Mobilis
       {"version" => "3.8", "services" => services}
     end
 
+    def kafka_service service
+      attributes = @project.attributes
+      {
+        "image" => service.docker_image_name,
+        "ports" => ["9092:9092"],
+        "environment" => [],
+        "build" => {
+          "context" => "./#{service.name}"
+        }
+      }
+    end
+
     def rails_service service
       attributes = @project.attributes
       keyname = "#{service.name}_internal_port_no".to_sym

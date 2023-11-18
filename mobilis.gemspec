@@ -39,6 +39,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "tty-prompt"
 
   spec.add_development_dependency "super_diff"
+  spec.add_development_dependency "simplecov"
 
   # spec.add_dependency "example-gem", "~> 1.0"
 

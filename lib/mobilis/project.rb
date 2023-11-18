@@ -1,18 +1,7 @@
 # frozen_string_literal: true
 
 require "fileutils"
-require "json"
-require "yaml"
 
-require "mobilis/actions_projects_take"
-require "mobilis/docker_compose_projector"
-require "mobilis/mysql_instance"
-require "mobilis/new_relic"
-require "mobilis/postgresql_instance"
-require "mobilis/rails_project"
-require "mobilis/rack_project"
-require "mobilis/redis_instance"
-require "mobilis/localgem_project"
 
 module Mobilis
   ##
