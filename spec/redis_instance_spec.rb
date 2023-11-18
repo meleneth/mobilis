@@ -13,7 +13,7 @@ RSpec.describe "Redis Instance" do
         "version" => "3.8",
         "services" => {
           "cache" => {
-            "image" => "redis:7.0.11-alpine",
+            "image" => "redis:7.2.3-alpine",
             "restart" => "always",
             "command" => "redis-server --save 20 1 --loglevel warning --requirepass cache_password",
             "environment" => [],

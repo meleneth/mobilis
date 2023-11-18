@@ -49,7 +49,7 @@ RSpec.describe "Acceptance" do
             "ports" => ["10000:3000"]
           },
           "testp-db" => {
-            "image" => "postgres:15.2-alpine",
+            "image" => "postgres:16.1-bookworm",
             "restart" => "always",
             "environment" => [
               "POSTGRES_DB=prime_production",
@@ -76,7 +76,7 @@ RSpec.describe "Acceptance" do
             ]
           },
           "cache" => {
-            "image" => "redis:7.0.11-alpine",
+            "image" => "redis:7.2.3-alpine",
             "restart" => "always",
             "environment" => [],
             "ports" => ["10300:6379"],

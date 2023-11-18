@@ -1,4 +1,92 @@
 module Mobilis
   VERSION: String
   # See the writing guide of rbs: https://github.com/ruby/rbs#guides
+
+  class Project
+    def name: () -> String
+    def name=: (String) -> self
+  end
+  module ActionsProjectsTake
+    def append_line: (String filename, String line) -> self
+    def run_command: (String command, ?bool ignore_errors) -> (nil | untyped)
+    def oblivious_run_command: (String command) -> self
+    def run_docker: (String cmd) -> self
+    def set_second_line: (String filename, String line) -> self
+    def set_file_contents: (String filename, String contents) -> self
+    def write_file: (String filename) { () -> untyped } -> self
+  end
+
+  # this is NOT a GenericProject, this is the metaproject
+  # TODO: s/Project/Meta/g
+  class Project
+    include ActionsProjectsTake
+    include Mobilis::NewRelic
+    def initialize: () -> void
+    def show: () -> untyped
+    def name: () -> untyped
+    def name=: (untyped name) -> untyped
+    def attributes: () -> untyped
+    def username: () -> untyped
+    def target_directory: () -> "generate"
+    def generate_files: () -> untyped
+    def create_rails_builder: () -> untyped
+    def create_rails_builder_dockerfile: () -> untyped
+    def create_rails_builder_gemfile: () -> untyped
+    def has_rails_project?: () -> (true | false)
+    def generate_attributes: () -> untyped
+    def build: () -> untyped
+    def rails_builder_image: () -> ::String
+    def build_rails_builder: () -> untyped
+    def load_from_file: (untyped filename) -> untyped
+    def save_project: () -> untyped
+    def save_docker_compose: () -> untyped
+    def projects: () -> untyped
+    def project_by_name: (untyped name) -> untyped
+    def display: () -> untyped
+    def add_prime_stack_rails_project: (untyped name) -> untyped
+    def add_omakase_stack_rails_project: (untyped name) -> untyped
+    def add_postgresql_instance: (untyped name) -> untyped
+    def add_mysql_instance: (untyped name) -> untyped
+    def add_redis_instance: (untyped name) -> untyped
+    def add_rails_project: (untyped name, untyped options) -> untyped
+    def add_localgem_project: (untyped name) -> untyped
+    def add_rack_project: (untyped name) -> untyped
+    def getwd: () -> (untyped | ::String)
+  end
+end
+module Mobilis
+  #
+  # base class for projects.
+  # Child classes should override
+  # generate
+  # and as needed
+  # child_env_vars
+  class GenericProject
+    include ActionsProjectsTake
+    extend Forwardable
+    def initialize: (untyped data, untyped metaproject) -> void
+    #
+    # environment env vars added to linked child services
+    def child_env_vars: () -> ::Array[untyped]
+    def env_vars: () -> ::Array[untyped]
+    def links_to_actually_link: () -> untyped
+    # projects who are linked to us
+    def children: () -> untyped
+    # projects we are linked to
+    def parents: () -> untyped
+    def linked_to_rails_project: () -> untyped
+    def linked_to_localgem_project: () -> untyped
+    def linked_localgem_projects: () -> untyped
+    def display: () -> untyped
+    def name: () -> untyped
+    def options: () -> untyped
+    def type: () -> untyped
+    def links: () -> untyped
+    def set_links: (untyped new_links) -> untyped
+    def docker_image_name: () -> ::String
+    def generate_build_sh: () -> untyped
+    def git_commit_all: (untyped message) -> nil
+    # generate the local file structure to support the project
+    def generate: () -> untyped
+  end
 end
