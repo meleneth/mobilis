@@ -1,10 +1,5 @@
 # frozen_string_literal: true
 
-require "forwardable"
-require "fileutils"
-
-require "mobilis/actions_projects_take"
-
 module Mobilis
   ##
   # base class for projects.

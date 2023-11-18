@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require "mobilis/generic_project"
-require "mobilis/os"
-
 module Mobilis
   class RackProject < GenericProject
     def name
