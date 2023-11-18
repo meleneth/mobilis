@@ -5,14 +5,54 @@ RSpec.describe "Acceptance" do
 
   describe "simple prime account service with default postgres db" do
     let(:expected) do
-      {
-      }
+         {
+          "version" => "3.8",
+          "services" => {
+            "account" => {
+              "image" => "testuser/account",
+              "ports" => [
+                "10000:3000"
+              ],
+              "environment" => [
+                "RAILS_ENV=production",
+                "RAILS_MASTER_KEY=",
+                "RAILS_MIN_THREADS=5",
+                "RAILS_MAX_THREADS=5",
+                "DATABASE_URL=postgres://account-db:account-db_password@account-db:5432/"
+              ],
+              "build" => {
+                "context" => "./account"
+              },
+              "links" => [
+                "account-db"
+              ],
+              "depends_on" => [
+                "account-db"
+              ]
+            },
+            "account-db" => {
+              "image" => "postgres:16.1-bookworm",
+              "restart" => "always",
+              "environment" => [
+                "POSTGRES_DB=account_production",
+                "POSTGRES_USER=account-db",
+                "POSTGRES_PASSWORD=account-db_password"
+              ],
+              "ports" => [
+                "10100:5432"
+              ],
+              "volumes" => [
+                "./data/account-db:/var/lib/postgresql/data"
+              ]
+            }
+          }
+         }
     end
 
     before do
       allow(project).to receive(:username).and_return("testuser")
     end
-    xit "Generates correct service" do
+    it "Generates correct service" do
       prime_stack = project.add_prime_stack_rails_project "account"
       prime_stack.add_linked_postgresql_instance "account-db"
       result = Mobilis::DockerComposeProjector.project project
