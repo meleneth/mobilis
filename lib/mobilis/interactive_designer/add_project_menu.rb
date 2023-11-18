@@ -32,6 +32,10 @@ module Mobilis::InteractiveDesigner
         transition [:add_project_menu] => :add_mysql_instance
       end
 
+      event :go_add_kafka_instance do
+        transition [:add_project_menu] => :add_kafka_instance
+      end
+
       event :go_add_redis_instance do
         transition [:add_project_menu] => :add_redis_instance
       end
@@ -77,9 +81,9 @@ module Mobilis::InteractiveDesigner
             # { name: "Add existing git project",        value: -> { go_add_existing_git_project }},
             {name: "Add redis instance", value: -> { go_add_redis_instance }},
             {name: "Add postgresql instance", value: -> { go_add_postgresql_instance }},
-            {name: "Add mysql instance", value: -> { go_add_mysql_instance }}
+            {name: "Add mysql instance", value: -> { go_add_mysql_instance }},
             # { name: "Add couchdb instance",            value: -> { go_add_couchdb_instance }},
-            # { name: "Add kafka instance",              value: -> { go_add_kafka_instance }},
+            { name: "Add kafka instance",              value: -> { go_add_kafka_instance }}
             # { name: "Add graphql instance",            value: -> { go_add_grapql_instance }},
             # { name: "Add gitlab instance w/workers",   value: -> { go_add_gitlab_instance }}
           ]
@@ -127,6 +131,20 @@ module Mobilis::InteractiveDesigner
         def action
           project_name = prompt.ask("new Rack project name:")
           project.add_rack_project project_name
+          go_main_menu
+        end
+      end
+
+      state :add_kafka_instance do
+        def display
+          puts "Creates a new kafka instance"
+        end
+
+        def choices = false
+
+        def action
+          project_name = prompt.ask("new Kafka instance name:")
+          project.add_kafka_instance project_name
           go_main_menu
         end
       end
