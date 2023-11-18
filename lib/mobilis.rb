@@ -3,6 +3,7 @@
 require "awesome_print"
 require "forwardable"
 require "table_print"
+require "fileutils"
 
 require "mel/scene-fsm"
 

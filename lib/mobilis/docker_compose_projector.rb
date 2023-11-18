@@ -46,7 +46,7 @@ module Mobilis
 
       database = service.database
       if database
-        vars << "#{database.env_var}=#{database.url}"
+        vars << "DATABASE_URL=#{database.url}"
       end
 
       # vars << "NEW_RELIC_APP_NAME=#{ service.name }"
