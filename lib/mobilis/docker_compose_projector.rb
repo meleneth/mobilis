@@ -79,7 +79,7 @@ module Mobilis
       attributes = @project.attributes
       keyname = "#{service.name}_internal_port_no".to_sym
       {
-        "image" => "postgres:15.2-alpine",
+        "image" => "postgres:16.1-bookworm",
         "restart" => "always",
         "environment" => service.env_vars,
         "ports" => ["#{attributes[keyname]}:5432"],
@@ -107,7 +107,7 @@ module Mobilis
       attributes = @project.attributes
       port_key = "#{service.name}_internal_port_no".to_sym
       {
-        "image" => "redis:7.0.11-alpine",
+        "image" => "redis:7.2.3-alpine",
         "restart" => "always",
         "command" => "redis-server --save 20 1 --loglevel warning --requirepass #{service.password}",
         "environment" => [],
