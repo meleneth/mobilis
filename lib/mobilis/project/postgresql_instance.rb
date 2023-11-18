@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "mobilis/generic_project"
-
 module Mobilis
   class PostgresqlInstance < GenericProject
     def generate
