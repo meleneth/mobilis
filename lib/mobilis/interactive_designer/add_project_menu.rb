@@ -8,14 +8,14 @@ module Mobilis::InteractiveDesigner
 
     def initialize(project)
       @project = project
-      setup()
+      setup
     end
 
     state_machine :state, initial: :add_project_menu do
       event :go_quit do
         transition [:main_menu] => :quit
       end
-      
+
       event :go_add_omakase_stack_rails_project do
         transition [:add_project_menu] => :add_omakase_stack_rails_project
       end
@@ -83,7 +83,7 @@ module Mobilis::InteractiveDesigner
             {name: "Add postgresql instance", value: -> { go_add_postgresql_instance }},
             {name: "Add mysql instance", value: -> { go_add_mysql_instance }},
             # { name: "Add couchdb instance",            value: -> { go_add_couchdb_instance }},
-            { name: "Add kafka instance",              value: -> { go_add_kafka_instance }}
+            {name: "Add kafka instance", value: -> { go_add_kafka_instance }}
             # { name: "Add graphql instance",            value: -> { go_add_grapql_instance }},
             # { name: "Add gitlab instance w/workers",   value: -> { go_add_gitlab_instance }}
           ]

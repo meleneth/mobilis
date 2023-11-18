@@ -2,7 +2,6 @@
 
 require "fileutils"
 
-
 module Mobilis
   ##
   # this is NOT a GenericProject, this is the metaproject

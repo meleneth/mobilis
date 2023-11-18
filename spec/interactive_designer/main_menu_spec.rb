@@ -32,7 +32,6 @@ RSpec.describe Mobilis::InteractiveDesigner::MainMenu do
     select_choice name
   end
 
-
   describe "Quit" do
     it "stops running" do
       select_choice "quit"
@@ -44,13 +43,13 @@ RSpec.describe Mobilis::InteractiveDesigner::MainMenu do
     let(:metaproject) { build(:metaproject) }
     let(:rails_project) { build(:rails_prime, metaproject: metaproject, name: "someprime") }
     let(:fsm_editor) { Mobilis::InteractiveDesigner::RailsAppEdit.new rails_project }
-  
+
     before do
       allow(Mobilis::Project).to receive(:new).and_return metaproject
       allow(fsm).to receive(:editor_machine_for).with(rails_project).and_return fsm_editor
       allow(prompt).to receive(:ask).and_return "someprime"
     end
-    
+
     it "allows adding a rails project" do
       expect(metaproject).to receive(:add_prime_stack_rails_project).with("someprime").and_return(rails_project)
       expect(fsm).to receive(:visit_submachine).with fsm_editor

@@ -36,7 +36,6 @@ module Mobilis
     end
 
     def kafka_service service
-      attributes = @project.attributes
       {
         "image" => service.docker_image_name,
         "ports" => ["9092:9092"],

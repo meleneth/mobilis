@@ -14,7 +14,7 @@ module Mobilis::InteractiveDesigner
       event :go_quit do
         transition [:main_menu] => :quit
       end
-      
+
       event :go_show_configuration do
         transition [:main_menu] => :show_configuration
       end

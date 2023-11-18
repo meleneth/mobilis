@@ -7,7 +7,7 @@ module Mobilis
     end
 
     def child_env_vars
-      [ ]
+      []
     end
 
     def env_vars
