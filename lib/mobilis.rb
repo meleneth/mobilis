@@ -12,6 +12,7 @@ require "mel/scene-fsm"
 module Mobilis
   module InteractiveDesigner
   end
+
   class Error < StandardError; end
 end
 

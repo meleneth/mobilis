@@ -55,7 +55,6 @@ module Mobilis::InteractiveDesigner
           @selected_rails_project.toggle_rails_api_mode
           go_edit_rails_project
         end
-
       end
 
       state :toggle_rails_api_mode do

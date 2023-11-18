@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# rubocop:disable Matrics/ClassLength
+# rubocop:disable Metrics/ClassLength
 module Mobilis
   class RailsProject < GenericProject
     def child_env_vars
@@ -187,7 +187,7 @@ module Mobilis
     end
 
     def wait_until_line
-      # TODO FIXME 
+      # TODO FIXME
       if database.instance_of? Mobilis::PostgresqlInstance
         return <<~POSTGRES_LINE
           /myapp/wait-until "psql postgres://#{database.username}:#{database.password}@#{database.name}/#{name}_production -c 'select 1'"
