@@ -115,6 +115,7 @@ module Mobilis
         generate_entrypoint_sh
         Mobilis.logger.info "-- generate_build_sh"
         generate_build_sh
+        bundle_install
         Mobilis.logger.info "-- git commit add Dockerfile and build script etc"
         git_commit_all "add Dockerfile and build script etc"
       end
@@ -209,6 +210,11 @@ module Mobilis
       Mobilis.logger.info "Installing rspec"
       append_line "Gemfile", 'gem "rspec-rails", group: [:development, :test]'
       bundle_run "rails generate rspec:install"
+    end
+
+    def bundle_install
+      Mobilis.logger.info "Running bundle install"
+      bundle_run "bundle install"
     end
 
     def install_factory_bot

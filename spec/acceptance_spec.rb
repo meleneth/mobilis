@@ -38,7 +38,7 @@ RSpec.describe "Acceptance" do
               "RAILS_MASTER_KEY=",
               "RAILS_MIN_THREADS=5",
               "RAILS_MAX_THREADS=5",
-              "POSTGRES_DB=postgres://testp-db:testp-db_password@testp-db:5432/",
+              "DATABASE_URL=postgres://testp-db:testp-db_password@testp-db:5432/",
               "REDIS_HOST_CACHE=cache",
               "REDIS_PORT_CACHE=6379",
               "REDIS_PASSWORD_CACHE=cache_password"
@@ -52,9 +52,9 @@ RSpec.describe "Acceptance" do
             "image" => "postgres:15.2-alpine",
             "restart" => "always",
             "environment" => [
-              "POSTGRES_DB_TESTP_DB=prime_production",
-              "POSTGRES_USER_TESTP_DB=testp-db",
-              "POSTGRES_PASSWORD_TESTP_DB=testp-db_password"
+              "POSTGRES_DB=prime_production",
+              "POSTGRES_USER=testp-db",
+              "POSTGRES_PASSWORD=testp-db_password"
             ],
             "ports" => ["10100:5432"],
             "volumes" => [
@@ -102,7 +102,7 @@ RSpec.describe "Acceptance" do
     before do
       allow(project).to receive(:username).and_return("testuser")
     end
-    xit "Generates correct service" do
+    it "Generates correct service" do
       prime_stack = project.add_prime_stack_rails_project "prime"
       project.add_postgresql_instance "testp-db"
       project.add_mysql_instance "testm-db"

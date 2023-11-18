@@ -109,7 +109,7 @@ module Mobilis
         
         ARG USER_ID
         ARG GROUP_ID
-        RUN addgroup --gid $GROUP_ID rubyuser
+        RUN addgroup --gid 200 rubyuser
         RUN adduser --disabled-password --gecos '' --uid 200 --gid 200 rubyuser
         USER rubyuser
       EOF
