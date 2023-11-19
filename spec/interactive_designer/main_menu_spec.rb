@@ -33,6 +33,9 @@ RSpec.describe Mobilis::InteractiveDesigner::MainMenu do
   end
 
   describe "Quit" do
+    it "is running by default" do
+      expect(fsm.still_running?).to eq(true)
+    end
     it "stops running" do
       select_choice "quit"
       expect(fsm.still_running?).to eq(false)
@@ -56,6 +59,28 @@ RSpec.describe Mobilis::InteractiveDesigner::MainMenu do
 
       select_choice "Add project"
       select_choice "Add prime stack"
+      fsm.action
+      expect(fsm.state).to eq("main_menu")
+    end
+  end
+
+  describe "Add Kafka instance" do
+    let(:metaproject) { build(:metaproject) }
+    let(:kafka_project) { build(:kafka_instance, metaproject: metaproject, name: "somekafka") }
+    let(:fsm_editor) { Mobilis::InteractiveDesigner::KafkaInstanceEdit.new kafka_project }
+
+    before do
+      allow(Mobilis::Project).to receive(:new).and_return metaproject
+      allow(fsm).to receive(:editor_machine_for).with(kafka_project).and_return fsm_editor
+      allow(prompt).to receive(:ask).and_return "somekafka"
+    end
+
+    it "allows adding a Kafka project" do
+      expect(metaproject).to receive(:add_kafka_instance).with("somekafka").and_return(kafka_project)
+      expect(fsm).to receive(:visit_submachine).with fsm_editor
+
+      select_choice "Add project"
+      select_choice "Add Kafka instance"
       fsm.action
       expect(fsm.state).to eq("main_menu")
     end

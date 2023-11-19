@@ -3,7 +3,6 @@
 module Mobilis
   class KafkaInstance < GenericProject
     def generate
-      FileUtils.mkdir_p data_dir
     end
 
     def child_env_vars
