@@ -183,12 +183,13 @@ module Mobilis
 
     def projects
       mapping = {
-        rails: RailsProject,
-        postgresql: PostgresqlInstance,
+        kafka: KafkaInstance,
+        localgem: LocalgemProject,
         mysql: MysqlInstance,
-        redis: RedisInstance,
+        postgresql: PostgresqlInstance,
         rack: RackProject,
-        localgem: LocalgemProject
+        rails: RailsProject,
+        redis: RedisInstance
       }
       @data[:projects].map { |p| mapping[p[:type].to_sym].new p, self }
     end
@@ -247,6 +248,16 @@ module Mobilis
       }
       @data[:projects] << data
       RailsProject.new data, self
+    end
+
+    def add_kafka_instance name
+      data = {
+        name: name,
+        type: :kafka,
+        attributes: {}
+      }
+      @data[:projects] << data
+      KafkaInstance.new data, self
     end
 
     def add_localgem_project name

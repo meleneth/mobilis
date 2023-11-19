@@ -7,15 +7,11 @@ module Mobilis::InteractiveDesigner
     def_delegators :project, :projects, :load_from_file
 
     def initialize(project)
+      super()
       @project = project
-      setup
     end
 
     state_machine :state, initial: :add_project_menu do
-      event :go_quit do
-        transition [:main_menu] => :quit
-      end
-
       event :go_add_omakase_stack_rails_project do
         transition [:add_project_menu] => :add_omakase_stack_rails_project
       end
@@ -68,7 +64,7 @@ module Mobilis::InteractiveDesigner
 
         def choices
           [
-            {name: "return to Main Menu", value: -> { go_main_menu }},
+            {name: "return to Main Menu", value: -> { go_finished }},
             {name: "Add prime stack rails project", value: -> { go_add_prime_stack_rails_project }},
             {name: "Add omakase stack rails project", value: -> { go_add_omakase_stack_rails_project }},
             {name: "Add rack3 project", value: -> { go_add_rack_project }},
@@ -117,7 +113,7 @@ module Mobilis::InteractiveDesigner
           rails_project = project.add_prime_stack_rails_project project_name
           editor_machine = editor_machine_for(rails_project)
           visit_submachine editor_machine
-          go_main_menu
+          go_finished
         end
       end
 
@@ -131,7 +127,7 @@ module Mobilis::InteractiveDesigner
         def action
           project_name = prompt.ask("new Rack project name:")
           project.add_rack_project project_name
-          go_main_menu
+          go_finished
         end
       end
 
@@ -145,7 +141,7 @@ module Mobilis::InteractiveDesigner
         def action
           project_name = prompt.ask("new Kafka instance name:")
           project.add_kafka_instance project_name
-          go_main_menu
+          go_finished
         end
       end
 
@@ -159,7 +155,7 @@ module Mobilis::InteractiveDesigner
         def action
           project_name = prompt.ask("new local gem project name:")
           project.add_localgem_project project_name
-          go_main_menu
+          go_finished
         end
       end
 
@@ -187,7 +183,7 @@ module Mobilis::InteractiveDesigner
         def action
           project_name = prompt.ask("new postgresql instance name:")
           project.add_postgresql_instance project_name
-          go_main_menu
+          go_finished
         end
       end
 
@@ -201,7 +197,7 @@ module Mobilis::InteractiveDesigner
         def action
           project_name = prompt.ask("new mysql instance name:")
           project.add_mysql_instance project_name
-          go_main_menu
+          go_finished
         end
       end
 
@@ -215,19 +211,7 @@ module Mobilis::InteractiveDesigner
         def action
           project_name = prompt.ask("new redis instance name:")
           project.add_redis_instance project_name
-          go_main_menu
-        end
-      end
-
-      state :quit do
-        def display = false
-
-        def choices = false
-
-        def action = false
-
-        def still_running?
-          false
+          go_finished
         end
       end
     end
