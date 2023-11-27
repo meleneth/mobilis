@@ -3,16 +3,8 @@
 require "mel/scene-fsm"
 
 module Mobilis::InteractiveDesigner
-  class RailsModelEdit < Mel::SceneFSM
-    def initialize(rails_model)
-      @rails_model = rails_model
-      super()
-      # TODO: toggle_scaffold
-      # TODO: edit name
-      # TODO: delete
-    end
-
-    state_machine :state, initial: :rails_model_edit do
+  def self.add_rails_model_edit_states(instance)
+    instance.instance_eval do
       event :go_edit_rails_project do
         transition [
           :edit_project_menu,
@@ -44,12 +36,27 @@ module Mobilis::InteractiveDesigner
         transition [:edit_rails_project] => :rails_add_linked_postgres
       end
 
+      state :rails_model_edit_screen do
+        def display
+          @rails_project.display
+        end
+
+        def choices
+          [
+            { name: "return to Main Menu", value: -> { go_finished } },
+            { name: "add Model", value: -> { go_toggle_rails_api_mode } },
+            { name: "add Scaffold", value: -> { go_toggle_rails_uuid_primary_keys } },
+            { name: "Add Model", value: -> { go_rails_add_model } },
+            { name: "Add Controller", value: -> { go_rails_add_controller } },
+            { name: "Add linked postgres database", value: -> { go_rails_add_linked_postgres } }
+          ]
+        end
+      end
+
       state :rails_model_edit do
         def display
           Mobilis.logger.info "Toggled rails API mode for '#{@selected_rails_project.name}'"
         end
-
-        def choices = false
 
         def action
           @selected_rails_project.toggle_rails_api_mode
@@ -62,8 +69,6 @@ module Mobilis::InteractiveDesigner
           Mobilis.logger.info "Toggled rails API mode for '#{@selected_rails_project.name}'"
         end
 
-        def choices = false
-
         def action
           @selected_rails_project.toggle_rails_api_mode
           go_edit_rails_project
@@ -74,8 +79,6 @@ module Mobilis::InteractiveDesigner
         def display
           spacer
         end
-
-        def choices = false
 
         def action
           db_name = prompt.ask("new linked postgresql instance name:", default: "#{@selected_rails_project}.name}-db")
@@ -89,8 +92,6 @@ module Mobilis::InteractiveDesigner
           Mobilis.logger.info "Toggled UUID primary keys for '#{@selected_rails_project.name}'"
         end
 
-        def choices = false
-
         def action
           @selected_rails_project.toggle_rails_uuid_primary_keys
           go_edit_rails_project
@@ -101,8 +102,6 @@ module Mobilis::InteractiveDesigner
         def display
           ap @selected_rails_project.models.collect { |x| x[:name] }
         end
-
-        def choices = false
 
         def action
           name = prompt.ask("new model name")
@@ -116,21 +115,11 @@ module Mobilis::InteractiveDesigner
           ap @selected_rails_project.controllers.collect { |x| x[:name] }
         end
 
-        def choices = false
-
         def action
           name = prompt.ask("new controller name:")
           @selected_rails_controller = answer.add_controller name
           go_edit_rails_controller
         end
-      end
-
-      state :main_edit_screen do
-        def display = false
-
-        def choice = false
-
-        def action = false
       end
     end
   end

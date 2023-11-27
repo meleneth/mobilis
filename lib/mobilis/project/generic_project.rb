@@ -11,6 +11,8 @@ module Mobilis
     include ActionsProjectsTake
     extend Forwardable
 
+    attr_reader :metaproject
+
     def_delegators :@metaproject, :starting_port, :port_gap, :username, :getwd
 
     def initialize data, metaproject
@@ -33,7 +35,7 @@ module Mobilis
 
     def links_to_actually_link
       children.filter { |l| !l.instance_of? Mobilis::LocalgemProject }
-        .map { |l| l.name }
+              .map { |l| l.name }
     end
 
     # projects who are linked to us

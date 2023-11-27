@@ -3,13 +3,8 @@
 require "mel/scene-fsm"
 
 module Mobilis::InteractiveDesigner
-  class RailsAppEdit < Mel::SceneFSM
-    def initialize rails_project
-      @rails_project = rails_project
-      super()
-    end
-
-    state_machine :state, initial: :rails_app_edit_screen do
+  def self.add_rails_app_edit_screen_states(instance)
+    instance.instance_eval do
       event :go_edit_rails_project do
         transition [
           :edit_project_menu,
@@ -45,19 +40,23 @@ module Mobilis::InteractiveDesigner
         transition [:rails_app_edit_screen] => :rails_add_linked_postgres
       end
 
+      event :go_toggle_rails_api_mode do
+        transition [:rails_app_edit_screen] => :toggle_rails_api_mode
+      end
+
       state :rails_app_edit_screen do
         def display
-          @rails_project.display
+          @selected_rails_project.display
         end
 
         def choices
           [
-            {name: "return to Main Menu", value: -> { go_finished }},
-            {name: "Toggle API mode", value: -> { go_toggle_rails_api_mode }},
-            {name: "Toggle UUID primary keys mode", value: -> { go_toggle_rails_uuid_primary_keys }},
-            {name: "Add Model", value: -> { go_rails_add_model }},
-            {name: "Add Controller", value: -> { go_rails_add_controller }},
-            {name: "Add linked postgres database", value: -> { go_rails_add_linked_postgres }}
+            { name: "return to Main Menu", value: -> { go_finished } },
+            { name: "Toggle API mode", value: -> { go_toggle_rails_api_mode } },
+            { name: "Toggle UUID primary keys mode", value: -> { go_toggle_rails_uuid_primary_keys } },
+            { name: "Add Model", value: -> { go_rails_add_model } },
+            { name: "Add Controller", value: -> { go_rails_add_controller } },
+            { name: "Add linked postgres database", value: -> { go_rails_add_linked_postgres } }
           ]
         end
 
@@ -66,14 +65,14 @@ module Mobilis::InteractiveDesigner
 
       state :toggle_rails_api_mode do
         def display
-          Mobilis.logger.info "Toggled rails API mode for '#{@rails_project.name}'"
+          Mobilis.logger.info "Toggled rails API mode for '#{@selected_rails_project.name}'"
         end
 
         def choices = false
 
         def action
-          @rails_project.toggle_rails_api_mode
-          go_edit_rails_project
+          @selected_rails_project.toggle_rails_api_mode
+          go_rails_app_edit_screen
         end
       end
 
@@ -85,42 +84,42 @@ module Mobilis::InteractiveDesigner
         def choices = false
 
         def action
-          db_name = prompt.ask("new linked postgresql instance name:", default: "#{@rails_project}.name}-db")
-          @rails_project.add_linked_postgresql_instance db_name
-          go_edit_rails_project
+          db_name = prompt.ask("new linked postgresql instance name:", default: "#{@selected_rails_project}.name}-db")
+          @selected_rails_project.add_linked_postgresql_instance db_name
+          go_rails_app_edit_screen
         end
       end
 
       state :toggle_rails_uuid_primary_keys do
         def display
-          Mobilis.logger.info "Toggled UUID primary keys for '#{@rails_project.name}'"
+          Mobilis.logger.info "Toggled UUID primary keys for '#{@selected_rails_project.name}'"
         end
 
         def choices = false
 
         def action
-          @rails_project.toggle_rails_uuid_primary_keys
-          go_edit_rails_project
+          @selected_rails_project.toggle_rails_uuid_primary_keys
+          go_rails_app_edit_screen
         end
       end
 
       state :rails_add_model do
         def display
-          ap @rails_project.models.collect { |x| x[:name] }
+          ap @selected_rails_project.models.collect { |x| x[:name] }
         end
 
         def choices = false
 
         def action
           name = prompt.ask("new model name")
-          @rails_model = add_model name
-          go_edit_rails_model
+          @selected_rails_model = add_model name
+          go_rails_app_edit_screen
         end
       end
 
       state :rails_add_controller do
         def display
-          ap @rails_project.controllers.collect { |x| x[:name] }
+          ap @selected_rails_project.controllers.collect { |x| x[:name] }
         end
 
         def choices = false
@@ -128,27 +127,7 @@ module Mobilis::InteractiveDesigner
         def action
           name = prompt.ask("new controller name:")
           @rails_controller = answer.add_controller name
-          go_edit_rails_controller
-        end
-      end
-
-      state :main_edit_screen do
-        def display = false
-
-        def choice = false
-
-        def action = false
-      end
-
-      state :finished do
-        def display = false
-
-        def choice = false
-
-        def action = false
-
-        def still_running?
-          false
+          go_rails_app_edit_screen
         end
       end
     end

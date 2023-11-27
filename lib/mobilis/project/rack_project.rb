@@ -33,13 +33,13 @@ module Mobilis
     def generate_Gemfile
       set_file_contents "Gemfile", <<~GEMFILE
         # frozen_string_literal: true
-        
+
         source "https://rubygems.org"
-        
+
         # gem "rails"
-        
+
         gem "rack", "= 3.0.2"
-        
+
         gem "rackup", "~> 0.2.2"
       GEMFILE
     end
@@ -54,14 +54,14 @@ module Mobilis
               rack (>= 3.0.2)
               webrick
             webrick (1.7.0)
-        
+
         PLATFORMS
           x64-mingw-ucrt
-        
+
         DEPENDENCIES
           rack (= 3.0.2)
           rackup (~> 0.2.2)
-        
+
         BUNDLED WITH
            2.3.16
       GEMFILE_LOCK
@@ -73,6 +73,7 @@ module Mobilis
 
     def localgem_prefix
       return "" unless linked_to_localgem_project
+
       "#{name}/"
     end
 

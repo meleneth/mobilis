@@ -20,3 +20,5 @@ gem "standard", group: [:development, :test]
 gem "mel-scene-fsm", "~> 0.1.0"
 
 gem "factory_bot", "~> 6.3"
+
+gem "super_diff", "~> 0.10.0"

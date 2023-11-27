@@ -3,7 +3,7 @@
 require "mel/scene-fsm"
 
 module Mobilis::InteractiveDesigner
-  class KafkaInstanceEdit < Mel::SceneFSM
+  class KafkaEdit < Mobilis::SceneFSM
     def initialize rails_project
       @rails_project = rails_project
       super()
@@ -52,7 +52,7 @@ module Mobilis::InteractiveDesigner
 
         def choices
           [
-            {name: "return to Main Menu", value: -> { go_finished }}
+            { name: "return to Main Menu", value: -> { go_finished } }
             # {name: "Toggle API mode", value: -> { go_toggle_rails_api_mode }},
             # {name: "Toggle UUID primary keys mode", value: -> { go_toggle_rails_uuid_primary_keys }},
             # {name: "Add Model", value: -> { go_rails_add_model }},

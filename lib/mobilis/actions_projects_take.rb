@@ -16,6 +16,7 @@ module Mobilis
       puts "-> Running --> #{command}"
       system command
       return if ignore_errors
+
       if $?
         puts "-> Error running command!"
         exit(1)

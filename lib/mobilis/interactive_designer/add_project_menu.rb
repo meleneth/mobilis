@@ -1,17 +1,13 @@
 # frozen_string_literal: true
 
 module Mobilis::InteractiveDesigner
-  class AddProjectMenu < Mel::SceneFSM
-    extend Forwardable
-    attr_reader :project
-    def_delegators :project, :projects, :load_from_file
+  def self.add_project_menu_states(instance)
+    instance.instance_eval do
+      event :go_add_project_menu do
+        puts "Event go_add_project_menu fired"
+        transition [:main_menu] => :add_project_menu
+      end
 
-    def initialize(project)
-      super()
-      @project = project
-    end
-
-    state_machine :state, initial: :add_project_menu do
       event :go_add_omakase_stack_rails_project do
         transition [:add_project_menu] => :add_omakase_stack_rails_project
       end
@@ -42,10 +38,6 @@ module Mobilis::InteractiveDesigner
         transition [:add_project_menu] => :go_finished
       end
 
-      event :go_finished do
-        transition any => :finished
-      end
-
       event :go_add_rack_project do
         transition [:add_project_menu] => :add_rack_project
       end
@@ -55,6 +47,7 @@ module Mobilis::InteractiveDesigner
       end
 
       state :add_project_menu do
+        Mobilis.logger.debug "setting add_project_menu methods"
         def display
           puts
           tp.set :max_width, 160
@@ -64,40 +57,28 @@ module Mobilis::InteractiveDesigner
 
         def choices
           [
-            {name: "return to Main Menu", value: -> { go_finished }},
-            {name: "Add prime stack rails project", value: -> { go_add_prime_stack_rails_project }},
-            {name: "Add omakase stack rails project", value: -> { go_add_omakase_stack_rails_project }},
-            {name: "Add rack3 project", value: -> { go_add_rack_project }},
-            {name: "Add localgem project", value: -> { go_add_localgem_project }},
+            { name: "return to Main Menu", value: -> { go_finished } },
+            { name: "Add prime stack rails project", value: -> { go_add_prime_stack_rails_project } },
+            { name: "Add omakase stack rails project", value: -> { go_add_omakase_stack_rails_project } },
+            { name: "Add rack3 project", value: -> { go_add_rack_project } },
+            { name: "Add localgem project", value: -> { go_add_localgem_project } },
             # { name: "Add airflow server project",      value: -> { go_add_airflow_server }},
             # { name: "Add airflow job project",         value: -> { go_add_airflow_job_project }},
             # { name: "Add Docker registry",             value: -> { go_add_docker_registry }},
             # { name: "Add Vue.js project",              value: -> { go_add_vue_project }},
             # { name: "Add flask project",               value: -> { go_add_flask_project }},
             # { name: "Add existing git project",        value: -> { go_add_existing_git_project }},
-            {name: "Add redis instance", value: -> { go_add_redis_instance }},
-            {name: "Add postgresql instance", value: -> { go_add_postgresql_instance }},
-            {name: "Add mysql instance", value: -> { go_add_mysql_instance }},
+            { name: "Add redis instance", value: -> { go_add_redis_instance } },
+            { name: "Add postgresql instance", value: -> { go_add_postgresql_instance } },
+            { name: "Add mysql instance", value: -> { go_add_mysql_instance } },
             # { name: "Add couchdb instance",            value: -> { go_add_couchdb_instance }},
-            {name: "Add kafka instance", value: -> { go_add_kafka_instance }}
-            # { name: "Add graphql instance",            value: -> { go_add_grapql_instance }},
+            { name: "Add kafka instance", value: -> { go_add_kafka_instance } }
+            # { name: "Add graphql instance",            value: -> { go_add_graphql_instance }},
             # { name: "Add gitlab instance w/workers",   value: -> { go_add_gitlab_instance }}
           ]
         end
 
         def action = false
-      end
-
-      state :finished do
-        def display = false
-
-        def choices = false
-
-        def action = false
-
-        def still_running?
-          false
-        end
       end
 
       state :add_prime_stack_rails_project do
@@ -110,10 +91,8 @@ module Mobilis::InteractiveDesigner
 
         def action
           project_name = prompt.ask("new Prime Stack Rails project name:")
-          rails_project = project.add_prime_stack_rails_project project_name
-          editor_machine = editor_machine_for(rails_project)
-          visit_submachine editor_machine
-          go_finished
+          @selected_rails_project = project.add_prime_stack_rails_project project_name
+          go_edit_rails_project
         end
       end
 
@@ -136,8 +115,6 @@ module Mobilis::InteractiveDesigner
           puts "Creates a new kafka instance"
         end
 
-        def choices = false
-
         def action
           project_name = prompt.ask("new Kafka instance name:")
           project.add_kafka_instance project_name
@@ -149,8 +126,6 @@ module Mobilis::InteractiveDesigner
         def display
           puts "Creates a new local gem project, generated via native bundler gem"
         end
-
-        def choices = false
 
         def action
           project_name = prompt.ask("new local gem project name:")
@@ -164,8 +139,6 @@ module Mobilis::InteractiveDesigner
           spacer
         end
 
-        def choices = false
-
         def action
           project_name = prompt.ask("new Omakase Stack Rails project name:")
           @selected_rails_project = project.add_omakase_stack_rails_project project_name
@@ -177,8 +150,6 @@ module Mobilis::InteractiveDesigner
         def display
           spacer
         end
-
-        def choices = false
 
         def action
           project_name = prompt.ask("new postgresql instance name:")
@@ -192,8 +163,6 @@ module Mobilis::InteractiveDesigner
           spacer
         end
 
-        def choices = false
-
         def action
           project_name = prompt.ask("new mysql instance name:")
           project.add_mysql_instance project_name
@@ -205,8 +174,6 @@ module Mobilis::InteractiveDesigner
         def display
           spacer
         end
-
-        def choices = false
 
         def action
           project_name = prompt.ask("new redis instance name:")

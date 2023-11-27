@@ -63,13 +63,13 @@ module Mobilis
     end
 
     def add_controller name
-      controller = {name: name, actions: []}
+      controller = { name: name, actions: [] }
       @data[:controllers] << controller
       controller
     end
 
     def add_model name
-      model = {name: name, fields: []}
+      model = { name: name, fields: [] }
       @data[:models] << model
       model
     end
@@ -127,20 +127,20 @@ module Mobilis
       set_file_contents "wait-until", <<~WAITUNTIL
         #!/usr/bin/env bash
         # https://github.com/nickjj/wait-until under MIT license
-        
+
         command="${1}"
         timeout="${2:-30}"
-        
+
         i=1
         until eval "${command}"
         do
             ((i++))
-        
+
             if [ "${i}" -gt "${timeout}" ]; then
                 echo "command was never successful, aborting due to ${timeout}s timeout!"
                 exit 1
             fi
-        
+
             sleep 1
         done
       WAITUNTIL
@@ -157,13 +157,13 @@ module Mobilis
         RUN bundle config set --local path 'vendor/bundle'
         RUN bundle install
         COPY . /myapp
-        
+
         # Add a script to be executed every time the container starts.
         RUN chmod +x /myapp/entrypoint.sh
         ENTRYPOINT ["/myapp/entrypoint.sh"]
         EXPOSE 3000
         RUN dos2unix /myapp/entrypoint.sh
-        
+
         # Configure the main process to run when running the image
         CMD ["rails", "server", "-b", "0.0.0.0"]
       DOCKER_END
@@ -172,16 +172,16 @@ module Mobilis
     def generate_entrypoint_sh
       set_file_contents "entrypoint.sh", <<~ENTRYPOINT_SH
         #!/bin/sh
-        
+
         # https://stackoverflow.com/a/38732187/1935918
         set -e
-        
+
         if [ -f /app/tmp/pids/server.pid ]; then
           rm /app/tmp/pids/server.pid
         fi
         #{wait_until_line}
         bundle exec rake db:migrate 2>/dev/null || bundle exec rake db:setup
-        
+
         exec bundle exec "$@"
       ENTRYPOINT_SH
     end
@@ -193,6 +193,7 @@ module Mobilis
           /myapp/wait-until "psql postgres://#{database.username}:#{database.password}@#{database.name}/#{name}_production -c 'select 1'"
         POSTGRES_LINE
       end
+
       # instance_of? is a code smell - maybe this should be database.wait_until_line ?
       if database.instance_of? Mobilis::MysqlInstance
         <<~MYSQL_LINE

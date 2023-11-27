@@ -32,7 +32,7 @@ module Mobilis
           end
         end
       end
-      {"version" => "3.8", "services" => services}
+      { "version" => "3.8", "services" => services }
     end
 
     def kafka_service service

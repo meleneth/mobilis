@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
 
   spec.summary = "Generate and scaffold multiple projects and a docker compose file"
   spec.homepage = "https://github.com/meleneth/mobilis"
-  spec.required_ruby_version = ">= 2.6.0"
+  spec.required_ruby_version = ">= 3.0.0"
   spec.licenses = ["MIT"]
   # spec.metadata["allowed_push_host"] = "TODO: Set to your gem server 'https://example.com'"
 
