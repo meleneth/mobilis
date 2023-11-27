@@ -162,7 +162,7 @@ DEPENDENCIES
   rspec (~> 3.0)
   simplecov
   standard
-  super_diff
+  super_diff (~> 0.10.0)
 
 BUNDLED WITH
-   2.4.20
+   2.4.12

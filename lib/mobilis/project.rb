@@ -10,6 +10,8 @@ module Mobilis
     include ActionsProjectsTake
     include Mobilis::NewRelic
 
+    attr_accessor :data
+
     def initialize
       @data = {
         projects: [],
@@ -91,10 +93,10 @@ module Mobilis
           && truncate -s 0 /var/log/*log
         RUN gem update bundle
         RUN gem update --system
-        
+
         COPY Gemfile .
         RUN bundle install
-        
+
         ARG USER_ID
         ARG GROUP_ID
         RUN addgroup --gid 200 rubyuser
@@ -108,7 +110,7 @@ module Mobilis
         source "https://rubygems.org"
         # FIXME
         #git_source(:github) { |repo| "https://github.com/repo.git" }
-        
+
         gem "rails"
         gem "sqlite3"
         gem "puma"
@@ -122,15 +124,15 @@ module Mobilis
         gem "pg"
         gem "mysql2"
         gem "minitest"
-        
+
         group :development, :test do
           gem "debug", platforms: %i[ mri mingw x64_mingw ]
         end
-        
+
         group :development do
           gem "spring"
         end
-        
+
         gem "rspec-rails", group: [:development, :test]
       EOF
     end
@@ -143,7 +145,7 @@ module Mobilis
     end
 
     def generate_attributes
-      attributes = {projects: {}, new_relic_license_key: ENV.fetch("NEW_RELIC_LICENSE_KEY", "some_invalid_key_NREAL")}
+      attributes = { projects: {}, new_relic_license_key: ENV.fetch("NEW_RELIC_LICENSE_KEY", "some_invalid_key_NREAL") }
       projects.each_with_index do |project, index|
         attributes["#{project.name}_internal_port_no".to_sym] =
           @data[:starting_port_no] + (index * @data[:port_gap])
@@ -168,7 +170,7 @@ module Mobilis
 
     def load_from_file filename
       data = File.read filename
-      @data = JSON.parse data, {symbolize_names: true}
+      @data = JSON.parse data, { symbolize_names: true }
     end
 
     def save_project
@@ -283,6 +285,7 @@ module Mobilis
     def getwd
       wd = Dir.getwd
       return wd unless wd[1] == ":"
+
       "/#{wd[0]}#{wd[2...]}"
     end
   end

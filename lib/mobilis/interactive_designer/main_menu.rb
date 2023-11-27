@@ -1,18 +1,28 @@
 # frozen_string_literal: true
 
 module Mobilis::InteractiveDesigner
-  class MainMenu < Mel::SceneFSM
+  class MainMenu < Mobilis::SceneFSM
     extend Forwardable
-
     def_delegators :project, :projects, :load_from_file
+    attr_accessor :project
+
+    attr_accessor :selected_rails_project
+
+    def select_rails_project_for_editing(rails_project)
+      puts "Selecting rails project for editing"
+      puts rails_project.name
+      @selected_rails_project = rails_project
+      go_rails_app_edit_screen
+    end
 
     state_machine :state, initial: :main_menu do
+      Mobilis::InteractiveDesigner.add_project_menu_states self
+      Mobilis::InteractiveDesigner.add_rails_model_edit_states self
+      Mobilis::InteractiveDesigner.add_rails_app_edit_screen_states self
+      Mobilis::InteractiveDesigner.add_project_edit_menu_states self
+
       event :go_build do
         transition [:main_menu] => :build
-      end
-
-      event :go_back do
-        transition [:add_project_menu] => :main_menu
       end
 
       event :go_quit do
@@ -23,59 +33,19 @@ module Mobilis::InteractiveDesigner
         transition [:main_menu] => :show_configuration
       end
 
-      event :go_add_omakase_stack_rails_project do
-        transition [:add_project_menu] => :add_omakase_stack_rails_project
-      end
-
-      event :go_add_prime_stack_rails_project do
-        transition [:add_project_menu] => :add_prime_stack_rails_project
-      end
-
-      event :go_add_postgresql_instance do
-        transition [:add_project_menu] => :add_postgresql_instance
-      end
-
-      event :go_add_project_menu do
-        transition [:main_menu] => :add_project_menu
-      end
-
       event :go_edit_project_menu do
         transition [:main_menu] => :edit_project_menu
-      end
-
-      event :go_add_mysql_instance do
-        transition [:add_project_menu] => :add_mysql_instance
-      end
-
-      event :go_add_redis_instance do
-        transition [:add_project_menu] => :add_redis_instance
       end
 
       event :go_back do
         transition [:edit_rails_project] => :edit_project_menu
         transition [:edit_generic_project] => :main_menu
         transition [:add_project_menu] => :main_menu
+        transition [:main_menu] => :finished
       end
 
       event :go_finished do
         transition any => :finished
-      end
-
-      event :go_add_rack_project do
-        transition [:add_project_menu] => :add_rack_project
-      end
-
-      event :go_add_localgem_project do
-        transition [:add_project_menu] => :add_localgem_project
-      end
-
-      event :go_edit_rails_project do
-        transition [
-          :edit_project_menu,
-          :add_omakase_stack_rails_project,
-          :add_prime_stack_rails_project,
-          :toggle_rails_api_mode
-        ] => :edit_rails_project
       end
 
       event :go_generate do
@@ -88,14 +58,6 @@ module Mobilis::InteractiveDesigner
 
       event :go_save_project do
         transition [:main_menu] => :save_project
-      end
-
-      event :go_toggle_rails_api_mode do
-        transition [:edit_rails_project] => :toggle_rails_api_mode
-      end
-
-      event :go_toggle_rails_uuid_primary_keys do
-        transition [:edit_rails_project] => :toggle_rails_uuid_primary_keys
       end
 
       event :go_edit_links_select_project do
@@ -117,62 +79,27 @@ module Mobilis::InteractiveDesigner
 
         def choices
           menu_items = [
-            {name: "reload all code", value: -> { reload! }},
-            {name: "[m] Add project", value: -> { go_add_project_menu }},
-            {name: "[m] Edit existing project", value: -> { go_edit_project_menu }},
-            {name: "[m] Show configuration", value: -> { go_show_configuration }},
-            {name: "quit", value: -> { go_quit }}
+            { name: "reload all code", value: -> { reload! } },
+            { name: "[m] Add project", value: -> { go_add_project_menu } },
+            { name: "[m] Edit existing project", value: -> { go_edit_project_menu } },
+            { name: "[m] Show configuration", value: -> { go_show_configuration } }
           ]
           if projects.length > 1
             menu_items.concat([
-              {name: "[m] edit links", value: -> { go_edit_links_select_project }}
-            ])
+                                { name: "[m] edit links", value: -> { go_edit_links_select_project } }
+                              ])
           end
           if projects.length > 0
             menu_items.concat([
-              {name: "Save mproj.json", value: -> { go_save_project }},
-              {name: "Generate", value: -> { go_generate }},
-              {name: "Build", value: -> { go_build }}
-            ])
+                                { name: "Save mproj.json", value: -> { go_save_project } },
+                                { name: "Generate", value: -> { go_generate } },
+                                { name: "Build", value: -> { go_build } }
+                              ])
           end
+          menu_items.concat([
+                              { name: "quit", value: -> { go_quit } }
+                            ])
           menu_items
-        end
-
-        def action = false
-      end
-
-      state :edit_project_menu do
-        def display
-          puts
-          tp.set :max_width, 160
-          tp projects, "name", "type", options: lambda { |p| p.options.join ", " }
-          puts
-        end
-
-        def choices
-          [
-            {name: "return to Main Menu", value: -> { go_main_menu }},
-            *(projects.map { |project|
-              {
-                name: "Edit '#{project.name}' project",
-                value: -> { visit_submachine editor_machine_for(project) }
-              }
-            })
-          ]
-        end
-
-        def action = false
-      end
-
-      state :add_project_menu do
-        def display = false
-
-        def choices = false
-
-        def action
-          machine = AddProjectMenu.new project
-          visit_submachine machine
-          go_back
         end
       end
 
@@ -186,7 +113,7 @@ module Mobilis::InteractiveDesigner
 
         def choices
           [
-            {name: "return to Main Menu", value: -> { go_main_menu }},
+            { name: "return to Main Menu", value: -> { go_main_menu } },
             *(projects.map { |project|
                 links_txt = project.links.join ", "
                 {
@@ -196,15 +123,9 @@ module Mobilis::InteractiveDesigner
               })
           ]
         end
-
-        def action = false
       end
 
       state :edit_links do
-        def display = false
-
-        def choices = false
-
         def action
           selected = prompt.multi_select("Select links") do |menu|
             menu.default(*@selected_project.links)
@@ -218,12 +139,6 @@ module Mobilis::InteractiveDesigner
       end
 
       state :finished do
-        def display = false
-
-        def choices = false
-
-        def action = false
-
         def still_running?
           false
         end
@@ -236,9 +151,9 @@ module Mobilis::InteractiveDesigner
 
         def choices
           [
-            {name: "return to Main Menu", value: -> { go_main_menu }},
-            {name: "return to rails project edit", value: -> { visit_submachine editor_machine_for(project) }},
-            {name: "Toggle timestamps", value: -> { go_toggle_rails_model_timestamps }},
+            { name: "return to Main Menu", value: -> { go_main_menu } },
+            { name: "return to rails project edit", value: -> { visit_submachine editor_machine_for(project) } },
+            { name: "Toggle timestamps", value: -> { go_toggle_rails_model_timestamps } },
             *(@selected_rails_project.models.map { |model|
                 {
                   name: "Edit '#{model.name}' model",
@@ -247,189 +162,37 @@ module Mobilis::InteractiveDesigner
               })
           ]
         end
-
-        def action = false
-      end
-
-      state :edit_rails_project do
-        def display
-          @selected_rails_project.display
-        end
-
-        def choices
-          [
-            {name: "return to Main Menu", value: -> { go_main_menu }},
-            {name: "Toggle API mode", value: -> { go_toggle_rails_api_mode }},
-            {name: "Toggle UUID primary keys mode", value: -> { go_toggle_rails_uuid_primary_keys }},
-            {name: "Add Model", value: -> { go_rails_add_model }},
-            {name: "Add Controller", value: -> { go_rails_add_controller }},
-            {name: "Add postgres database", value: -> { go_rails_add_linked_postgres }}
-          ]
-        end
-
-        def action = false
-      end
-
-      state :add_prime_stack_rails_project do
-        def display
-          puts "Creates a new rails project, using the prime stack"
-          puts "includes rspec haml factory_bot"
-        end
-
-        def choices = false
-
-        def action
-          project_name = prompt.ask("new Prime Stack Rails project name:")
-          rails_project = project.add_prime_stack_rails_project project_name
-          editor_machine = editor_machine_for(rails_project)
-          visit_submachine editor_machine
-          go_main_menu
-        end
-      end
-
-      state :add_rack_project do
-        def display
-          puts "Creates a new rack project, with a minimal script"
-        end
-
-        def choices = false
-
-        def action
-          project_name = prompt.ask("new Rack project name:")
-          project.add_rack_project project_name
-          go_main_menu
-        end
-      end
-
-      state :add_localgem_project do
-        def display
-          puts "Creates a new local gem project, generated via native bundler gem"
-        end
-
-        def choices = false
-
-        def action
-          project_name = prompt.ask("new local gem project name:")
-          project.add_localgem_project project_name
-          go_main_menu
-        end
-      end
-
-      state :add_omakase_stack_rails_project do
-        def display
-          spacer
-        end
-
-        def choices = false
-
-        def action
-          project_name = prompt.ask("new Omakase Stack Rails project name:")
-          @selected_rails_project = project.add_omakase_stack_rails_project project_name
-          go_edit_rails_project
-        end
-      end
-
-      state :add_postgresql_instance do
-        def display
-          spacer
-        end
-
-        def choices = false
-
-        def action
-          project_name = prompt.ask("new postgresql instance name:")
-          project.add_postgresql_instance project_name
-          go_main_menu
-        end
-      end
-
-      state :add_mysql_instance do
-        def display
-          spacer
-        end
-
-        def choices = false
-
-        def action
-          project_name = prompt.ask("new mysql instance name:")
-          project.add_mysql_instance project_name
-          go_main_menu
-        end
-      end
-
-      state :add_redis_instance do
-        def display
-          spacer
-        end
-
-        def choices = false
-
-        def action
-          project_name = prompt.ask("new redis instance name:")
-          project.add_redis_instance project_name
-          go_main_menu
-        end
       end
 
       state :generate do
-        def display
-          spacer
-        end
-
-        def choices = false
-
         def action
           project.generate_files
-          go_main_menu
+          go_back
         end
       end
 
       state :build do
-        def display
-          spacer
-        end
-
-        def choices = false
-
         def action
           project.build
-          go_main_menu
+          go_back
         end
       end
 
       state :save_project do
-        def display
-          spacer
-        end
-
-        def choices = false
-
         def action
           project.save_project
-          go_main_menu
+          go_back
         end
       end
 
       state :show_configuration do
-        def display
-          spacer
-        end
-
-        def choices = false
-
         def action
           project.show
-          go_main_menu
+          go_back
         end
       end
 
       state :quit do
-        def display = false
-
-        def choices = false
-
-        def action = false
-
         def still_running?
           false
         end
@@ -453,10 +216,6 @@ module Mobilis::InteractiveDesigner
       end
       # Return true when complete.
       true
-    end
-
-    def editor_machine_for(project)
-      RailsAppEdit.new project
     end
 
     def project

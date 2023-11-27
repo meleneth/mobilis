@@ -1,5 +1,6 @@
 ## [Unreleased]
 
+- a huge amount of refactoring of the main FSM.  Everything is likely broken, but tests are coming
 - changed uid / gid to hardcoded value of '200' in the rails builder image
   to let it work in Windows.  Will need to re-test linux and mac
 - multiple db support is hosed.  Need non-destructive YAML editing before it is really fixable

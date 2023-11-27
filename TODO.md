@@ -1,3 +1,14 @@
+# Danger Will Robinson
+the FSM split is seriously bad.
+Need to refactor back to one giant FSM
+but in different files, not all in one file
+this thing is gigantic, and having everything 
+in one file cannot scale.
+The test suite is the only thing that is going to make
+this possible, but it's still going to be hella painful.
+take it one tiny step at a time, and start by commenting out 
+the currently failing test.
+
 # Currently Burning
 name your meta project prompt to start with
 Seeing what happens when trying to make a small complicated system

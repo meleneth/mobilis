@@ -8,7 +8,7 @@ require "mobilis/interactive_designer/main_menu"
 #   [m] Show configuration
 #   quit
 
-RSpec.describe Mobilis::InteractiveDesigner::MainMenu do
+RSpec.describe 'AddProjectMenu' do
   let(:fsm) { Mobilis::InteractiveDesigner::MainMenu.new }
 
   let(:prompt) { fsm.prompt }
@@ -42,20 +42,23 @@ RSpec.describe Mobilis::InteractiveDesigner::MainMenu do
     select_choice name
   end
 
-  describe "Quit" do
-    it "is running by default" do
-      expect(fsm.still_running?).to eq(true)
-    end
-    it "stops running" do
-      select_choice "quit"
-      expect(fsm.still_running?).to eq(false)
-    end
-  end
+  describe "Simplest Rails project" do
+    let(:metaproject) { build(:metaproject) }
+    let(:rails_project) { build(:rails_prime, metaproject: metaproject, name: "someprime") }
 
-  describe "Add project" do
-    it "Goes to the add project menu" do
+    before do
+      allow(Mobilis::Project).to receive(:new).and_return metaproject
+    end
+
+    it "allows adding a rails project" do
+      expect(prompt).to receive(:ask).and_return "someprime"
+      expect(metaproject).to receive(:add_prime_stack_rails_project).with("someprime").and_return(rails_project)
+      expect(fsm.state).to eq("main_menu")
       fsm.select_choice "Add project"
       expect(fsm.state).to eq("add_project_menu")
+      fsm.select_choice "Add prime stack"
+      fsm.action
+      expect(fsm.state).to eq("edit_rails_project")
     end
   end
 
