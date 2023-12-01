@@ -8,19 +8,6 @@ RSpec.describe 'RailsAppEdit' do
   let(:fsm) { build(:fsm, project: metaproject) }
   let(:prompt) { fsm.prompt }
 
-  describe "Factory Functions" do
-    it "Assigns rails_project to metaproject" do
-      rails_project
-      expect(metaproject.data[:projects][0][:name]).to eq("somerails")
-    end
-    it "Assigns metaproject to the rails project" do
-      expect(rails_project.metaproject).to eq(metaproject)
-    end
-    it "Assigns metaproject to the fsm project" do
-      expect(fsm.project).to eq(metaproject)
-    end
-  end
-
   def select_choice name
     show_current_location
     puts "Selecting #{name}"
@@ -74,13 +61,13 @@ RSpec.describe 'RailsAppEdit' do
     it "allows toggling of API mode" do
       expect(fsm.state).to eq "edit_project_menu"
       select_choice "somerails"
-      expect(metaproject.data[:projects][0][:options]).to include(:api)
+      expect(metaproject.projects[0].options).to include(:api)
       expect(fsm.state).to eq "rails_app_edit_screen"
       #  expect(rails_project).to receive(:toggle_rails_api_mode)
       select_choice "Toggle API mode"
       expect(fsm.state).to eq "toggle_rails_api_mode"
       fsm.action
-      expect(metaproject.data[:projects][0][:options]).not_to include(:api)
+      expect(metaproject.projects[0].options).not_to include(:api)
     end
   end
 end

@@ -13,6 +13,10 @@ module Mobilis
       @data[:controllers]
     end
 
+    def name
+      @data[:name]
+    end
+
     def models
       @data[:models]
     end

@@ -11,6 +11,7 @@ module Mobilis
     include Mobilis::NewRelic
 
     attr_accessor :data
+    attr_accessor :projects
 
     def initialize
       @data = {
@@ -20,6 +21,7 @@ module Mobilis
         port_gap: 100,
         name: "generate"
       }
+      @projects = []
     end
 
     def show
@@ -171,10 +173,12 @@ module Mobilis
     def load_from_file filename
       data = File.read filename
       @data = JSON.parse data, { symbolize_names: true }
+      @projects = @data[:projects].map {|p| project_for_line(p) }
+      @data[:projects] = []
     end
 
     def save_project
-      File.write("mproj.json", JSON.pretty_generate(@data))
+      File.write("mproj.json", JSON.pretty_generate(to_json))
     end
 
     def save_docker_compose
@@ -183,7 +187,7 @@ module Mobilis
       File.write("docker-compose.yml", docker.to_yaml)
     end
 
-    def projects
+    def project_for_data data
       mapping = {
         kafka: KafkaInstance,
         localgem: LocalgemProject,
@@ -193,7 +197,7 @@ module Mobilis
         rails: RailsProject,
         redis: RedisInstance
       }
-      @data[:projects].map { |p| mapping[p[:type].to_sym].new p, self }
+      mapping[data[:type].to_sym].new(data, self)
     end
 
     def project_by_name name
@@ -217,8 +221,8 @@ module Mobilis
         name: name,
         type: :postgresql
       }
-      @data[:projects] << data
-      GenericProject.new data, self
+      @projects << PostgresqlInstance.new(data, self)
+      @projects[-1]
     end
 
     def add_mysql_instance name
@@ -226,8 +230,8 @@ module Mobilis
         name: name,
         type: :mysql
       }
-      @data[:projects] << data
-      GenericProject.new data, self
+      @projects << MysqlInstance.new(data, self)
+      @projects[-1]
     end
 
     def add_redis_instance name
@@ -235,8 +239,8 @@ module Mobilis
         name: name,
         type: :redis
       }
-      @data[:projects] << data
-      RedisInstance.new data, self
+      @projects << RedisInstance.new(data, self)
+      @projects[-1]
     end
 
     def add_rails_project name, options
@@ -248,8 +252,8 @@ module Mobilis
         options: options.clone,
         attributes: {}
       }
-      @data[:projects] << data
-      RailsProject.new data, self
+      @projects << RailsProject.new(data, self)
+      @projects[-1]
     end
 
     def add_kafka_instance name
@@ -258,8 +262,8 @@ module Mobilis
         type: :kafka,
         attributes: {}
       }
-      @data[:projects] << data
-      KafkaInstance.new data, self
+      @projects << KafkaInstance.new(data, self)
+      @projects[-1]
     end
 
     def add_localgem_project name
@@ -268,8 +272,8 @@ module Mobilis
         type: :localgem,
         attributes: {}
       }
-      @data[:projects] << data
-      LocalgemProject.new data, self
+      @projects << LocalgemProject.new(data, self)
+      @projects[-1]
     end
 
     def add_rack_project name
@@ -278,8 +282,8 @@ module Mobilis
         type: :rack,
         attributes: {}
       }
-      @data[:projects] << data
-      RackProject.new data, self
+      @projects << RackProject.new(data, self)
+      @projects[-1]
     end
 
     def getwd
@@ -287,6 +291,12 @@ module Mobilis
       return wd unless wd[1] == ":"
 
       "/#{wd[0]}#{wd[2...]}"
+    end
+
+    def to_json
+      my_data = @data.clone
+      my_data[:projects] = projects.collect(&:to_json)
+      my_data
     end
   end
 end
