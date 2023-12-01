@@ -10,14 +10,13 @@ require "mobilis/interactive_designer/main_menu"
 
 RSpec.describe Mobilis::InteractiveDesigner::MainMenu do
   let(:fsm) { Mobilis::InteractiveDesigner::MainMenu.new }
-
   let(:prompt) { fsm.prompt }
 
-  def select_choice name
+  def select_choice machine, name
     show_current_location
     puts "Selecting #{name}"
 
-    choices = fsm.choices
+    choices = machine.choices
     if choices
       choices.each do |choice|
         return choice[:value].call if choice[:name].include? name
@@ -47,7 +46,7 @@ RSpec.describe Mobilis::InteractiveDesigner::MainMenu do
       expect(fsm.still_running?).to eq(true)
     end
     it "stops running" do
-      select_choice "quit"
+      select_choice fsm,"quit"
       expect(fsm.still_running?).to eq(false)
     end
   end
@@ -66,26 +65,29 @@ RSpec.describe Mobilis::InteractiveDesigner::MainMenu do
 
     before do
       allow(Mobilis::Project).to receive(:new).and_return metaproject
-      allow(fsm).to receive(:editor_machine_for).with(kafka_project).and_return fsm_editor
       allow(prompt).to receive(:ask).and_return "somekafka"
     end
 
-    xit "allows adding a Kafka project" do
+    it "allows adding a Kafka project" do
       expect(metaproject).to receive(:add_kafka_instance).with("somekafka").and_return(kafka_project)
-      expect(fsm).to receive(:visit_submachine).with fsm_editor
 
-      select_choice "Add project"
-      select_choice "Add Kafka instance"
+      select_choice fsm, "Add project"
+      select_choice fsm,"Add kafka instance"
       fsm.action
       expect(fsm.state).to eq("main_menu")
     end
   end
 
   describe "Edit existing project" do
-    xit "Allows selecting an existing project" do
-      add_prime_rails_project "someprime"
-      edit_project "someprime"
-      expect(fsm.state).to eq "edit_rails_project"
+    let(:rails_project) { build(:rails_prime, metaproject: metaproject, name: "someprime") }
+    let(:metaproject) { build(:metaproject) }
+    let(:fsm) { rails_project ; build(:fsm, project: metaproject) }
+
+    it "Allows selecting an existing project" do
+      rails_project
+      select_choice fsm, "Edit existing"
+      select_choice fsm, "someprime"
+      expect(fsm.state).to eq "rails_app_edit_screen"
     end
   end
 end

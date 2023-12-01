@@ -92,7 +92,7 @@ module Mobilis::InteractiveDesigner
         def action
           project_name = prompt.ask("new Prime Stack Rails project name:")
           @selected_rails_project = project.add_prime_stack_rails_project project_name
-          go_edit_rails_project
+          go_rails_app_edit_screen
         end
       end
 
@@ -118,7 +118,7 @@ module Mobilis::InteractiveDesigner
         def action
           project_name = prompt.ask("new Kafka instance name:")
           project.add_kafka_instance project_name
-          go_finished
+          go_main_menu
         end
       end
 

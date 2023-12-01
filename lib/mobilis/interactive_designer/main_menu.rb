@@ -21,6 +21,12 @@ module Mobilis::InteractiveDesigner
       Mobilis::InteractiveDesigner.add_rails_app_edit_screen_states self
       Mobilis::InteractiveDesigner.add_project_edit_menu_states self
 
+      #after_transition any => any do |designer|
+      #  puts "o0o VVVV ---- VVVV o0o"
+      #  puts "-- Switched state to #{designer.state_name} --"
+      #  puts "o0o ^^^^ ---- ^^^^ o0o"
+      #end
+
       event :go_build do
         transition [:main_menu] => :build
       end
@@ -152,7 +158,7 @@ module Mobilis::InteractiveDesigner
         def choices
           [
             { name: "return to Main Menu", value: -> { go_main_menu } },
-            { name: "return to rails project edit", value: -> { visit_submachine editor_machine_for(project) } },
+            { name: "return to rails project edit", value: -> { go_rails_app_edit } },
             { name: "Toggle timestamps", value: -> { go_toggle_rails_model_timestamps } },
             *(@selected_rails_project.models.map { |model|
                 {

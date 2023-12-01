@@ -84,6 +84,10 @@ module Mobilis
       @data[:links] = new_links
     end
 
+    def to_json
+      @data
+    end
+
     def docker_image_name
       "#{@metaproject.username}/#{name}"
     end

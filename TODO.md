@@ -1,4 +1,14 @@
+# Danger continues
+So the next really bad idea I had was storing everything as linked plain old ruby objects but then wrapping
+them dynamically on the fly.  Makes mocking awful.
+Currently refactoring back to actually have fat ruby objects storing fat ruby objects, and letting to_json handle
+the wiring.
+
+Restoring these is another matter, but the generating / saving is almost working.  Tests are going to have
+my back here.
+
 # Danger Will Robinson
+
 the FSM split is seriously bad.
 Need to refactor back to one giant FSM
 but in different files, not all in one file

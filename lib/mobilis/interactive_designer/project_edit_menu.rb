@@ -8,7 +8,8 @@ module Mobilis::InteractiveDesigner
           :edit_project_menu,
           :toggle_rails_api_mode,
           :rails_add_linked_postgres,
-          :toggle_rails_uuid_primary_keys
+          :toggle_rails_uuid_primary_keys,
+          :add_prime_stack_rails_project
         ] => :rails_app_edit_screen
       end
 
