@@ -92,7 +92,7 @@ module Mobilis::InteractiveDesigner
         def action
           project_name = prompt.ask("new Prime Stack Rails project name:")
           @selected_rails_project = project.add_prime_stack_rails_project project_name
-          go_rails_app_edit_screen
+          go_rails_project_edit
         end
       end
 
@@ -142,7 +142,7 @@ module Mobilis::InteractiveDesigner
         def action
           project_name = prompt.ask("new Omakase Stack Rails project name:")
           @selected_rails_project = project.add_omakase_stack_rails_project project_name
-          go_edit_rails_project
+          go_rails_project_edit
         end
       end
 

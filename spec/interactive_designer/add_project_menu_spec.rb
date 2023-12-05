@@ -57,7 +57,7 @@ RSpec.describe 'AddProjectMenu' do
       expect(fsm.state).to eq("add_project_menu")
       fsm.select_choice "Add prime stack"
       fsm.action
-      expect(fsm.state).to eq("rails_app_edit_screen")
+      expect(fsm.state).to eq("rails_project_edit")
     end
   end
 
@@ -89,7 +89,7 @@ RSpec.describe 'AddProjectMenu' do
     it "Allows selecting an existing project" do
       select_choice "Edit existing project"
       select_choice "somerails"
-      expect(fsm.state).to eq "rails_app_edit_screen"
+      expect(fsm.state).to eq "rails_project_edit"
     end
   end
 end

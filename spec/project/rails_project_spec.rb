@@ -43,6 +43,13 @@ RSpec.describe "Rails Project" do
     end
   end
 
+  describe "models" do
+    # rails g scaffold Author name:string
+    # rails g scaffold Post title:string description:text author:references
+    # rails g scaffold Comment title:string content:text score:integer author:references post:references
+    # rails g scaffold FlaggedForReview comment:references status:string
+  end
+
   describe "#wait_until_line" do
     it "Generates correct line for MySQL" do
       prime_stack = project.add_rails_project "prime", [:rspec, :api, :simplecov, :standard, :factorybot]

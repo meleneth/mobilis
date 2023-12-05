@@ -5,77 +5,85 @@ require "mel/scene-fsm"
 module Mobilis::InteractiveDesigner
   def self.add_rails_model_edit_states(instance)
     instance.instance_eval do
-      event :go_edit_rails_project do
+      event :go_rails_model_edit do
         transition [
-          :edit_project_menu,
-          :add_omakase_stack_rails_project,
-          :add_prime_stack_rails_project,
-          :toggle_rails_api_mode,
-          :toggle_rails_uuid_primary_keys,
-          :rails_add_linked_postgres
-        ] => :edit_rails_project
+          :rails_model_edit
+        ] => :rails_model_edit
       end
 
-      event :go_rails_add_model do
-        transition [:edit_rails_project] => :rails_add_model
+      event :go_rails_project_add_model do
+        transition [:rails_project_edit] => :rails_project_add_model
       end
 
-      event :go_rails_add_controller do
-        transition [:edit_rails_project] => :rails_add_controller
+      event :go_rails_project_add_controller do
+        transition [:rails_project_edit] => :rails_add_controller
       end
 
-      event :go_rails_edit_controller do
-        transition [:rails_add_controller] => :edit_rails_controller
+      event :go_rails_controller_edit do
+        transition [:rails_project_add_controller] => :rails_controller_edit
       end
 
-      event :go_rails_edit_model do
-        transition [:rails_add_model] => :edit_rails_model
+      event :go_rails_model_edit do
+        transition [:rails_project_add_model] => :rails_model_edit
       end
 
-      event :go_rails_add_linked_postgres do
-        transition [:edit_rails_project] => :rails_add_linked_postgres
+      event :go_rails_project_add_linked_postgres do
+        transition [:rails_project_edit] => :rails_project_add_linked_postgres
       end
 
-      state :rails_model_edit_screen do
-        def display
-          @rails_project.display
-        end
+      event :go_rails_model_add_field do
+        transition [:rails_model_edit] => :rails_model_add_field
+      end
 
-        def choices
-          [
-            { name: "return to Main Menu", value: -> { go_finished } },
-            { name: "add Model", value: -> { go_toggle_rails_api_mode } },
-            { name: "add Scaffold", value: -> { go_toggle_rails_uuid_primary_keys } },
-            { name: "Add Model", value: -> { go_rails_add_model } },
-            { name: "Add Controller", value: -> { go_rails_add_controller } },
-            { name: "Add linked postgres database", value: -> { go_rails_add_linked_postgres } }
-          ]
-        end
+      event :go_rails_field_edit do
+        transition [:rails_model_add_field] => :rails_field_edit
+      end
+
+      event :go_rails_model_add_field_select_type do
+        transition [:rails_model_edit] => :rails_model_add_field_select_type
+      end
+
+      event :go_rails_model_add_field_references_select_model do
+        transition [:rails_model_add_field_select_type] => :rails_model_add_field_references_select_model
+      end
+
+      event :go_rails_model_add_field_enter_name do
+        transition [:rails_model_add_field_select_type] => :rails_model_add_field_enter_name
       end
 
       state :rails_model_edit do
         def display
-          Mobilis.logger.info "Toggled rails API mode for '#{@selected_rails_project.name}'"
+          ap @selected_rails_project.models.collect { |x| x[:name] }
         end
 
-        def action
-          @selected_rails_project.toggle_rails_api_mode
-          go_edit_rails_project
+        def choices
+          [
+            { name: "return to Main Menu", value: -> { go_main_menu } },
+            { name: "return to rails project edit", value: -> { go_rails_app_edit } },
+            { name: "Toggle timestamps", value: -> { go_toggle_rails_model_timestamps } },
+            { name: "Add field", value: -> { go_rails_model_add_field_select_type } },
+            *(@selected_rails_model.fields.map do |field|
+            {
+              name: "Edit '#{field.name}' #{field.type} field",
+              value: -> { @selected_rails_field = field ; go_rails_field_edit }
+            }
+            end)
+          ]
         end
       end
 
-      state :toggle_rails_api_mode do
+      state :rails_project_toggle_api_mode do
         def display
           Mobilis.logger.info "Toggled rails API mode for '#{@selected_rails_project.name}'"
         end
 
         def action
           @selected_rails_project.toggle_rails_api_mode
-          go_edit_rails_project
+          go_rails_project_edit
         end
       end
 
-      state :rails_add_linked_postgres do
+      state :rails_project_add_linked_postgres do
         def display
           spacer
         end
@@ -83,11 +91,23 @@ module Mobilis::InteractiveDesigner
         def action
           db_name = prompt.ask("new linked postgresql instance name:", default: "#{@selected_rails_project}.name}-db")
           @selected_rails_project.add_linked_postgresql_instance db_name
-          go_edit_rails_project
+          go_rails_project_edit
         end
       end
 
-      state :toggle_rails_uuid_primary_keys do
+      state :rails_model_add_field do
+        def display
+          puts @selected_rails_model.name
+        end
+
+        def action
+          name = prompt.ask("new field name:")
+          @selected_rails_field = @selected_rails_model.add_field name
+          go_rails_model_edit
+        end
+      end
+
+      state :rails_project_toggle_uuid_primary_keys do
         def display
           Mobilis.logger.info "Toggled UUID primary keys for '#{@selected_rails_project.name}'"
         end
@@ -98,15 +118,70 @@ module Mobilis::InteractiveDesigner
         end
       end
 
-      state :rails_add_model do
+      state :rails_project_add_model do
         def display
           ap @selected_rails_project.models.collect { |x| x[:name] }
         end
 
         def action
           name = prompt.ask("new model name")
-          @selected_rails_model = add_model name
-          go_edit_rails_model
+          @selected_rails_model = @selected_rails_project.add_model name
+          go_rails_model_edit
+        end
+      end
+
+      state :rails_project_add_model do
+        def display
+          ap @selected_rails_project.models.collect { |x| x[:name] }
+        end
+
+        def action
+          name = prompt.ask("new model name")
+          @selected_rails_model = @selected_rails_project.add_model name
+          go_rails_model_edit
+        end
+      end
+
+      state :rails_model_add_field_select_type do
+        def display
+          ap @selected_rails_model.name
+        end
+
+        def choices
+          [
+            { name: "references", value: -> { go_rails_model_add_field_references_select_model } },
+            *(Mobilis::NON_REFERENCE_MODEL_TYPES.each do |field|
+              {
+                name: "Add '#{field.name}' #{field.description} field",
+                value: -> { @selected_rails_field = field ; go_rails_field_edit }
+              }
+            end)
+          ]
+        end
+        def action = false
+      end
+
+      state :rails_model_add_field_references_select_model do
+        def display
+          ap @selected_rails_project.models.collect { |x| x[:name] }
+        end
+
+        def action
+          name = prompt.ask("new model name")
+          @selected_rails_model = @selected_rails_project.add_model name
+          go_rails_model_edit
+        end
+      end
+
+      state :rails_model_add_field_enter_name do
+        def display
+          ap @selected_rails_project.models.collect { |x| x[:name] }
+        end
+
+        def action
+          name = prompt.ask("new model name")
+          @selected_rails_model = @selected_rails_project.add_model name
+          go_rails_model_edit
         end
       end
 

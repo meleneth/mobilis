@@ -3,14 +3,14 @@
 module Mobilis::InteractiveDesigner
   def self.add_project_edit_menu_states(instance)
     instance.instance_eval do
-      event :go_rails_app_edit_screen do
+      event :go_rails_project_edit do
         transition [
           :edit_project_menu,
-          :toggle_rails_api_mode,
+          :rails_project_toggle_api_mode,
           :rails_add_linked_postgres,
           :toggle_rails_uuid_primary_keys,
           :add_prime_stack_rails_project
-        ] => :rails_app_edit_screen
+        ] => :rails_project_edit
       end
 
       state :edit_project_menu do

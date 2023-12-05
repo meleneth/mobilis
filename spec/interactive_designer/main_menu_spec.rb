@@ -87,7 +87,7 @@ RSpec.describe Mobilis::InteractiveDesigner::MainMenu do
       rails_project
       select_choice fsm, "Edit existing"
       select_choice fsm, "someprime"
-      expect(fsm.state).to eq "rails_app_edit_screen"
+      expect(fsm.state).to eq "rails_project_edit"
     end
   end
 end
