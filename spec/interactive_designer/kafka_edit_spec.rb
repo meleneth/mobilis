@@ -35,7 +35,7 @@ RSpec.describe Mobilis::InteractiveDesigner::KafkaEdit do
     it "changes still_running? to be false" do
       expect(fsm.still_running?).to eq(true)
       select_choice "return to Main Menu"
-      expect(fsm.still_running?).to eq(false)
+      expect(fsm.state).to eq("main_menu")
     end
   end
 end

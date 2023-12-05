@@ -3,17 +3,23 @@
 require "mel/scene-fsm"
 
 module Mobilis::InteractiveDesigner
-  def self.add_rails_app_edit_screen_states(instance)
+  def self.add_rails_project_edit_states(instance)
     instance.instance_eval do
       event :go_edit_rails_project do
         transition [
           :edit_project_menu,
           :add_omakase_stack_rails_project,
           :add_prime_stack_rails_project,
-          :toggle_rails_api_mode,
+          :rails_project_toggle_api_mode,
           :toggle_rails_uuid_primary_keys,
           :rails_add_linked_postgres
         ] => :rails_app_edit_screen
+      end
+
+      event :go_rails_project_edit do
+        transition [
+          :rails_project_add_linked_postgres
+                   ] => :rails_project_edit
       end
 
       event :go_finished do
@@ -32,38 +38,45 @@ module Mobilis::InteractiveDesigner
         transition [:rails_add_controller] => :edit_rails_controller
       end
 
-      event :go_rails_edit_model do
-        transition [:rails_add_model] => :edit_rails_model
+      event :go_rails_project_add_linked_postgres do
+        transition [:rails_project_edit] => :rails_project_add_linked_postgres
       end
 
-      event :go_rails_add_linked_postgres do
-        transition [:rails_app_edit_screen] => :rails_add_linked_postgres
+      event :go_rails_project_toggle_api_mode do
+        transition [:rails_project_edit] => :rails_project_toggle_api_mode
       end
 
-      event :go_toggle_rails_api_mode do
-        transition [:rails_app_edit_screen] => :toggle_rails_api_mode
+      event :go_rails_model_edit do
+        transition [:rails_add_model] => :rails_model_edit
       end
 
-      state :rails_app_edit_screen do
+      state :rails_project_edit do
         def display
           @selected_rails_project.display
         end
 
         def choices
           [
-            { name: "return to Main Menu", value: -> { go_finished } },
-            { name: "Toggle API mode", value: -> { go_toggle_rails_api_mode } },
-            { name: "Toggle UUID primary keys mode", value: -> { go_toggle_rails_uuid_primary_keys } },
-            { name: "Add Model", value: -> { go_rails_add_model } },
-            { name: "Add Controller", value: -> { go_rails_add_controller } },
-            { name: "Add linked postgres database", value: -> { go_rails_add_linked_postgres } }
+            { name: "return to Main Menu", value: -> { go_main_menu } },
+            { name: "Toggle API mode", value: -> { go_rails_project_toggle_api_mode } },
+            { name: "Toggle UUID primary keys mode", value: -> { go_rails_project_toggle_uuid_primary_keys } },
+            { name: "Add Model", value: -> { go_rails_project_add_model } },
+            { name: "Add Controller", value: -> { go_rails_project_add_controller } },
+            { name: "Add linked postgres database", value: -> { go_rails_project_add_linked_postgres } },
+            *(@selected_rails_project.models.map do |model|
+            {
+              name: "Edit '#{model.name}' model",
+              value: -> { visit_submachine Mobilis::InteractiveDesigner::EditRailsModel.new(model) }
+            }
+          end)
+
           ]
         end
 
         def action = false
       end
 
-      state :toggle_rails_api_mode do
+      state :rails_project_toggle_api_mode do
         def display
           Mobilis.logger.info "Toggled rails API mode for '#{@selected_rails_project.name}'"
         end
@@ -72,11 +85,11 @@ module Mobilis::InteractiveDesigner
 
         def action
           @selected_rails_project.toggle_rails_api_mode
-          go_rails_app_edit_screen
+          go_rails_project_edit
         end
       end
 
-      state :rails_add_linked_postgres do
+      state :rails_project_add_linked_postgres do
         def display
           spacer
         end
@@ -86,11 +99,11 @@ module Mobilis::InteractiveDesigner
         def action
           db_name = prompt.ask("new linked postgresql instance name:", default: "#{@selected_rails_project}.name}-db")
           @selected_rails_project.add_linked_postgresql_instance db_name
-          go_rails_app_edit_screen
+          go_rails_project_edit
         end
       end
 
-      state :toggle_rails_uuid_primary_keys do
+      state :rails_project_toggle_uuid_primary_keys do
         def display
           Mobilis.logger.info "Toggled UUID primary keys for '#{@selected_rails_project.name}'"
         end
@@ -103,7 +116,7 @@ module Mobilis::InteractiveDesigner
         end
       end
 
-      state :rails_add_model do
+      state :rails_project_add_model do
         def display
           ap @selected_rails_project.models.collect { |x| x[:name] }
         end
@@ -112,12 +125,12 @@ module Mobilis::InteractiveDesigner
 
         def action
           name = prompt.ask("new model name")
-          @selected_rails_model = add_model name
-          go_rails_app_edit_screen
+          @selected_rails_model = @selected_rails_project.add_model name
+          go_rails_model_edit
         end
       end
 
-      state :rails_add_controller do
+      state :rails_project_add_controller do
         def display
           ap @selected_rails_project.controllers.collect { |x| x[:name] }
         end

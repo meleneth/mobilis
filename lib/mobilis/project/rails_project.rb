@@ -3,10 +3,29 @@
 # rubocop:disable Metrics/ClassLength
 module Mobilis
   class RailsProject < GenericProject
+    attr_accessor :models
+
+    def initialize(data, metaproject)
+      super
+      @models = []
+    end
     def child_env_vars
       [
         "#{name.upcase}_HOST=#{name}"
       ]
+    end
+
+    def to_json
+      my_models = models.collect(&:to_json)
+      {
+        name: @data[:name],
+        type: :rails,
+        controllers: [],
+        models: my_models,
+        options: @data[:options],
+        attributes: {},
+        links: @data[:links]
+      }
     end
 
     def controllers
@@ -15,10 +34,6 @@ module Mobilis
 
     def name
       @data[:name]
-    end
-
-    def models
-      @data[:models]
     end
 
     def add_linked_postgresql_instance(dbname = nil)
@@ -73,9 +88,9 @@ module Mobilis
     end
 
     def add_model name
-      model = { name: name, fields: [] }
-      @data[:models] << model
-      model
+      new_model = RailsModel.new(name, self)
+      models << new_model
+      new_model
     end
 
     def rails_builder_image

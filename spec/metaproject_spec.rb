@@ -11,16 +11,17 @@ RSpec.describe Mobilis::Project do
   end
   describe "#to_json" do
     let(:rails_project) { build(:rails_prime, name: "my_prime") }
+    let(:options) { [:rspec, :api, :simplecov, :standard, :factorybot] }
     it "works for simple metaproject case" do
       expected = { projects: [], username: "meleneth", starting_port_no: 10000, port_gap: 100, name: "meta_project" }
       expect(metaproject.to_json).to eq( expected)
     end
     it "works for simple rails project case" do
-      expected = { name: "my_prime", type: :rails, controllers: [], models: [], options: [:rspec, :api, :simplecov, :standard, :factorybot], attributes: {}, links: [] }
+      expected = { name: "my_prime", type: :rails, controllers: [], models: [], options: options, attributes: {}, links: [] }
       expect(rails_project.to_json).to eq( expected)
     end
     it "works for more complicated case" do
-      expected = { projects: [{ name: "my_prime", type: :rails, controllers: [], models: [], options: [:rspec, :api, :simplecov, :standard, :factorybot], attributes: {}, links: [] }], username: "meleneth", starting_port_no: 10000, port_gap: 100, name: "meta_project" }
+      expected = { projects: [{ name: "my_prime", type: :rails, controllers: [], models: [], options: options, attributes: {}, links: [] }], username: "meleneth", starting_port_no: 10000, port_gap: 100, name: "meta_project" }
       expect(rails_project.metaproject.to_json).to eq(expected)
     end
   end

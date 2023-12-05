@@ -12,13 +12,13 @@ module Mobilis::InteractiveDesigner
       puts "Selecting rails project for editing"
       puts rails_project.name
       @selected_rails_project = rails_project
-      go_rails_app_edit_screen
+      go_rails_project_edit
     end
 
     state_machine :state, initial: :main_menu do
       Mobilis::InteractiveDesigner.add_project_menu_states self
       Mobilis::InteractiveDesigner.add_rails_model_edit_states self
-      Mobilis::InteractiveDesigner.add_rails_app_edit_screen_states self
+      Mobilis::InteractiveDesigner.add_rails_project_edit_states self
       Mobilis::InteractiveDesigner.add_project_edit_menu_states self
 
       #after_transition any => any do |designer|
@@ -147,26 +147,6 @@ module Mobilis::InteractiveDesigner
       state :finished do
         def still_running?
           false
-        end
-      end
-
-      state :edit_rails_model do
-        def display
-          ap @selected_rails_project.models.collect { |x| x[:name] }
-        end
-
-        def choices
-          [
-            { name: "return to Main Menu", value: -> { go_main_menu } },
-            { name: "return to rails project edit", value: -> { go_rails_app_edit } },
-            { name: "Toggle timestamps", value: -> { go_toggle_rails_model_timestamps } },
-            *(@selected_rails_project.models.map { |model|
-                {
-                  name: "Edit '#{model.name}' model",
-                  value: -> { visit_submachine Mobilis::InteractiveDesigner::EditRailsModel.new(model) }
-                }
-              })
-          ]
         end
       end
 

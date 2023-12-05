@@ -4,6 +4,7 @@ require "simplecov"
 require "debug"
 require "super_diff/rspec"
 require "factory_bot"
+require_relative "./spec_utils"
 
 SimpleCov.start
 
