@@ -2,8 +2,9 @@
 
 module Mobilis
   class RailsField
-    attr_accessor :name
-    attr_accessor :rails_model
+    attr_reader :name
+    attr_reader :type
+    attr_reader :rails_model
 
     def initialize(name:, rails_model:, type:)
       @rails_model = rails_model

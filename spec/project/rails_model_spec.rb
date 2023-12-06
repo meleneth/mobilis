@@ -20,4 +20,15 @@ RSpec.describe "Rails Model" do
       expect(model.to_json).to eq(expected)
     end
   end
+
+  describe "#add_references" do
+    let(:author_model) { build(:rails_model, name: "Author") }
+    let(:post_model) { build(:rails_model, name: "Post") }
+    let(:expected) { {name: "Author", fields: [{name: "post", type: :references}]} }
+
+    it "handles simple case" do
+      author_model.add_references(post_model)
+      expect(author_model.to_json).to eq(expected)
+    end
+  end
 end
