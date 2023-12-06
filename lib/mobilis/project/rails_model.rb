@@ -23,6 +23,10 @@ module Mobilis
       new_field
     end
 
+    def add_references(model)
+      add_field(name: model.name.downcase, type: Mobilis::RAILS_MODEL_TYPE_REFERENCE)
+    end
+
     def to_json
       my_fields = @fields.map { |f| f.to_json}
       {

@@ -42,7 +42,6 @@ RSpec.describe 'RailsModelEdit' do
       expect(fsm.state).to eq "rails_project_add_model"
       expect(prompt).to receive(:ask).and_return "Post"
       fsm.action
-      puts "took action"
       expect(fsm.state).to eq "rails_model_edit"
       nav.select_choice("Add field")
       expect(fsm.state).to eq "rails_model_add_field_select_type"
@@ -56,7 +55,7 @@ RSpec.describe 'RailsModelEdit' do
       expect(fsm.state).to eq "rails_model_add_field_enter_name"
       expect(prompt).to receive(:ask).and_return "subject"
       fsm.action
-      puts "Took action"
+      expect(fsm.state).to eq "rails_model_edit"
       expect(rails_project.to_json).to eq(expected)
     end
   end

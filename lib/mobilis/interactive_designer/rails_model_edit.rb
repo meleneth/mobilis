@@ -7,7 +7,9 @@ module Mobilis::InteractiveDesigner
     instance.instance_eval do
       event :go_rails_model_edit do
         transition [
-          :rails_model_edit
+          :rails_model_edit,
+          :rails_model_add_field_references_select_model,
+          :rails_model_add_field_enter_name
         ] => :rails_model_edit
       end
 
@@ -53,23 +55,25 @@ module Mobilis::InteractiveDesigner
 
       state :rails_model_edit do
         def display
-          ap @selected_rails_project.models.collect { |x| x[:name] }
+          ap @selected_rails_project.models.collect(&:name)
         end
 
         def choices
           [
             { name: "return to Main Menu", value: -> { go_main_menu } },
-            { name: "return to rails project edit", value: -> { go_rails_app_edit } },
+            { name: "return to rails project edit", value: -> { go_rails_project_edit } },
             { name: "Toggle timestamps", value: -> { go_toggle_rails_model_timestamps } },
             { name: "Add field", value: -> { go_rails_model_add_field_select_type } },
             *(@selected_rails_model.fields.map do |field|
-            {
-              name: "Edit '#{field.name}' #{field.type} field",
-              value: -> { @selected_rails_field = field ; go_rails_field_edit }
-            }
+              {
+                name: "Edit '#{field.name}' :#{field.type.name} field",
+                value: -> { @selected_rails_field = field ; go_rails_field_edit }
+              }
             end)
           ]
         end
+
+        def action = false
       end
 
       state :rails_project_toggle_api_mode do
@@ -81,6 +85,8 @@ module Mobilis::InteractiveDesigner
           @selected_rails_project.toggle_rails_api_mode
           go_rails_project_edit
         end
+
+        def choices = false
       end
 
       state :rails_project_add_linked_postgres do
@@ -93,6 +99,8 @@ module Mobilis::InteractiveDesigner
           @selected_rails_project.add_linked_postgresql_instance db_name
           go_rails_project_edit
         end
+
+        def choices = false
       end
 
       state :rails_model_add_field do
@@ -105,6 +113,8 @@ module Mobilis::InteractiveDesigner
           @selected_rails_field = @selected_rails_model.add_field name
           go_rails_model_edit
         end
+
+        def choices = false
       end
 
       state :rails_project_toggle_uuid_primary_keys do
@@ -116,6 +126,8 @@ module Mobilis::InteractiveDesigner
           @selected_rails_project.toggle_rails_uuid_primary_keys
           go_edit_rails_project
         end
+
+        def choices = false
       end
 
       state :rails_project_add_model do
@@ -128,18 +140,8 @@ module Mobilis::InteractiveDesigner
           @selected_rails_model = @selected_rails_project.add_model name
           go_rails_model_edit
         end
-      end
 
-      state :rails_project_add_model do
-        def display
-          ap @selected_rails_project.models.collect { |x| x[:name] }
-        end
-
-        def action
-          name = prompt.ask("new model name")
-          @selected_rails_model = @selected_rails_project.add_model name
-          go_rails_model_edit
-        end
+        def choices = false
       end
 
       state :rails_model_add_field_select_type do
@@ -150,10 +152,10 @@ module Mobilis::InteractiveDesigner
         def choices
           [
             { name: "references", value: -> { go_rails_model_add_field_references_select_model } },
-            *(Mobilis::NON_REFERENCE_MODEL_TYPES.each do |field|
+            *(Mobilis::NON_REFERENCE_MODEL_TYPES.map do |field|
               {
                 name: "Add '#{field.name}' #{field.description} field",
-                value: -> { @selected_rails_field = field ; go_rails_field_edit }
+                value: -> { @selected_rails_field_new_type = field ; go_rails_model_add_field_enter_name }
               }
             end)
           ]
@@ -163,26 +165,36 @@ module Mobilis::InteractiveDesigner
 
       state :rails_model_add_field_references_select_model do
         def display
-          ap @selected_rails_project.models.collect { |x| x[:name] }
+          ap @selected_rails_project.models.collect(&:name)
         end
 
-        def action
-          name = prompt.ask("new model name")
-          @selected_rails_model = @selected_rails_project.add_model name
-          go_rails_model_edit
+        def choices
+          [
+            { name: "Return to Model Edit", value: -> { go_rails_model_edit } },
+            *(@selected_rails_project.models.map do |model|
+              {
+                name: "Reference '#{model.name}'",
+                value: -> { @selected_rails_model.add_references(model) ; go_rails_model_edit }
+              }
+            end)
+          ]
         end
+
+        def action = false
       end
 
       state :rails_model_add_field_enter_name do
         def display
-          ap @selected_rails_project.models.collect { |x| x[:name] }
+          ap @selected_rails_project.models.collect(&:name)
         end
 
         def action
-          name = prompt.ask("new model name")
-          @selected_rails_model = @selected_rails_project.add_model name
+          name = prompt.ask("new #{@selected_rails_field_new_type.name} field name: ")
+          @selected_rails_model.add_field(name: name, type: @selected_rails_field_new_type)
           go_rails_model_edit
         end
+
+        def choices = false
       end
 
       state :rails_add_controller do
