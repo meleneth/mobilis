@@ -24,3 +24,5 @@ gem "factory_bot", "~> 6.3"
 gem "super_diff", "~> 0.10.0"
 
 gem 'state_machines-graphviz' , group: :development
+
+gem "git", "~> 1.18"

@@ -148,6 +148,9 @@ module Mobilis::InteractiveDesigner
         def still_running?
           false
         end
+        def choices = false
+        def display = false
+
       end
 
       state :generate do
@@ -155,6 +158,9 @@ module Mobilis::InteractiveDesigner
           project.generate_files
           go_back
         end
+
+        def choices = false
+        def display = false
       end
 
       state :build do
@@ -162,6 +168,9 @@ module Mobilis::InteractiveDesigner
           project.build
           go_back
         end
+        def choices = false
+        def display = false
+
       end
 
       state :save_project do
@@ -169,6 +178,9 @@ module Mobilis::InteractiveDesigner
           project.save_project
           go_back
         end
+        def choices = false
+        def display = false
+
       end
 
       state :show_configuration do
@@ -176,12 +188,18 @@ module Mobilis::InteractiveDesigner
           project.show
           go_back
         end
+        def choices = false
+        def display = false
+
       end
 
       state :quit do
         def still_running?
           false
         end
+        def choices = false
+        def display = false
+
       end
     end
 

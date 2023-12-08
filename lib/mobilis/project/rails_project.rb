@@ -105,8 +105,10 @@ module Mobilis
       rails_run_command "./bundle_run.sh #{command}"
     end
 
-    def generate
+    def generate(git)
+      @git=git
       rails_run_command rails_new_command_line
+      puts "RAILS RUN COMMAND finished"
       Dir.chdir name do
         Mobilis.logger.info "-- commiting rails new"
         git_commit_all "rails new"
@@ -131,6 +133,7 @@ module Mobilis
         bundle_install
         Mobilis.logger.info "-- git commit add Dockerfile and build script etc"
         git_commit_all "add Dockerfile and build script etc"
+        puts "FINISHED generating rails project"
       end
     end
 
