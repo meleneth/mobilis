@@ -2,7 +2,7 @@
 
 module Mobilis
   class KafkaInstance < GenericProject
-    def generate
+    def generate(git)
     end
 
     def child_env_vars

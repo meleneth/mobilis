@@ -99,13 +99,12 @@ module Mobilis
     end
 
     def git_commit_all message
-      # FIXME
-      # run_command ["git", "add", "."]
-      # run_command ["git", "commit", "-m", message]
+      @git.add
+      @git.commit(message)
     end
 
     # generate the local file structure to support the project
-    def generate
+    def generate git
       FileUtils.mkdir_p name
     end
   end

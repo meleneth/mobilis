@@ -6,10 +6,10 @@ module Mobilis::InteractiveDesigner
   def self.add_rails_model_edit_states(instance)
     instance.instance_eval do
       event :go_rails_model_edit do
-        transition [
-          :rails_model_edit,
-          :rails_model_add_field_references_select_model,
-          :rails_model_add_field_enter_name
+        transition %i[
+          rails_model_edit
+          rails_model_add_field_references_select_model
+          rails_model_add_field_enter_name
         ] => :rails_model_edit
       end
 
@@ -38,7 +38,10 @@ module Mobilis::InteractiveDesigner
       end
 
       event :go_rails_field_edit do
-        transition [:rails_model_add_field] => :rails_field_edit
+        transition %i[
+          rails_model_add_field
+          rails_model_edit
+        ] => :rails_field_edit
       end
 
       event :go_rails_model_add_field_select_type do
@@ -58,12 +61,16 @@ module Mobilis::InteractiveDesigner
           ap @selected_rails_project.models.collect(&:name)
         end
 
+        def default
+
+        end
+
         def choices
           [
             { name: "return to Main Menu", value: -> { go_main_menu } },
-            { name: "return to rails project edit", value: -> { go_rails_project_edit } },
             { name: "Toggle timestamps", value: -> { go_toggle_rails_model_timestamps } },
             { name: "Add field", value: -> { go_rails_model_add_field_select_type } },
+            { name: "return to rails project edit", value: -> { go_rails_project_edit } },
             *(@selected_rails_model.fields.map do |field|
               {
                 name: "Edit '#{field.name}' :#{field.type.name} field",
@@ -199,7 +206,7 @@ module Mobilis::InteractiveDesigner
 
       state :rails_add_controller do
         def display
-          ap @selected_rails_project.controllers.collect { |x| x[:name] }
+          ap @selected_rails_project.controllers.collect(&:name)
         end
 
         def action

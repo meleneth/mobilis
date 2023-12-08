@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "fileutils"
+require 'git'
 
 module Mobilis
   ##
@@ -58,9 +59,10 @@ module Mobilis
 
       Dir.chdir target_directory do
         save_project
+        git = Git.init
         create_rails_builder if has_rails_project?
         projects.each_with_index do |project, index|
-          project.generate
+          project.generate git
         end
         save_docker_compose
       end
