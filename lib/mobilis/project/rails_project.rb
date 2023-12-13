@@ -105,36 +105,38 @@ module Mobilis
       rails_run_command "./bundle_run.sh #{command}"
     end
 
-    def generate(git)
-      @git=git
+    def generate(directory_service:)
+      directory_service.chdir_generate
       rails_run_command rails_new_command_line
-      puts "RAILS RUN COMMAND finished"
-      Dir.chdir name do
-        Mobilis.logger.info "-- commiting rails new"
-        git_commit_all "rails new"
-        Mobilis.logger.info "-- generating bundle run"
-        generate_bundle_run
-        Mobilis.logger.info "-- reading rails master key"
-        read_rails_master_key
-        Mobilis.logger.info "-- installing rspec (maybe)"
-        install_rspec if options.include? :rspec
-        Mobilis.logger.info "-- installing factory bot (maybe)"
-        install_factory_bot if options.include? :factory_bot
-        Mobilis.logger.info "-- git commit add Gems"
-        git_commit_all "add Gems"
-        Mobilis.logger.info "-- generate_wait_until"
-        generate_wait_until
-        Mobilis.logger.info "-- generate_Dockerfile"
-        generate_Dockerfile
-        Mobilis.logger.info "-- generate_entrypoint_sh"
-        generate_entrypoint_sh
-        Mobilis.logger.info "-- generate_build_sh"
-        generate_build_sh
-        bundle_install
-        Mobilis.logger.info "-- git commit add Dockerfile and build script etc"
-        git_commit_all "add Dockerfile and build script etc"
-        puts "FINISHED generating rails project"
-      end
+      directory_service.chdir_project(self)
+      Mobilis.logger.info "-- commiting rails new"
+      directory_service.git_commit_all "rails new"
+      directory_service.chdir_project(self)
+      Mobilis.logger.info "-- generating bundle run"
+      generate_bundle_run
+      Mobilis.logger.info "-- generating .gitignore"
+      generate_gitignore
+      Mobilis.logger.info "-- reading rails master key"
+      read_rails_master_key
+      Mobilis.logger.info "-- installing rspec (maybe)"
+      install_rspec if options.include? :rspec
+      Mobilis.logger.info "-- installing factory bot (maybe)"
+      install_factory_bot if options.include? :factory_bot
+      Mobilis.logger.info "-- git commit add Gems"
+      directory_service.git_commit_all "add Gems"
+      directory_service.chdir_project(self)
+      Mobilis.logger.info "-- generate_wait_until"
+      generate_wait_until
+      Mobilis.logger.info "-- generate_Dockerfile"
+      generate_Dockerfile
+      Mobilis.logger.info "-- generate_entrypoint_sh"
+      generate_entrypoint_sh
+      Mobilis.logger.info "-- generate_build_sh"
+      generate_build_sh
+      bundle_install
+      Mobilis.logger.info "-- git commit add Dockerfile and build script etc"
+      directory_service.git_commit_all "add Dockerfile and build script etc"
+      directory_service.chdir_project(self)
     end
 
     def read_rails_master_key
@@ -189,6 +191,80 @@ module Mobilis
         # Configure the main process to run when running the image
         CMD ["rails", "server", "-b", "0.0.0.0"]
       DOCKER_END
+    end
+
+    def generate_gitignore
+      set_file_contents ".gitignore", <<~GITIGNORE_END
+        *.rbc
+        capybara-*.html
+        .rspec
+        /db/*.sqlite3
+        /db/*.sqlite3-journal
+        /db/*.sqlite3-[0-9]*
+        /public/system
+        /coverage/
+        /spec/tmp
+        *.orig
+        rerun.txt
+        pickle-email-*.html
+        
+        # Ignore all logfiles and tempfiles.
+        /log/*
+        /tmp/*
+        !/log/.keep
+        !/tmp/.keep
+        
+        # TODO Comment out this rule if you are OK with secrets being uploaded to the repo
+        config/initializers/secret_token.rb
+        config/master.key
+        
+        # Only include if you have production secrets in this file, which is no longer a Rails default
+        # config/secrets.yml
+        
+        # dotenv, dotenv-rails
+        # TODO Comment out these rules if environment variables can be committed
+        .env
+        .env*.local
+        
+        ## Environment normalization:
+        /.bundle
+        /vendor/bundle
+        
+        # these should all be checked in to normalize the environment:
+        # Gemfile.lock, .ruby-version, .ruby-gemset
+        
+        # unless supporting rvm < 1.11.0 or doing something fancy, ignore this:
+        .rvmrc
+        
+        # if using bower-rails ignore default bower_components path bower.json files
+        /vendor/assets/bower_components
+        *.bowerrc
+        bower.json
+        
+        # Ignore pow environment settings
+        .powenv
+        
+        # Ignore Byebug command history file.
+        .byebug_history
+        
+        # Ignore node_modules
+        node_modules/
+        
+        # Ignore precompiled javascript packs
+        /public/packs
+        /public/packs-test
+        /public/assets
+        
+        # Ignore yarn files
+        /yarn-error.log
+        yarn-debug.log*
+        .yarn-integrity
+        
+        # Ignore uploaded files in development
+        /storage/*
+        !/storage/.keep
+        /public/uploads
+        GITIGNORE_END
     end
 
     def generate_entrypoint_sh
@@ -261,7 +337,7 @@ $@
     end
 
     def rails_new_command_line
-      pieces = ["bundle", "exec", "rails", "new", name, ".", "--skip-bundle"]
+      pieces = ["bundle", "exec", "rails", "new", name, ".", "--skip-bundle", "--skip-git"]
       pieces << "--api" if options.include? :api
       my_db = database
       if my_db

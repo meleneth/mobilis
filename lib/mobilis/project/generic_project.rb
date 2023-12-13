@@ -98,13 +98,9 @@ module Mobilis
       end
     end
 
-    def git_commit_all message
-      @git.add
-      @git.commit(message)
-    end
 
     # generate the local file structure to support the project
-    def generate git
+    def generate
       FileUtils.mkdir_p name
     end
   end
