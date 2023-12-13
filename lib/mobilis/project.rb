@@ -14,7 +14,7 @@ module Mobilis
     attr_accessor :data
     attr_accessor :projects
 
-    def initialize
+    def initialize()
       @data = {
         projects: [],
         username: ENV.fetch("USER", ENV.fetch("USERNAME", "")),
@@ -23,6 +23,15 @@ module Mobilis
         name: "generate"
       }
       @projects = []
+      @directory_service = Mobilis::Services::Directory.new
+    end
+
+    def return_to_start_directory
+      @directory_service.chdir_start
+    end
+
+    def return_to_target_directory
+      @directory_service.chdir_generate
     end
 
     def show
@@ -50,31 +59,39 @@ module Mobilis
     end
 
     def generate_files
-      if Dir.exist? target_directory
-        puts "Removing existing #{target_directory} directory"
-        FileUtils.rm_rf(target_directory)
+      @directory_service.mkdir_generate
+      @directory_service.chdir_generate
+      save_project
+      Git.init
+      create_rails_builder if has_rails_project?
+      projects.each_with_index do |project, index|
+        project.generate directory_service: @directory_service
       end
+      @directory_service.chdir_generate
+      save_docker_compose
+      generate_gitignore
+      generate_env_file
+      @directory_service.git_commit_all("Docker compose file")
+    end
 
-      Dir.mkdir target_directory
+    def generate_gitignore
+      set_file_contents ".gitignore", <<~EOF
+        .env
+      EOF
+    end
 
-      Dir.chdir target_directory do
-        save_project
-        git = Git.init
-        create_rails_builder if has_rails_project?
-        projects.each_with_index do |project, index|
-          project.generate git
-        end
-        save_docker_compose
-      end
+    def generate_env_file
+      set_file_contents ".env", <<~EOF
+        NEW_RELIC_LICENSE_KEY=
+      EOF
     end
 
     def create_rails_builder
-      Dir.mkdir "rails-builder"
-      Dir.chdir "rails-builder" do
-        create_rails_builder_dockerfile
-        create_rails_builder_gemfile
-        build_rails_builder
-      end
+      @directory_service.mkdir_rails_builder
+      @directory_service.chdir_rails_builder
+      create_rails_builder_dockerfile
+      create_rails_builder_gemfile
+      build_rails_builder
     end
 
     def create_rails_builder_dockerfile
@@ -103,10 +120,17 @@ module Mobilis
 
         ARG USER_ID
         ARG GROUP_ID
-        RUN addgroup --gid 200 rubyuser
-        RUN adduser --disabled-password --gecos '' --uid 200 --gid 200 rubyuser
+        RUN addgroup --gid $GROUP_ID rubyuser
+        RUN adduser --disabled-password --gecos '' --uid $USER_ID --gid $GROUP_ID rubyuser
         USER rubyuser
       EOF
+      # it makes no sense that these values were hardcoded at 200 when I was passing
+      # in the id's, why did that happen?
+      # I assume it's because at some point something didn't work
+      # so here's me taking notes trying to figure it out
+      # using the args seems to have helped things a bit, but it didn't just work
+      # Dir.chdir is conflicting with itself all over the place, time to stop using the block
+      # form and get more in-control over where the CWD is
     end
 
     def create_rails_builder_gemfile
@@ -159,9 +183,8 @@ module Mobilis
 
     def build
       #  logger.info "# build"
-      Dir.chdir "generate" do
-        run_command "docker compose build"
-      end
+      return_to_target_directory
+      run_command "docker compose build"
     end
 
     def rails_builder_image

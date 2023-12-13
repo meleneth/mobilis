@@ -6,14 +6,13 @@ module Mobilis
       @data[:name]
     end
 
-    def generate
-      Dir.mkdir name
-      Dir.chdir name do
-        generate_config_ru
-        generate_Gemfile
-        generate_Gemfile_lock
-        generate_Dockerfile
-      end
+    def generate(directory_service:)
+      directory_service.mkdir_project(self)
+      directory_service.chdir_project(self)
+      generate_config_ru
+      generate_Gemfile
+      generate_Gemfile_lock
+      generate_Dockerfile
     end
 
     def generate_config_ru

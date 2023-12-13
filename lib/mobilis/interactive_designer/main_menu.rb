@@ -47,6 +47,7 @@ module Mobilis::InteractiveDesigner
         transition [:edit_rails_project] => :edit_project_menu
         transition [:edit_generic_project] => :main_menu
         transition [:add_project_menu] => :main_menu
+        transition [:generate] => :main_menu
         transition [:main_menu] => :finished
       end
 
