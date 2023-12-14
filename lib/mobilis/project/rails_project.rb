@@ -137,6 +137,11 @@ module Mobilis
       Mobilis.logger.info "-- git commit add Dockerfile and build script etc"
       directory_service.git_commit_all "add Dockerfile and build script etc"
       directory_service.chdir_project(self)
+      if models.length > 0
+        generate_models
+        directory_service.git_commit_all "add Models"
+        directory_service.chdir_project(self)
+      end
     end
 
     def read_rails_master_key
@@ -168,6 +173,13 @@ module Mobilis
             sleep 1
         done
       WAITUNTIL
+    end
+
+    def generate_models
+      models.each do |model|
+        puts "Generating model #{model.name}"
+        bundle_run model.line
+      end
     end
 
     def generate_Dockerfile

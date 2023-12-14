@@ -54,7 +54,7 @@ module Mobilis
         chdir_generate
         Git.open generate_dir
       end
-      
+
       def generate_dir
         File.join(@start_position, "generate")
       end
