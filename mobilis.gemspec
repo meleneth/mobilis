@@ -37,6 +37,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "state_machines"
   spec.add_dependency "table_print"
   spec.add_dependency "tty-prompt"
+  spec.add_dependency "git"
 
   spec.add_development_dependency "super_diff"
   spec.add_development_dependency "simplecov"

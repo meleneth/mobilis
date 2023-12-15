@@ -17,7 +17,7 @@ module Mobilis
     end
 
     def for_line
-      [@name, @type].join(":")
+      [@name, @type.name].join(":")
     end
 
     def to_json
