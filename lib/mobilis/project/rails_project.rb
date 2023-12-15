@@ -9,6 +9,7 @@ module Mobilis
       super
       @models = []
     end
+
     def child_env_vars
       [
         "#{name.upcase}_HOST=#{name}"
@@ -82,7 +83,7 @@ module Mobilis
     end
 
     def add_controller name
-      controller = { name: name, actions: [] }
+      controller = {name: name, actions: []}
       @data[:controllers] << controller
       controller
     end
