@@ -318,9 +318,9 @@ module Mobilis
       "/#{wd[0]}#{wd[2...]}"
     end
 
-    def to_json
+    def to_h
       my_data = @data.clone
-      my_data[:projects] = projects.collect(&:to_json)
+      my_data[:projects] = projects.collect(&:to_h)
       my_data
     end
   end

@@ -7,9 +7,9 @@ RSpec.describe "Rails Field" do
     expect(field.for_line).to eq("name:string")
   end
 
-  describe "#to_json" do
+  describe "#to_h" do
     it "handles simple case" do
-      expect(field.to_json).to eq({name: "name", type: :string})
+      expect(field.to_h).to eq({name: "name", type: :string})
     end
   end
 end

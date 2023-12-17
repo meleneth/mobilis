@@ -20,7 +20,7 @@ module Mobilis
       [@name, @type.name].join(":")
     end
 
-    def to_json
+    def to_h
       {name: @name, type: @type.name.to_sym}
     end
   end

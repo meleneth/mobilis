@@ -3,6 +3,7 @@ PATH
   specs:
     mobilis (0.0.7pre)
       awesome_print
+      git
       optimist
       pry
       state_machines

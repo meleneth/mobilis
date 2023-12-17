@@ -19,7 +19,7 @@ module Mobilis::InteractiveDesigner
       event :go_rails_project_edit do
         transition [
           :rails_project_add_linked_postgres
-                   ] => :rails_project_edit
+        ] => :rails_project_edit
       end
 
       event :go_finished do
@@ -57,19 +57,39 @@ module Mobilis::InteractiveDesigner
 
         def choices
           [
-            { name: "return to Main Menu", value: -> { go_main_menu } },
-            { name: "Toggle API mode", value: -> { go_rails_project_toggle_api_mode } },
-            { name: "Toggle UUID primary keys mode", value: -> { go_rails_project_toggle_uuid_primary_keys } },
-            { name: "Add Model", value: -> { go_rails_project_add_model } },
-            { name: "Add Controller", value: -> { go_rails_project_add_controller } },
-            { name: "Add linked postgres database", value: -> { go_rails_project_add_linked_postgres } },
-            *(@selected_rails_project.models.map do |model|
             {
-              name: "Edit '#{model.name}' model",
-              value: -> { visit_submachine Mobilis::InteractiveDesigner::EditRailsModel.new(model) }
-            }
-          end)
-
+              name: "return to Main Menu",
+              value: -> { go_main_menu }
+            },
+            {
+              name: "Toggle API mode",
+              value: -> { go_rails_project_toggle_api_mode }
+            },
+            {
+              name: "Toggle UUID primary keys mode",
+              value: -> { go_rails_project_toggle_uuid_primary_keys }
+            },
+            {
+              name: "Add Model",
+              value: -> { go_rails_project_add_model }
+            },
+            {
+              name: "Add Controller",
+              value: -> { go_rails_project_add_controller }
+            },
+            {
+              name: "Add linked postgres database",
+              value: -> { go_rails_project_add_linked_postgres }
+            },
+            *(@selected_rails_project.models.map do |model|
+              {
+                name: "Edit '#{model.name}' model",
+                value: -> do
+                  @selected_rails_model = model
+                  go_rails_model_edit
+                end
+              }
+            end)
           ]
         end
 
@@ -118,7 +138,7 @@ module Mobilis::InteractiveDesigner
 
       state :rails_project_add_model do
         def display
-          ap @selected_rails_project.models.collect { |x| x[:name] }
+          ap @selected_rails_project.models.collect(&:name)
         end
 
         def choices = false
@@ -132,7 +152,7 @@ module Mobilis::InteractiveDesigner
 
       state :rails_project_add_controller do
         def display
-          ap @selected_rails_project.controllers.collect { |x| x[:name] }
+          ap @selected_rails_project.controllers.collect(&:name)
         end
 
         def choices = false
