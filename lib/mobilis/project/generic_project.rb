@@ -84,7 +84,7 @@ module Mobilis
       @data[:links] = new_links
     end
 
-    def to_json
+    def to_h
       @data
     end
 

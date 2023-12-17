@@ -16,8 +16,8 @@ module Mobilis
       ]
     end
 
-    def to_json
-      my_models = models.collect(&:to_json)
+    def to_h
+      my_models = models.collect(&:to_h)
       {
         name: @data[:name],
         type: :rails,

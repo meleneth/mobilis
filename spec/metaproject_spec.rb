@@ -9,20 +9,20 @@ RSpec.describe Mobilis::Project do
     metaproject.add_prime_stack_rails_project("my_prime")
     expect(metaproject.projects[0].name).to eq("my_prime")
   end
-  describe "#to_json" do
+  describe "#to_h" do
     let(:rails_project) { build(:rails_prime, name: "my_prime") }
     let(:options) { [:rspec, :api, :simplecov, :standard, :factorybot] }
     it "works for simple metaproject case" do
       expected = { projects: [], username: "meleneth", starting_port_no: 10000, port_gap: 100, name: "meta_project" }
-      expect(metaproject.to_json).to eq( expected)
+      expect(metaproject.to_h).to eq( expected)
     end
     it "works for simple rails project case" do
       expected = { name: "my_prime", type: :rails, controllers: [], models: [], options: options, attributes: {}, links: [] }
-      expect(rails_project.to_json).to eq( expected)
+      expect(rails_project.to_h).to eq( expected)
     end
     it "works for more complicated case" do
       expected = { projects: [{ name: "my_prime", type: :rails, controllers: [], models: [], options: options, attributes: {}, links: [] }], username: "meleneth", starting_port_no: 10000, port_gap: 100, name: "meta_project" }
-      expect(rails_project.metaproject.to_json).to eq(expected)
+      expect(rails_project.metaproject.to_h).to eq(expected)
     end
   end
 end

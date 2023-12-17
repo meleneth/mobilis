@@ -7,17 +7,17 @@ RSpec.describe "Rails Model" do
     expect(model.line).to eq("rails g scaffold SomeModel ")
   end
 
-  describe "#to_json" do
+  describe "#to_h" do
     it "handles simple case" do
-      expect(model.to_json).to eq({name: "SomeModel", fields: []})
+      expect(model.to_h).to eq({name: "SomeModel", fields: []})
     end
   end
 
   describe "#add_field" do
     let(:expected) { {name: "SomeModel", fields: [ {name: "some_field", type: :string}]} }
     it "handles simple case" do
-      model.add_field(name: "some_field", type: Mobilis::RAILS_MODEL_TYPE_STRING)
-      expect(model.to_json).to eq(expected)
+      model.add_field(name: "some_field", type: Mobilis::RAILS_MODEL_TYPE_STRING.name)
+      expect(model.to_h).to eq(expected)
     end
   end
 
@@ -28,7 +28,7 @@ RSpec.describe "Rails Model" do
 
     it "handles simple case" do
       author_model.add_references(post_model)
-      expect(author_model.to_json).to eq(expected)
+      expect(author_model.to_h).to eq(expected)
     end
   end
 end
