@@ -61,7 +61,7 @@ module Mobilis
     end
 
     def display
-      ap @data
+      ap to_h
     end
 
     def name

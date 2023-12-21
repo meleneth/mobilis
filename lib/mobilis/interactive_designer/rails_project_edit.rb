@@ -47,7 +47,10 @@ module Mobilis::InteractiveDesigner
       end
 
       event :go_rails_model_edit do
-        transition [:rails_add_model] => :rails_model_edit
+        transition [
+          :rails_add_model,
+          :rails_project_edit
+        ] => :rails_model_edit
       end
 
       state :rails_project_edit do

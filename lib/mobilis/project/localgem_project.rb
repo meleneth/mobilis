@@ -6,11 +6,14 @@ module Mobilis
       @data[:name]
     end
 
-    def generate
-      Dir.mkdir "localgems" unless Dir.exist? "localgems"
-      Dir.chdir "localgems" do
-        run_command "bundle gem #{name}", true
-      end
+    def generate(directory_service:)
+      directory_service.mkdir_localgems
+      directory_service.chdir_localgems
+      run_command "bundle gem #{name}", true
+      directory_service.chdir_localgems
+      directory_service.rm_localgems_project_gitdir(self)
+
+      directory_service.git_commit_all "Generated localgem #{name}"
     end
   end
 end

@@ -47,12 +47,9 @@ module Mobilis::InteractiveDesigner
       end
 
       state :add_project_menu do
-        Mobilis.logger.debug "setting add_project_menu methods"
         def display
-          puts
-          tp.set :max_width, 160
-          tp projects, "name", "type", options: lambda { |p| p.options.join ", " }
-          puts
+          puts "Add Project"
+          fancy_tp projects, "name", "type", options: lambda { |p| p.options.join ", " }
         end
 
         def choices
@@ -115,6 +112,8 @@ module Mobilis::InteractiveDesigner
           puts "Creates a new kafka instance"
         end
 
+        def choices = false
+
         def action
           project_name = prompt.ask("new Kafka instance name:")
           project.add_kafka_instance project_name
@@ -127,10 +126,12 @@ module Mobilis::InteractiveDesigner
           puts "Creates a new local gem project, generated via native bundler gem"
         end
 
+        def choices = false
+
         def action
           project_name = prompt.ask("new local gem project name:")
           project.add_localgem_project project_name
-          go_finished
+          go_main_menu
         end
       end
 
@@ -138,6 +139,8 @@ module Mobilis::InteractiveDesigner
         def display
           spacer
         end
+
+        def choices = false
 
         def action
           project_name = prompt.ask("new Omakase Stack Rails project name:")
@@ -151,6 +154,8 @@ module Mobilis::InteractiveDesigner
           spacer
         end
 
+        def choices = false
+
         def action
           project_name = prompt.ask("new postgresql instance name:")
           project.add_postgresql_instance project_name
@@ -163,6 +168,8 @@ module Mobilis::InteractiveDesigner
           spacer
         end
 
+        def choices = false
+
         def action
           project_name = prompt.ask("new mysql instance name:")
           project.add_mysql_instance project_name
@@ -174,6 +181,8 @@ module Mobilis::InteractiveDesigner
         def display
           spacer
         end
+
+        def choices = false
 
         def action
           project_name = prompt.ask("new redis instance name:")

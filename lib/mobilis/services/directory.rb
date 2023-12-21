@@ -29,6 +29,16 @@ module Mobilis
         Dir.mkdir generate_dir
       end
 
+      def rm_localgems_project_gitdir(project)
+        localgems_project_git_dir = File.join(localgems_dir, project.name, ".git")
+        FileUtils.rm_rf localgems_project_git_dir
+      end
+
+      def mkdir_localgems
+        chdir_generate
+        Dir.mkdir "localgems" unless Dir.exist? "localgems"
+      end
+
       def mkdir_rails_builder
         chdir_generate
         Dir.mkdir "rails-builder"
@@ -36,6 +46,10 @@ module Mobilis
 
       def chdir_generate
         Dir.chdir generate_dir
+      end
+
+      def chdir_localgems
+        Dir.chdir localgems_dir
       end
 
       def project_dir(project)
@@ -61,6 +75,10 @@ module Mobilis
 
       def rails_builder_dir
         File.join(generate_dir, "rails-builder")
+      end
+
+      def localgems_dir
+        File.join(generate_dir, "localgems")
       end
     end
   end
