@@ -53,7 +53,7 @@ RSpec.describe "RailsAppEdit" do
       nav.select_choice "somerails"
       expect(metaproject.projects[0].options).not_to include(:uuid)
       nav.select_choice "Toggle UUID primary keys mode"
-      expect(fsm.state).to eq "rails_project_toggle_uuid_primary_keys_mode"
+      expect(fsm.state).to eq "rails_project_toggle_uuid_primary_keys"
       fsm.action
       expect(metaproject.projects[0].options).to include(:api)
     end
