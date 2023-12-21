@@ -58,19 +58,31 @@ module Mobilis::InteractiveDesigner
 
       state :rails_model_edit do
         def display
-          ap @selected_rails_project.models.collect(&:name)
+          puts @selected_rails_project.name
+          fancy_tp @selected_rails_model.fields, "name", type: lambda { |f| f.type.name }
         end
 
         def default
-
         end
 
         def choices
           [
-            { name: "return to Main Menu", value: -> { go_main_menu } },
-            { name: "Toggle timestamps", value: -> { go_toggle_rails_model_timestamps } },
-            { name: "Add field", value: -> { go_rails_model_add_field_select_type } },
-            { name: "return to rails project edit", value: -> { go_rails_project_edit } },
+            {
+              name: "return to Main Menu",
+              value: -> { go_main_menu }
+            },
+            {
+              name: "Toggle timestamps",
+              value: -> { go_toggle_rails_model_timestamps }
+            },
+            {
+              name: "Add field",
+              value: -> { go_rails_model_add_field_select_type }
+            },
+            {
+              name: "return to rails project edit",
+              value: -> { go_rails_project_edit }
+            },
             *(@selected_rails_model.fields.map do |field|
               {
                 name: "Edit '#{field.name}' :#{field.type.name} field",

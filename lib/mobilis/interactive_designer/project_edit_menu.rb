@@ -15,10 +15,7 @@ module Mobilis::InteractiveDesigner
 
       state :edit_project_menu do
         def display
-          puts
-          tp.set :max_width, 160
-          tp projects, "name", "type", options: lambda { |p| p.options.join ", " }
-          puts
+          fancy_tp projects, "name", "type", options: lambda { |p| p.options.join ", " }
         end
 
         def choices

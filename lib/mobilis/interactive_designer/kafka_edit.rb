@@ -4,10 +4,6 @@ require "mel/scene-fsm"
 
 module Mobilis::InteractiveDesigner
   class KafkaEdit < Mobilis::SceneFSM
-    def initialize rails_project
-      @rails_project = rails_project
-      super()
-    end
 
     state_machine :state, initial: :kafka_instance_edit do
       event :go_edit_kafka_project do
@@ -22,7 +18,7 @@ module Mobilis::InteractiveDesigner
 
       state :kafka_instance_edit do
         def display
-          @rails_project.display
+          @selected_kafka_project.display
         end
 
         def choices

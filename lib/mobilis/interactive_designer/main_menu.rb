@@ -78,10 +78,7 @@ module Mobilis::InteractiveDesigner
 
       state :main_menu do
         def display
-          puts
-          tp.set :max_width, 160
-          tp projects, "name", "type", options: lambda { |p| p.options.join ", " }
-          puts
+          fancy_tp projects, "name", "type", options: lambda { |p| p.options.join ", " }
         end
 
         def choices
@@ -112,10 +109,8 @@ module Mobilis::InteractiveDesigner
 
       state :edit_links_select_project do
         def display
-          puts
-          tp.set :max_width, 160
-          tp projects, "name", "type", links: lambda { |p| p.links.join ", " }
-          puts
+          puts "Select Project"
+          fancy_tp projects, "name", "type", links: lambda { |p| p.links.join ", " }
         end
 
         def choices
@@ -207,6 +202,13 @@ module Mobilis::InteractiveDesigner
     # display, choices, and action methods all change per-state
     def new_relic_license_key
       ENV.fetch "NEW_RELIC_LICENSE_KEY", false
+    end
+
+    def fancy_tp(data, *options)
+      TablePrint::Config.set(:max_width, [160])
+      printer = TablePrint::Printer.new(data, options)
+      lines = printer.table_print
+      decobox(lines)
     end
 
     def reload!(print = true)
