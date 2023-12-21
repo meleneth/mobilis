@@ -136,33 +136,6 @@ module Mobilis::InteractiveDesigner
         def choices = false
       end
 
-      state :rails_project_toggle_uuid_primary_keys do
-        def display
-          Mobilis.logger.info "Toggled UUID primary keys for '#{@selected_rails_project.name}'"
-        end
-
-        def action
-          @selected_rails_project.toggle_rails_uuid_primary_keys
-          go_edit_rails_project
-        end
-
-        def choices = false
-      end
-
-      state :rails_project_add_model do
-        def display
-          ap @selected_rails_project.models.collect { |x| x[:name] }
-        end
-
-        def action
-          name = prompt.ask("new model name")
-          @selected_rails_model = @selected_rails_project.add_model name
-          go_rails_model_edit
-        end
-
-        def choices = false
-      end
-
       state :rails_model_add_field_select_type do
         def display
           ap @selected_rails_model.name

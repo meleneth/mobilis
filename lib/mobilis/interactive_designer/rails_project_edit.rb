@@ -46,6 +46,10 @@ module Mobilis::InteractiveDesigner
         transition [:rails_project_edit] => :rails_project_toggle_api_mode
       end
 
+      event :go_rails_project_toggle_uuid_primary_keys do
+        transition [:rails_project_edit] => :rails_project_toggle_uuid_primary_keys
+      end
+
       event :go_rails_model_edit do
         transition [
           :rails_add_model,
@@ -134,8 +138,9 @@ module Mobilis::InteractiveDesigner
         def choices = false
 
         def action
-          @selected_rails_project.toggle_rails_uuid_primary_keys
-          go_rails_app_edit_screen
+          @selected_rails_project.toggle_uuid_primary_keys
+
+          go_rails_project_edit
         end
       end
 
