@@ -1,5 +1,25 @@
 
 # Currently Burning
+
+the world.
+
+Ok, a bit on the nose.
+Anyways.
+
+db files are getting created with user ownership issues.
+
+Noodle - define DB container pieces in files, then include those in the main docker-compose files in order to support test/development/production/otherproduction environments
+actually, extend that to everything - the main files should be references only
+
+compose/service_name.yml
+compose/somedb_test.yml
+compose/somedb_production.yml
+compose/somedb_development.yml
+compose/somedb_otherproduction.yml
+docker-compose.yml
+docker-compose-development.yml
+docker-compose-testdb.yml
+
 name your meta project prompt to start with
 Seeing what happens when trying to make a small complicated system
 author-service post-service

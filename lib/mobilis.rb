@@ -26,6 +26,8 @@ require_relative "mobilis/rails_model_type"
 
 require_relative "mobilis/services/directory"
 
+require_relative "mobilis/port_assigner"
+
 require_relative "mobilis/project"
 require_relative "mobilis/project/generic_project"
 require_relative "mobilis/project/localgem_project"

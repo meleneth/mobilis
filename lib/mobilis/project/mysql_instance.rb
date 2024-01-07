@@ -41,5 +41,9 @@ module Mobilis
     def password
       "#{name}_password"
     end
+
+    def is_datastore_project?
+      true
+    end
   end
 end

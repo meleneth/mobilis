@@ -21,6 +21,30 @@ module Mobilis
         chdir_generate
       end
 
+      def mkdir_project_data_dir(project)
+        FileUtils.mkdir_p project_data_dir(project)
+      end
+
+      def mkdir_environment(environment)
+        FileUtils.mkdir_p environment_dir(environment)
+      end
+
+      def chdir_environment(environment)
+        Dir.chdir environment_dir(environment)
+      end
+
+      def mkdir_environment_datadir_forproject(environment, project)
+        FileUtils.mkdir_p environment_datadir_forproject(environment, project)
+      end
+
+      def chdir_environment_datadir_forproject(environment, project)
+        Dir.chdir environment_datadir_forproject(environment, project)
+      end
+
+      def environment_datadir_forproject(environment, project)
+        File.join(environment_dir(environment), project.name.to_s)
+      end
+
       def mkdir_generate
         if Dir.exist? generate_dir
           puts "Removing existing #{ generate_dir } directory"
@@ -73,12 +97,20 @@ module Mobilis
         File.join(@start_position, "generate")
       end
 
+      def environment_dir(environment)
+        File.join(generate_dir, "data", environment.to_s)
+      end
+
       def rails_builder_dir
         File.join(generate_dir, "rails-builder")
       end
 
       def localgems_dir
         File.join(generate_dir, "localgems")
+      end
+
+      def project_data_dir(project)
+        File.join(generate_dir, "data", project.name)
       end
     end
   end

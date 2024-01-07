@@ -6,6 +6,35 @@ module Mobilis
       10
     end
 
+    def self.project_dev project
+      projector = DockerComposeProjector.new project
+
+      services = {}
+      project.datastore_projects.each_with_index do |service, index|
+        service_definition = projector.send "#{service.type}_service", service
+        if service_definition
+          if service.linked_to_localgem_project
+            service_definition["build"] = {
+              "context" => "./",
+              "dockerfile" => "./#{service.name}/Dockerfile"
+            }
+          end
+          services[service.name] = service_definition
+          if service.links.count > 0
+            services[service.name]["links"] = service.links_to_actually_link.map(&:to_s)
+            services[service.name]["depends_on"] = service.links_to_actually_link.map(&:to_s)
+            service.links.each do |link|
+              linked_service = project.project_by_name link
+              linked_service.child_env_vars.each do |var|
+                services[service.name]["environment"] << var
+              end
+            end
+          end
+        end
+      end
+      {"version" => "3.8", "services" => services}
+    end
+
     def self.project project
       projector = DockerComposeProjector.new project
 

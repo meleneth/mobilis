@@ -27,5 +27,9 @@ module Mobilis
     def has_local_build
       false
     end
+
+    def is_datastore_project?
+      true
+    end
   end
 end

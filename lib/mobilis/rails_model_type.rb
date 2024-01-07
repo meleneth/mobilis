@@ -9,10 +9,11 @@ module Mobilis
       @description = description
     end
   end
-  RAILS_MODEL_TYPES=[
-    RAILS_MODEL_TYPE_REFERENCE=RailsModelType.new(name: :references, description: "a foreign key to another table.  This is where the \"relational\" in \"relational database\" comes from"),
+  RAILS_MODEL_TYPES = [
+    RAILS_MODEL_TYPE_REFERENCE = RailsModelType.new(name: :references, description: "a foreign key to another table.  This is where the \"relational\" in \"relational database\" comes from"),
     RailsModelType.new(name: :primary_key, description: "this data type is a kind of placeholder that Rails translates as a unique key to identify each row in your table"),
-    RAILS_MODEL_TYPE_STRING=RailsModelType.new(name: :string, description: "used for short text fields, think \"name\" or \"title\" attributes, and has to be less than 255 characters"),
+    RAILS_MODEL_TYPE_STRING = RailsModelType.new(name: :string, description: "used for short text fields, think \"name\" or \"title\" attributes, and has to be less than 255 characters"),
+    RAILS_MODEL_TYPE_UUID = RailsModelType.new(name: :uuid, description: "holds a UUID value.  Might work."),
     RailsModelType.new(name: :text, description: "used for longer text fields, think \"comment\" or \"review\" attributes, and has a character limit of approximately 30,000 characters"),
     RailsModelType.new(name: :integer, description: "this type is used specifically for whole numbers ONLY, and can store numbers up to 2.1 billion"),
     RailsModelType.new(name: :bigint, description: "similar to :integer, with the difference being that it can store whole numbers up to approximately 20 digits long"),

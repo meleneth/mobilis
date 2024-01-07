@@ -84,6 +84,10 @@ module Mobilis
       @data[:links] = new_links
     end
 
+    def add_link new_link
+      @data[:links] << new_link
+    end
+
     def to_h
       @data
     end
@@ -98,6 +102,9 @@ module Mobilis
       end
     end
 
+    def is_datastore_project?
+      false
+    end
 
     # generate the local file structure to support the project
     def generate
