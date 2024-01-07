@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "fileutils"
-require 'git'
+require "git"
 
 module Mobilis
   ##
@@ -14,7 +14,7 @@ module Mobilis
     attr_accessor :data
     attr_accessor :projects
 
-    def initialize()
+    def initialize
       @data = {
         projects: [],
         username: ENV.fetch("USER", ENV.fetch("USERNAME", "")),
@@ -58,26 +58,51 @@ module Mobilis
       "generate"
     end
 
+    def target_environments
+      [:production, :development, :test]
+    end
+
+    def datastore_projects
+      projects.select { |p| p.is_datastore_project? }
+    end
+
+    def non_datastore_projects
+      projects.select { |p| !p.is_datastore_project? }
+    end
+
     def generate_files
       @directory_service.mkdir_generate
       @directory_service.chdir_generate
       save_project
       Git.init
+      @directory_service.chdir_generate
+      @directory_service.git_commit_all("Project export")
+      if has_datastore_instance?
+        target_environments.each do |target_environment|
+          @directory_service.mkdir_environment(target_environment)
+          @directory_service.chdir_environment(target_environment)
+          datastore_projects.each do |project|
+            @directory_service.mkdir_environment_datadir_forproject(target_environment, project)
+            set_file_contents File.join(@directory_service.environment_datadir_forproject(target_environment, project), ".gitkeep"), ""
+            project.generate directory_service: @directory_service
+          end
+        end
+        save_dev_docker_compose
+        @directory_service.chdir_generate
+        @directory_service.git_commit_all("compose-dev.yml and environment datastore projects")
+      end
       create_rails_builder if has_rails_project?
-      projects.each_with_index do |project, index|
+      non_datastore_projects.each do |project|
         project.generate directory_service: @directory_service
       end
       @directory_service.chdir_generate
       save_docker_compose
-      generate_gitignore
       generate_env_file
-      @directory_service.git_commit_all("Docker compose file")
+      @directory_service.git_commit_all("compose.yml")
     end
 
-    def generate_gitignore
-      set_file_contents ".gitignore", <<~EOF
-        .env
-      EOF
+    def has_datastore_instance?
+      projects.any?(&:is_datastore_project?)
     end
 
     def generate_env_file
@@ -173,7 +198,7 @@ module Mobilis
     end
 
     def generate_attributes
-      attributes = { projects: {}, new_relic_license_key: ENV.fetch("NEW_RELIC_LICENSE_KEY", "some_invalid_key_NREAL") }
+      attributes = {projects: {}, new_relic_license_key: ENV.fetch("NEW_RELIC_LICENSE_KEY", "some_invalid_key_NREAL")}
       projects.each_with_index do |project, index|
         attributes["#{project.name}_internal_port_no".to_sym] =
           @data[:starting_port_no] + (index * @data[:port_gap])
@@ -210,6 +235,12 @@ module Mobilis
       docker = DockerComposeProjector.project self
 
       File.write("docker-compose.yml", docker.to_yaml)
+    end
+
+    def save_dev_docker_compose
+      docker = DockerComposeProjector.project_dev self
+
+      File.write("docker-compose-dev.yml", docker.to_yaml)
     end
 
     def project_for_data data

@@ -2,8 +2,8 @@
 
 module Mobilis
   class PostgresqlInstance < GenericProject
-    def generate
-      FileUtils.mkdir_p data_dir
+    def generate(directory_service:)
+      directory_service.mkdir_project_data_dir(self)
     end
 
     def child_env_vars
@@ -47,6 +47,10 @@ module Mobilis
 
     def password
       "#{name}_password"
+    end
+
+    def is_datastore_project?
+      true
     end
   end
 end

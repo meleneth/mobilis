@@ -21,11 +21,15 @@ module Mobilis::InteractiveDesigner
       Mobilis::InteractiveDesigner.add_rails_project_edit_states self
       Mobilis::InteractiveDesigner.add_project_edit_menu_states self
 
-      #after_transition any => any do |designer|
-      #  puts "o0o VVVV ---- VVVV o0o"
-      #  puts "-- Switched state to #{designer.state_name} --"
-      #  puts "o0o ^^^^ ---- ^^^^ o0o"
-      #end
+      after_transition any => any do |designer|
+        puts "o0o VVVV ---- VVVV o0o"
+        puts "-- Switched state to #{designer.state_name} --"
+        puts "o0o ^^^^ ---- ^^^^ o0o"
+      end
+
+      event :go_create_demo_project do
+        transition [:main_menu] => :create_demo_project
+      end
 
       event :go_build do
         transition [:main_menu] => :build
@@ -48,6 +52,7 @@ module Mobilis::InteractiveDesigner
         transition [:edit_generic_project] => :main_menu
         transition [:add_project_menu] => :main_menu
         transition [:generate] => :main_menu
+        transition [:create_demo_project] => :main_menu
         transition [:main_menu] => :finished
       end
 
@@ -83,26 +88,27 @@ module Mobilis::InteractiveDesigner
 
         def choices
           menu_items = [
-            { name: "reload all code", value: -> { reload! } },
-            { name: "[m] Add project", value: -> { go_add_project_menu } },
-            { name: "[m] Edit existing project", value: -> { go_edit_project_menu } },
-            { name: "[m] Show configuration", value: -> { go_show_configuration } }
+            {name: "reload all code", value: -> { reload! }},
+            {name: "[m] Add project", value: -> { go_add_project_menu }},
+            {name: "[m] Create demo project", value: -> { go_create_demo_project }},
+            {name: "[m] Edit existing project", value: -> { go_edit_project_menu }},
+            {name: "[m] Show configuration", value: -> { go_show_configuration }}
           ]
           if projects.length > 1
             menu_items.concat([
-                                { name: "[m] edit links", value: -> { go_edit_links_select_project } }
-                              ])
+              {name: "[m] edit links", value: -> { go_edit_links_select_project }}
+            ])
           end
           if projects.length > 0
             menu_items.concat([
-                                { name: "Save mproj.json", value: -> { go_save_project } },
-                                { name: "Generate", value: -> { go_generate } },
-                                { name: "Build", value: -> { go_build } }
-                              ])
+              {name: "Save mproj.json", value: -> { go_save_project }},
+              {name: "Generate", value: -> { go_generate }},
+              {name: "Build", value: -> { go_build }}
+            ])
           end
           menu_items.concat([
-                              { name: "quit", value: -> { go_quit } }
-                            ])
+            {name: "quit", value: -> { go_quit }}
+          ])
           menu_items
         end
       end
@@ -115,7 +121,7 @@ module Mobilis::InteractiveDesigner
 
         def choices
           [
-            { name: "return to Main Menu", value: -> { go_main_menu } },
+            {name: "return to Main Menu", value: -> { go_main_menu }},
             *(projects.map { |project|
                 links_txt = project.links.join ", "
                 {
@@ -144,9 +150,10 @@ module Mobilis::InteractiveDesigner
         def still_running?
           false
         end
-        def choices = false
-        def display = false
 
+        def choices = false
+
+        def display = false
       end
 
       state :generate do
@@ -156,6 +163,7 @@ module Mobilis::InteractiveDesigner
         end
 
         def choices = false
+
         def display = false
       end
 
@@ -164,9 +172,10 @@ module Mobilis::InteractiveDesigner
           project.build
           go_back
         end
-        def choices = false
-        def display = false
 
+        def choices = false
+
+        def display = false
       end
 
       state :save_project do
@@ -174,9 +183,10 @@ module Mobilis::InteractiveDesigner
           project.save_project
           go_back
         end
-        def choices = false
-        def display = false
 
+        def choices = false
+
+        def display = false
       end
 
       state :show_configuration do
@@ -184,18 +194,70 @@ module Mobilis::InteractiveDesigner
           project.show
           go_back
         end
+
         def choices = false
+
+        def display = false
+      end
+
+      state :create_demo_project do
+        def choices = false
+
         def display = false
 
+        def create_rails_service_with_postgres_db service_name
+        end
+
+        def action
+          @project = ::Mobilis::Project.new
+          @project.add_localgem_project "api_models"
+          services = Hash.new
+          models = Hash.new
+
+          postgres_prime_rails_projects = %w[organization account user credential authorization notification authentication_domain group]
+          postgres_prime_rails_projects.each do |name|
+            new_service = @project.add_prime_stack_rails_project "#{name}_service"
+            new_service.add_linked_postgresql_instance("#{name}_db")
+            new_service.add_link "api_models"
+            new_service.toggle_uuid_primary_keys
+            services[name] = new_service
+          end
+
+          %w[token login scim].each do |name|
+            services[name] = @project.add_rack_project("#{name}_service")
+            services[name].add_link "api_models"
+          end
+
+          service_tables = %w[organization account user authentication_domain]
+          service_tables.each do |name|
+            model = services[name].add_model name
+            model.add_field(name: "name", type: Mobilis::RAILS_MODEL_TYPE_STRING)
+            models[name] = model
+          end
+
+          models["account"].add_field(name: "organization_id", type: Mobilis::RAILS_MODEL_TYPE_UUID)
+          models["authentication_domain"].add_field(name: "account_id", type: Mobilis::RAILS_MODEL_TYPE_UUID)
+          models["user"].add_field(name: "authentication_domain_id", type: Mobilis::RAILS_MODEL_TYPE_UUID)
+
+          @project.new_relic do
+            set_license_key "some_invalid_key_NREAL"
+            enable_distributed_tracing
+          end
+
+          go_back
+        end
       end
 
       state :quit do
         def still_running?
           false
         end
+
         def choices = false
+
         def display = false
 
+        def action = false
       end
     end
 
