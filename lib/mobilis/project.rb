@@ -228,7 +228,7 @@ module Mobilis
     end
 
     def save_project
-      File.write("mproj.json", JSON.pretty_generate(to_json))
+      File.write("mproj.json", JSON.pretty_generate(to_h))
     end
 
     def save_docker_compose

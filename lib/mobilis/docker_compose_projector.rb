@@ -128,7 +128,7 @@ module Mobilis
         "environment" => service.env_vars,
         "ports" => ["#{attributes[keyname]}:5432"],
         "volumes" => [
-          "#{service.data_dir}:/var/lib/postgresql/data"
+          "${#{service.env_name}_POSTGRES_DATA}:/var/lib/postgresql/data"
         ]
       }
     end
@@ -142,7 +142,7 @@ module Mobilis
         "environment" => service.env_vars,
         "ports" => ["#{attributes[keyname]}:3306"],
         "volumes" => [
-          "#{service.data_dir}:/var/lib/mysql"
+          "${#{service.env_name}_MYSQL_DATA}:/var/lib/mysql"
         ]
       }
     end
