@@ -9,6 +9,11 @@ module Mobilis
       []
     end
 
+    def global_env_vars(environment)
+      {
+      }
+    end
+
     def env_vars
       [
         "KAFKA_CFG_NODE_ID=0",

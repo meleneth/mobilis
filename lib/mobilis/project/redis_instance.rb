@@ -37,5 +37,10 @@ module Mobilis
     def is_datastore_project?
       true
     end
+
+    def global_env_vars(environment)
+      {
+      }
+    end
   end
 end

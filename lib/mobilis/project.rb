@@ -77,27 +77,13 @@ module Mobilis
       Git.init
       @directory_service.chdir_generate
       @directory_service.git_commit_all("Project export")
-      if has_datastore_instance?
-        target_environments.each do |target_environment|
-          @directory_service.mkdir_environment(target_environment)
-          @directory_service.chdir_environment(target_environment)
-          datastore_projects.each do |project|
-            @directory_service.mkdir_environment_datadir_forproject(target_environment, project)
-            set_file_contents File.join(@directory_service.environment_datadir_forproject(target_environment, project), ".gitkeep"), ""
-            project.generate directory_service: @directory_service
-          end
-        end
-        save_dev_docker_compose
-        @directory_service.chdir_generate
-        @directory_service.git_commit_all("compose-dev.yml and environment datastore projects")
-      end
-      create_rails_builder if has_rails_project?
-      non_datastore_projects.each do |project|
-        project.generate directory_service: @directory_service
-      end
-      @directory_service.chdir_generate
+      @directory_service.mkdir_compose
+      generate_env_files
       save_docker_compose
-      generate_env_file
+      create_datastore_directories
+      create_datastore_instances
+      create_project_instances
+      @directory_service.chdir_generate
       @directory_service.git_commit_all("compose.yml")
     end
 
@@ -105,10 +91,21 @@ module Mobilis
       projects.any?(&:is_datastore_project?)
     end
 
-    def generate_env_file
+    def generate_env_files
       set_file_contents ".env", <<~EOF
         NEW_RELIC_LICENSE_KEY=
       EOF
+      target_environments.each do |environment|
+        env_vars = {}
+        projects.each do |project|
+          env_vars.merge! project.global_env_vars(environment)
+        end
+        env_lines = []
+        env_vars.each do |key, value|
+          env_lines << "#{key}=#{value}\n"
+        end
+        set_file_contents("compose/#{environment}.env", env_lines.join(""))
+      end
     end
 
     def create_rails_builder
@@ -353,6 +350,41 @@ module Mobilis
       my_data = @data.clone
       my_data[:projects] = projects.collect(&:to_h)
       my_data
+    end
+
+    private
+
+    def create_datastore_directories
+      # creates storage directories, per-environment, per-datastore
+      return unless has_datastore_instance?
+      target_environments.each do |target_environment|
+        @directory_service.mkdir_environment(target_environment)
+        @directory_service.chdir_environment(target_environment)
+        datastore_projects.each do |project|
+          @directory_service.mkdir_environment_datadir_forproject(target_environment, project)
+          target_directory = @directory_service.environment_datadir_forproject(target_environment, project)
+          set_file_contents File.join(target_directory, ".gitkeep"), ""
+          project.generate directory_service: @directory_service
+        end
+      end
+      save_dev_docker_compose
+      @directory_service.chdir_generate
+      @directory_service.git_commit_all("compose-dev.yml and environment datastore projects")
+    end
+
+    def create_datastore_instances
+      return unless has_datastore_instance?
+      target_environments.each do |target_environment|
+        datastore_projects.each do |project|
+        end
+      end
+    end
+
+    def create_project_instances
+      create_rails_builder if has_rails_project?
+      non_datastore_projects.each do |project|
+        project.generate directory_service: @directory_service
+      end
     end
   end
 end
