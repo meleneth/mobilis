@@ -3,7 +3,6 @@
 module Mobilis
   class PostgresqlInstance < GenericProject
     def generate(directory_service:)
-      directory_service.mkdir_project_data_dir(self)
     end
 
     def child_env_vars

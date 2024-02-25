@@ -15,6 +15,11 @@ module Mobilis
       generate_Dockerfile
     end
 
+    def global_env_vars(environment)
+      {
+      }
+    end
+
     def generate_config_ru
       set_file_contents "config.ru", <<~CONFIG_RU
         # config.ru

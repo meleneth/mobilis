@@ -6,6 +6,11 @@ module Mobilis
       @data[:name]
     end
 
+    def global_env_vars(environment)
+      {
+      }
+    end
+
     def generate(directory_service:)
       directory_service.mkdir_localgems
       directory_service.chdir_localgems

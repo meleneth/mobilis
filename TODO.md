@@ -1,6 +1,24 @@
 
 # Currently Burning
 
+Working on getting the generated docker compose config to be multi file based.
+
+Need to be able to support multiple environments with the same set of compose files.
+
+Need to start the DB's for test and dev during generation - they should be running at initial rails create time.
+
+How do we check that db's are up and ready to go?  a new invocation of the wait script is probably called for.
+
+Need to fix file generation order.
+
+Write compose.yml first, and supporting files.
+As soon as those are written, make the data directory tree
+as soon as the directory tree is made, build the DB containers and start them - for dev and test
+
+Currently unresolved - having different ports for different environments
+
+# Old Fires
+
 the world.
 
 Ok, a bit on the nose.

@@ -358,5 +358,10 @@ $@
       end
       pieces.join " "
     end
+
+    def global_env_vars(environment)
+      {
+      }
+    end
   end
 end

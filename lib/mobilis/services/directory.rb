@@ -68,6 +68,21 @@ module Mobilis
         Dir.mkdir "rails-builder"
       end
 
+      def mkdir_compose
+        chdir_generate
+        Dir.mkdir "compose"
+      end
+
+      def mkdir_datadir
+        chdir_generate
+        Dir.mkdir "data"
+      end
+
+      def mkdir_env_datadir(environment)
+        chdir_generate
+        Dir.mkdir File.join("data", environment)
+      end
+
       def chdir_generate
         Dir.chdir generate_dir
       end
