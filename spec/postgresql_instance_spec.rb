@@ -16,12 +16,12 @@ RSpec.describe "Postgresql Instance" do
             "image" => "postgres:16.1-bookworm",
             "restart" => "always",
             "environment" => [
-              "POSTGRES_USER=test-db",
-              "POSTGRES_PASSWORD=test-db_password"
+              "POSTGRES_USER=${TEST_DB_POSTGRES_USER}",
+              "POSTGRES_PASSWORD=${TEST_DB_POSTGRES_PASSWORD}"
             ],
             "ports" => ["10000:5432"],
             "volumes" => [
-              "./data/test-db:/var/lib/postgresql/data"
+              "${TEST_DB_POSTGRES_DATA}:/var/lib/postgresql/data"
             ]
           }
         }
@@ -32,6 +32,17 @@ RSpec.describe "Postgresql Instance" do
       project.add_postgresql_instance "test-db"
       result = Mobilis::DockerComposeProjector.project project
       expect(result).to eq(expected)
+    end
+
+    it "has global_env_vars" do
+      project.add_postgresql_instance "test-db"
+      expect(project.projects[0].global_env_vars("test")).to eq({
+        TEST_DB_POSTGRES_DB: "test-db_test",
+        TEST_DB_POSTGRES_USER: "test-db",
+        TEST_DB_POSTGRES_PASSWORD: "test-db_password",
+        TEST_DB_POSTGRES_DATA: "./data/test/test-db",
+        TEST_DB_POSTGRES_URL: "postgres://test-db:test-db_password@test-db:5432/"
+      })
     end
   end
 end

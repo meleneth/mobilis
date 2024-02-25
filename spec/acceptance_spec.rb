@@ -34,15 +34,15 @@ RSpec.describe "Acceptance" do
             "image" => "postgres:16.1-bookworm",
             "restart" => "always",
             "environment" => [
-              "POSTGRES_DB=account_production",
-              "POSTGRES_USER=account-db",
-              "POSTGRES_PASSWORD=account-db_password"
+              "POSTGRES_DB=${ACCOUNT_DB_POSTGRES_DB}",
+              "POSTGRES_USER=${ACCOUNT_DB_POSTGRES_USER}",
+              "POSTGRES_PASSWORD=${ACCOUNT_DB_POSTGRES_PASSWORD}"
             ],
             "ports" => [
               "10100:5432"
             ],
             "volumes" => [
-              "./data/account-db:/var/lib/postgresql/data"
+              "${ACCOUNT_DB_POSTGRES_DATA}:/var/lib/postgresql/data"
             ]
           }
         }
@@ -92,27 +92,27 @@ RSpec.describe "Acceptance" do
             "image" => "postgres:16.1-bookworm",
             "restart" => "always",
             "environment" => [
-              "POSTGRES_DB=prime_production",
-              "POSTGRES_USER=testp-db",
-              "POSTGRES_PASSWORD=testp-db_password"
+              "POSTGRES_DB=${TESTP_DB_POSTGRES_DB}",
+              "POSTGRES_USER=${TESTP_DB_POSTGRES_USER}",
+              "POSTGRES_PASSWORD=${TESTP_DB_POSTGRES_PASSWORD}"
             ],
             "ports" => ["10100:5432"],
             "volumes" => [
-              "./data/testp-db:/var/lib/postgresql/data"
+              "${TESTP_DB_POSTGRES_DATA}:/var/lib/postgresql/data"
             ]
           },
           "testm-db" => {
             "image" => "mysql:debian",
             "restart" => "always",
             "environment" => [
-              "MYSQL_DATABASE=prime_production",
-              "MYSQL_USER=testm-db",
-              "MYSQL_PASSWORD=testm-db_password",
+              "MYSQL_DATABASE=${TESTM_DB_MYSQL_DATABASE}",
+              "MYSQL_USER=${TESTM_DB_MYSQL_USER}",
+              "MYSQL_PASSWORD=${TESTM_DB_MYSQL_PASSWORD}",
               "MYSQL_RANDOM_ROOT_PASSWORD=true"
             ],
             "ports" => ["10200:3306"],
             "volumes" => [
-              "./data/testm-db:/var/lib/mysql"
+              "${TESTM_DB_MYSQL_DATA}:/var/lib/mysql"
             ]
           },
           "cache" => {

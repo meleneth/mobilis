@@ -13,12 +13,22 @@ module Mobilis
     def env_vars
       vars = []
       if linked_to_rails_project
-        vars << "#{env_var}=#{linked_to_rails_project.name}_production"
+        vars << "POSTGRES_DB=${#{env_name}_POSTGRES_DB}"
       end
       vars.concat [
-        "POSTGRES_USER=#{name}",
-        "POSTGRES_PASSWORD=#{password}"
+        "POSTGRES_USER=${#{env_name}_POSTGRES_USER}",
+        "POSTGRES_PASSWORD=${#{env_name}_POSTGRES_PASSWORD}"
       ]
+    end
+
+    def global_env_vars(environment)
+      {
+        "#{env_name}_POSTGRES_DB": "#{name}_#{environment}",
+        "#{env_name}_POSTGRES_USER": name,
+        "#{env_name}_POSTGRES_PASSWORD": password,
+        "#{env_name}_POSTGRES_DATA": "./data/#{environment}/#{name}",
+        "#{env_name}_POSTGRES_URL": url
+      }
     end
 
     def env_var

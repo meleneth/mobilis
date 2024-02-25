@@ -13,13 +13,26 @@ module Mobilis
     def env_vars
       vars = []
       if linked_to_rails_project
-        vars << "MYSQL_DATABASE=#{linked_to_rails_project.name}_production"
+        vars << "MYSQL_DATABASE=${#{env_name}_MYSQL_DATABASE}"
       end
       vars.concat [
-        "MYSQL_USER=#{name}",
-        "MYSQL_PASSWORD=#{name}_password",
+        "MYSQL_USER=${#{env_name}_MYSQL_USER}",
+        "MYSQL_PASSWORD=${#{env_name}_MYSQL_PASSWORD}",
         "MYSQL_RANDOM_ROOT_PASSWORD=true"
       ]
+    end
+
+    def global_env_vars(environment)
+      {
+        "#{env_name}_MYSQL_USER": name,
+        "#{env_name}_MYSQL_PASSWORD": password,
+        "#{env_name}_MYSQL_DATA": "./data/#{environment}/#{name}",
+        "#{env_name}_MYSQL_URL": url
+      }
+    end
+
+    def env_name
+      name.upcase.tr("-", "_")
     end
 
     def data_dir
