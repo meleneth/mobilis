@@ -17,11 +17,6 @@ module Mobilis
       "rails g scaffold #{name} #{my_fields.join(' ')}"
     end
 
-    def global_env_vars(environment)
-      {
-      }
-    end
-
     def add_field(name:, type:)
       new_field = RailsField.new(name: name, rails_model: self, type: type)
       @fields << new_field

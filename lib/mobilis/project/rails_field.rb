@@ -12,11 +12,6 @@ module Mobilis
       @type = type
     end
 
-    def global_env_vars(environment)
-      {
-      }
-    end
-
     def line
       "rails g scaffold #{name} "
     end

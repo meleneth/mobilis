@@ -61,17 +61,40 @@ module Mobilis
           end
         end
       end
-      { "version" => "3.8", "services" => services }
+      {"version" => "3.8", "services" => services}
+    end
+
+    def render_single_service service
+      service_definition = send "#{service.type}_service", service
+      if service_definition
+        if service.linked_to_localgem_project
+          service_definition["build"] = {
+            "context" => "./",
+            "dockerfile" => "./#{service.name}/Dockerfile"
+          }
+        end
+        if service.links.count > 0
+          service_definition["links"] = service.links_to_actually_link.map(&:to_s)
+          service_definition["depends_on"] = service.links_to_actually_link.map(&:to_s)
+          service.links.each do |link|
+            linked_service = @project.project_by_name link
+            linked_service.child_env_vars.each do |var|
+              service_definition["environment"] << var
+            end
+          end
+        end
+      end
+      service_definition
     end
 
     def kafka_service service
       {
         "image" => 'bitnami/kafka:latest',
-        "ports" => ["9092:9092"],
+        "ports" => ["${#{service.env_name}_EXPOSED_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
         "environment" => [
           "KAFKA_CFG_NODE_ID=0",
           "KAFKA_CFG_PROCESS_ROLES=controller,broker",
-          "KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093",
+          "KAFKA_CFG_LISTENERS=PLAINTEXT://:${#{service.env_name}_INTERNAL_PORT_NO},CONTROLLER://:9093",
           "KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT",
           "KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@#{service.name}:9093",
           "KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER"
@@ -80,8 +103,6 @@ module Mobilis
     end
 
     def rails_service service
-      attributes = @project.attributes
-      keyname = "#{service.name}_internal_port_no".to_sym
       vars = []
       vars << "RAILS_ENV=production"
       vars << "RAILS_MASTER_KEY=#{service.rails_master_key}"
@@ -90,7 +111,7 @@ module Mobilis
 
       database = service.database
       if database
-        vars << "DATABASE_URL=#{database.url}"
+        vars << "DATABASE_URL=${#{service.env_name}_DATABASE_URL}"
       end
 
       # vars << "NEW_RELIC_APP_NAME=#{ service.name }"
@@ -98,7 +119,7 @@ module Mobilis
       # vars << "NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true"
       {
         "image" => service.docker_image_name,
-        "ports" => ["#{attributes[keyname]}:3000"],
+        "ports" => ["${#{service.env_name}_EXPOSED_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
         "environment" => vars,
         "build" => {
           "context" => "./#{service.name}"
@@ -107,11 +128,9 @@ module Mobilis
     end
 
     def rack_service service
-      attributes = @project.attributes
-      keyname = "#{service.name}_internal_port_no".to_sym
       {
         "image" => service.docker_image_name,
-        "ports" => ["#{attributes[keyname]}:9292"],
+        "ports" => ["${#{service.env_name}_EXPOSED_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
         "environment" => [],
         "build" => {
           "context" => "./#{service.name}"
@@ -120,13 +139,11 @@ module Mobilis
     end
 
     def postgresql_service service
-      attributes = @project.attributes
-      keyname = "#{service.name}_internal_port_no".to_sym
       {
         "image" => "postgres:16.1-bookworm",
         "restart" => "always",
         "environment" => service.env_vars,
-        "ports" => ["#{attributes[keyname]}:5432"],
+        "ports" => ["${#{service.env_name}_EXPOSED_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
         "volumes" => [
           "${#{service.env_name}_POSTGRES_DATA}:/var/lib/postgresql/data"
         ]
@@ -134,13 +151,11 @@ module Mobilis
     end
 
     def mysql_service service
-      attributes = @project.attributes
-      keyname = "#{service.name}_internal_port_no".to_sym
       {
         "image" => "mysql:debian",
         "restart" => "always",
         "environment" => service.env_vars,
-        "ports" => ["#{attributes[keyname]}:3306"],
+        "ports" => ["${#{service.env_name}_EXPOSED_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
         "volumes" => [
           "${#{service.env_name}_MYSQL_DATA}:/var/lib/mysql"
         ]
@@ -148,14 +163,12 @@ module Mobilis
     end
 
     def redis_service service
-      attributes = @project.attributes
-      port_key = "#{service.name}_internal_port_no".to_sym
       {
         "image" => "redis:7.2.3-alpine",
         "restart" => "always",
         "command" => "redis-server --save 20 1 --loglevel warning --requirepass #{service.password}",
         "environment" => [],
-        "ports" => ["#{attributes[port_key]}:6379"],
+        "ports" => ["${#{service.env_name}_EXPOSED_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
         "volumes" => [
           "#{service.data_dir}:/data"
         ]

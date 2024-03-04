@@ -33,6 +33,12 @@ module Mobilis
       []
     end
 
+    # all caps env name
+    def env_name
+      name.upcase
+    end
+
+
     def links_to_actually_link
       children.filter { |l| !l.instance_of? Mobilis::LocalgemProject }
               .map { |l| l.name }
@@ -104,6 +110,10 @@ module Mobilis
 
     def is_datastore_project?
       false
+    end
+
+    def compose_filename
+      "./compose/#{name}.yml"
     end
 
     # generate the local file structure to support the project

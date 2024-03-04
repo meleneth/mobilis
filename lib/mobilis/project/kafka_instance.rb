@@ -11,6 +11,8 @@ module Mobilis
 
     def global_env_vars(environment)
       {
+        "#{env_name}_EXTERNAL_PORT_NO": 9999,
+        "#{env_name}_INTERNAL_PORT_NO": 9092
       }
     end
 

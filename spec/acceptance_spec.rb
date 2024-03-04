@@ -11,14 +11,14 @@ RSpec.describe "Acceptance" do
           "account" => {
             "image" => "testuser/account",
             "ports" => [
-              "10000:3000"
+              "${ACCOUNT_EXPOSED_PORT_NO}:${ACCOUNT_INTERNAL_PORT_NO}"
             ],
             "environment" => [
               "RAILS_ENV=production",
               "RAILS_MASTER_KEY=",
               "RAILS_MIN_THREADS=5",
               "RAILS_MAX_THREADS=5",
-              "DATABASE_URL=postgres://account-db:account-db_password@account-db:5432/"
+              "DATABASE_URL=${ACCOUNT_DATABASE_URL}"
             ],
             "build" => {
               "context" => "./account"
@@ -39,7 +39,7 @@ RSpec.describe "Acceptance" do
               "POSTGRES_PASSWORD=${ACCOUNT_DB_POSTGRES_PASSWORD}"
             ],
             "ports" => [
-              "10100:5432"
+              "${ACCOUNT_DB_EXPOSED_PORT_NO}:${ACCOUNT_DB_INTERNAL_PORT_NO}"
             ],
             "volumes" => [
               "${ACCOUNT_DB_POSTGRES_DATA}:/var/lib/postgresql/data"
@@ -78,7 +78,7 @@ RSpec.describe "Acceptance" do
               "RAILS_MASTER_KEY=",
               "RAILS_MIN_THREADS=5",
               "RAILS_MAX_THREADS=5",
-              "DATABASE_URL=postgres://testp-db:testp-db_password@testp-db:5432/",
+              "DATABASE_URL=${PRIME_DATABASE_URL}",
               "REDIS_HOST_CACHE=cache",
               "REDIS_PORT_CACHE=6379",
               "REDIS_PASSWORD_CACHE=cache_password"
@@ -86,7 +86,7 @@ RSpec.describe "Acceptance" do
               #              "NEW_RELIC_LICENSE_KEY=some_invalid_key_NREAL",
               #              "NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true"
             ],
-            "ports" => ["10000:3000"]
+            "ports" => ["${PRIME_EXPOSED_PORT_NO}:${PRIME_INTERNAL_PORT_NO}"]
           },
           "testp-db" => {
             "image" => "postgres:16.1-bookworm",
@@ -96,7 +96,7 @@ RSpec.describe "Acceptance" do
               "POSTGRES_USER=${TESTP_DB_POSTGRES_USER}",
               "POSTGRES_PASSWORD=${TESTP_DB_POSTGRES_PASSWORD}"
             ],
-            "ports" => ["10100:5432"],
+            "ports" => ["${TESTP_DB_EXPOSED_PORT_NO}:${TESTP_DB_INTERNAL_PORT_NO}"],
             "volumes" => [
               "${TESTP_DB_POSTGRES_DATA}:/var/lib/postgresql/data"
             ]
@@ -110,7 +110,7 @@ RSpec.describe "Acceptance" do
               "MYSQL_PASSWORD=${TESTM_DB_MYSQL_PASSWORD}",
               "MYSQL_RANDOM_ROOT_PASSWORD=true"
             ],
-            "ports" => ["10200:3306"],
+            "ports" => ["${TESTM_DB_EXPOSED_PORT_NO}:${TESTM_DB_INTERNAL_PORT_NO}"],
             "volumes" => [
               "${TESTM_DB_MYSQL_DATA}:/var/lib/mysql"
             ]
@@ -119,7 +119,7 @@ RSpec.describe "Acceptance" do
             "image" => "redis:7.2.3-alpine",
             "restart" => "always",
             "environment" => [],
-            "ports" => ["10300:6379"],
+            "ports" => ["${CACHE_EXPOSED_PORT_NO}:${CACHE_INTERNAL_PORT_NO}"],
             "command" => "redis-server --save 20 1 --loglevel warning --requirepass cache_password",
             "volumes" => [
               "./data/cache:/data"
@@ -128,7 +128,7 @@ RSpec.describe "Acceptance" do
           "somerack" => {
             "image" => "testuser/somerack",
             "ports" => [
-              "10400:9292"
+              "${SOMERACK_EXPOSED_PORT_NO}:${SOMERACK_INTERNAL_PORT_NO}"
             ],
             "environment" => [],
             "build" => {
