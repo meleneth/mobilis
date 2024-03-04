@@ -22,6 +22,8 @@ module Mobilis
 
     def global_env_vars(environment)
       {
+        "#{env_name}_INTERNAL_PORT_NO": 5432,
+        "#{env_name}_EXTERNAL_PORT_NO": 9999,
         "#{env_name}_POSTGRES_DB": "#{name}_#{environment}",
         "#{env_name}_POSTGRES_USER": name,
         "#{env_name}_POSTGRES_PASSWORD": password,

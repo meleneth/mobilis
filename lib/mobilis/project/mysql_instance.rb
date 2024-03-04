@@ -24,6 +24,8 @@ module Mobilis
 
     def global_env_vars(environment)
       {
+        "#{env_name}_EXTERNAL_PORT_NO": 9999,
+        "#{env_name}_INTERNAL_PORT_NO": 3306,
         "#{env_name}_MYSQL_USER": name,
         "#{env_name}_MYSQL_PASSWORD": password,
         "#{env_name}_MYSQL_DATA": "./data/#{environment}/#{name}",

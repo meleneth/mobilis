@@ -21,10 +21,6 @@ module Mobilis
         chdir_generate
       end
 
-      def mkdir_project_data_dir(project)
-        FileUtils.mkdir_p project_data_dir(project)
-      end
-
       def mkdir_environment(environment)
         FileUtils.mkdir_p environment_dir(environment)
       end
@@ -122,10 +118,6 @@ module Mobilis
 
       def localgems_dir
         File.join(generate_dir, "localgems")
-      end
-
-      def project_data_dir(project)
-        File.join(generate_dir, "data", project.name)
       end
     end
   end
