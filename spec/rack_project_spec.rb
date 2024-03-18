@@ -74,7 +74,7 @@ RSpec.describe "Rack Project" do
           "some_rack_project" => {
             "image" => "testuser/some_rack_project",
             "ports" => [
-              "${SOME_RACK_PROJECT_EXPOSED_PORT_NO}:${SOME_RACK_PROJECT_INTERNAL_PORT_NO}"
+              "${SOME_RACK_PROJECT_EXTERNAL_PORT_NO}:${SOME_RACK_PROJECT_INTERNAL_PORT_NO}"
             ],
             "environment" => [],
             "build" => {

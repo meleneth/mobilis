@@ -82,9 +82,10 @@ module Mobilis
       save_docker_compose
       create_datastore_directories
       create_datastore_instances
+      pull_dev_datastore_instances
+      start_dev_datastore_instances
       create_project_instances
       @directory_service.chdir_generate
-      @directory_service.git_commit_all("compose.yml")
     end
 
     def has_datastore_instance?
@@ -229,15 +230,10 @@ module Mobilis
     end
 
     def save_docker_compose
-      docker = DockerComposeProjector.project self
-
-      File.write("docker-compose.yml", docker.to_yaml)
-    end
-
-    def save_dev_docker_compose
-      docker = DockerComposeProjector.project_dev self
-
-      File.write("docker-compose-dev.yml", docker.to_yaml)
+      DockerComposeProjector.project_multi self
+      target_environments.each do |target_environment|
+        DockerComposeProjector.project_base target_environment, self
+      end
     end
 
     def project_for_data data
@@ -360,16 +356,17 @@ module Mobilis
       target_environments.each do |target_environment|
         @directory_service.mkdir_environment(target_environment)
         @directory_service.chdir_environment(target_environment)
+        # TODO: make script for creating datastore directories after checkout, since
+        # the db's will complain if they see a .gitkeep file
+        # ... or maybe make the containers rm the mounted .gitkeep file?
+        # anyways, we want it to work so here we go
         datastore_projects.each do |project|
           @directory_service.mkdir_environment_datadir_forproject(target_environment, project)
-          target_directory = @directory_service.environment_datadir_forproject(target_environment, project)
-          set_file_contents File.join(target_directory, ".gitkeep"), ""
           project.generate directory_service: @directory_service
         end
       end
-      save_dev_docker_compose
       @directory_service.chdir_generate
-      @directory_service.git_commit_all("compose-dev.yml and environment datastore projects")
+      @directory_service.git_commit_all("environment datastore projects")
     end
 
     def create_datastore_instances
@@ -378,6 +375,22 @@ module Mobilis
         datastore_projects.each do |project|
         end
       end
+    end
+
+    def pull_dev_datastore_instances
+      @directory_service.chdir_generate
+      datastore_projects.each do |project|
+        system "docker compose -f compose-development.yml pull #{project.name}"
+      end
+    end
+
+    def start_dev_datastore_instances
+      @directory_service.chdir_generate
+      datastore_projects.each do |project|
+        system "docker compose -f compose-development.yml start #{project.name}"
+      end
+      puts "Sleeping for one minute to give the DB's time to initialize..."
+      sleep 60
     end
 
     def create_project_instances

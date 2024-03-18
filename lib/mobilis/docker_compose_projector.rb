@@ -6,31 +6,39 @@ module Mobilis
       10
     end
 
+    def self.project_multi project
+      projector = DockerComposeProjector.new project
+      project.projects.each_with_index do |service, index|
+        services = {}
+        services[service.name] = projector.render_single_service service
+        info = {"version" => "3.8", "services" => services}
+        File.open(service.compose_filename, "w") do |f|
+          f.write info.to_yaml
+        end
+      end
+    end
+
+    def self.project_base target_environment, project
+      includes = []
+      project.projects.each do |project|
+        next unless project.is_service_project
+        project_path = "./compose/#{project.name}.yml"
+        project_env = "./compose/#{target_environment}.env"
+        includes << {"path" =>  project_path, "project_directory" => "./", "env_file" => project_env}
+      end
+      info = {"version" => "3.8", "include" => includes}
+      File.open("compose-#{target_environment}.yml", "w") do |f|
+        f.write(info.to_yaml)
+      end
+    end
+
     def self.project_dev project
       projector = DockerComposeProjector.new project
 
       services = {}
       project.datastore_projects.each_with_index do |service, index|
-        service_definition = projector.send "#{service.type}_service", service
-        if service_definition
-          if service.linked_to_localgem_project
-            service_definition["build"] = {
-              "context" => "./",
-              "dockerfile" => "./#{service.name}/Dockerfile"
-            }
-          end
-          services[service.name] = service_definition
-          if service.links.count > 0
-            services[service.name]["links"] = service.links_to_actually_link.map(&:to_s)
-            services[service.name]["depends_on"] = service.links_to_actually_link.map(&:to_s)
-            service.links.each do |link|
-              linked_service = project.project_by_name link
-              linked_service.child_env_vars.each do |var|
-                services[service.name]["environment"] << var
-              end
-            end
-          end
-        end
+        next unless service.is_service_project
+        services[service.name] = projector.render_single_service service
       end
       {"version" => "3.8", "services" => services}
     end
@@ -90,7 +98,7 @@ module Mobilis
     def kafka_service service
       {
         "image" => 'bitnami/kafka:latest',
-        "ports" => ["${#{service.env_name}_EXPOSED_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
+        "ports" => ["${#{service.env_name}_EXTERNAL_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
         "environment" => [
           "KAFKA_CFG_NODE_ID=0",
           "KAFKA_CFG_PROCESS_ROLES=controller,broker",
@@ -119,7 +127,7 @@ module Mobilis
       # vars << "NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true"
       {
         "image" => service.docker_image_name,
-        "ports" => ["${#{service.env_name}_EXPOSED_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
+        "ports" => ["${#{service.env_name}_EXTERNAL_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
         "environment" => vars,
         "build" => {
           "context" => "./#{service.name}"
@@ -130,7 +138,7 @@ module Mobilis
     def rack_service service
       {
         "image" => service.docker_image_name,
-        "ports" => ["${#{service.env_name}_EXPOSED_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
+        "ports" => ["${#{service.env_name}_EXTERNAL_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
         "environment" => [],
         "build" => {
           "context" => "./#{service.name}"
@@ -143,7 +151,7 @@ module Mobilis
         "image" => "postgres:16.1-bookworm",
         "restart" => "always",
         "environment" => service.env_vars,
-        "ports" => ["${#{service.env_name}_EXPOSED_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
+        "ports" => ["${#{service.env_name}_EXTERNAL_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
         "volumes" => [
           "${#{service.env_name}_POSTGRES_DATA}:/var/lib/postgresql/data"
         ]
@@ -155,7 +163,7 @@ module Mobilis
         "image" => "mysql:debian",
         "restart" => "always",
         "environment" => service.env_vars,
-        "ports" => ["${#{service.env_name}_EXPOSED_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
+        "ports" => ["${#{service.env_name}_EXTERNAL_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
         "volumes" => [
           "${#{service.env_name}_MYSQL_DATA}:/var/lib/mysql"
         ]
@@ -168,7 +176,7 @@ module Mobilis
         "restart" => "always",
         "command" => "redis-server --save 20 1 --loglevel warning --requirepass #{service.password}",
         "environment" => [],
-        "ports" => ["${#{service.env_name}_EXPOSED_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
+        "ports" => ["${#{service.env_name}_EXTERNAL_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
         "volumes" => [
           "#{service.data_dir}:/data"
         ]

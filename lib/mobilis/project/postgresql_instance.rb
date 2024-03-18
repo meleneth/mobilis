@@ -20,16 +20,21 @@ module Mobilis
       ]
     end
 
+
     def global_env_vars(environment)
-      {
+      vars = {
         "#{env_name}_INTERNAL_PORT_NO": 5432,
-        "#{env_name}_EXTERNAL_PORT_NO": 9999,
+        "#{env_name}_EXTERNAL_PORT_NO": 'AUTO_EXTERNAL_PORT',
         "#{env_name}_POSTGRES_DB": "#{name}_#{environment}",
         "#{env_name}_POSTGRES_USER": name,
         "#{env_name}_POSTGRES_PASSWORD": password,
         "#{env_name}_POSTGRES_DATA": "./data/#{environment}/#{name}",
         "#{env_name}_POSTGRES_URL": url
       }
+      if linked_to_rails_project
+        vars["#{linked_to_rails_project.env_name}_DATABASE_URL"] = url
+      end
+      vars
     end
 
     def env_var

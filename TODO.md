@@ -1,3 +1,8 @@
+Moar FIRE
+currently working up to the point of not generating different ports for different services to listen on.
+
+Otherwise, things build.  OMG.
+
 
 # Currently Burning
 
