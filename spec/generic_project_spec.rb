@@ -52,7 +52,7 @@ RSpec.describe "Generic Project" do
               "RAILS_MIN_THREADS=5",
               "RAILS_MAX_THREADS=5"
             ],
-            "ports" => ["${PRIME_EXPOSED_PORT_NO}:${PRIME_INTERNAL_PORT_NO}"]
+            "ports" => ["${PRIME_EXTERNAL_PORT_NO}:${PRIME_INTERNAL_PORT_NO}"]
           }
         }
       }

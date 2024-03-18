@@ -17,7 +17,7 @@ RSpec.describe "Redis Instance" do
             "restart" => "always",
             "command" => "redis-server --save 20 1 --loglevel warning --requirepass cache_password",
             "environment" => [],
-            "ports" => ["${CACHE_EXPOSED_PORT_NO}:${CACHE_INTERNAL_PORT_NO}"],
+            "ports" => ["${CACHE_EXTERNAL_PORT_NO}:${CACHE_INTERNAL_PORT_NO}"],
             "volumes" => [
               "./data/cache:/data"
             ]

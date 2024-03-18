@@ -226,6 +226,8 @@ module Mobilis
         /tmp/*
         !/log/.keep
         !/tmp/.keep
+
+        data
         
         # TODO Comment out this rule if you are OK with secrets being uploaded to the repo
         config/initializers/secret_token.rb
@@ -361,7 +363,7 @@ $@
 
     def global_env_vars(environment)
       {
-        "#{env_name}_EXTERNAL_PORT_NO": 9999,
+        "#{env_name}_EXTERNAL_PORT_NO": 'AUTO_EXTERNAL_PORT',
         "#{env_name}_INTERNAL_PORT_NO": 3000
       }
     end

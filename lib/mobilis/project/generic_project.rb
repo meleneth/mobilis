@@ -125,5 +125,9 @@ module Mobilis
       {
       }
     end
+
+    def is_service_project
+      true
+    end
   end
 end
