@@ -31,6 +31,10 @@ module Mobilis::InteractiveDesigner
         transition [:main_menu] => :create_demo_project
       end
 
+      event :go_create_simple_demo_project do
+        transition [:main_menu] => :create_simple_demo_project
+      end
+
       event :go_build do
         transition [:main_menu] => :build
       end
@@ -53,6 +57,7 @@ module Mobilis::InteractiveDesigner
         transition [:add_project_menu] => :main_menu
         transition [:generate] => :main_menu
         transition [:create_demo_project] => :main_menu
+        transition [:create_simple_demo_project] => :main_menu
         transition [:main_menu] => :finished
       end
 
@@ -90,6 +95,7 @@ module Mobilis::InteractiveDesigner
           menu_items = [
             {name: "reload all code", value: -> { reload! }},
             {name: "[m] Add project", value: -> { go_add_project_menu }},
+            {name: "[m] Create simple demo project", value: -> { go_create_simple_demo_project }},
             {name: "[m] Create demo project", value: -> { go_create_demo_project }},
             {name: "[m] Edit existing project", value: -> { go_edit_project_menu }},
             {name: "[m] Show configuration", value: -> { go_show_configuration }}
@@ -242,6 +248,39 @@ module Mobilis::InteractiveDesigner
           @project.new_relic do
             set_license_key "some_invalid_key_NREAL"
             enable_distributed_tracing
+          end
+
+          go_back
+        end
+      end
+
+      state :create_simple_demo_project do
+        def choices = false
+
+        def display = false
+
+        def create_rails_service_with_postgres_db service_name
+        end
+
+        def action
+          @project = ::Mobilis::Project.new
+          @project.add_localgem_project "api_models"
+          services = Hash.new
+          models = Hash.new
+
+          postgres_prime_rails_projects = %w[user]
+          postgres_prime_rails_projects.each do |name|
+            new_service = @project.add_prime_stack_rails_project "#{name}_service"
+            new_service.add_linked_postgresql_instance("#{name}_db")
+            new_service.toggle_uuid_primary_keys
+            services[name] = new_service
+          end
+
+          service_tables = %w[user]
+          service_tables.each do |name|
+            model = services[name].add_model name
+            model.add_field(name: "name", type: Mobilis::RAILS_MODEL_TYPE_STRING)
+            models[name] = model
           end
 
           go_back
