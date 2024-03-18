@@ -220,8 +220,8 @@ module Mobilis
 
     def load_from_file filename
       data = File.read filename
-      @data = JSON.parse data, { symbolize_names: true }
-      @projects = @data[:projects].map {|p| project_for_line(p) }
+      @data = JSON.parse data, {symbolize_names: true}
+      @projects = @data[:projects].map {|p| project_for_line(p)}
       @data[:projects] = []
     end
 
