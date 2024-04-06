@@ -1,5 +1,6 @@
 ## [Unreleased]
-
+- when scaffolding models, the test db containers will be spun up since rails talks to the db at scaffold time
+- generated compose is now multiple files, allowing for multiple environment deployments for groups of related services
 - a huge amount of refactoring of the main FSM.  Everything is likely broken, but tests are coming
 - changed uid / gid to hardcoded value of '200' in the rails builder image
   to let it work in Windows.  Will need to re-test linux and mac
