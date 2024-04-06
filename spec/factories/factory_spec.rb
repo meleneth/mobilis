@@ -16,7 +16,7 @@ RSpec.describe 'Factories' do
     end
     it "mention things to force them to build" do
       expect(fsm.state).to eq("main_menu")
-      fsm.choices[2][:value].call
+      fsm.choices[4][:value].call
       expect(fsm.state).to eq("edit_project_menu")
       expect(fsm.choices[0][:name]).to eq("return to Main Menu")
       expect(fsm.project.projects[0]).to eq(rails_project)
