@@ -19,6 +19,9 @@ This will start the console based user interface.
 Add projects of the various kinds.  The input doesn't save you from mistakes
 like entering spaces for service names, so don't do it.
 
+Do not use dashes or underscores for database names.  Underscores are invalid in hostnames,
+and dashes are invalid in ??? yaml keys?
+
 If you need any containers to connect to other containers via the internal
 names, you will want to add a link from the project that is connecting to the
 project that is being connected to.
