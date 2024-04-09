@@ -107,7 +107,8 @@ module Mobilis
         env_vars.each do |key, value|
           actual_value = value
           actual_value = next_auto_port_no if value == 'AUTO_EXTERNAL_PORT'
-          env_lines << "#{key}=#{actual_value}\n"
+          actual_key = key.to_s.tr("-", "_")
+          env_lines << "#{actual_key}=#{actual_value}\n"
         end
         set_file_contents("compose/#{environment}.env", env_lines.join(""))
       end

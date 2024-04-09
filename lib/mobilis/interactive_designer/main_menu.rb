@@ -223,7 +223,7 @@ module Mobilis::InteractiveDesigner
           postgres_prime_rails_projects = %w[organization account user credential authorization notification authentication_domain group]
           postgres_prime_rails_projects.each do |name|
             new_service = @project.add_prime_stack_rails_project "#{name}-service"
-            new_service.add_linked_postgresql_instance("#{name}-db")
+            new_service.add_linked_postgresql_instance("#{name}db")
             new_service.add_link "api_models"
             new_service.toggle_uuid_primary_keys
             services[name] = new_service
@@ -271,7 +271,7 @@ module Mobilis::InteractiveDesigner
           postgres_prime_rails_projects = %w[user]
           postgres_prime_rails_projects.each do |name|
             new_service = @project.add_prime_stack_rails_project "#{name}-service"
-            new_service.add_linked_postgresql_instance("#{name}-db")
+            new_service.add_linked_postgresql_instance("#{name}db")
             new_service.toggle_uuid_primary_keys
             services[name] = new_service
           end

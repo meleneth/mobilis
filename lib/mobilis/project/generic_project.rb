@@ -35,7 +35,7 @@ module Mobilis
 
     # all caps env name
     def env_name
-      name.upcase
+      name.upcase.tr("-", "_")
     end
 
 
