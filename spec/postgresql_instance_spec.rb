@@ -38,12 +38,25 @@ RSpec.describe "Postgresql Instance" do
       project.add_postgresql_instance "test-db"
       expect(project.projects[0].global_env_vars("test")).to eq({
         TEST_DB_INTERNAL_PORT_NO: 5432,
-        TEST_DB_EXTERNAL_PORT_NO: 'AUTO_EXTERNAL_PORT',
-        TEST_DB_POSTGRES_DB: "test-db_test",
-        TEST_DB_POSTGRES_USER: "test-db",
-        TEST_DB_POSTGRES_PASSWORD: "test-db_password",
+        TEST_DB_EXTERNAL_PORT_NO: "AUTO_EXTERNAL_PORT",
+        TEST_DB_POSTGRES_DB: "test-db-test",
+        TEST_DB_POSTGRES_USER: "test-db-test-user",
+        TEST_DB_POSTGRES_PASSWORD: "test-db-test-password",
         TEST_DB_POSTGRES_DATA: "./data/test/test-db",
-        TEST_DB_POSTGRES_URL: "postgres://test-db:test-db_password@test-db:5432/"
+        TEST_DB_POSTGRES_URL: "postgres://test-db-test-user:test-db-test-password@test-db:5432/test-db-test"
+      })
+    end
+
+    it "some items change based on env" do
+      project.add_postgresql_instance "test-db"
+      expect(project.projects[0].global_env_vars("development")).to eq({
+        TEST_DB_INTERNAL_PORT_NO: 5432,
+        TEST_DB_EXTERNAL_PORT_NO: "AUTO_EXTERNAL_PORT",
+        TEST_DB_POSTGRES_DB: "test-db-development",
+        TEST_DB_POSTGRES_USER: "test-db-development-user",
+        TEST_DB_POSTGRES_PASSWORD: "test-db-development-password",
+        TEST_DB_POSTGRES_DATA: "./data/development/test-db",
+        TEST_DB_POSTGRES_URL: "postgres://test-db-development-user:test-db-development-password@test-db:5432/test-db-development"
       })
     end
   end

@@ -24,15 +24,15 @@ module Mobilis
     def global_env_vars(environment)
       vars = {
         "#{env_name}_INTERNAL_PORT_NO": 5432,
-        "#{env_name}_EXTERNAL_PORT_NO": 'AUTO_EXTERNAL_PORT',
-        "#{env_name}_POSTGRES_DB": "#{name}_#{environment}",
-        "#{env_name}_POSTGRES_USER": name,
-        "#{env_name}_POSTGRES_PASSWORD": password,
+        "#{env_name}_EXTERNAL_PORT_NO": "AUTO_EXTERNAL_PORT",
+        "#{env_name}_POSTGRES_DB": "#{name}-#{environment}",
+        "#{env_name}_POSTGRES_USER": username(environment),
+        "#{env_name}_POSTGRES_PASSWORD": password(environment),
         "#{env_name}_POSTGRES_DATA": "./data/#{environment}/#{name}",
-        "#{env_name}_POSTGRES_URL": url
+        "#{env_name}_POSTGRES_URL": url(environment)
       }
       if linked_to_rails_project
-        vars["#{linked_to_rails_project.env_name}_DATABASE_URL"] = url
+        vars["#{linked_to_rails_project.env_name}_DATABASE_URL"] = url(environment)
       end
       vars
     end
@@ -53,16 +53,16 @@ module Mobilis
       false
     end
 
-    def url
-      "postgres://#{username}:#{password}@#{name}:5432/"
+    def password(environment)
+      "#{name}-#{environment}-password"
     end
 
-    def username
-      name
+    def url(environment)
+      "postgres://#{username(environment)}:#{password(environment)}@#{name}:5432/#{name}-#{environment}"
     end
 
-    def password
-      "#{name}_password"
+    def username(environment)
+      "#{name}-#{environment}-user"
     end
 
     def is_datastore_project?

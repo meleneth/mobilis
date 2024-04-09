@@ -102,6 +102,7 @@ module Mobilis
         projects.each do |project|
           env_vars.merge! project.global_env_vars(environment)
         end
+        env_vars.merge! { "ENVIRONMENT" => environment }
         env_lines = []
         env_vars.each do |key, value|
           actual_value = value
@@ -210,7 +211,7 @@ module Mobilis
     def build
       #  logger.info "# build"
       return_to_target_directory
-      run_command "docker compose build"
+      run_command "docker compose -f compose-development.yml build"
     end
 
     def rails_builder_image
