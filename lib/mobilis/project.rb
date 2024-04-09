@@ -22,6 +22,7 @@ module Mobilis
         port_gap: 100,
         name: "generate"
       }
+      @auto_port_index = 0
       @projects = []
       @directory_service = Mobilis::Services::Directory.new
     end
@@ -103,7 +104,9 @@ module Mobilis
         end
         env_lines = []
         env_vars.each do |key, value|
-          env_lines << "#{key}=#{value}\n"
+          actual_value = value
+          actual_value = next_auto_port_no if value == 'AUTO_EXTERNAL_PORT'
+          env_lines << "#{key}=#{actual_value}\n"
         end
         set_file_contents("compose/#{environment}.env", env_lines.join(""))
       end
@@ -398,6 +401,11 @@ module Mobilis
       non_datastore_projects.each do |project|
         project.generate directory_service: @directory_service
       end
+    end
+
+    def next_auto_port_no
+      @auto_port_index += 1
+      @data[:starting_port_no] + (@data[:port_gap] * @auto_port_index)
     end
   end
 end
