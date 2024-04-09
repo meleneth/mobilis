@@ -26,7 +26,11 @@ module Mobilis
         project_env = "./compose/#{target_environment}.env"
         includes << {"path" =>  project_path, "project_directory" => "./", "env_file" => project_env}
       end
-      info = {"version" => "3.8", "include" => includes}
+      info = {
+        "version" => "3.8",
+        "include" => includes,
+        "name" => "#{project.name}-#{target_environment}"
+      }
       File.open("compose-#{target_environment}.yml", "w") do |f|
         f.write(info.to_yaml)
       end

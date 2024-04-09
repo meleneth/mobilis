@@ -195,6 +195,7 @@ module Mobilis
         RUN bundle install
         COPY . /myapp
 
+        COPY --chmod=0755 wait-until /myapp/wait-until
         # Add a script to be executed every time the container starts.
         RUN chmod +x /myapp/entrypoint.sh
         ENTRYPOINT ["/myapp/entrypoint.sh"]
@@ -303,7 +304,7 @@ module Mobilis
       # TODO FIXME
       if database.instance_of? Mobilis::PostgresqlInstance
         return <<~POSTGRES_LINE
-          /myapp/wait-until "psql postgres://#{database.username}:#{database.password}@#{database.name}/#{name}_production -c 'select 1'"
+          /myapp/wait-until "psql $DATABASE_URL -c 'select 1'"
         POSTGRES_LINE
       end
 

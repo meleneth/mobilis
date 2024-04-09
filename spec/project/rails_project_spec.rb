@@ -64,7 +64,7 @@ RSpec.describe "Rails Project" do
       project.add_postgresql_instance "testp-db"
       prime_stack.set_links(["testp-db"])
       expect(prime_stack.wait_until_line).to eq <<~POSTGRES_LINE
-        /myapp/wait-until "psql postgres://testp-db:testp-db_password@testp-db/prime_production -c 'select 1'"
+        /myapp/wait-until "psql $DATABASE_URL -c 'select 1'"
       POSTGRES_LINE
     end
   end
