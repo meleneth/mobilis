@@ -220,7 +220,7 @@ module Mobilis::InteractiveDesigner
           services = Hash.new
           models = Hash.new
 
-          postgres_prime_rails_projects = %w[organization account user credential authorization notification authentication_domain group]
+          postgres_prime_rails_projects = %w[organization account user credential authorization notification authenticationdomain group]
           postgres_prime_rails_projects.each do |name|
             new_service = @project.add_prime_stack_rails_project "#{name}-service"
             new_service.add_linked_postgresql_instance("#{name}db")
@@ -234,7 +234,7 @@ module Mobilis::InteractiveDesigner
             services[name].add_link "api_models"
           end
 
-          service_tables = %w[organization account user authentication_domain]
+          service_tables = %w[organization account user authenticationdomain]
           service_tables.each do |name|
             model = services[name].add_model name
             model.add_field(name: "name", type: Mobilis::RAILS_MODEL_TYPE_STRING)
@@ -242,7 +242,7 @@ module Mobilis::InteractiveDesigner
           end
 
           models["account"].add_field(name: "organization_id", type: Mobilis::RAILS_MODEL_TYPE_UUID)
-          models["authentication_domain"].add_field(name: "account_id", type: Mobilis::RAILS_MODEL_TYPE_UUID)
+          models["authenticationdomain"].add_field(name: "account_id", type: Mobilis::RAILS_MODEL_TYPE_UUID)
           models["user"].add_field(name: "authentication_domain_id", type: Mobilis::RAILS_MODEL_TYPE_UUID)
 
           @project.new_relic do

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'debug'
+
 # rubocop:disable Metrics/ClassLength
 module Mobilis
   class RailsProject < GenericProject

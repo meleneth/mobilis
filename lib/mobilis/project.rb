@@ -393,6 +393,7 @@ module Mobilis
     def start_dev_datastore_instances
       @directory_service.chdir_generate
       datastore_projects.each do |project|
+        puts "Starting datastore project #{project.name}"
         system "docker compose -f compose-development.yml start #{project.name}"
       end
       puts "Sleeping for one minute to give the DB's time to initialize..."
