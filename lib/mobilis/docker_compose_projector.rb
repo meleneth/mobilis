@@ -24,7 +24,11 @@ module Mobilis
         next unless project.is_service_project
         project_path = "./compose/#{project.name}.yml"
         project_env = "./compose/#{target_environment}.env"
-        includes << {"path" =>  project_path, "project_directory" => "./", "env_file" => project_env}
+        includes << {
+          "path" => project_path,
+          "project_directory" => "./",
+          "env_file" => project_env
+        }
       end
       info = {
         "version" => "3.8",

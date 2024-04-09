@@ -117,8 +117,6 @@ module Mobilis
       generate_bundle_run
       Mobilis.logger.info "-- generating .gitignore"
       generate_gitignore
-      Mobilis.logger.info "-- reading rails master key"
-      read_rails_master_key
       Mobilis.logger.info "-- installing rspec (maybe)"
       install_rspec if options.include? :rspec
       Mobilis.logger.info "-- installing factory bot (maybe)"
@@ -136,7 +134,13 @@ module Mobilis
       generate_build_sh
       bundle_install
       Mobilis.logger.info "-- git commit add Dockerfile and build script etc"
+      directory_service.chdir_project(self)
       directory_service.git_commit_all "add Dockerfile and build script etc"
+      Mobilis.logger.info "-- reading rails master key"
+      directory_service.chdir_project(self)
+      read_rails_master_key
+      patchup_master_key_env
+      directory_service.git_commit_all "set rails master key"
       directory_service.chdir_project(self)
       if models.length > 0
         generate_models
@@ -151,6 +155,12 @@ module Mobilis
 
     def rails_master_key
       @data[:attributes][:rails_master_key]
+    end
+
+    def patchup_master_key_env
+      lines = FileLines.from_file(filename: "../compose/#{name}.yml")
+      lines.gsub!(/- RAILS_MASTER_KEY=$/, "- RAILS_MASTER_KEY=#{rails_master_key}")
+      lines.save
     end
 
     def generate_wait_until

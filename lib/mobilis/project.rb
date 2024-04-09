@@ -77,6 +77,7 @@ module Mobilis
       save_project
       Git.init
       @directory_service.chdir_generate
+      File.write(".gitignore", "data")
       @directory_service.git_commit_all("Project export")
       @directory_service.mkdir_compose
       generate_env_files
