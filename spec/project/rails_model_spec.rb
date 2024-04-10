@@ -4,7 +4,7 @@ RSpec.describe "Rails Model" do
   let(:model) { build(:rails_model, name: "SomeModel") }
 
   it "#line" do
-    expect(model.line).to eq("rails g scaffold SomeModel ")
+    expect(model.line).to eq("./bin/rails g scaffold SomeModel ")
   end
 
   describe "#to_h" do
