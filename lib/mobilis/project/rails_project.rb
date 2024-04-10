@@ -100,12 +100,24 @@ module Mobilis
       "#{@metaproject.username}/rails-builder"
     end
 
+    def rails_image
+      "#{@metaproject.username}/#{name}"
+    end
+
     def rails_run_command command
       run_docker "run --rm -v #{getwd}:/usr/src/app -w /usr/src/app #{rails_builder_image} #{command}"
     end
 
+    def project_rails_run_command command
+      run_docker "run --rm -v #{getwd}:/myapp -w /myapp #{rails_image} #{command}"
+    end
+
     def bundle_run command
       rails_run_command "./bundle_run.sh #{command}"
+    end
+
+    def project_bundle_run command
+      project_rails_run_command "./bundle_run.sh #{command}"
     end
 
     def generate(directory_service:)
@@ -145,7 +157,7 @@ module Mobilis
       directory_service.git_commit_all "set rails master key"
       directory_service.chdir_project(self)
       if models.length > 0
-        generate_models
+        generate_models directory_service
         directory_service.git_commit_all "add Models"
         directory_service.chdir_project(self)
       end
@@ -188,28 +200,55 @@ module Mobilis
       WAITUNTIL
     end
 
-    def generate_models
+    def generate_models(directory_service)
       models.each do |model|
+        directory_service.chdir_generate
+        build_image(directory_service)
+        directory_service.chdir_project(self)
         puts "Generating model #{model.name}"
-        bundle_run model.line
+        project_bundle_run model.line
       end
+    end
+
+    def build_image(directory_service)
+      directory_service.chdir_generate
+      comment_out_cmd(directory_service)
+      run_docker "compose -f compose-development.yml build #{name}"
+      uncomment_cmd(directory_service)
+    end
+
+    def comment_out_cmd(directory_service)
+      directory_service.chdir_generate
+      lines = FileLines.from_file(filename: "./#{name}/Dockerfile")
+      lines.gsub! 'CMD ["rails", "server", "-b", "0.0.0.0"]', '# CMD ["rails", "server", "-b", "0.0.0.0"]'
+      lines.gsub! 'ENTRYPOINT ["/myapp/entrypoint.sh"]', '# ENTRYPOINT ["/myapp/entrypoint.sh"]'
+      lines.save
+    end
+
+    def uncomment_cmd(directory_service)
+      directory_service.chdir_generate
+      lines = FileLines.from_file(filename: "./#{name}/Dockerfile")
+      lines.gsub! '# CMD ["rails", "server", "-b", "0.0.0.0"]', 'CMD ["rails", "server", "-b", "0.0.0.0"]'
+      lines.gsub! '# ENTRYPOINT ["/myapp/entrypoint.sh"]', 'ENTRYPOINT ["/myapp/entrypoint.sh"]'
+      lines.save
     end
 
     def generate_Dockerfile
       set_file_contents "Dockerfile", <<~DOCKER_END
         FROM ruby:latest
         RUN apt-get update -qq && apt-get install -y nodejs postgresql-client default-mysql-client dos2unix
+
         WORKDIR /myapp
-        COPY --chmod=0755 wait-until /myapp/wait-until
         COPY Gemfile /myapp/Gemfile
         COPY Gemfile.lock /myapp/Gemfile.lock
         RUN bundle config set --local path 'vendor/bundle'
         RUN bundle install
-        COPY . /myapp
 
+        COPY . /myapp
         COPY --chmod=0755 wait-until /myapp/wait-until
+        COPY --chmod=0755 entrypoint.sh /myapp/entrypoint.sh
+
         # Add a script to be executed every time the container starts.
-        RUN chmod +x /myapp/entrypoint.sh
         ENTRYPOINT ["/myapp/entrypoint.sh"]
         EXPOSE 3000
         RUN dos2unix /myapp/entrypoint.sh

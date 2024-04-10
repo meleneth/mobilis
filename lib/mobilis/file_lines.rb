@@ -46,12 +46,6 @@ module Mobilis
       "#{@lines.join "\n"}\n"
     end
 
-    def tr!(source, destination)
-      @lines.each do |l|
-        l.tr!(source, destination)
-      end
-    end
-
     def gsub!(pattern, replacement)
       @lines.each do |l|
         l.gsub!(pattern, replacement)

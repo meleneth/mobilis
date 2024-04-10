@@ -14,7 +14,7 @@ module Mobilis
 
     def line
       my_fields = @fields.map { |f| f.for_line }
-      "rails g scaffold #{name} #{my_fields.join(' ')}"
+      "./bin/rails g scaffold #{name} #{my_fields.join(' ')}"
     end
 
     def add_field(name:, type:)

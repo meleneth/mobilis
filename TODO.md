@@ -1,3 +1,31 @@
+Trying to fix the permissions issue with initdb, specifically for postgres
+Prototype for the solve for this works, which involves using the postgres image directly to create the db files, along with ro-mounting the /etc/passwd file from the host into the image.  Kinda gnarly, will clearly want a command line program to be able to 'do this' for any targettable selection of test, development, production environments per-dataservice.
+
+Simple demo now builds and is startable.
+
+Non simple demo fails because it's using the rails-builder image to run model scaffolds, which require access
+to the dev database to be able to run.  Unsure why the single case works, probably don't wanna know.
+So next is conversion of the scaffold calls being run in the container they are for.  This will require a build
+of the container before we try to use it, but also gets weird because we'll want to be able to run a command
+instead of the default container thing.  Wouldn't be a bad idea to be setup for that anyways, if we can figure
+out a clean way of doing it.
+
+so apparently
+
+ENTRYPOINT [ "/myapp/entrypoint.sh" ]
+CMD [ "rails", "server", "-p", "3000" ]
+
+work together.  CMD existing interferes with being able to run 
+
+docker run --rm -v /home/meleneth/code/devscene/drowning/generate/user-service:/myapp -w /myapp meleneth/user-service ./bundle_run.sh ./bin/rails g scaffold user name:string
+
+but it works if the container is built with CMD commented out
+
+which is pretty neat, I about jumped out of my chair when I generated my first scaffold with the rails inside the container that it was adding the scaffold to
+
+Which works and is integrated now.
+
+
 Moar FIRE
 currently working up to the point of not generating different ports for different services to listen on.
 
