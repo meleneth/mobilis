@@ -20,12 +20,15 @@ module Mobilis
       ]
     end
 
+    def db_name(environment)
+      "#{name}-#{environment}"
+    end
 
     def global_env_vars(environment)
       vars = {
         "#{env_name}_INTERNAL_PORT_NO": 5432,
         "#{env_name}_EXTERNAL_PORT_NO": "AUTO_EXTERNAL_PORT",
-        "#{env_name}_POSTGRES_DB": "#{name}-#{environment}",
+        "#{env_name}_POSTGRES_DB": db_name(environment),
         "#{env_name}_POSTGRES_USER": username(environment),
         "#{env_name}_POSTGRES_PASSWORD": password(environment),
         "#{env_name}_POSTGRES_DATA": "./data/#{environment}/#{name}",
@@ -42,7 +45,7 @@ module Mobilis
     end
 
     def env_name
-      name.upcase.tr("-", "_")
+      name.upcase.tr("-_", "")
     end
 
     def data_dir

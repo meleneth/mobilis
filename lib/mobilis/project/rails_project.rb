@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'debug'
+require 'socket'
 
 # rubocop:disable Metrics/ClassLength
 module Mobilis
@@ -108,16 +109,16 @@ module Mobilis
       run_docker "run --rm -v #{getwd}:/usr/src/app -w /usr/src/app #{rails_builder_image} #{command}"
     end
 
-    def project_rails_run_command command
-      run_docker "run --rm -v #{getwd}:/myapp -w /myapp #{rails_image} #{command}"
+    def project_rails_run_command command, extra_args = ""
+      run_docker "run --rm -v #{getwd}:/myapp -w /myapp #{extra_args} #{rails_image} #{command}"
     end
 
     def bundle_run command
       rails_run_command "./bundle_run.sh #{command}"
     end
 
-    def project_bundle_run command
-      project_rails_run_command "./bundle_run.sh #{command}"
+    def project_bundle_run command, extra_args = ""
+      project_rails_run_command "./bundle_run.sh #{command}", extra_args
     end
 
     def generate(directory_service:)
@@ -125,7 +126,7 @@ module Mobilis
       rails_run_command rails_new_command_line
       directory_service.chdir_project(self)
       Mobilis.logger.info "-- commiting rails new"
-      directory_service.git_commit_all "rails new"
+      directory_service.git_commit_all "#{name} - rails new"
       directory_service.chdir_project(self)
       Mobilis.logger.info "-- generating bundle run"
       generate_bundle_run
@@ -136,7 +137,7 @@ module Mobilis
       Mobilis.logger.info "-- installing factory bot (maybe)"
       install_factory_bot if options.include? :factory_bot
       Mobilis.logger.info "-- git commit add Gems"
-      directory_service.git_commit_all "add Gems"
+      directory_service.git_commit_all "#{name} - add Gems"
       directory_service.chdir_project(self)
       Mobilis.logger.info "-- generate_wait_until"
       generate_wait_until
@@ -146,19 +147,18 @@ module Mobilis
       generate_entrypoint_sh
       Mobilis.logger.info "-- generate_build_sh"
       generate_build_sh
-      bundle_install
       Mobilis.logger.info "-- git commit add Dockerfile and build script etc"
       directory_service.chdir_project(self)
-      directory_service.git_commit_all "add Dockerfile and build script etc"
+      directory_service.git_commit_all "#{name} - add Dockerfile and build script etc"
       Mobilis.logger.info "-- reading rails master key"
       directory_service.chdir_project(self)
       read_rails_master_key
       patchup_master_key_env
-      directory_service.git_commit_all "set rails master key"
+      directory_service.git_commit_all "#{name} - set rails master key"
       directory_service.chdir_project(self)
       if models.length > 0
         generate_models directory_service
-        directory_service.git_commit_all "add Models"
+        directory_service.git_commit_all "#{name} - add Models"
         directory_service.chdir_project(self)
       end
     end
@@ -206,7 +206,11 @@ module Mobilis
         build_image(directory_service)
         directory_service.chdir_project(self)
         puts "Generating model #{model.name}"
-        project_bundle_run model.line
+        hostname = Socket.gethostname
+        lines = FileLines.from_file(filename: "../compose/development.env")
+        db = database
+        external_db_port = lines.get_value("#{db.name}_EXTERNAL_PORT_NO")
+        project_bundle_run model.line, "-e DATABASE_URL=postgres://#{db.name}-development-user:#{db.name}-development-password@#{hostname}:#{external_db_port}/#{db.name}-development"
       end
     end
 
@@ -239,14 +243,14 @@ module Mobilis
         RUN apt-get update -qq && apt-get install -y nodejs postgresql-client default-mysql-client dos2unix
 
         WORKDIR /myapp
-        COPY Gemfile /myapp/Gemfile
-        COPY Gemfile.lock /myapp/Gemfile.lock
+        COPY ./#{name}/Gemfile /myapp/Gemfile
+        COPY ./#{name}/Gemfile.lock /myapp/Gemfile.lock
         RUN bundle config set --local path 'vendor/bundle'
         RUN bundle install
 
-        COPY . /myapp
-        COPY --chmod=0755 wait-until /myapp/wait-until
-        COPY --chmod=0755 entrypoint.sh /myapp/entrypoint.sh
+        COPY ./#{name} /myapp
+        COPY --chmod=0755 ./#{name}/wait-until /myapp/wait-until
+        COPY --chmod=0755 ./#{name}/entrypoint.sh /myapp/entrypoint.sh
 
         # Add a script to be executed every time the container starts.
         ENTRYPOINT ["/myapp/entrypoint.sh"]

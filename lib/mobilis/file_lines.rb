@@ -46,6 +46,16 @@ module Mobilis
       "#{@lines.join "\n"}\n"
     end
 
+    def get_value(key)
+      key = key.upcase
+      key.tr!("-", "_")
+      key = "#{key}="
+      @lines.each do |line|
+        return line.delete_prefix(key) if line.start_with? key
+      end
+      raise "Could not get value #{key} from", @lines
+    end
+
     def gsub!(pattern, replacement)
       @lines.each do |l|
         l.gsub!(pattern, replacement)

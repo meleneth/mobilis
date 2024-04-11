@@ -94,6 +94,10 @@ module Mobilis
       projects.any?(&:is_datastore_project?)
     end
 
+    def runasuser
+      "#{Process.uid}:#{Process.gid}"
+    end
+
     def generate_env_files
       set_file_contents ".env", <<~EOF
         NEW_RELIC_LICENSE_KEY=
@@ -103,7 +107,8 @@ module Mobilis
         projects.each do |project|
           env_vars.merge! project.global_env_vars(environment)
         end
-        env_vars.merge! { "ENVIRONMENT" => environment }
+        env_vars["ENVIRONMENT"] = environment
+        env_vars["RUNASUSER"] = runasuser
         env_lines = []
         env_vars.each do |key, value|
           actual_value = value
@@ -227,7 +232,7 @@ module Mobilis
     def load_from_file filename
       data = File.read filename
       @data = JSON.parse data, {symbolize_names: true}
-      @projects = @data[:projects].map {|p| project_for_line(p)}
+      @projects = @data[:projects].map { |p| project_for_line(p) }
       @data[:projects] = []
     end
 
@@ -386,7 +391,7 @@ module Mobilis
     def pull_dev_datastore_instances
       @directory_service.chdir_generate
       datastore_projects.each do |project|
-        system "docker compose -f compose-development.yml pull #{project.name}"
+        run_docker "compose -f compose-development.yml pull #{project.name}"
       end
     end
 
@@ -394,7 +399,7 @@ module Mobilis
       @directory_service.chdir_generate
       datastore_projects.each do |project|
         puts "Starting datastore project #{project.name}"
-        system "docker compose -f compose-development.yml start #{project.name}"
+        run_docker "compose -f compose-development.yml up -d #{project.name}"
       end
       puts "Sleeping for one minute to give the DB's time to initialize..."
       sleep 60
