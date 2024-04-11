@@ -229,10 +229,10 @@ module Mobilis::InteractiveDesigner
             services[name] = new_service
           end
 
-          %w[token login scim].each do |name|
-            services[name] = @project.add_rack_project("#{name}-service")
-            services[name].add_link "api_models"
-          end
+          #%w[token login scim].each do |name|
+          #  services[name] = @project.add_rack_project("#{name}-service")
+          #  services[name].add_link "api_models"
+          #end
 
           service_tables = %w[organization account user authenticationdomain]
           service_tables.each do |name|

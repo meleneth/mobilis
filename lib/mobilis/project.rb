@@ -83,7 +83,6 @@ module Mobilis
       generate_env_files
       save_docker_compose
       create_datastore_directories
-      create_datastore_instances
       pull_dev_datastore_instances
       start_dev_datastore_instances
       create_project_instances
@@ -378,14 +377,6 @@ module Mobilis
       end
       @directory_service.chdir_generate
       @directory_service.git_commit_all("environment datastore projects")
-    end
-
-    def create_datastore_instances
-      return unless has_datastore_instance?
-      target_environments.each do |target_environment|
-        datastore_projects.each do |project|
-        end
-      end
     end
 
     def pull_dev_datastore_instances
