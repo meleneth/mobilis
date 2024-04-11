@@ -229,10 +229,10 @@ module Mobilis::InteractiveDesigner
             services[name] = new_service
           end
 
-          #%w[token login scim].each do |name|
-          #  services[name] = @project.add_rack_project("#{name}-service")
-          #  services[name].add_link "api_models"
-          #end
+          %w[token login scim].each do |name|
+            services[name] = @project.add_rack_project("#{name}-service")
+            services[name].add_link "api_models"
+          end
 
           service_tables = %w[organization account user authenticationdomain]
           service_tables.each do |name|
@@ -274,6 +274,11 @@ module Mobilis::InteractiveDesigner
             new_service.add_linked_postgresql_instance("#{name}db")
             new_service.toggle_uuid_primary_keys
             services[name] = new_service
+          end
+
+          %w[token].each do |name|
+            services[name] = @project.add_rack_project("#{name}-service")
+            services[name].add_link "api_models"
           end
 
           service_tables = %w[user]
