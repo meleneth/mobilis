@@ -9,6 +9,10 @@ module Mobilis
       []
     end
 
+    def user_id_arg
+      "#{Process.uid}:#{Process.gid}"
+    end
+
     def env_vars
       vars = []
       if linked_to_rails_project
