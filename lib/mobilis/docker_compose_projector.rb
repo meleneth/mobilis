@@ -156,7 +156,8 @@ module Mobilis
 
     def postgresql_service service
       {
-        "image" => "postgres:16.1-bookworm",
+        "image" => "postgres:16.2-bookworm",
+        "user" => "${RUNASUSER}",
         "restart" => "always",
         "environment" => service.env_vars,
         "ports" => ["${#{service.env_name}_EXTERNAL_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
@@ -180,7 +181,7 @@ module Mobilis
 
     def redis_service service
       {
-        "image" => "redis:7.2.3-alpine",
+        "image" => "redis:7.2.4-alpine",
         "restart" => "always",
         "command" => "redis-server --save 20 1 --loglevel warning --requirepass #{service.password}",
         "environment" => [],
