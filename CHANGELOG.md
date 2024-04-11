@@ -1,4 +1,6 @@
 ## [Unreleased]
+- I scaffolded 19 services today and they started right up and everything migrated on boot and everything was amazing.
+- Just thought someone should know.  I did cheat and use minion mumble before the build on the localgem, but cheating is amazing.
 - when scaffolding models, the test db containers will be spun up since rails talks to the db at scaffold time
 - generated compose is now multiple files, allowing for multiple environment deployments for groups of related services
 - a huge amount of refactoring of the main FSM.  Everything is likely broken, but tests are coming
