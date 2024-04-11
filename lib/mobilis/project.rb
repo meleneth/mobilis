@@ -280,8 +280,7 @@ module Mobilis
         name: name,
         type: :postgresql
       }
-      @projects << PostgresqlInstance.new(data, self)
-      @projects[-1]
+      (@projects << PostgresqlInstance.new(data, self))[-1]
     end
 
     def add_mysql_instance name
@@ -289,8 +288,7 @@ module Mobilis
         name: name,
         type: :mysql
       }
-      @projects << MysqlInstance.new(data, self)
-      @projects[-1]
+      (@projects << MysqlInstance.new(data, self))[-1]
     end
 
     def add_redis_instance name
@@ -298,8 +296,7 @@ module Mobilis
         name: name,
         type: :redis
       }
-      @projects << RedisInstance.new(data, self)
-      @projects[-1]
+      (@projects << RedisInstance.new(data, self))[-1]
     end
 
     def add_rails_project name, options
@@ -311,8 +308,7 @@ module Mobilis
         options: options.clone,
         attributes: {}
       }
-      @projects << RailsProject.new(data, self)
-      @projects[-1]
+      (@projects << RailsProject.new(data, self))[-1]
     end
 
     def add_kafka_instance name
@@ -321,8 +317,7 @@ module Mobilis
         type: :kafka,
         attributes: {}
       }
-      @projects << KafkaInstance.new(data, self)
-      @projects[-1]
+      (@projects << KafkaInstance.new(data, self))[-1]
     end
 
     def add_localgem_project name
@@ -331,8 +326,7 @@ module Mobilis
         type: :localgem,
         attributes: {}
       }
-      @projects << LocalgemProject.new(data, self)
-      @projects[-1]
+      (@projects << LocalgemProject.new(data, self))[-1]
     end
 
     def add_rack_project name
@@ -341,8 +335,7 @@ module Mobilis
         type: :rack,
         attributes: {}
       }
-      @projects << RackProject.new(data, self)
-      @projects[-1]
+      (@projects << RackProject.new(data, self))[-1]
     end
 
     def getwd

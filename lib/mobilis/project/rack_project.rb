@@ -96,10 +96,10 @@ module Mobilis
         FROM ruby:latest
         RUN apt-get update -qq && apt-get install -y postgresql-client
         WORKDIR /myapp
-        COPY Gemfile /myapp/Gemfile
-        COPY Gemfile.lock /myapp/Gemfile.lock
+        COPY ./#{name}/Gemfile /myapp/Gemfile
+        COPY ./#{name}/Gemfile.lock /myapp/Gemfile.lock
         RUN bundle install
-        COPY . /myapp
+        COPY ./#{name} /myapp
         # Add a script to be executed every time the container starts.
         ENTRYPOINT ["rackup", "-o", "#{name}"]
         EXPOSE 9292
@@ -109,7 +109,7 @@ module Mobilis
     def get_Dockerfile_with_localgems
       localgem_lines = []
       linked_localgem_projects.each do |p|
-        localgem_lines << "COPY localgems/#{p.name} /myapp/localgems/#{p.name}"
+        localgem_lines << "COPY ./localgems/#{p.name} /myapp/localgems/#{p.name}"
         localgem_lines << "WORKDIR /myapp/localgems/#{p.name}"
         localgem_lines << "RUN bundle install"
         localgem_lines << "RUN rake install"

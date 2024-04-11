@@ -19,6 +19,7 @@ module Mobilis
 
       def mkdir_project(project)
         chdir_generate
+        Dir.mkdir project.name
       end
 
       def mkdir_environment(environment)
