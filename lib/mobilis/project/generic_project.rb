@@ -94,6 +94,11 @@ module Mobilis
       @data[:links] << new_link
     end
 
+    def _p(path)
+      return path unless linked_to_localgem_project
+      "./#{name}/#{path}"
+    end
+
     def to_h
       @data
     end

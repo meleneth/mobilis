@@ -96,10 +96,10 @@ module Mobilis
         FROM ruby:latest
         RUN apt-get update -qq && apt-get install -y postgresql-client
         WORKDIR /myapp
-        COPY ./#{name}/Gemfile /myapp/Gemfile
-        COPY ./#{name}/Gemfile.lock /myapp/Gemfile.lock
+        COPY #{_p("Gemfile")} /myapp/Gemfile
+        COPY #{_p("Gemfile.lock")} /myapp/Gemfile.lock
         RUN bundle install
-        COPY ./#{name} /myapp
+        COPY #{_p(".")} /myapp
         # Add a script to be executed every time the container starts.
         ENTRYPOINT ["rackup", "-o", "#{name}"]
         EXPOSE 9292
