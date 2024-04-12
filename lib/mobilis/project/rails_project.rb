@@ -243,14 +243,14 @@ module Mobilis
         RUN apt-get update -qq && apt-get install -y nodejs postgresql-client default-mysql-client dos2unix
 
         WORKDIR /myapp
-        COPY ./#{name}/Gemfile /myapp/Gemfile
-        COPY ./#{name}/Gemfile.lock /myapp/Gemfile.lock
+        COPY #{_p("Gemfile")} /myapp/Gemfile
+        COPY #{_p("Gemfile.lock")} /myapp/Gemfile.lock
         RUN bundle config set --local path 'vendor/bundle'
         RUN bundle install
 
-        COPY ./#{name} /myapp
-        COPY --chmod=0755 ./#{name}/wait-until /myapp/wait-until
-        COPY --chmod=0755 ./#{name}/entrypoint.sh /myapp/entrypoint.sh
+        COPY #{_p(".")} /myapp
+        COPY --chmod=0755 #{_p("wait-until")} /myapp/wait-until
+        COPY --chmod=0755 #{_p("entrypoint.sh")} /myapp/entrypoint.sh
 
         # Add a script to be executed every time the container starts.
         ENTRYPOINT ["/myapp/entrypoint.sh"]

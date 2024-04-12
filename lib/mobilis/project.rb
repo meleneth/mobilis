@@ -217,7 +217,7 @@ module Mobilis
     def build
       #  logger.info "# build"
       return_to_target_directory
-      run_command "docker compose -f compose-development.yml build"
+      run_docker "compose -f compose-development.yml build"
     end
 
     def rails_builder_image
