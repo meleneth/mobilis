@@ -31,18 +31,19 @@ RSpec.describe "Acceptance" do
             ]
           },
           "account-db" => {
-            "image" => "postgres:16.1-bookworm",
+            "image" => "postgres:16.2-bookworm",
             "restart" => "always",
+            "user" =>  "${RUNASUSER}",
             "environment" => [
-              "POSTGRES_DB=${ACCOUNT_DB_POSTGRES_DB}",
-              "POSTGRES_USER=${ACCOUNT_DB_POSTGRES_USER}",
-              "POSTGRES_PASSWORD=${ACCOUNT_DB_POSTGRES_PASSWORD}"
+              "POSTGRES_DB=${ACCOUNTDB_POSTGRES_DB}",
+              "POSTGRES_USER=${ACCOUNTDB_POSTGRES_USER}",
+              "POSTGRES_PASSWORD=${ACCOUNTDB_POSTGRES_PASSWORD}"
             ],
             "ports" => [
-              "${ACCOUNT_DB_EXTERNAL_PORT_NO}:${ACCOUNT_DB_INTERNAL_PORT_NO}"
+              "${ACCOUNTDB_EXTERNAL_PORT_NO}:${ACCOUNTDB_INTERNAL_PORT_NO}"
             ],
             "volumes" => [
-              "${ACCOUNT_DB_POSTGRES_DATA}:/var/lib/postgresql/data"
+              "${ACCOUNTDB_POSTGRES_DATA}:/var/lib/postgresql/data"
             ]
           }
         }
