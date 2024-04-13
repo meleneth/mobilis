@@ -46,7 +46,7 @@ RSpec.describe "Rack Project" do
         FROM ruby:latest as gem-cache
         RUN gem install bundler:2.4.12
         RUN mkdir -p /myapp/localgems
-        COPY localgems/some_nifty_gem /myapp/localgems/some_nifty_gem
+        COPY ./localgems/some_nifty_gem /myapp/localgems/some_nifty_gem
         WORKDIR /myapp/localgems/some_nifty_gem
         RUN bundle install
         RUN rake install
