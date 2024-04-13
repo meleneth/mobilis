@@ -90,16 +90,17 @@ RSpec.describe "Acceptance" do
             "ports" => ["${PRIME_EXTERNAL_PORT_NO}:${PRIME_INTERNAL_PORT_NO}"]
           },
           "testp-db" => {
-            "image" => "postgres:16.1-bookworm",
+            "image" => "postgres:16.2-bookworm",
             "restart" => "always",
+            "user" => "${RUNASUSER}",
             "environment" => [
-              "POSTGRES_DB=${TESTP_DB_POSTGRES_DB}",
-              "POSTGRES_USER=${TESTP_DB_POSTGRES_USER}",
-              "POSTGRES_PASSWORD=${TESTP_DB_POSTGRES_PASSWORD}"
+              "POSTGRES_DB=${TESTPDB_POSTGRES_DB}",
+              "POSTGRES_USER=${TESTPDB_POSTGRES_USER}",
+              "POSTGRES_PASSWORD=${TESTPDB_POSTGRES_PASSWORD}"
             ],
-            "ports" => ["${TESTP_DB_EXTERNAL_PORT_NO}:${TESTP_DB_INTERNAL_PORT_NO}"],
+            "ports" => ["${TESTPDB_EXTERNAL_PORT_NO}:${TESTPDB_INTERNAL_PORT_NO}"],
             "volumes" => [
-              "${TESTP_DB_POSTGRES_DATA}:/var/lib/postgresql/data"
+              "${TESTPDB_POSTGRES_DATA}:/var/lib/postgresql/data"
             ]
           },
           "testm-db" => {
@@ -117,7 +118,7 @@ RSpec.describe "Acceptance" do
             ]
           },
           "cache" => {
-            "image" => "redis:7.2.3-alpine",
+            "image" => "redis:7.2.4-alpine",
             "restart" => "always",
             "environment" => [],
             "ports" => ["${CACHE_EXTERNAL_PORT_NO}:${CACHE_INTERNAL_PORT_NO}"],
