@@ -12,13 +12,17 @@ module Mobilis::InteractiveDesigner
           :add_prime_stack_rails_project,
           :rails_project_toggle_api_mode,
           :toggle_rails_uuid_primary_keys,
-          :rails_add_linked_postgres
+          :rails_add_linked_postgres,
+          :rails_add_linked_mysql,
+          :rails_add_linked_redis
         ] => :rails_app_edit_screen
       end
 
       event :go_rails_project_edit do
         transition [
-          :rails_project_add_linked_postgres
+          :rails_project_add_linked_postgres,
+          :rails_project_add_linked_mysql,
+          :rails_project_add_linked_redis
         ] => :rails_project_edit
       end
 
@@ -40,6 +44,14 @@ module Mobilis::InteractiveDesigner
 
       event :go_rails_project_add_linked_postgres do
         transition [:rails_project_edit] => :rails_project_add_linked_postgres
+      end
+
+      event :go_rails_project_add_linked_mysql do
+        transition [:rails_project_edit] => :rails_project_add_linked_mysql
+      end
+
+      event :go_rails_project_add_linked_redis do
+        transition [:rails_project_edit] => :rails_project_add_linked_redis
       end
 
       event :go_rails_project_toggle_api_mode do
@@ -88,6 +100,14 @@ module Mobilis::InteractiveDesigner
               name: "Add linked postgres database",
               value: -> { go_rails_project_add_linked_postgres }
             },
+            {
+              name: "Add linked mysql database",
+              value: -> { go_rails_project_add_linked_mysql }
+            },
+            {
+              name: "Add linked redis instance",
+              value: -> { go_rails_project_add_linked_redis }
+            },
             *(@selected_rails_project.models.map do |model|
               {
                 name: "Edit '#{model.name}' model",
@@ -124,8 +144,36 @@ module Mobilis::InteractiveDesigner
         def choices = false
 
         def action
-          db_name = prompt.ask("new linked postgresql instance name:", default: "#{@selected_rails_project}.name}-db")
+          db_name = prompt.ask("new linked postgresql instance name:", default: "#{@selected_rails_project}.name}db")
           @selected_rails_project.add_linked_postgresql_instance db_name
+          go_rails_project_edit
+        end
+      end
+
+      state :rails_project_add_linked_mysql do
+        def display
+          spacer
+        end
+
+        def choices = false
+
+        def action
+          db_name = prompt.ask("new linked mysql instance name:", default: "#{@selected_rails_project}.name}db")
+          @selected_rails_project.add_linked_mysql_instance db_name
+          go_rails_project_edit
+        end
+      end
+
+      state :rails_project_add_linked_redis do
+        def display
+          spacer
+        end
+
+        def choices = false
+
+        def action
+          db_name = prompt.ask("new linked redis instance name:", default: "#{@selected_rails_project}.name}db")
+          @selected_rails_project.add_linked_redis_instance db_name
           go_rails_project_edit
         end
       end

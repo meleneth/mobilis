@@ -12,23 +12,44 @@ RSpec.describe "RailsAppEdit" do
   let(:prompt) { fsm.prompt }
   let(:nav) { FSMNavigator.new fsm: fsm }
 
-  describe "Add linked postgres project" do
-    it "Event works to edit the project" do
-      nav.select_choice "Edit existing"
-      nav.select_choice "somerails"
-      expect(fsm.state).to eq "rails_project_edit"
-      expect(fsm.instance_variable_get(:@selected_rails_project)).to eq(rails_project)
-    end
-    it "allows creating linked postgres" do
-      nav.select_choice "Edit existing"
-      nav.select_choice "somerails"
-      expect(fsm.state).to eq "rails_project_edit"
-      allow(prompt).to receive(:ask).and_return "account-db"
-      expect(rails_project).to receive(:add_linked_postgresql_instance).with("account-db")
-      nav.select_choice "Add linked postgres database"
-      fsm.action
-      expect(fsm.state).to eq "rails_project_edit"
-    end
+  it "works to edit the project" do
+    nav.select_choice "Edit existing"
+    nav.select_choice "somerails"
+    expect(fsm.state).to eq "rails_project_edit"
+    expect(fsm.instance_variable_get(:@selected_rails_project)).to eq(rails_project)
+  end
+
+  it "allows creating linked postgres" do
+    nav.select_choice "Edit existing"
+    nav.select_choice "somerails"
+    expect(fsm.state).to eq "rails_project_edit"
+    allow(prompt).to receive(:ask).and_return "accountdb"
+    expect(rails_project).to receive(:add_linked_postgresql_instance).with("accountdb")
+    nav.select_choice "Add linked postgres database"
+    fsm.action
+    expect(fsm.state).to eq "rails_project_edit"
+  end
+
+  it "allows creating linked mysql" do
+    nav.select_choice "Edit existing"
+    nav.select_choice "somerails"
+    expect(fsm.state).to eq "rails_project_edit"
+    allow(prompt).to receive(:ask).and_return "accountdb"
+    expect(rails_project).to receive(:add_linked_mysql_instance).with("accountdb")
+    nav.select_choice "Add linked mysql database"
+    fsm.action
+    expect(fsm.state).to eq "rails_project_edit"
+  end
+
+  it "allows creating linked redis" do
+    nav.select_choice "Edit existing"
+    nav.select_choice "somerails"
+    expect(fsm.state).to eq "rails_project_edit"
+    allow(prompt).to receive(:ask).and_return "accountdb"
+    expect(rails_project).to receive(:add_linked_redis_instance).with("accountdb")
+    nav.select_choice "Add linked redis instance"
+    fsm.action
+    expect(fsm.state).to eq "rails_project_edit"
   end
 
   describe "Toggle API Mode" do

@@ -54,10 +54,10 @@ RSpec.describe "Rack Project" do
         COPY --from=gem-cache /usr/local/bundle /usr/local/bundle
         RUN apt-get update -qq && apt-get install -y postgresql-client
         WORKDIR /myapp
-        COPY some_rack_project/Gemfile /myapp/Gemfile
-        COPY some_rack_project/Gemfile.lock /myapp/Gemfile.lock
+        COPY ./some_rack_project/Gemfile /myapp/Gemfile
+        COPY ./some_rack_project/Gemfile.lock /myapp/Gemfile.lock
         RUN bundle install
-        COPY some_rack_project/. /myapp
+        COPY ./some_rack_project/. /myapp
         # Add a script to be executed every time the container starts.
         ENTRYPOINT ["rackup", "-o", "some_rack_project"]
         EXPOSE 9292

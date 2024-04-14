@@ -41,12 +41,30 @@ module Mobilis
     end
 
     def add_linked_postgresql_instance(dbname = nil)
-      dbname ||= "#{name}_db"
-      postgres_db = @metaproject.add_postgresql_instance dbname
+      dbname ||= "#{name}db"
+      postgresdb = @metaproject.add_postgresql_instance dbname
       new_links = links.clone
-      new_links << postgres_db.name
+      new_links << postgresdb.name
       set_links new_links
-      postgres_db
+      postgresdb
+    end
+
+    def add_linked_mysql_instance(dbname = nil)
+      dbname ||= "#{name}db"
+      mysqldb = @metaproject.add_mysql_instance dbname
+      new_links = links.clone
+      new_links << mysqldb.name
+      set_links new_links
+      mysqldb
+    end
+
+    def add_linked_redis_instance(dbname = nil)
+      dbname ||= "#{name}db"
+      redisdb = @metaproject.add_redis_instance dbname
+      new_links = links.clone
+      new_links << redisdb.name
+      set_links new_links
+      redisdb
     end
 
     def database
