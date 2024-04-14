@@ -22,6 +22,13 @@ module Mobilis
       }
     end
 
+    def add_url_handler(url, handler)
+      # "/game/play", "MakeNumberBiggerGame"
+      @data[:urls] ||= {}
+      data[:urls][url] = handler
+      self
+    end
+
     def generate_config_ru
       set_file_contents "config.ru", <<~CONFIG_RU
         # config.ru
@@ -44,7 +51,7 @@ module Mobilis
 
         # gem "rails"
 
-        gem "rack", "= 3.0.2"
+        gem "rack", "= 3.0.10"
 
         gem "rackup", "~> 0.2.2"
       GEMFILE
@@ -55,7 +62,7 @@ module Mobilis
         GEM
           remote: https://rubygems.org/
           specs:
-            rack (3.0.2)
+            rack (3.0.10)
             rackup (0.2.2)
               rack (>= 3.0.2)
               webrick
@@ -124,10 +131,10 @@ module Mobilis
         COPY --from=gem-cache /usr/local/bundle /usr/local/bundle
         RUN apt-get update -qq && apt-get install -y postgresql-client
         WORKDIR /myapp
-        COPY #{localgem_prefix}Gemfile /myapp/Gemfile
-        COPY #{localgem_prefix}Gemfile.lock /myapp/Gemfile.lock
+        COPY #{_p("Gemfile")} /myapp/Gemfile
+        COPY #{_p("Gemfile.lock")} /myapp/Gemfile.lock
         RUN bundle install
-        COPY #{localgem_prefix}. /myapp
+        COPY #{_p(".")} /myapp
         # Add a script to be executed every time the container starts.
         ENTRYPOINT ["rackup", "-o", "#{name}"]
         EXPOSE 9292
