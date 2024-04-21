@@ -58,6 +58,7 @@ module Mobilis::InteractiveDesigner
         transition [:generate] => :main_menu
         transition [:create_demo_project] => :main_menu
         transition [:create_simple_demo_project] => :main_menu
+        transition [:show_configuration] => :main_menu
         transition [:main_menu] => :finished
       end
 
