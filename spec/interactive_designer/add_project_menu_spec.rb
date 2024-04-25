@@ -61,6 +61,26 @@ RSpec.describe 'AddProjectMenu' do
     end
   end
 
+  describe "Add rack3 instance" do
+    let(:metaproject) { build(:metaproject) }
+    let(:rack_project) { build(:rack_project, metaproject: metaproject, name: "somerack") }
+    let(:fsm_editor) { Mobilis::InteractiveDesigner::Rack.new rack_project }
+
+    before do
+      allow(Mobilis::Project).to receive(:new).and_return metaproject
+      allow(prompt).to receive(:ask).and_return "somerack"
+    end
+
+    it "allows adding a rack project" do
+      expect(metaproject).to receive(:add_rack_project).with("somerack").and_return(rack_project)
+
+      select_choice "Add project"
+      select_choice "Add rack3 project"
+      fsm.action
+      expect(fsm.state).to eq("main_menu")
+    end
+  end
+
   describe "Add Kafka instance" do
     let(:metaproject) { build(:metaproject) }
     let(:kafka_project) { build(:kafka_instance, metaproject: metaproject, name: "somekafka") }
@@ -84,7 +104,10 @@ RSpec.describe 'AddProjectMenu' do
   describe "Edit existing project" do
     let(:metaproject) { build(:metaproject) }
     let(:rails_project) { build(:rails_prime, metaproject: metaproject, name: "somerails") }
-    let(:fsm) { rails_project ; build(:fsm, project: metaproject) }
+    let(:fsm) do
+      rails_project
+      build(:fsm, project: metaproject)
+    end
     let(:prompt) { fsm.prompt }
     it "Allows selecting an existing project" do
       select_choice "Edit existing project"

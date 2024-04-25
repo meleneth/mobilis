@@ -20,6 +20,7 @@ module Mobilis::InteractiveDesigner
       Mobilis::InteractiveDesigner.add_rails_model_edit_states self
       Mobilis::InteractiveDesigner.add_rails_project_edit_states self
       Mobilis::InteractiveDesigner.add_project_edit_menu_states self
+      Mobilis::InteractiveDesigner.add_edit_links_states self
 
       after_transition any => any do |designer|
         puts "o0o VVVV ---- VVVV o0o"
@@ -78,14 +79,6 @@ module Mobilis::InteractiveDesigner
         transition [:main_menu] => :save_project
       end
 
-      event :go_edit_links_select_project do
-        transition [:main_menu] => :edit_links_select_project
-        transition [:edit_links] => :edit_links_select_project
-      end
-
-      event :go_edit_links do
-        transition [:edit_links_select_project] => :edit_links
-      end
 
       state :main_menu do
         def display
@@ -120,38 +113,6 @@ module Mobilis::InteractiveDesigner
         end
       end
 
-      state :edit_links_select_project do
-        def display
-          puts "Select Project"
-          fancy_tp projects, "name", "type", links: lambda { |p| p.links.join ", " }
-        end
-
-        def choices
-          [
-            {name: "return to Main Menu", value: -> { go_main_menu }},
-            *(projects.map { |project|
-                links_txt = project.links.join ", "
-                {
-                  name: "Edit '#{project.name}' links (#{links_txt})",
-                  value: -> { visit_submachine Mobilis::InteractiveDesigner::EditLinks.new(project) }
-                }
-              })
-          ]
-        end
-      end
-
-      state :edit_links do
-        def action
-          selected = prompt.multi_select("Select links") do |menu|
-            menu.default(*@selected_project.links)
-            projects.each do |project|
-              menu.choice project.name unless project.name == @selected_project.name
-            end
-          end
-          @selected_project.set_links selected
-          go_edit_links_select_project
-        end
-      end
 
       state :finished do
         def still_running?

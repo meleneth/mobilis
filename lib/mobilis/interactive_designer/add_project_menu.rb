@@ -103,7 +103,7 @@ module Mobilis::InteractiveDesigner
         def action
           project_name = prompt.ask("new Rack project name:")
           project.add_rack_project project_name
-          go_finished
+          go_main_menu
         end
       end
 
