@@ -77,6 +77,7 @@ RSpec.describe "RailsAppEdit" do
       expect(fsm.state).to eq "rails_project_toggle_uuid_primary_keys"
       fsm.action
       expect(metaproject.projects[0].options).to include(:api)
+      expect(fsm.state).to eq "rails_project_edit"
     end
   end
 end
