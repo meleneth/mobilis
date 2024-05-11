@@ -46,6 +46,8 @@ module Mobilis::InteractiveDesigner
           @selected_project.set_links selected
           go_edit_links_select_project
         end
+        def choices = false
+        def display = false
       end
     end
   end
