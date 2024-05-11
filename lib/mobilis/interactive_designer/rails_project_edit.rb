@@ -5,21 +5,9 @@ require "mel/scene-fsm"
 module Mobilis::InteractiveDesigner
   def self.add_rails_project_edit_states(instance)
     instance.instance_eval do
-      event :go_edit_rails_project do
-        transition [
-          :edit_project_menu,
-          :add_omakase_stack_rails_project,
-          :add_prime_stack_rails_project,
-          :rails_project_toggle_api_mode,
-          :toggle_rails_uuid_primary_keys,
-          :rails_add_linked_postgres,
-          :rails_add_linked_mysql,
-          :rails_add_linked_redis
-        ] => :rails_app_edit_screen
-      end
-
       event :go_rails_project_edit do
         transition [
+          :rails_project_toggle_uuid_primary_keys,
           :rails_project_add_linked_postgres,
           :rails_project_add_linked_mysql,
           :rails_project_add_linked_redis
