@@ -179,8 +179,8 @@ module Mobilis::InteractiveDesigner
         def action
           @project = ::Mobilis::Project.new
           @project.add_localgem_project "api_models"
-          services = Hash.new
-          models = Hash.new
+          services = {}
+          models = {}
 
           postgres_prime_rails_projects = %w[organization account user credential authorization notification authenticationdomain group]
           postgres_prime_rails_projects.each do |name|
