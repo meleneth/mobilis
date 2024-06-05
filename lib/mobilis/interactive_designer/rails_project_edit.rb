@@ -132,7 +132,7 @@ module Mobilis::InteractiveDesigner
         def choices = false
 
         def action
-          db_name = prompt.ask("new linked postgresql instance name:", default: "#{@selected_rails_project}.name}db")
+          db_name = prompt.ask("new linked postgresql instance name:", default: "#{@selected_rails_project.name}db")
           @selected_rails_project.add_linked_postgresql_instance db_name
           go_rails_project_edit
         end
