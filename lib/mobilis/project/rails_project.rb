@@ -474,8 +474,8 @@ $@
 
       raise "Unexpectedly dirty directory!" unless untracked_files.length == 1
 
-      file = FileLines.from_file(filename: untracked_files[0])
-      colon_names = *index.map(":#{name}").join(", ")
+      file = FileLines.from_file(filename: untracked_files[0].path)
+      colon_names = index.map { |name| ":#{name}" }.join(", ")
       file.gsub!("def change", "def change\n    add_index #{colon_names}")
       file.save
     end

@@ -50,6 +50,21 @@ RSpec.describe "Rails Project" do
     # rails g scaffold FlaggedForReview comment:references status:string
   end
 
+  describe "#generate_index" do
+    let(:prime_stack) { project.add_rails_project "prime", [:rspec, :api, :simplecov, :standard, :factorybot] }
+    let(:model) { instance_double(Mobilis::RailsModel, {name: "some_model"}) }
+    let(:git_untracked_files) { [instance_double(Git::Status::StatusFile, {path: "some_filename"})] }
+    let(:directory_service) { instance_double(Mobilis::Services::Directory, {git_untracked_files: git_untracked_files}) }
+    let(:file_lines) { instance_double(Mobilis::FileLines) }
+    it "Generates correct index generation line" do
+      allow(prime_stack).to receive(:rails_run_command).with("./bundle_run.sh rails generate migration SomeModelNameEmailIndex")
+      expect(Mobilis::FileLines).to receive(:from_file).with(filename: "some_filename").and_return file_lines
+      allow(file_lines).to receive(:gsub!).with("def change", "def change\n    add_index :name, :email")
+      expect(file_lines).to receive(:save)
+      prime_stack.send(:generate_index, directory_service, model, ["name", "email"])
+    end
+  end
+
   describe "#wait_until_line" do
     it "Generates correct line for MySQL" do
       prime_stack = project.add_rails_project "prime", [:rspec, :api, :simplecov, :standard, :factorybot]

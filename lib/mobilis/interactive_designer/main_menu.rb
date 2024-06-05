@@ -247,6 +247,8 @@ module Mobilis::InteractiveDesigner
           service_tables.each do |name|
             model = services[name].add_model name
             model.add_field(name: "name", type: Mobilis::RAILS_MODEL_TYPE_STRING)
+            model.add_field(name: "email", type: Mobilis::RAILS_MODEL_TYPE_STRING)
+            model.add_index('name', 'email')
             models[name] = model
           end
 
