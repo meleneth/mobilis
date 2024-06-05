@@ -141,7 +141,7 @@ module Mobilis
     end
 
     def project_rails_run_command command, extra_args = ""
-      run_docker "run --rm -v #{getwd}:/myapp -w /myapp #{extra_args} #{rails_image} #{command}"
+      run_docker "run -u #{Process.uid}:#{Process.gid} --rm -v #{getwd}:/myapp -w /myapp #{extra_args} #{rails_image} #{command}"
     end
 
     def bundle_run command
@@ -468,8 +468,8 @@ $@
     private
 
     def generate_index(directory_service, model, index)
-      index_name = [model, *index, "index"].join("_")
-      rails_run_command "generate migration #{camelize(index_name)}"
+      index_name = [model.name, *index, "index"].join("_")
+      rails_run_command "./bundle_run.sh rails generate migration #{camelize(index_name)}"
       untracked_files = directory_service.git_untracked_files
 
       raise "Unexpectedly dirty directory!" unless untracked_files.length == 1
