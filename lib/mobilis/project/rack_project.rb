@@ -13,6 +13,7 @@ module Mobilis
       generate_Gemfile
       generate_Gemfile_lock
       generate_Dockerfile
+      directory_service.git_commit_all "#{name} - new rack service"
     end
 
     def global_env_vars(environment)
