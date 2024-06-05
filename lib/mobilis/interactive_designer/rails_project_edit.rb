@@ -10,7 +10,9 @@ module Mobilis::InteractiveDesigner
           :rails_project_toggle_uuid_primary_keys,
           :rails_project_add_linked_postgres,
           :rails_project_add_linked_mysql,
-          :rails_project_add_linked_redis
+          :rails_project_add_linked_redis,
+          :rails_project_add_index_select_model,
+          :rails_project_add_index_to_model
         ] => :rails_project_edit
       end
 
@@ -50,6 +52,14 @@ module Mobilis::InteractiveDesigner
         transition [:rails_project_edit] => :rails_project_toggle_uuid_primary_keys
       end
 
+      event :go_rails_project_add_index_select_model do
+        transition [:rails_project_edit] => :rails_project_add_index_select_model
+      end
+
+      event :go_rails_project_add_index_to_model do
+        transition [:rails_project_add_index_select_model] => :rails_project_add_index_to_model
+      end
+
       event :go_rails_model_edit do
         transition [
           :rails_add_model,
@@ -83,6 +93,10 @@ module Mobilis::InteractiveDesigner
             {
               name: "Add Controller",
               value: -> { go_rails_project_add_controller }
+            },
+            {
+              name: "Add index",
+              value: -> { go_rails_project_add_index_select_model }
             },
             {
               name: "Add linked postgres database",
@@ -176,6 +190,51 @@ module Mobilis::InteractiveDesigner
         def action
           @selected_rails_project.toggle_uuid_primary_keys
 
+          go_rails_project_edit
+        end
+      end
+
+      state :rails_project_add_index_select_model do
+        def display
+          fancy_tp @selected_rails_project.models, "name", type: lambda { |model| model.fields.map(&:name).join ", " }
+        end
+
+        def choices
+          c = [
+            {
+              name: "return to Main Menu",
+              value: -> { go_main_menu }
+            }
+          ]
+          @selected_rails_project.models.each do |model|
+            c << {
+              name: model.name,
+              value: -> {
+                @selected_rails_model = model
+                go_rails_project_add_index_to_model
+              }
+            }
+          end
+          c
+        end
+
+        def action = false
+      end
+
+      state :rails_project_add_index_to_model do
+        def display
+          fancy_tp @selected_rails_project.models, "name", type: lambda { |m| model.fields.join ", " }
+        end
+
+        def choices = false
+
+        def action
+          selected = prompt.multi_select("Select fields") do |menu|
+            @selected_rails_model.fields.each do |field|
+              menu.choice "#{field.name} #{field.type}"
+            end
+          end
+          @selected_rails_model.add_index(*selected)
           go_rails_project_edit
         end
       end

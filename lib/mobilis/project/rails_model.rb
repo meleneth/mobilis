@@ -4,12 +4,14 @@ module Mobilis
   class RailsModel
     attr_accessor :name
     attr_accessor :fields
+    attr_accessor :indexes
     attr_accessor :rails_project
 
     def initialize(name, rails_project)
       @rails_project = rails_project
       @name = name
       @fields = []
+      @indexes = []
     end
 
     def line
@@ -27,11 +29,16 @@ module Mobilis
       add_field(name: model.name.downcase, type: Mobilis::RAILS_MODEL_TYPE_REFERENCE)
     end
 
+    def add_index(*index_field_names)
+      @indexes << index_field_names
+    end
+
     def to_h
       my_fields = @fields.map(&:to_h)
       {
         name: name,
-        fields: my_fields
+        fields: my_fields,
+        indexes: indexes
       }
     end
   end

@@ -20,8 +20,8 @@ RSpec.describe 'RailsModelEdit' do
   describe "Can get to model edit screen" do
     let(:name_field) { {name: "name", type: :string} }
     let(:author_field) { {name: "author", type: :references} }
-    let(:post_model) { {name: "Post", fields: [author_field, subject_field]} }
-    let(:author_model) { {name: "Author", fields: [name_field]} }
+    let(:post_model) { {name: "Post", fields: [author_field, subject_field], indexes: []} }
+    let(:author_model) { {name: "Author", fields: [name_field], indexes: []} }
     let(:subject_field) { {name: "subject", type: :string} }
     let(:options) { [:rspec, :api, :simplecov, :standard, :factorybot] }
     let(:models) { [author_model, post_model] }

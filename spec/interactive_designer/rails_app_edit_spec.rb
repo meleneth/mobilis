@@ -80,4 +80,25 @@ RSpec.describe "RailsAppEdit" do
       expect(fsm.state).to eq "rails_project_edit"
     end
   end
+
+  describe "add index" do
+    let(:rails_project) do
+      rp = build(:rails_prime, metaproject: metaproject, name: "somerails")
+      user_model = rp.add_model("user")
+      user_model.add_field(name: "name", type: "string")
+      rp
+    end
+
+    it "allows selection of a model to add an index to" do
+      nav.select_choice "Edit existing"
+      expect(fsm.state).to eq "edit_project_menu"
+      nav.select_choice "somerails"
+      nav.select_choice "Add index"
+      expect(fsm.state).to eq "rails_project_add_index_select_model"
+      nav.select_choice "user"
+      expect(fsm.state).to eq "rails_project_add_index_to_model"
+      expect(fsm.prompt).to receive(:multi_select).with("Select fields").and_return("name")
+      fsm.action
+    end
+  end
 end

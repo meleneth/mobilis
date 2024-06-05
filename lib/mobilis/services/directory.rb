@@ -98,6 +98,10 @@ module Mobilis
         my_git.commit(message)
       end
 
+      def git_untracked_files
+        git.status.filter { |f| !f.untracked.nil? }
+      end
+
       private
 
       def git
