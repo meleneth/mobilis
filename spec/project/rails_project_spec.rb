@@ -59,7 +59,7 @@ RSpec.describe "Rails Project" do
     it "Generates correct index generation line" do
       allow(prime_stack).to receive(:rails_run_command).with("./bundle_run.sh rails generate migration SomeModelNameEmailIndex")
       expect(Mobilis::FileLines).to receive(:from_file).with(filename: "some_filename").and_return file_lines
-      allow(file_lines).to receive(:gsub!).with("def change", "def change\n    add_index :name, :email")
+      allow(file_lines).to receive(:gsub!).with("def change", "def change\n    add_index :some_model, [:name, :email], name: \"SomeModelNameEmailIndex\"")
       expect(file_lines).to receive(:save)
       prime_stack.send(:generate_index, directory_service, model, ["name", "email"])
     end

@@ -476,7 +476,7 @@ $@
 
       file = FileLines.from_file(filename: untracked_files[0].path)
       colon_names = index.map { |name| ":#{name}" }.join(", ")
-      file.gsub!("def change", "def change\n    add_index #{colon_names}")
+      file.gsub!("def change", "def change\n    add_index :#{model.name}, [#{colon_names}], name: \"#{camelize(index_name)}\"")
       file.save
     end
 
