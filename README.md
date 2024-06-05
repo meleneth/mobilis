@@ -6,6 +6,8 @@ prototyping of arbitrary project architecture.
 It has some smarts built in to make common things simple, and will allow you to
 further customize the output for more complex needs.
 
+Don't work on the pieces.  Work on the picture.
+
 ## Installation
 
     $ gem install mobilis
