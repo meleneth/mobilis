@@ -12,7 +12,8 @@ module Mobilis::InteractiveDesigner
           :rails_project_add_linked_mysql,
           :rails_project_add_linked_redis,
           :rails_project_add_index_select_model,
-          :rails_project_add_index_to_model
+          :rails_project_add_index_to_model,
+          :rails_model_edit
         ] => :rails_project_edit
       end
 
@@ -231,7 +232,7 @@ module Mobilis::InteractiveDesigner
         def action
           selected = prompt.multi_select("Select fields") do |menu|
             @selected_rails_model.fields.each do |field|
-              menu.choice "#{field.name} #{field.type}"
+              menu.choice "#{field.name} #{field.type.name}", field.name
             end
           end
           @selected_rails_model.add_index(*selected)
