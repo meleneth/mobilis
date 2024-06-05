@@ -3,6 +3,13 @@
 require 'debug'
 require 'socket'
 
+def fancy_tp(data, *options)
+  TablePrint::Config.set(:max_width, [160])
+  printer = TablePrint::Printer.new(data, options)
+  lines = printer.table_print
+  puts (lines)
+end
+
 # rubocop:disable Metrics/ClassLength
 module Mobilis
   class RailsProject < GenericProject
@@ -11,6 +18,12 @@ module Mobilis
     def initialize(data, metaproject)
       super
       @models = []
+    end
+
+    def display
+      ap name
+      ap @data[:options]
+      fancy_tp models, "name", fields: lambda { |model| model.fields.map(&:name).join ", " }
     end
 
     def child_env_vars
@@ -174,11 +187,21 @@ module Mobilis
       patchup_master_key_env
       directory_service.git_commit_all "#{name} - set rails master key"
       directory_service.chdir_project(self)
-      if models.length > 0
+      if has_models?
         generate_models directory_service
         directory_service.git_commit_all "#{name} - add Models"
         directory_service.chdir_project(self)
       end
+      models.each do |model|
+        model.indexes.each do |index|
+          generate_index(directory_service, model, index)
+          directory_service.git_commit_all "#{name} - #{model.name} - add index #{index.join ","}"
+        end
+      end
+    end
+
+    def has_models?
+      models.length > 0
     end
 
     def read_rails_master_key
@@ -440,6 +463,25 @@ $@
         "#{env_name}_EXTERNAL_PORT_NO": 'AUTO_EXTERNAL_PORT',
         "#{env_name}_INTERNAL_PORT_NO": 3000
       }
+    end
+
+    private
+
+    def generate_index(directory_service, model, index)
+      index_name = [model, *index, "index"].join("_")
+      rails_run_command "generate migration #{camelize(index_name)}"
+      untracked_files = directory_service.git_untracked_files
+
+      raise "Unexpectedly dirty directory!" unless untracked_files.length == 1
+
+      file = FileLines.from_file(filename: untracked_files[0])
+      colon_names = *index.map(":#{name}").join(", ")
+      file.gsub!("def change", "def change\n    add_index #{colon_names}")
+      file.save
+    end
+
+    def camelize(target)
+      target.split("_").collect(&:capitalize).join
     end
   end
 end
