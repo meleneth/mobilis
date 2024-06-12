@@ -53,6 +53,10 @@ module Mobilis
       @data[:name]
     end
 
+    def graphql_enabled?
+      options.include? :graphql
+    end
+
     def add_linked_postgresql_instance(dbname = nil)
       dbname ||= "#{name}db"
       postgresdb = @metaproject.add_postgresql_instance dbname

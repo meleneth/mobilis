@@ -42,4 +42,14 @@ RSpec.describe "Rails Model" do
       expect(author_model.to_h[:indexes]).to eq [["name"], ["name", "email"]]
     end
   end
+
+  describe "Rails project w/GraphQL" do
+    let(:rails_graphql) { build(:rails_project, graphql: true) }
+    let(:author_model) { build(:rails_model, name: "Author", rails_project: rails_graphql) }
+    let(:name_field) { build(:rails_field, name: "name", rails_model: author_model) }
+    it "can set field names of graphql models" do
+      author_model.set_graphql_fields(name_field)
+      expect(author_model.graphql_fields[0].name).to eq "name"
+    end
+  end
 end

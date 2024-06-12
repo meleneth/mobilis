@@ -6,6 +6,7 @@ module Mobilis
     attr_accessor :fields
     attr_accessor :indexes
     attr_accessor :rails_project
+    attr_reader :graphql_fields
 
     def initialize(name, rails_project)
       @rails_project = rails_project
@@ -33,13 +34,19 @@ module Mobilis
       @indexes << index_field_names
     end
 
+    def set_graphql_fields(*index_field_names)
+      @graphql_fields = index_field_names
+    end
+
     def to_h
       my_fields = @fields.map(&:to_h)
-      {
+      returned_h = {
         name: name,
         fields: my_fields,
-        indexes: indexes
+        indexes: indexes,
       }
+      returned_h[:graphql_fields] = @graphql_fields if @rails_project.graphql_enabled?
+      returned_h
     end
   end
 end
