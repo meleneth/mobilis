@@ -210,6 +210,16 @@ module Mobilis
           directory_service.git_commit_all "#{name} - #{model.name} - add index #{index.join ","}"
         end
       end
+      if graphql_enabled?
+        install_graphql
+        directory_service.git_commit_all "#{name} - rails g graphql:install"
+        models.each do |model|
+          if model.has_graphql_fields?
+            generate_graphql_wrapper_for_model(model)
+            directory_service.git_commit_all "#{name} - #{model.name} - add index #{index.join ","}"
+          end
+        end
+      end
     end
 
     def has_models?
@@ -422,6 +432,18 @@ module Mobilis
           /myapp/wait-until "mysql -D #{name}_production -h #{database.name} -u #{database.username} -p#{database.password} -e 'select 1'"
         MYSQL_LINE
       end
+    end
+
+    def install_graphql
+      Mobilis.logger.info "Installing graphql"
+      append_line "Gemfile", 'gem "graphql"'
+      bundle_run "bundle install"
+      bundle_run "rails g graphql:install"
+      bundle_run "bundle install"
+    end
+
+    def generate_graphql_wrapper_for_model(model)
+      bundle_run "rails g graphql:Object #{model.name.camelcase} #{model.graphql_fields.map(&:to_graphql).join(" ")}"
     end
 
     def install_rspec

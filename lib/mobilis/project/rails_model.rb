@@ -13,6 +13,7 @@ module Mobilis
       @name = name
       @fields = []
       @indexes = []
+      @graphql_fields = []
     end
 
     def line
