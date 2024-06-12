@@ -15,7 +15,7 @@ module Mobilis
     RAILS_MODEL_TYPE_STRING = RailsModelType.new(name: :string, description: "used for short text fields, think \"name\" or \"title\" attributes, and has to be less than 255 characters"),
     RAILS_MODEL_TYPE_UUID = RailsModelType.new(name: :uuid, description: "holds a UUID value.  Might work."),
     RailsModelType.new(name: :text, description: "used for longer text fields, think \"comment\" or \"review\" attributes, and has a character limit of approximately 30,000 characters"),
-    RailsModelType.new(name: :integer, description: "this type is used specifically for whole numbers ONLY, and can store numbers up to 2.1 billion"),
+    RAILS_MODEL_TYPE_INTEGER = RailsModelType.new(name: :integer, description: "this type is used specifically for whole numbers ONLY, and can store numbers up to 2.1 billion"),
     RailsModelType.new(name: :bigint, description: "similar to :integer, with the difference being that it can store whole numbers up to approximately 20 digits long"),
     RailsModelType.new(name: :float, description: "used for decimal numbers with fixed precision"),
     RailsModelType.new(name: :decimal, description: "also used for decimal numbers, but use this type if you need to make specific calculations (precision is NOT fixed)"),

@@ -2,6 +2,7 @@ PATH
   remote: .
   specs:
     mobilis (0.0.7pre)
+      activesupport
       awesome_print
       git
       optimist
