@@ -81,13 +81,26 @@ RSpec.describe Mobilis::InteractiveDesigner::MainMenu do
   describe "Edit existing project" do
     let(:rails_project) { build(:rails_prime, metaproject: metaproject, name: "someprime") }
     let(:metaproject) { build(:metaproject) }
-    let(:fsm) { rails_project ; build(:fsm, project: metaproject) }
+    let(:fsm) do
+      rails_project
+      build(:fsm, project: metaproject)
+    end
 
     it "Allows selecting an existing project" do
       rails_project
       select_choice fsm, "Edit existing"
       select_choice fsm, "someprime"
       expect(fsm.state).to eq "rails_project_edit"
+    end
+  end
+
+  describe "create demo project" do
+    let(:metaproject) { build(:metaproject) }
+    let(:fsm) { build(:fsm, project: metaproject) }
+
+    it "Allows selecting an existing project" do
+      select_choice fsm, "[m] Create demo project"
+      fsm.action
     end
   end
 end

@@ -206,7 +206,7 @@ module Mobilis::InteractiveDesigner
           models["account"].add_field(name: "organization_id", type: Mobilis::RAILS_MODEL_TYPE_UUID)
           models["authenticationdomain"].add_field(name: "account_id", type: Mobilis::RAILS_MODEL_TYPE_UUID)
           models["user"].add_field(name: "authentication_domain_id", type: Mobilis::RAILS_MODEL_TYPE_UUID)
-          models["user"].add_field(name: "organization", type: Mobilis::RAILS_MODEL_TYPE_REFERENCES)
+          models["user"].add_field(name: "organization", type: Mobilis::RAILS_MODEL_TYPE_REFERENCE)
 
           @project.new_relic do
             set_license_key "some_invalid_key_NREAL"
