@@ -67,6 +67,21 @@ RSpec.describe "RailsAppEdit" do
     end
   end
 
+  describe "Toggle GraphQL integration" do
+    it "allows toggling of GrapQL integration" do
+      nav.select_choice "Edit existing"
+      expect(fsm.state).to eq "edit_project_menu"
+      nav.select_choice "somerails"
+      expect(metaproject.projects[0].options).not_to include(:graphql)
+      expect(fsm.state).to eq "rails_project_edit"
+      nav.select_choice "Toggle GraphQL integration"
+      expect(fsm.state).to eq "rails_project_toggle_graphql_integration"
+      fsm.action
+      expect(metaproject.projects[0].options).to include(:graphql)
+      expect(fsm.state).to eq "rails_project_edit"
+    end
+  end
+
   describe "toggle UUID primary keys" do
     it "allows toggle of UUID primary keys" do
       nav.select_choice "Edit existing"

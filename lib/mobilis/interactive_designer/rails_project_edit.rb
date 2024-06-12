@@ -13,6 +13,7 @@ module Mobilis::InteractiveDesigner
           :rails_project_add_linked_redis,
           :rails_project_add_index_select_model,
           :rails_project_add_index_to_model,
+          :rails_project_toggle_graphql_integration,
           :rails_model_edit
         ] => :rails_project_edit
       end
@@ -43,6 +44,10 @@ module Mobilis::InteractiveDesigner
 
       event :go_rails_project_add_linked_redis do
         transition [:rails_project_edit] => :rails_project_add_linked_redis
+      end
+
+      event :go_rails_project_toggle_graphql_integration do
+        transition [:rails_project_edit] => :rails_project_toggle_graphql_integration
       end
 
       event :go_rails_project_toggle_api_mode do
@@ -82,6 +87,10 @@ module Mobilis::InteractiveDesigner
             {
               name: "Toggle API mode",
               value: -> { go_rails_project_toggle_api_mode }
+            },
+            {
+              name: "Toggle GraphQL integration",
+              value: -> { go_rails_project_toggle_graphql_integration }
             },
             {
               name: "Toggle UUID primary keys mode",
@@ -135,6 +144,19 @@ module Mobilis::InteractiveDesigner
 
         def action
           @selected_rails_project.toggle_rails_api_mode
+          go_rails_project_edit
+        end
+      end
+
+      state :rails_project_toggle_graphql_integration do
+        def display
+          Mobilis.logger.info "Toggled GraphQL integration for '#{@selected_rails_project.name}'"
+        end
+
+        def choices = false
+
+        def action
+          @selected_rails_project.toggle_rails_graphql_integration
           go_rails_project_edit
         end
       end

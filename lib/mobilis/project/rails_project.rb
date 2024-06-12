@@ -99,6 +99,14 @@ module Mobilis
       end
     end
 
+    def toggle_rails_graphql_integration
+      if options.include? :graphql
+        remove_rails_option :graphql
+      else
+        add_rails_option :graphql
+      end
+    end
+
     def toggle_uuid_primary_keys
       if options.include? :uuid_primary_keys
         remove_rails_option :uuid_primary_keys
