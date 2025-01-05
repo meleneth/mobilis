@@ -6,7 +6,6 @@ RSpec.describe "Acceptance" do
   describe "simple prime account service with default postgres db" do
     let(:expected) do
       {
-        "version" => "3.8",
         "services" => {
           "account" => {
             "image" => "testuser/account",
@@ -33,7 +32,7 @@ RSpec.describe "Acceptance" do
           "account-db" => {
             "image" => "postgres:16.2-bookworm",
             "restart" => "always",
-            "user" =>  "${RUNASUSER}",
+            "user" => "${RUNASUSER}",
             "environment" => [
               "POSTGRES_DB=${ACCOUNTDB_POSTGRES_DB}",
               "POSTGRES_USER=${ACCOUNTDB_POSTGRES_USER}",
@@ -64,16 +63,15 @@ RSpec.describe "Acceptance" do
   describe "docker-compose" do
     let(:expected) do
       {
-        "version" => "3.8",
         "services" => {
           "prime" => {
-            "links" => ["testp-db", "testm-db", "cache"],
+            "links" => %w[testp-db testm-db cache],
             "image" => "testuser/prime",
             "build" => {
               "context" => "./",
               "dockerfile" => "./prime/Dockerfile"
             },
-            "depends_on" => ["testp-db", "testm-db", "cache"],
+            "depends_on" => %w[testp-db testm-db cache],
             "environment" => [
               "RAILS_ENV=production",
               "RAILS_MASTER_KEY=",
@@ -151,7 +149,7 @@ RSpec.describe "Acceptance" do
       project.add_redis_instance "cache"
       project.add_rack_project "somerack"
       project.add_localgem_project "some_local_gem"
-      prime_stack.set_links(["testp-db", "testm-db", "cache", "some_local_gem"])
+      prime_stack.set_links(%w[testp-db testm-db cache some_local_gem])
       project.new_relic do
         set_license_key "some_invalid_key_NREAL"
         enable_distributed_tracing

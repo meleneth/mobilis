@@ -69,7 +69,6 @@ RSpec.describe "Rack Project" do
   describe "docker-compose" do
     let(:expected) do
       {
-        "version" => "3.8",
         "services" => {
           "some_rack_project" => {
             "image" => "testuser/some_rack_project",

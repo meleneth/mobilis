@@ -79,40 +79,38 @@ module Mobilis::InteractiveDesigner
         transition [:main_menu] => :save_project
       end
 
-
       state :main_menu do
         def display
-          fancy_tp projects, "name", "type", options: lambda { |p| p.options.join ", " }
+          fancy_tp projects, "name", "type", options: ->(p) { p.options.join ", " }
         end
 
         def choices
           menu_items = [
-            {name: "reload all code", value: -> { reload! }},
-            {name: "[m] Add project", value: -> { go_add_project_menu }},
-            {name: "[m] Create simple demo project", value: -> { go_create_simple_demo_project }},
-            {name: "[m] Create demo project", value: -> { go_create_demo_project }},
-            {name: "[m] Edit existing project", value: -> { go_edit_project_menu }},
-            {name: "[m] Show configuration", value: -> { go_show_configuration }}
+            { name: "reload all code", value: -> { reload! } },
+            { name: "[m] Add project", value: -> { go_add_project_menu } },
+            { name: "[m] Create simple demo project", value: -> { go_create_simple_demo_project } },
+            { name: "[m] Create demo project", value: -> { go_create_demo_project } },
+            { name: "[m] Edit existing project", value: -> { go_edit_project_menu } },
+            { name: "[m] Show configuration", value: -> { go_show_configuration } }
           ]
           if projects.length > 1
             menu_items.concat([
-              {name: "[m] edit links", value: -> { go_edit_links_select_project }}
-            ])
+                                { name: "[m] edit links", value: -> { go_edit_links_select_project } }
+                              ])
           end
           if projects.length > 0
             menu_items.concat([
-              {name: "Save mproj.json", value: -> { go_save_project }},
-              {name: "Generate", value: -> { go_generate }},
-              {name: "Build", value: -> { go_build }}
-            ])
+                                { name: "Save mproj.json", value: -> { go_save_project } },
+                                { name: "Generate", value: -> { go_generate } },
+                                { name: "Build", value: -> { go_build } }
+                              ])
           end
           menu_items.concat([
-            {name: "quit", value: -> { go_quit }}
-          ])
+                              { name: "quit", value: -> { go_quit } }
+                            ])
           menu_items
         end
       end
-
 
       state :finished do
         def still_running?
@@ -173,27 +171,27 @@ module Mobilis::InteractiveDesigner
 
         def display = false
 
-        def create_rails_service_with_postgres_db service_name
-        end
+        def create_rails_service_with_postgres_db(service_name); end
 
         def action
           @project = ::Mobilis::Project.new
-          @project.add_localgem_project "api_models"
+          # @project.add_localgem_project "api_models"
           services = {}
           models = {}
 
-          postgres_prime_rails_projects = %w[organization account user credential authorization notification authenticationdomain group]
+          postgres_prime_rails_projects = %w[organization account user credential authorization notification
+                                             authenticationdomain group]
           postgres_prime_rails_projects.each do |name|
             new_service = @project.add_prime_stack_rails_project "#{name}-service"
             new_service.add_linked_postgresql_instance("#{name}db")
-            new_service.add_link "api_models"
+            # new_service.add_link "api_models"
             new_service.toggle_uuid_primary_keys
             services[name] = new_service
           end
 
           %w[token login scim].each do |name|
             services[name] = @project.add_rack_project("#{name}-service")
-            services[name].add_link "api_models"
+            # services[name].add_link "api_models"
           end
 
           service_tables = %w[organization account user authenticationdomain]
@@ -222,14 +220,13 @@ module Mobilis::InteractiveDesigner
 
         def display = false
 
-        def create_rails_service_with_postgres_db service_name
-        end
+        def create_rails_service_with_postgres_db(service_name); end
 
         def action
           @project = ::Mobilis::Project.new
-          @project.add_localgem_project "api_models"
-          services = Hash.new
-          models = Hash.new
+          # @project.add_localgem_project "api_models"
+          services = {}
+          models = {}
 
           postgres_prime_rails_projects = %w[user]
           postgres_prime_rails_projects.each do |name|
@@ -241,7 +238,7 @@ module Mobilis::InteractiveDesigner
 
           %w[token].each do |name|
             services[name] = @project.add_rack_project("#{name}-service")
-            services[name].add_link "api_models"
+            # services[name].add_link "api_models"
           end
 
           service_tables = %w[user]
@@ -249,7 +246,7 @@ module Mobilis::InteractiveDesigner
             model = services[name].add_model name
             model.add_field(name: "name", type: Mobilis::RAILS_MODEL_TYPE_STRING)
             model.add_field(name: "email", type: Mobilis::RAILS_MODEL_TYPE_STRING)
-            model.add_index('name', 'email')
+            model.add_index("name", "email")
             models[name] = model
           end
 

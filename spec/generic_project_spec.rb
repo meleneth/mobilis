@@ -30,13 +30,12 @@ RSpec.describe "Generic Project" do
   end
 
   it "is addable" do
-    project.add_rails_project "prime", [:rspec, :api, :simplecov, :standard, :factorybot]
+    project.add_rails_project "prime", %i[rspec api simplecov standard factorybot]
   end
 
   describe "docker-compose" do
     let(:expected) do
       {
-        "version" => "3.8",
         "services" => {
           "prime" => {
             "build" => {
@@ -59,7 +58,7 @@ RSpec.describe "Generic Project" do
     end
 
     it "Generates correct service" do
-      project.add_rails_project "prime", [:rspec, :api, :simplecov, :standard, :factorybot]
+      project.add_rails_project "prime", %i[rspec api simplecov standard factorybot]
       result = Mobilis::DockerComposeProjector.project project
       expect(result).to eq(expected)
     end

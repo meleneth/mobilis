@@ -6,22 +6,23 @@ module Mobilis
       10
     end
 
-    def self.project_multi project
+    def self.project_multi(project)
       projector = DockerComposeProjector.new project
-      project.projects.each_with_index do |service, index|
+      project.projects.each_with_index do |service, _index|
         services = {}
         services[service.name] = projector.render_single_service service
-        info = {"version" => "3.8", "services" => services}
+        info = { "services" => services }
         File.open(service.compose_filename, "w") do |f|
           f.write info.to_yaml
         end
       end
     end
 
-    def self.project_base target_environment, project
+    def self.project_base(target_environment, project)
       includes = []
       project.projects.each do |project|
         next unless project.is_service_project
+
         project_path = "./compose/#{project.name}.yml"
         project_env = "./compose/#{target_environment}.env"
         includes << {
@@ -31,7 +32,6 @@ module Mobilis
         }
       end
       info = {
-        "version" => "3.8",
         "include" => includes,
         "name" => "#{project.name}-#{target_environment}"
       }
@@ -40,47 +40,48 @@ module Mobilis
       end
     end
 
-    def self.project_dev project
+    def self.project_dev(project)
       projector = DockerComposeProjector.new project
 
       services = {}
-      project.datastore_projects.each_with_index do |service, index|
+      project.datastore_projects.each_with_index do |service, _index|
         next unless service.is_service_project
+
         services[service.name] = projector.render_single_service service
       end
-      {"version" => "3.8", "services" => services}
+      { "services" => services }
     end
 
-    def self.project project
+    def self.project(project)
       projector = DockerComposeProjector.new project
 
       services = {}
-      project.projects.each_with_index do |service, index|
+      project.projects.each_with_index do |service, _index|
         service_definition = projector.send "#{service.type}_service", service
-        if service_definition
-          if service.linked_to_localgem_project
-            service_definition["build"] = {
-              "context" => "./",
-              "dockerfile" => "./#{service.name}/Dockerfile"
-            }
-          end
-          services[service.name] = service_definition
-          if service.links.count > 0
-            services[service.name]["links"] = service.links_to_actually_link.map(&:to_s)
-            services[service.name]["depends_on"] = service.links_to_actually_link.map(&:to_s)
-            service.links.each do |link|
-              linked_service = project.project_by_name link
-              linked_service.child_env_vars.each do |var|
-                services[service.name]["environment"] << var
-              end
-            end
+        next unless service_definition
+
+        if service.linked_to_localgem_project
+          service_definition["build"] = {
+            "context" => "./",
+            "dockerfile" => "./#{service.name}/Dockerfile"
+          }
+        end
+        services[service.name] = service_definition
+        next unless service.links.count > 0
+
+        services[service.name]["links"] = service.links_to_actually_link.map(&:to_s)
+        services[service.name]["depends_on"] = service.links_to_actually_link.map(&:to_s)
+        service.links.each do |link|
+          linked_service = project.project_by_name link
+          linked_service.child_env_vars.each do |var|
+            services[service.name]["environment"] << var
           end
         end
       end
-      {"version" => "3.8", "services" => services}
+      { "services" => services }
     end
 
-    def render_single_service service
+    def render_single_service(service)
       service_definition = send "#{service.type}_service", service
       if service_definition
         if service.linked_to_localgem_project
@@ -103,9 +104,9 @@ module Mobilis
       service_definition
     end
 
-    def kafka_service service
+    def kafka_service(service)
       {
-        "image" => 'bitnami/kafka:latest',
+        "image" => "bitnami/kafka:latest",
         "ports" => ["${#{service.env_name}_EXTERNAL_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
         "environment" => [
           "KAFKA_CFG_NODE_ID=0",
@@ -118,7 +119,7 @@ module Mobilis
       }
     end
 
-    def rails_service service
+    def rails_service(service)
       vars = []
       vars << "RAILS_ENV=production"
       vars << "RAILS_MASTER_KEY=#{service.rails_master_key}"
@@ -126,9 +127,7 @@ module Mobilis
       vars << "RAILS_MAX_THREADS=5"
 
       database = service.database
-      if database
-        vars << "DATABASE_URL=${#{service.env_name}_DATABASE_URL}"
-      end
+      vars << "DATABASE_URL=${#{service.env_name}_DATABASE_URL}" if database
 
       # vars << "NEW_RELIC_APP_NAME=#{ service.name }"
       # vars << "NEW_RELIC_LICENSE_KEY=#{ attributes[:new_relic_license_key] }"
@@ -143,7 +142,7 @@ module Mobilis
       }
     end
 
-    def rack_service service
+    def rack_service(service)
       {
         "image" => service.docker_image_name,
         "ports" => ["${#{service.env_name}_EXTERNAL_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
@@ -154,7 +153,7 @@ module Mobilis
       }
     end
 
-    def postgresql_service service
+    def postgresql_service(service)
       {
         "image" => "postgres:16.2-bookworm",
         "user" => "${RUNASUSER}",
@@ -167,7 +166,7 @@ module Mobilis
       }
     end
 
-    def mysql_service service
+    def mysql_service(service)
       {
         "image" => "mysql:debian",
         "restart" => "always",
@@ -179,7 +178,7 @@ module Mobilis
       }
     end
 
-    def redis_service service
+    def redis_service(service)
       {
         "image" => "redis:7.2.4-alpine",
         "restart" => "always",
@@ -192,7 +191,7 @@ module Mobilis
       }
     end
 
-    def localgem_service service
+    def localgem_service(service)
       # nothing here, because it doesn't integrate directly
     end
 
@@ -205,7 +204,7 @@ module Mobilis
       f
     end
 
-    def initialize project
+    def initialize(project)
       @project = project
     end
   end

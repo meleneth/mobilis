@@ -10,7 +10,6 @@ RSpec.describe "Redis Instance" do
   describe "docker-compose" do
     let(:expected) do
       {
-        "version" => "3.8",
         "services" => {
           "cache" => {
             "image" => "redis:7.2.4-alpine",
