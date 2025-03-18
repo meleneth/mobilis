@@ -11,14 +11,13 @@ module Mobilis
     include ActionsProjectsTake
     include Mobilis::NewRelic
 
-    attr_accessor :data
-    attr_accessor :projects
+    attr_accessor :data, :projects
 
     def initialize
       @data = {
         projects: [],
         username: ENV.fetch("USER", ENV.fetch("USERNAME", "")),
-        starting_port_no: 10000,
+        starting_port_no: 10_000,
         port_gap: 100,
         name: "generate"
       }
@@ -60,7 +59,7 @@ module Mobilis
     end
 
     def target_environments
-      [:production, :development, :test]
+      %i[production development test]
     end
 
     def datastore_projects
@@ -111,7 +110,7 @@ module Mobilis
         env_lines = []
         env_vars.each do |key, value|
           actual_value = value
-          actual_value = next_auto_port_no if value == 'AUTO_EXTERNAL_PORT'
+          actual_value = next_auto_port_no if value == "AUTO_EXTERNAL_PORT"
           actual_key = key.to_s.tr("-", "_")
           env_lines << "#{actual_key}=#{actual_value}\n"
         end
@@ -206,7 +205,7 @@ module Mobilis
     end
 
     def generate_attributes
-      attributes = {projects: {}, new_relic_license_key: ENV.fetch("NEW_RELIC_LICENSE_KEY", "some_invalid_key_NREAL")}
+      attributes = { projects: {}, new_relic_license_key: ENV.fetch("NEW_RELIC_LICENSE_KEY", "some_invalid_key_NREAL") }
       projects.each_with_index do |project, index|
         attributes["#{project.name}_internal_port_no".to_sym] =
           @data[:starting_port_no] + (index * @data[:port_gap])
@@ -228,9 +227,9 @@ module Mobilis
       run_docker "build -t #{rails_builder_image} --build-arg USER_ID=#{Process.uid} --build-arg GROUP_ID=#{Process.gid} ."
     end
 
-    def load_from_file filename
+    def load_from_file(filename)
       data = File.read filename
-      @data = JSON.parse data, {symbolize_names: true}
+      @data = JSON.parse data, { symbolize_names: true }
       @projects = @data[:projects].map { |p| project_for_line(p) }
       @data[:projects] = []
     end
@@ -246,7 +245,7 @@ module Mobilis
       end
     end
 
-    def project_for_data data
+    def project_for_data(data)
       mapping = {
         kafka: KafkaInstance,
         localgem: LocalgemProject,
@@ -259,7 +258,7 @@ module Mobilis
       mapping[data[:type].to_sym].new(data, self)
     end
 
-    def project_by_name name
+    def project_by_name(name)
       projects.find { |p| p.name == name }
     end
 
@@ -267,15 +266,15 @@ module Mobilis
       ap @data
     end
 
-    def add_prime_stack_rails_project name
-      add_rails_project name, [:rspec, :api, :simplecov, :standard, :factorybot]
+    def add_prime_stack_rails_project(name)
+      add_rails_project name, %i[rspec api simplecov standard factorybot]
     end
 
-    def add_omakase_stack_rails_project name
-      add_rails_project name, [:simplecov, :standard, :api]
+    def add_omakase_stack_rails_project(name)
+      add_rails_project name, %i[simplecov standard api]
     end
 
-    def add_postgresql_instance name
+    def add_postgresql_instance(name)
       data = {
         name: name,
         type: :postgresql
@@ -283,7 +282,7 @@ module Mobilis
       (@projects << PostgresqlInstance.new(data, self))[-1]
     end
 
-    def add_mysql_instance name
+    def add_mysql_instance(name)
       data = {
         name: name,
         type: :mysql
@@ -291,7 +290,7 @@ module Mobilis
       (@projects << MysqlInstance.new(data, self))[-1]
     end
 
-    def add_redis_instance name
+    def add_redis_instance(name)
       data = {
         name: name,
         type: :redis
@@ -299,7 +298,7 @@ module Mobilis
       (@projects << RedisInstance.new(data, self))[-1]
     end
 
-    def add_rails_project name, options
+    def add_rails_project(name, options)
       data = {
         name: name,
         type: :rails,
@@ -311,7 +310,7 @@ module Mobilis
       (@projects << RailsProject.new(data, self))[-1]
     end
 
-    def add_kafka_instance name
+    def add_kafka_instance(name)
       data = {
         name: name,
         type: :kafka,
@@ -320,7 +319,7 @@ module Mobilis
       (@projects << KafkaInstance.new(data, self))[-1]
     end
 
-    def add_localgem_project name
+    def add_localgem_project(name)
       data = {
         name: name,
         type: :localgem,
@@ -329,7 +328,7 @@ module Mobilis
       (@projects << LocalgemProject.new(data, self))[-1]
     end
 
-    def add_rack_project name
+    def add_rack_project(name)
       data = {
         name: name,
         type: :rack,
@@ -356,6 +355,7 @@ module Mobilis
     def create_datastore_directories
       # creates storage directories, per-environment, per-datastore
       return unless has_datastore_instance?
+
       target_environments.each do |target_environment|
         @directory_service.mkdir_environment(target_environment)
         @directory_service.chdir_environment(target_environment)
