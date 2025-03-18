@@ -15,7 +15,7 @@ module Mobilis
 
     def_delegators :@metaproject, :starting_port, :port_gap, :username, :getwd
 
-    def initialize data, metaproject
+    def initialize(data, metaproject)
       @data = data
       data[:attributes] = {} unless data[:attributes]
       data[:options] = [] unless data[:options]
@@ -37,7 +37,6 @@ module Mobilis
     def env_name
       name.upcase.tr("-", "_")
     end
-
 
     def links_to_actually_link
       children.filter { |l| !l.instance_of? Mobilis::LocalgemProject }
@@ -86,16 +85,17 @@ module Mobilis
       @data[:links]
     end
 
-    def set_links new_links
+    def set_links(new_links)
       @data[:links] = new_links
     end
 
-    def add_link new_link
+    def add_link(new_link)
       @data[:links] << new_link
     end
 
     def _p(path)
       return path unless linked_to_localgem_project
+
       "./#{name}/#{path}"
     end
 
@@ -126,9 +126,8 @@ module Mobilis
       FileUtils.mkdir_p name
     end
 
-    def global_env_vars(environment)
-      {
-      }
+    def global_env_vars(_environment)
+      {}
     end
 
     def is_service_project

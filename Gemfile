@@ -26,3 +26,5 @@ gem "super_diff", "~> 0.10.0"
 gem 'state_machines-graphviz' , group: :development
 
 gem "git", "~> 1.18"
+
+gem "steep", "~> 1.9"

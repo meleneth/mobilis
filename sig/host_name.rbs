@@ -1,0 +1,8 @@
+class HostName
+  attr_reader raw: String
+
+  def self.[](name: String) -> HostName
+  def initialize: (name: String) -> void
+  def child: (suffix: String) -> HostName
+  def to_s: () -> String
+end

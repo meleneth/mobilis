@@ -18,6 +18,8 @@ end
 
 require_relative "mobilis/version"
 require_relative "mobilis/logger"
+require_relative "mobilis/env_var"
+require_relative "mobilis/host_name"
 
 require_relative "mobilis/actions_projects_take"
 require_relative "mobilis/new_relic"
