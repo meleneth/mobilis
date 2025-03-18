@@ -73,5 +73,13 @@ module Mobilis
     def bare_filename
       File.basename(@filename, ".rb")
     end
+
+    def index_of(pattern)
+      @lines.index { |line| line.match?(pattern) }
+    end
+
+    def insert_line_at(line, index)
+      @lines.insert(index, line)
+    end
   end
 end

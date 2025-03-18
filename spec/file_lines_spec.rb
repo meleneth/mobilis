@@ -26,5 +26,12 @@ RSpec.describe Mobilis::FileLines do
         expect(subject.match "machina").to eq([])
       end
     end
+    it "#index_of" do
+      expect(subject.index_of(/gem "rails"/)).to eq 1
+    end
+    it "#insert_line_at" do
+      subject.insert_line_at('gem "something"', 1)
+      expect(subject.lines).to eq(['gem "some_gem"', 'gem "something"', 'gem "rails"'])
+    end
   end
 end
