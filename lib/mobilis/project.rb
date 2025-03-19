@@ -97,24 +97,13 @@ module Mobilis
     end
 
     def generate_env_files
-      set_file_contents ".env", <<~EOF
+      set_file_contents ".env", <<~EOFENV
         NEW_RELIC_LICENSE_KEY=
-      EOF
+      EOFENV
+
       target_environments.each do |environment|
-        env_vars = {}
-        projects.each do |project|
-          env_vars.merge! project.global_env_vars(environment)
-        end
-        env_vars["ENVIRONMENT"] = environment
-        env_vars["RUNASUSER"] = runasuser
-        env_lines = []
-        env_vars.each do |key, value|
-          actual_value = value
-          actual_value = next_auto_port_no if value == "AUTO_EXTERNAL_PORT"
-          actual_key = key.to_s.tr("-", "_")
-          env_lines << "#{actual_key}=#{actual_value}\n"
-        end
-        set_file_contents("compose/#{environment}.env", env_lines.join(""))
+        env_file = Mobilis::OutputFile::Env.new(environment, self, method(:next_auto_port_no))
+        env_file.write_to("compose")
       end
     end
 
