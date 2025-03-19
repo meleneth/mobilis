@@ -1,0 +1,10 @@
+# Represents a generic output file with filename, render, and write capabilities
+module Mobilis
+  class OutputFile
+    attr_reader filename: String
+
+    def initialize: (filename: String) -> void
+    def render: () -> String
+    def write_to: (String, force_overwrite?: bool) -> void
+  end
+end

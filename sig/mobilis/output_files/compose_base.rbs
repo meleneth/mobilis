@@ -1,0 +1,10 @@
+# Base class for Compose file output generators, providing environment and project config attributes
+module Mobilis::OutputFiles
+  class ComposeBase < Mobilis::OutputFile
+    attr_reader environment: String
+    attr_reader project_config: untyped # Replace with a concrete type if/when defined
+
+    def initialize: (environment: String, project_config: untyped) -> void
+    def render: () -> String
+  end
+end

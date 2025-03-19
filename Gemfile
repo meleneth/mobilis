@@ -28,3 +28,5 @@ gem 'state_machines-graphviz' , group: :development
 gem "git", "~> 1.18"
 
 gem "steep", "~> 1.9"
+
+gem "webrick", "~> 1.9"

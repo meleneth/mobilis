@@ -21,6 +21,9 @@ require_relative "mobilis/logger"
 require_relative "mobilis/env_var"
 require_relative "mobilis/host_name"
 
+require_relative "mobilis/output_file"
+require_relative "mobilis/output_files/compose_base"
+
 require_relative "mobilis/actions_projects_take"
 require_relative "mobilis/new_relic"
 require_relative "mobilis/scene_fsm"

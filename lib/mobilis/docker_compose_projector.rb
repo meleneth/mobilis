@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "fileutils"
 
 module Mobilis
@@ -19,25 +21,8 @@ module Mobilis
     end
 
     def self.project_base(target_environment, project)
-      includes = []
-      project.projects.each do |project|
-        next unless project.is_service_project
-
-        project_path = "./compose/#{project.name}.yml"
-        project_env = "./compose/#{target_environment}.env"
-        includes << {
-          "path" => project_path,
-          "project_directory" => "./",
-          "env_file" => project_env
-        }
-      end
-      info = {
-        "include" => includes,
-        "name" => "#{project.name}-#{target_environment}"
-      }
-      File.open("compose-#{target_environment}.yml", "w") do |f|
-        f.write(info.to_yaml)
-      end
+      file = Mobilis::OutputFile::ComposeBase.new(target_environment, project)
+      file.write_to(".")
     end
 
     def self.project_dev(project)

@@ -194,6 +194,7 @@ GEM
       concurrent-ruby (~> 1.0)
     unicode-display_width (2.5.0)
     uri (1.0.3)
+    webrick (1.9.1)
     wisper (2.0.1)
 
 PLATFORMS
@@ -214,6 +215,7 @@ DEPENDENCIES
   state_machines-graphviz
   steep (~> 1.9)
   super_diff (~> 0.10.0)
+  webrick (~> 1.9)
 
 BUNDLED WITH
    2.4.12
