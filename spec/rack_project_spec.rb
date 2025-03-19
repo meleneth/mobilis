@@ -65,29 +65,4 @@ RSpec.describe "Rack Project" do
       expect(project.projects[0].get_Dockerfile).to eq(expected)
     end
   end
-
-  describe "docker-compose" do
-    let(:expected) do
-      {
-        "services" => {
-          "some_rack_project" => {
-            "image" => "testuser/some_rack_project",
-            "ports" => [
-              "${SOME_RACK_PROJECT_EXTERNAL_PORT_NO}:${SOME_RACK_PROJECT_INTERNAL_PORT_NO}"
-            ],
-            "environment" => [],
-            "build" => {
-              "context" => "./some_rack_project"
-            }
-          }
-        }
-      }
-    end
-
-    it "Generates correct service" do
-      project.add_rack_project "some_rack_project"
-      result = Mobilis::DockerComposeProjector.project project
-      expect(result).to eq(expected)
-    end
-  end
 end

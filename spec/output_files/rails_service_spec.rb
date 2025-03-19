@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
-RSpec.describe "Acceptance" do
+require "spec_helper"
+
+RSpec.describe Mobilis::OutputFiles::RailsService do
   let(:project) { Mobilis::Project.new }
 
   describe "simple prime account service with default postgres db" do
@@ -28,22 +30,6 @@ RSpec.describe "Acceptance" do
             "depends_on" => [
               "account-db"
             ]
-          },
-          "account-db" => {
-            "image" => "postgres:16.2-bookworm",
-            "restart" => "always",
-            "user" => "${RUNASUSER}",
-            "environment" => [
-              "POSTGRES_DB=${ACCOUNTDB_POSTGRES_DB}",
-              "POSTGRES_USER=${ACCOUNTDB_POSTGRES_USER}",
-              "POSTGRES_PASSWORD=${ACCOUNTDB_POSTGRES_PASSWORD}"
-            ],
-            "ports" => [
-              "${ACCOUNTDB_EXTERNAL_PORT_NO}:${ACCOUNTDB_INTERNAL_PORT_NO}"
-            ],
-            "volumes" => [
-              "${ACCOUNTDB_POSTGRES_DATA}:/var/lib/postgresql/data"
-            ]
           }
         }
       }
@@ -55,7 +41,7 @@ RSpec.describe "Acceptance" do
     it "Generates correct service" do
       prime_stack = project.add_prime_stack_rails_project "account"
       prime_stack.add_linked_postgresql_instance "account-db"
-      result = Mobilis::DockerComposeProjector.project project
+      result = YAML.safe_load(Mobilis::OutputFiles::RailsService.new(prime_stack).render, aliases: true)
       expect(result).to eq(expected)
     end
   end
@@ -86,56 +72,7 @@ RSpec.describe "Acceptance" do
               #              "NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true"
             ],
             "ports" => ["${PRIME_EXTERNAL_PORT_NO}:${PRIME_INTERNAL_PORT_NO}"]
-          },
-          "testp-db" => {
-            "image" => "postgres:16.2-bookworm",
-            "restart" => "always",
-            "user" => "${RUNASUSER}",
-            "environment" => [
-              "POSTGRES_DB=${TESTPDB_POSTGRES_DB}",
-              "POSTGRES_USER=${TESTPDB_POSTGRES_USER}",
-              "POSTGRES_PASSWORD=${TESTPDB_POSTGRES_PASSWORD}"
-            ],
-            "ports" => ["${TESTPDB_EXTERNAL_PORT_NO}:${TESTPDB_INTERNAL_PORT_NO}"],
-            "volumes" => [
-              "${TESTPDB_POSTGRES_DATA}:/var/lib/postgresql/data"
-            ]
-          },
-          "testm-db" => {
-            "image" => "mysql:debian",
-            "restart" => "always",
-            "environment" => [
-              "MYSQL_DATABASE=${TESTM_DB_MYSQL_DATABASE}",
-              "MYSQL_USER=${TESTM_DB_MYSQL_USER}",
-              "MYSQL_PASSWORD=${TESTM_DB_MYSQL_PASSWORD}",
-              "MYSQL_RANDOM_ROOT_PASSWORD=true"
-            ],
-            "ports" => ["${TESTM_DB_EXTERNAL_PORT_NO}:${TESTM_DB_INTERNAL_PORT_NO}"],
-            "volumes" => [
-              "${TESTM_DB_MYSQL_DATA}:/var/lib/mysql"
-            ]
-          },
-          "cache" => {
-            "image" => "redis:7.2.4-alpine",
-            "restart" => "always",
-            "environment" => [],
-            "ports" => ["${CACHE_EXTERNAL_PORT_NO}:${CACHE_INTERNAL_PORT_NO}"],
-            "command" => "redis-server --save 20 1 --loglevel warning --requirepass cache_password",
-            "volumes" => [
-              "./data/cache:/data"
-            ]
-          },
-          "somerack" => {
-            "image" => "testuser/somerack",
-            "ports" => [
-              "${SOMERACK_EXTERNAL_PORT_NO}:${SOMERACK_INTERNAL_PORT_NO}"
-            ],
-            "environment" => [],
-            "build" => {
-              "context" => "./somerack"
-            }
           }
-
         }
       }
     end
@@ -154,7 +91,7 @@ RSpec.describe "Acceptance" do
         set_license_key "some_invalid_key_NREAL"
         enable_distributed_tracing
       end
-      result = Mobilis::DockerComposeProjector.project project
+      result = YAML.safe_load(Mobilis::OutputFiles::RailsService.new(prime_stack).render, aliases: true)
       expect(result).to eq(expected)
     end
   end

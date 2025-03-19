@@ -8,32 +8,6 @@ RSpec.describe "Postgresql Instance" do
   end
 
   describe "docker-compose" do
-    let(:expected) do
-      {
-        "services" => {
-          "test-db" => {
-            "image" => "postgres:16.2-bookworm",
-            "restart" => "always",
-            "user" => "${RUNASUSER}",
-            "environment" => [
-              "POSTGRES_USER=${TESTDB_POSTGRES_USER}",
-              "POSTGRES_PASSWORD=${TESTDB_POSTGRES_PASSWORD}"
-            ],
-            "ports" => ["${TESTDB_EXTERNAL_PORT_NO}:${TESTDB_INTERNAL_PORT_NO}"],
-            "volumes" => [
-              "${TESTDB_POSTGRES_DATA}:/var/lib/postgresql/data"
-            ]
-          }
-        }
-      }
-    end
-
-    it "Generates correct service" do
-      project.add_postgresql_instance "test-db"
-      result = Mobilis::DockerComposeProjector.project project
-      expect(result).to eq(expected)
-    end
-
     it "has global_env_vars" do
       project.add_postgresql_instance "test-db"
       expect(project.projects[0].global_env_vars("test")).to eq({

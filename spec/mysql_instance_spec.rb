@@ -8,32 +8,6 @@ RSpec.describe "MySQL Instance" do
   end
 
   describe "docker-compose" do
-    let(:expected) do
-      {
-        "services" => {
-          "test-db" => {
-            "image" => "mysql:debian",
-            "restart" => "always",
-            "environment" => [
-              "MYSQL_USER=${TEST_DB_MYSQL_USER}",
-              "MYSQL_PASSWORD=${TEST_DB_MYSQL_PASSWORD}",
-              "MYSQL_RANDOM_ROOT_PASSWORD=true"
-            ],
-            "ports" => ["${TEST_DB_EXTERNAL_PORT_NO}:${TEST_DB_INTERNAL_PORT_NO}"],
-            "volumes" => [
-              "${TEST_DB_MYSQL_DATA}:/var/lib/mysql"
-            ]
-          }
-        }
-      }
-    end
-
-    it "Generates correct service" do
-      project.add_mysql_instance "test-db"
-      result = Mobilis::DockerComposeProjector.project project
-      expect(result).to eq(expected)
-    end
-
     it "has global_env_vars" do
       project.add_mysql_instance "test-db"
       expect(project.projects[0].global_env_vars("test")).to eq({

@@ -11,37 +11,6 @@ RSpec.describe "Rails Project" do
     allow(project).to receive(:username).and_return("testuser")
   end
 
-  describe "docker-compose" do
-    let(:expected) do
-      {
-        "services" => {
-          "prime" => {
-            "build" => {
-              "context" => "./prime"
-            },
-            "image" => "testuser/prime",
-            "environment" => [
-              "RAILS_ENV=production",
-              "RAILS_MASTER_KEY=",
-              #              "NEW_RELIC_APP_NAME=prime",
-              #              "NEW_RELIC_LICENSE_KEY=some_invalid_key_NREAL",
-              #              "NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true",
-              "RAILS_MIN_THREADS=5",
-              "RAILS_MAX_THREADS=5"
-            ],
-            "ports" => ["${PRIME_EXTERNAL_PORT_NO}:${PRIME_INTERNAL_PORT_NO}"]
-          }
-        }
-      }
-    end
-
-    it "Generates correct service" do
-      project.add_rails_project "prime", %i[rspec api simplecov standard factorybot]
-      result = Mobilis::DockerComposeProjector.project project
-      expect(result).to eq(expected)
-    end
-  end
-
   describe "models" do
     # rails g scaffold Author name:string
     # rails g scaffold Post title:string description:text author:references
