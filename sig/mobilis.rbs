@@ -5,5 +5,7 @@ module Mobilis
   end
   class Services
   end
+  class Error
+  end
 end
 

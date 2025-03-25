@@ -1,4 +1,6 @@
 class Mobilis::OutputFile
-  attr_reader filename: untyped
-  def initialize: (e: untyped) -> void
+  attr_reader filename: String
+  def initialize: (String) -> void
+  def render: () -> void
+  def write_to: (String, bool) -> void
 end

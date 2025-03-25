@@ -1,3 +1,52 @@
 class Mobilis::Project
-  def initialize: (e: untyped) -> void
+  include Mobilis::ActionsProjectsTake
+  include Mobilis::NewRelic
+
+  def initialize: () -> void
+  def return_to_start_directory: () -> void
+  def return_to_target_directory: () -> void
+  def show: () -> void
+  def name: () -> void
+  def name=: (String) -> void
+  def attributes: () -> void
+  def username: () -> void
+  def target_directory: () -> void
+  def target_environments: () -> void
+  def datastore_projects: () -> void
+  def non_datastore_projects: () -> void
+  def generate_files: () -> void
+  def has_datastore_instance?: () -> void
+  def runasuser: () -> void
+  def generate_env_files: () -> void
+  def create_rails_builder: () -> void
+  def create_rails_builder_dockerfile: () -> void
+  def create_rails_builder_gemfile: () -> void
+  def has_rails_project?: () -> void
+  def generate_attributes: () -> void
+  def build: () -> void
+  def rails_builder_image: () -> void
+  def build_rails_builder: () -> void
+  def load_from_file: (filename) -> void
+  def save_project: () -> void
+  def each_project_for_environment : (Mobilis::ExecutionEnvironment) -> void
+  def save_docker_compose: () -> void
+  def writer_for_project: (Mobilis::Project::GenericProject) -> Mobilis::OutputFile
+  def project_by_name: (String) -> Mobilis::Project::GenericProject
+  def display: () -> void
+  def add_prime_stack_rails_project: (String) -> Mobilis::Project::RailsProject
+  def add_omakase_stack_rails_project: (String) -> Mobilis::Project::RailsProject
+  def add_postgresql_instance: (String) -> Mobilis::Project::PosgresProject
+  def add_mysql_instance: (String) -> Mobilis::Project::MysqlProject
+  def add_redis_instance: (String) -> Mobilis::Project::RedisProject
+  def add_rails_project: (String, options) -> Mobilis::Project::RailsProject
+  def add_kafka_instance: (String) -> Mobilis::Project::KafkaProject
+  def add_localgem_project: (String) -> Mobilis::Project::LocalGemProject
+  def add_rack_project: (String) -> Mobilis::Project::RackProject
+  def getwd: () -> void
+  def to_h: () -> void
+  def create_datastore_directories: () -> void
+  def pull_dev_datastore_instances: () -> void
+  def start_dev_datastore_instances: () -> void
+  def create_project_instances: () -> void
+  def next_auto_port_no: () -> void
 end
