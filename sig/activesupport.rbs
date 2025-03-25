@@ -1,0 +1,4 @@
+class String
+  def camelcase: () -> String
+end
+

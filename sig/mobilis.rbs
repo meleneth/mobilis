@@ -3,10 +3,6 @@ module Mobilis
 
   module Project
   end
-  class InteractiveDesigner
-  end
-  class OutputFiles
-  end
   class Services
   end
   class Error

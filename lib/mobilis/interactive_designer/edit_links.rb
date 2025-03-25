@@ -3,8 +3,7 @@
 require "mel/scene-fsm"
 
 module Mobilis::InteractiveDesigner
-  class KafkaEdit < Mobilis::SceneFSM
-
+  class EditLinks < Mobilis::SceneFSM
     state_machine :state, initial: :kafka_instance_edit do
       event :go_edit_kafka_project do
         transition [

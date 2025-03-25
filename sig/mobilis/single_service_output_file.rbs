@@ -1,7 +1,9 @@
-class Mobilis::SingleServiceOutputFile
+class Mobilis::SingleServiceOutputFile < Mobilis::OutputFile
   attr_reader service: Mobilis::Project::GenericProject
-  def initialize: (e: untyped) -> void
-  def render_data: () -> String
-  def service_data: () -> Hash
-  def project: () -> Mobilis::Project
+
+  def initialize: (service: Mobilis::Project::GenericProject) -> void
+  def project: () -> Mobilis::Project::MetaProject
+  def render: () -> String
+  def render_data: () -> Hash[String, untyped]
 end
+

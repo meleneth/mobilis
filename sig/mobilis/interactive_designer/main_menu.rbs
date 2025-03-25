@@ -1,3 +1,13 @@
-class Mobilis::InteractiveDesigner::MainMenu
-  def initialize: () -> void
+module Mobilis::InteractiveDesigner
+  class MainMenu < Mobilis::SceneFSM
+    attr_accessor project: Mobilis::Project::MetaProject
+    attr_accessor selected_rails_project: Mobilis::Project::RailsProject
+
+    def select_rails_project_for_editing: (Mobilis::Project::RailsProject) -> void
+    def new_relic_license_key: () -> (String | false)
+    def fancy_tp: (Array[untyped], *untyped) -> void
+    def reload!: (?bool) -> true
+    def project: () -> Mobilis::Project::MetaProject
+  end
 end
+

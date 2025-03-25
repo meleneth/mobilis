@@ -1,3 +1,5 @@
-class Mobilis::SceneFsm
-  def initialize: () -> void
+module Mobilis
+  class SceneFSM < Mel::SceneFSM
+    def select_choice: (String) -> void
+  end
 end

@@ -439,18 +439,23 @@ module Mobilis
 
       def wait_until_line
         # TODO: FIXME
-        if database.instance_of? Mobilis::Project::PostgresqlInstance
+        #
+        if database.is_a? Mobilis::Project::PostgresqlInstance
           return <<~POSTGRES_LINE
             /myapp/wait-until "psql $DATABASE_URL -c 'select 1'"
           POSTGRES_LINE
         end
 
         # instance_of? is a code smell - maybe this should be database.wait_until_line ?
-        return unless database.instance_of? Mobilis::Project::MysqlInstance
+        db = database
+        if db.is_a? Mobilis::Project::MysqlInstance
 
-        <<~MYSQL_LINE
-          /myapp/wait-until "mysql -D #{name}_production -h #{database.name} -u #{database.username} -p#{database.password} -e 'select 1'"
-        MYSQL_LINE
+          return <<~MYSQL_LINE
+            /myapp/wait-until "mysql -D #{name}_production -h #{db.name} -u #{db.username} -p#{db.password} -e 'select 1'"
+          MYSQL_LINE
+        end
+
+        ""
       end
 
       def install_graphql

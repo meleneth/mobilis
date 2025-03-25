@@ -1,0 +1,11 @@
+module TablePrint
+  module Config
+    def self.set: (Symbol, Array[Integer]) -> void
+  end
+
+  class Printer
+    def initialize: (Array[untyped], Array[untyped]) -> void
+    def table_print: () -> Array[String]
+  end
+end
+

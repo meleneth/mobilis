@@ -1,3 +1,13 @@
 class Mobilis::DockerComposeProjector
-  def initialize: () -> void
+  def self.port_skip: () -> Integer
+  def self.service_writers: () -> Hash[Symbol,
+    (singleton(Mobilis::OutputFiles::KafkaService) | 
+     singleton(Mobilis::OutputFiles::RailsService) | 
+     singleton(Mobilis::OutputFiles::RedisService) | 
+     singleton(Mobilis::OutputFiles::RackService) | 
+     singleton(Mobilis::OutputFiles::MysqlService) | 
+     singleton(Mobilis::OutputFiles::PostgresqlService))]
+
+  def self.project_multi: (Mobilis::Project::MetaProject) -> void
+  def self.project_base: (untyped, Mobilis::Project::MetaProject) -> void
 end
