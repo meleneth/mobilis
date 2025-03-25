@@ -3,6 +3,10 @@ module Mobilis
 
   module Project
   end
+
+  module OutputFiles
+  end
+
   class Services
   end
   class Error
