@@ -1,3 +1,5 @@
-class Mobilis::ActionsProjectsTake
-  def initialize: () -> void
+module Mobilis::ActionsProjectsTake
+  def append_line: (String, String) -> void
+  def write_file: (String)  { (untyped) -> void } -> void
+  def run_command: (String, Boolean) -> void
 end

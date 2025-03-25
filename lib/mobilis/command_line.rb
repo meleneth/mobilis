@@ -3,10 +3,11 @@ require "optimist"
 module Mobilis
   class CommandLine
     def self.parse_args(args)
+      # @type var options: Hash[Symbol, Symbol]
       options = {}
       Optimist.options(args) do
         banner "multi-project codebase generation toolkit"
-        stop_on ["load", "build", "help"]
+        stop_on %w[load build help]
       end
       if args == []
         options[:subcommand] = :interactive

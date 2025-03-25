@@ -1,3 +1,4 @@
 class Mobilis::CommandLine
   def initialize: () -> void
+  def self.parse_args: (Array[String]) -> Hash
 end

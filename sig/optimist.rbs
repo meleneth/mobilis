@@ -1,0 +1,3 @@
+module Optimist
+  def self.options: (Array[String]) { (untyped) -> void } -> Hash[Symbol, untyped]
+end
