@@ -20,10 +20,27 @@ module Mobilis
       @models = []
     end
 
+    def each_project_for_environment(environment = nil)
+      yield self
+      return unless environment&.is_production?
+
+      main_db = database
+      return unless main_db
+
+      db_class = main_db.class
+      base_name = main_db.name
+      %w[cache queue cable].each do |variant|
+        data = main_db.data.dup
+        data[:name] = "#{variant}-#{base_name}"
+        data[:links] = [name]
+        yield db_class.new(data, main_db.metaproject)
+      end
+    end
+
     def display
       ap name
       ap @data[:options]
-      fancy_tp models, "name", fields: lambda { |model| model.fields.map(&:name).join ", " }
+      fancy_tp models, "name", fields: ->(model) { model.fields.map(&:name).join ", " }
     end
 
     def child_env_vars
@@ -119,22 +136,22 @@ module Mobilis
       end
     end
 
-    def add_rails_option option
+    def add_rails_option(option)
       remove_rails_option option
       options << option
     end
 
-    def remove_rails_option option
+    def remove_rails_option(option)
       options.reject! { |x| x == option }
     end
 
-    def add_controller name
-      controller = {name: name, actions: []}
+    def add_controller(name)
+      controller = { name: name, actions: [] }
       @data[:controllers] << controller
       controller
     end
 
-    def add_model name
+    def add_model(name)
       new_model = RailsModel.new(name, self)
       models << new_model
       new_model
@@ -148,19 +165,19 @@ module Mobilis
       "#{@metaproject.username}/#{name}"
     end
 
-    def rails_run_command command
+    def rails_run_command(command)
       run_docker "run --rm -v #{getwd}:/usr/src/app -w /usr/src/app #{rails_builder_image} #{command}"
     end
 
-    def project_rails_run_command command, extra_args = ""
+    def project_rails_run_command(command, extra_args = "")
       run_docker "run -u #{Process.uid}:#{Process.gid} --rm -v #{getwd}:/myapp -w /myapp #{extra_args} #{rails_image} #{command}"
     end
 
-    def bundle_run command
+    def bundle_run(command)
       rails_run_command "./bundle_run.sh #{command}"
     end
 
-    def project_bundle_run command, extra_args = ""
+    def project_bundle_run(command, extra_args = "")
       project_rails_run_command "./bundle_run.sh #{command}", extra_args
     end
 
@@ -210,14 +227,14 @@ module Mobilis
           directory_service.git_commit_all "#{name} - #{model.name} - add index #{index.join ","}"
         end
       end
-      if graphql_enabled?
-        install_graphql
-        directory_service.git_commit_all "#{name} - rails g graphql:install"
-        models.each do |model|
-          if model.has_graphql_fields?
-            generate_graphql_wrapper_for_model(model)
-            directory_service.git_commit_all "#{name} - #{model.name} - add index #{index.join ","}"
-          end
+      return unless graphql_enabled?
+
+      install_graphql
+      directory_service.git_commit_all "#{name} - rails g graphql:install"
+      models.each do |model|
+        if model.has_graphql_fields?
+          generate_graphql_wrapper_for_model(model)
+          directory_service.git_commit_all "#{name} - #{model.name} - add index #{index.join ","}"
         end
       end
     end
@@ -273,7 +290,8 @@ module Mobilis
         lines = FileLines.from_file(filename: "../compose/development.env")
         db = database
         external_db_port = lines.get_value("#{db.name}_EXTERNAL_PORT_NO")
-        project_bundle_run model.line, "-e DATABASE_URL=postgres://#{db.name}-development-user:#{db.name}-development-password@#{hostname}:#{external_db_port}/#{db.name}-development"
+        project_bundle_run model.line,
+                           "-e DATABASE_URL=postgres://#{db.name}-development-user:#{db.name}-development-password@#{hostname}:#{external_db_port}/#{db.name}-development"
       end
     end
 
@@ -339,7 +357,7 @@ module Mobilis
         *.orig
         rerun.txt
         pickle-email-*.html
-        
+
         # Ignore all logfiles and tempfiles.
         /log/*
         /tmp/*
@@ -347,58 +365,58 @@ module Mobilis
         !/tmp/.keep
 
         data
-        
+
         # TODO Comment out this rule if you are OK with secrets being uploaded to the repo
         config/initializers/secret_token.rb
         config/master.key
-        
+
         # Only include if you have production secrets in this file, which is no longer a Rails default
         # config/secrets.yml
-        
+
         # dotenv, dotenv-rails
         # TODO Comment out these rules if environment variables can be committed
         .env
         .env*.local
-        
+
         ## Environment normalization:
         /.bundle
         /vendor/bundle
-        
+
         # these should all be checked in to normalize the environment:
         # Gemfile.lock, .ruby-version, .ruby-gemset
-        
+
         # unless supporting rvm < 1.11.0 or doing something fancy, ignore this:
         .rvmrc
-        
+
         # if using bower-rails ignore default bower_components path bower.json files
         /vendor/assets/bower_components
         *.bowerrc
         bower.json
-        
+
         # Ignore pow environment settings
         .powenv
-        
+
         # Ignore Byebug command history file.
         .byebug_history
-        
+
         # Ignore node_modules
         node_modules/
-        
+
         # Ignore precompiled javascript packs
         /public/packs
         /public/packs-test
         /public/assets
-        
+
         # Ignore yarn files
         /yarn-error.log
         yarn-debug.log*
         .yarn-integrity
-        
+
         # Ignore uploaded files in development
         /storage/*
         !/storage/.keep
         /public/uploads
-        GITIGNORE_END
+      GITIGNORE_END
     end
 
     def generate_entrypoint_sh
@@ -419,7 +437,7 @@ module Mobilis
     end
 
     def wait_until_line
-      # TODO FIXME
+      # TODO: FIXME
       if database.instance_of? Mobilis::PostgresqlInstance
         return <<~POSTGRES_LINE
           /myapp/wait-until "psql $DATABASE_URL -c 'select 1'"
@@ -427,11 +445,11 @@ module Mobilis
       end
 
       # instance_of? is a code smell - maybe this should be database.wait_until_line ?
-      if database.instance_of? Mobilis::MysqlInstance
-        <<~MYSQL_LINE
-          /myapp/wait-until "mysql -D #{name}_production -h #{database.name} -u #{database.username} -p#{database.password} -e 'select 1'"
-        MYSQL_LINE
-      end
+      return unless database.instance_of? Mobilis::MysqlInstance
+
+      <<~MYSQL_LINE
+        /myapp/wait-until "mysql -D #{name}_production -h #{database.name} -u #{database.username} -p#{database.password} -e 'select 1'"
+      MYSQL_LINE
     end
 
     def install_graphql
@@ -486,15 +504,13 @@ $@
       pieces = ["bundle", "exec", "rails", "new", name, ".", "--skip-bundle", "--skip-git"]
       pieces << "--api" if options.include? :api
       my_db = database
-      if my_db
-        pieces << "--database=#{my_db.type}"
-      end
+      pieces << "--database=#{my_db.type}" if my_db
       pieces.join " "
     end
 
     def global_env_vars(environment)
       {
-        "#{env_name}_EXTERNAL_PORT_NO": 'AUTO_EXTERNAL_PORT',
+        "#{env_name}_EXTERNAL_PORT_NO": "AUTO_EXTERNAL_PORT",
         "#{env_name}_INTERNAL_PORT_NO": 3000
       }
     end
@@ -510,7 +526,8 @@ $@
 
       file = FileLines.from_file(filename: untracked_files[0].path)
       colon_names = index.map { |name| ":#{name}" }.join(", ")
-      file.gsub!("def change", "def change\n    add_index :#{model.name}, [#{colon_names}], name: \"#{camelize(index_name)}\"")
+      file.gsub!("def change",
+                 "def change\n    add_index :#{model.name}, [#{colon_names}], name: \"#{camelize(index_name)}\"")
       file.save
     end
 

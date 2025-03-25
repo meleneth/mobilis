@@ -59,7 +59,7 @@ module Mobilis
     end
 
     def target_environments
-      %i[production development test]
+      %i[production development test].each { |env| yield Mobilis::ExecutionEnvironment.new(env) }
     end
 
     def datastore_projects
@@ -101,7 +101,7 @@ module Mobilis
         NEW_RELIC_LICENSE_KEY=
       EOFENV
 
-      target_environments.each do |environment|
+      target_environments do |environment|
         env_file = Mobilis::OutputFile::Env.new(environment, self, method(:next_auto_port_no))
         env_file.write_to("compose")
       end
@@ -227,14 +227,24 @@ module Mobilis
       File.write("mproj.json", JSON.pretty_generate(to_h))
     end
 
-    def save_docker_compose
-      DockerComposeProjector.project_multi self
-      target_environments.each do |target_environment|
-        DockerComposeProjector.project_base target_environment, self
+    def each_project_for_environment(target_environment = nil, &block)
+      projects.each do |project|
+        project.each_project_for_environment(target_environment, &block)
       end
     end
 
-    def project_for_data(data)
+    def save_docker_compose
+      DockerComposeProjector.project_multi self
+      target_environments do |target_environment|
+        DockerComposeProjector.project_base target_environment, self
+        each_project_for_environment(target_environment) do |project|
+          writer = writer_for_project(project)
+          writer.write_to("compose")
+        end
+      end
+    end
+
+    def writer_for_project(project)
       mapping = {
         kafka: KafkaInstance,
         localgem: LocalgemProject,
@@ -244,7 +254,7 @@ module Mobilis
         rails: RailsProject,
         redis: RedisInstance
       }
-      mapping[data[:type].to_sym].new(data, self)
+      mapping[project.data[:type].to_sym].new(project, self)
     end
 
     def project_by_name(name)
@@ -345,7 +355,7 @@ module Mobilis
       # creates storage directories, per-environment, per-datastore
       return unless has_datastore_instance?
 
-      target_environments.each do |target_environment|
+      target_environments do |target_environment|
         @directory_service.mkdir_environment(target_environment)
         @directory_service.chdir_environment(target_environment)
         # TODO: make script for creating datastore directories after checkout, since

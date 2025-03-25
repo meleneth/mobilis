@@ -4,7 +4,7 @@ require "spec_helper"
 
 # Tests for Mobilis::OutputFiles::ComposeBase
 RSpec.describe Mobilis::OutputFiles::ComposeBase do
-  let(:environment) { :test }
+  let(:environment) { Mobilis::ExecutionEnvironment.new(:test) }
   let(:metaproject) { build(:metaproject) }
   let(:rails_project) { build(:rails_prime, metaproject: metaproject, name: "somerails") }
 

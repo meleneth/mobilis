@@ -13,7 +13,7 @@ module Mobilis
 
       def render
         includes = []
-        project_config.projects.each do |project|
+        project_config.each_project_for_environment(@environment) do |project|
           next unless project.is_service_project
 
           includes << {
@@ -22,6 +22,13 @@ module Mobilis
             "env_file" => "./compose/#{environment}.env"
           }
         end
+
+        if environment.is_production?
+          includes << {
+            "path" => "./compose/production-overrides.yml"
+          }
+        end
+
         info = {
           "include" => includes,
           "name" => "#{project_config.name}-#{environment}"

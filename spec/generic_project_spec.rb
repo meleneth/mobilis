@@ -18,14 +18,40 @@ RSpec.describe "Generic Project" do
   describe "#parents" do
     it "has projects that link to us" do
       prime_stack.set_links([mysql_instance.name])
-      expect(mysql_instance.parents[0].name).to eq("prime")
+      seen_parents = []
+      mysql_instance.parents do |parent|
+        seen_parents << parent.name
+      end
+      expect(seen_parents).to eq(["prime"])
     end
   end
 
   describe "#linked_to_rails_project" do
     it "returns first linked rails project, if there is one" do
       prime_stack.set_links([mysql_instance.name])
-      expect(mysql_instance.linked_to_rails_project.name).to eq("prime")
+      rails_project = []
+      mysql_instance.linked_to_rails_project do |rails|
+        rails_project << rails.name
+      end
+      expect(rails_project).to eq(["prime"])
+    end
+  end
+
+  describe "#each_project_for_environment" do
+    it "yields self" do
+      project_names = []
+      mysql_instance.each_project_for_environment(Mobilis::ExecutionEnvironment.new(:production)) do |project|
+        project_names << project.name
+      end
+      expect(project_names).to eq(%w[testm-db])
+    end
+    it "yields extra projects for rails production" do
+      project_names = []
+      prime_stack.set_links([mysql_instance.name])
+      prime_stack.each_project_for_environment(Mobilis::ExecutionEnvironment.new(:production)) do |project|
+        project_names << project.name
+      end
+      expect(project_names).to eq(%w[prime cache-testm-db queue-testm-db cable-testm-db])
     end
   end
 

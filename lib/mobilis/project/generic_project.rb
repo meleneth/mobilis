@@ -11,7 +11,7 @@ module Mobilis
     include ActionsProjectsTake
     extend Forwardable
 
-    attr_reader :metaproject
+    attr_reader :metaproject, :data
 
     def_delegators :@metaproject, :starting_port, :port_gap, :username, :getwd
 
@@ -29,6 +29,10 @@ module Mobilis
       []
     end
 
+    def each_project_for_environment(environment = nil)
+      yield self
+    end
+
     def env_vars
       []
     end
@@ -38,27 +42,34 @@ module Mobilis
       name.upcase.tr("-", "_")
     end
 
-    def links_to_actually_link
-      children.filter { |l| !l.instance_of? Mobilis::LocalgemProject }
-              .map { |l| l.name }
+    def links_to_actually_link(environment = nil)
+      children(environment).filter { |l| !l.instance_of? Mobilis::LocalgemProject }
+                           .map { |l| l.name }
     end
 
     # projects who are linked to us
-    def children
+    def children(environment = nil)
       links.map { |name| @metaproject.project_by_name name }
     end
 
     # projects we are linked to
-    def parents
-      @metaproject.projects.filter { |l| l.links.include? name }
+    def parents(environment = nil)
+      @metaproject.each_project_for_environment(environment) do |project|
+        yield project if project.links.include? name
+      end
     end
 
     def linked_to_rails_project
-      parents.find { |l| l.instance_of? Mobilis::RailsProject }
+      parents do |project|
+        if project.instance_of? Mobilis::RailsProject
+          yield project
+          return
+        end
+      end
     end
 
     def linked_to_localgem_project
-      linked_localgem_projects.length > 0
+      linked_localgem_projects.length.positive?
     end
 
     def linked_localgem_projects
