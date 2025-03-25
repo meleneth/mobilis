@@ -1,0 +1,3 @@
+class Mobilis::Project::MysqlInstance
+  def initialize: () -> void
+end

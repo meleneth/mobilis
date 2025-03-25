@@ -1,0 +1,3 @@
+class Mobilis::Os
+  def initialize: () -> void
+end

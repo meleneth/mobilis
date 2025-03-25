@@ -1,0 +1,4 @@
+class Mobilis::HostName
+  attr_reader raw: untyped
+  def initialize: (e: untyped) -> void
+end

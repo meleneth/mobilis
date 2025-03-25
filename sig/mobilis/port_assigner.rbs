@@ -1,0 +1,3 @@
+class Mobilis::PortAssigner
+  def initialize: (starting_port_no: Integer,port_gep: Integer) -> void
+end

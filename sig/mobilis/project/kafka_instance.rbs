@@ -1,0 +1,3 @@
+class Mobilis::Project::KafkaInstance
+  def initialize: () -> void
+end

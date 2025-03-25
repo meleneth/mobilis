@@ -1,0 +1,3 @@
+class Mobilis::Project::RackProject
+  def initialize: () -> void
+end

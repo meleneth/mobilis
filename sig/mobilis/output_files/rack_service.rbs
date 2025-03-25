@@ -1,0 +1,3 @@
+class Mobilis::OutputFiles::RackService
+  def initialize: () -> void
+end

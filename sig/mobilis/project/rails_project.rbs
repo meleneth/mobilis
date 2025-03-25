@@ -1,0 +1,3 @@
+class Mobilis::Project::RailsProject
+  def initialize: (a: untyped,t: untyped) -> void
+end

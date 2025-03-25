@@ -1,0 +1,3 @@
+class Mobilis::OutputFiles::RailsService
+  def initialize: () -> void
+end

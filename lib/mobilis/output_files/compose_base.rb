@@ -23,12 +23,6 @@ module Mobilis
           }
         end
 
-        if environment.is_production?
-          includes << {
-            "path" => "./compose/production-overrides.yml"
-          }
-        end
-
         info = {
           "include" => includes,
           "name" => "#{project_config.name}-#{environment}"

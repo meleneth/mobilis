@@ -1,0 +1,3 @@
+class Mobilis::Project
+  def initialize: (e: untyped) -> void
+end

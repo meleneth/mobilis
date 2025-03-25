@@ -1,0 +1,3 @@
+class Mobilis::Version
+  def initialize: () -> void
+end

@@ -1,0 +1,5 @@
+class Mobilis::Project::GenericProject
+  attr_reader metaproject: untyped
+  attr_reader data: untyped
+  def initialize: (a: untyped,t: untyped) -> void
+end

@@ -1,0 +1,4 @@
+class Mobilis::ExecutionEnvironment
+  attr_reader value: untyped
+  def initialize: (e: untyped) -> void
+end

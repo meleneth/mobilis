@@ -1,0 +1,3 @@
+class Mobilis::CommandLine
+  def initialize: () -> void
+end

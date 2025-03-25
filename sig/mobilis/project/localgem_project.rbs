@@ -1,0 +1,3 @@
+class Mobilis::Project::LocalgemProject
+  def initialize: () -> void
+end

@@ -1,0 +1,6 @@
+class Mobilis::Project::RailsField
+  attr_reader name: String
+  attr_reader type: untyped
+  attr_reader rails_model: untyped
+  def initialize: (name: untyped, rails_model: untyped, type: untyped) -> void
+end

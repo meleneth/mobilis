@@ -1,0 +1,3 @@
+class Mobilis::Logger
+  def initialize: () -> void
+end

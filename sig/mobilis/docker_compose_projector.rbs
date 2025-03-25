@@ -1,0 +1,3 @@
+class Mobilis::DockerComposeProjector
+  def initialize: () -> void
+end

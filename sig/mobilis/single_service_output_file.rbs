@@ -1,0 +1,4 @@
+class Mobilis::SingleServiceOutputFile
+  attr_reader service: untyped
+  def initialize: (e: untyped) -> void
+end

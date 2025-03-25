@@ -1,0 +1,4 @@
+class Mobilis::FileLines
+  attr_reader filename: untyped
+  def initialize: (filename: string,lines: Array[string]) -> void
+end

@@ -1,0 +1,3 @@
+class Mobilis::NewRelic
+  def initialize: () -> void
+end

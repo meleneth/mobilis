@@ -1,0 +1,3 @@
+class Mobilis::InteractiveDesigner::FsmDesigner
+  def initialize: () -> void
+end

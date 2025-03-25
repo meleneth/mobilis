@@ -1,0 +1,5 @@
+class Mobilis::RailsModelType
+  attr_reader name: Symbol
+  attr_reader description: String
+  def initialize: (name: String, description: String) -> void
+end

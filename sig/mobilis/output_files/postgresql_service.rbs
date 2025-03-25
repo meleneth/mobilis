@@ -1,0 +1,3 @@
+class Mobilis::OutputFiles::PostgresqlService
+  def initialize: () -> void
+end

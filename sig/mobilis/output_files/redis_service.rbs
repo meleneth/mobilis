@@ -1,0 +1,3 @@
+class Mobilis::OutputFiles::RedisService
+  def initialize: () -> void
+end

@@ -1,0 +1,3 @@
+class Mobilis::Project::RedisInstance
+  def initialize: () -> void
+end

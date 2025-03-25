@@ -1,0 +1,3 @@
+class Mobilis::SceneFsm
+  def initialize: () -> void
+end

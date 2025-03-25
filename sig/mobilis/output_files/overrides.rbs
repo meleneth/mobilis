@@ -1,4 +1,4 @@
-class Mobilis::OutputFiles::ComposeBase
+class Mobilis::OutputFiles::Overrides
   attr_reader environment: untyped
   attr_reader project_config: untyped
   def initialize: (t: untyped,g: untyped) -> void

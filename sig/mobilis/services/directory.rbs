@@ -1,0 +1,3 @@
+class Mobilis::Services::Directory
+  def initialize: (e: untyped) -> void
+end

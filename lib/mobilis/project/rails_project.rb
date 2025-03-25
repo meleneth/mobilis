@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-require 'debug'
-require 'socket'
+require "debug"
+require "socket"
 
 def fancy_tp(data, *options)
   TablePrint::Config.set(:max_width, [160])
   printer = TablePrint::Printer.new(data, options)
   lines = printer.table_print
-  puts (lines)
+  puts(lines)
 end
 
 # rubocop:disable Metrics/ClassLength

@@ -225,7 +225,7 @@ DEPENDENCIES
   simplecov
   standard
   state_machines-graphviz
-  steep (~> 1.9)
+  steep
   super_diff (~> 0.10.0)
   webrick (~> 1.9)
 

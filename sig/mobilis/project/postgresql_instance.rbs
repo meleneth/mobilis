@@ -1,0 +1,3 @@
+class Mobilis::Project::PostgresqlInstance
+  def initialize: () -> void
+end

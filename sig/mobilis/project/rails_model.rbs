@@ -1,0 +1,4 @@
+class Mobilis::Project::RailsModel
+  attr_reader graphql_fields: untyped
+  def initialize: (e: untyped,t: untyped) -> void
+end
