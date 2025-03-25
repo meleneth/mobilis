@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :rails_model, class: "Mobilis::RailsModel" do
+  factory :rails_model, class: "Mobilis::Project::RailsModel" do
     rails_project
     name { "SomeModel" }
 

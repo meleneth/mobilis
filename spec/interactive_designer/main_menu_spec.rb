@@ -12,7 +12,7 @@ RSpec.describe Mobilis::InteractiveDesigner::MainMenu do
   let(:fsm) { Mobilis::InteractiveDesigner::MainMenu.new }
   let(:prompt) { fsm.prompt }
 
-  def select_choice machine, name
+  def select_choice(machine, name)
     show_current_location
     puts "Selecting #{name}"
 
@@ -36,7 +36,7 @@ RSpec.describe Mobilis::InteractiveDesigner::MainMenu do
     puts fsm.choices
   end
 
-  def edit_project name
+  def edit_project(name)
     select_choice "Edit existing"
     select_choice name
   end
@@ -46,7 +46,7 @@ RSpec.describe Mobilis::InteractiveDesigner::MainMenu do
       expect(fsm.still_running?).to eq(true)
     end
     it "stops running" do
-      select_choice fsm,"quit"
+      select_choice fsm, "quit"
       expect(fsm.still_running?).to eq(false)
     end
   end
@@ -59,12 +59,12 @@ RSpec.describe Mobilis::InteractiveDesigner::MainMenu do
   end
 
   describe "Add Kafka instance" do
-    let(:metaproject) { build(:metaproject) }
-    let(:kafka_project) { build(:kafka_instance, metaproject: metaproject, name: "somekafka") }
+    let!(:metaproject) { build(:metaproject) }
+    let!(:kafka_project) { build(:kafka_instance, metaproject: metaproject, name: "somekafka") }
     let(:fsm_editor) { Mobilis::InteractiveDesigner::KafkaEdit.new kafka_project }
 
     before do
-      allow(Mobilis::Project).to receive(:new).and_return metaproject
+      allow(Mobilis::Project::MetaProject).to receive(:new).and_return(metaproject)
       allow(prompt).to receive(:ask).and_return "somekafka"
     end
 
@@ -72,7 +72,7 @@ RSpec.describe Mobilis::InteractiveDesigner::MainMenu do
       expect(metaproject).to receive(:add_kafka_instance).with("somekafka").and_return(kafka_project)
 
       select_choice fsm, "Add project"
-      select_choice fsm,"Add kafka instance"
+      select_choice fsm, "Add kafka instance"
       fsm.action
       expect(fsm.state).to eq("main_menu")
     end

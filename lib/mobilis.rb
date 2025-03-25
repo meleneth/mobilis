@@ -13,6 +13,9 @@ module Mobilis
   module InteractiveDesigner
   end
 
+  module Project
+  end
+
   class Error < StandardError; end
 end
 
@@ -44,7 +47,7 @@ require_relative "mobilis/services/directory"
 
 require_relative "mobilis/port_assigner"
 
-require_relative "mobilis/project"
+require_relative "mobilis/project/meta_project"
 require_relative "mobilis/project/generic_project"
 require_relative "mobilis/project/localgem_project"
 require_relative "mobilis/project/redis_instance"

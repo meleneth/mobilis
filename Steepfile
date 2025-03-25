@@ -3,5 +3,9 @@ target :lib do
   check "lib"
 
   ignore "spec/**/*"
+
+  library "fileutils"
+  library "singleton"
+  library "forwardable"
 end
 

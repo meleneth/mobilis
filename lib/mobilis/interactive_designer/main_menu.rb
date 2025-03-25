@@ -174,7 +174,7 @@ module Mobilis::InteractiveDesigner
         def create_rails_service_with_postgres_db(service_name); end
 
         def action
-          @project = ::Mobilis::Project.new
+          @project = ::Mobilis::Project::MetaProject.new
           # @project.add_localgem_project "api_models"
           services = {}
           models = {}
@@ -294,7 +294,7 @@ module Mobilis::InteractiveDesigner
     end
 
     def project
-      @project ||= ::Mobilis::Project.new
+      @project ||= ::Mobilis::Project::MetaProject.new
     end
   end
 end

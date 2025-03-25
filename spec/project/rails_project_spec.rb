@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe "Rails Project" do
-  let(:project) { Mobilis::Project.new }
+  let(:project) { build(:metaproject) }
 
   it "is addable" do
     project.add_rails_project "prime", %i[rspec api simplecov standard factorybot]
@@ -20,7 +20,7 @@ RSpec.describe "Rails Project" do
 
   describe "#generate_index" do
     let(:prime_stack) { project.add_rails_project "prime", %i[rspec api simplecov standard factorybot] }
-    let(:model) { instance_double(Mobilis::RailsModel, { name: "some_model" }) }
+    let(:model) { instance_double(Mobilis::Project::RailsModel, { name: "some_model" }) }
     let(:git_untracked_files) { [instance_double(Git::Status::StatusFile, { path: "some_filename" })] }
     let(:directory_service) do
       instance_double(Mobilis::Services::Directory, { git_untracked_files: git_untracked_files })

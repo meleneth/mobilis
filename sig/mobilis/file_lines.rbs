@@ -1,4 +1,26 @@
 class Mobilis::FileLines
-  attr_reader filename: untyped
-  def initialize: (filename: string,lines: Array[string]) -> void
+  extend Forwardable
+
+  attr_reader filename: String
+  attr_accessor lines: Array[String]
+
+  def initialize: (filename: String, lines: Array[String]) -> void
+
+  def index: () -> Integer
+  def []: (Integer) -> String
+  def []=: (Integer, String) -> untyped
+
+  def self.from_glob: (String) -> Mobilis::FileLines
+  def self.from_file: (filename: String) -> Mobilis::FileLines
+  def self.from_contents: (filename: String, contents: String) -> Mobilis::FileLines
+  def self.from_filehandle: (filename: String, handle: untyped) -> Mobilis::FileLines
+
+  def as_file: () -> String
+  def get_value: (String) -> String
+  def gsub!: (untyped, String) -> void
+  def save: () -> void
+  def match: (untyped) -> void
+  def bare_filename: () -> String
+  def index_of: (untyped) -> Integer
+  def insert_line_at: (String, Integer) -> void
 end

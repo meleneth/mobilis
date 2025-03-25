@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe "Generic Project" do
-  let(:project) { Mobilis::Project.new }
+  let(:project) { build(:metaproject) }
   let(:prime_stack) { project.add_prime_stack_rails_project "prime" }
   let(:mysql_instance) { project.add_mysql_instance "testm-db" }
   before do

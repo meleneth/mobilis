@@ -1,5 +1,6 @@
 class Mobilis::Project::GenericProject
-  attr_reader metaproject: untyped
-  attr_reader data: untyped
+  include Mobilis::ActionsProjectsTake
+  attr_reader metaproject: Mobilis::Project
+  attr_reader data: Hash
   def initialize: (a: untyped,t: untyped) -> void
 end

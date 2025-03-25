@@ -1,4 +1,4 @@
-class Mobilis::Project
+class Mobilis::Project::MetaProject
   include Mobilis::ActionsProjectsTake
   include Mobilis::NewRelic
 

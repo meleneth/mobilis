@@ -1,4 +1,6 @@
 module Mobilis
+  module Project
+  end
   class InteractiveDesigner
   end
   class OutputFiles

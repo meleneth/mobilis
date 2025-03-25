@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :rails_field, class: "Mobilis::RailsField" do
+  factory :rails_field, class: "Mobilis::Project::RailsField" do
     rails_model
     name { "name" }
     type { Mobilis::RAILS_MODEL_TYPE_STRING }

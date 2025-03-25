@@ -1,3 +1,6 @@
 class Mobilis::PortAssigner
-  def initialize: (starting_port_no: Integer,port_gep: Integer) -> void
+  include Singleton
+  def initialize: (starting_port_no: Integer, port_gap: Integer) -> void
+  def for_project: (Mobilis::Project::GenericProject) -> Integer
+  def next_port_number_to_assign: () -> Integer
 end

@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :rails_prime, class: "Mobilis::RailsProject" do
+  factory :rails_prime, class: "Mobilis::Project::RailsProject" do
     metaproject
     name { "rails_project" }
 
@@ -8,7 +8,7 @@ FactoryBot.define do
 end
 
 FactoryBot.define do
-  factory :rails_project, class: "Mobilis::RailsProject" do
+  factory :rails_project, class: "Mobilis::Project::RailsProject" do
     transient do
       graphql { false }
     end

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe "Postgresql Instance" do
-  let(:project) { Mobilis::Project.new }
+  let(:project) { build(:metaproject) }
 
   describe "docker-compose" do
     let(:expected) do

@@ -8,11 +8,11 @@ require "mobilis/interactive_designer/main_menu"
 #   [m] Show configuration
 #   quit
 
-RSpec.describe 'AddProjectMenu' do
+RSpec.describe "AddProjectMenu" do
   let(:fsm) { Mobilis::InteractiveDesigner::MainMenu.new }
   let(:prompt) { fsm.prompt }
 
-  def select_choice name
+  def select_choice(name)
     show_current_location
     puts "Selecting #{name}"
 
@@ -36,7 +36,7 @@ RSpec.describe 'AddProjectMenu' do
     puts fsm.choices
   end
 
-  def edit_project name
+  def edit_project(name)
     select_choice "Edit existing"
     select_choice name
   end
@@ -46,7 +46,7 @@ RSpec.describe 'AddProjectMenu' do
     let(:rails_project) { build(:rails_prime, metaproject: metaproject, name: "someprime") }
 
     before do
-      allow(Mobilis::Project).to receive(:new).and_return metaproject
+      allow(Mobilis::Project::MetaProject).to receive(:new).and_return metaproject
     end
 
     it "allows adding a rails project" do
@@ -67,7 +67,7 @@ RSpec.describe 'AddProjectMenu' do
     let(:fsm_editor) { Mobilis::InteractiveDesigner::Rack.new rack_project }
 
     before do
-      allow(Mobilis::Project).to receive(:new).and_return metaproject
+      allow(Mobilis::Project::MetaProject).to receive(:new).and_return metaproject
       allow(prompt).to receive(:ask).and_return "somerack"
     end
 
@@ -87,7 +87,7 @@ RSpec.describe 'AddProjectMenu' do
     let(:fsm_editor) { Mobilis::InteractiveDesigner::KafkaEdit.new kafka_project }
 
     before do
-      allow(Mobilis::Project).to receive(:new).and_return metaproject
+      allow(Mobilis::Project::MetaProject).to receive(:new).and_return metaproject
       allow(prompt).to receive(:ask).and_return "somekafka"
     end
 

@@ -3,7 +3,7 @@
 require "spec_helper"
 
 RSpec.describe Mobilis::OutputFiles::RailsService do
-  let(:project) { Mobilis::Project.new }
+  let(:project) { build(:metaproject) }
 
   describe "simple prime account service with default postgres db" do
     let(:expected) do

@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :rack_project, class: "Mobilis::RackProject" do
+  factory :rack_project, class: "Mobilis::Project::RackProject" do
     metaproject
     name { "rack_project" }
 

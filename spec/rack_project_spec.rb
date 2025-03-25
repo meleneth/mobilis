@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe "Rack Project" do
-  let(:project) { Mobilis::Project.new }
+  let(:project) { build(:metaproject) }
 
   it "is addable" do
     project.add_rack_project "some_rack_project"

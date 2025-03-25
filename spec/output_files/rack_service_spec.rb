@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe "Rack Project" do
-  let(:project) { Mobilis::Project.new }
+  let(:project) { build(:metaproject) }
 
   before do
     allow(project).to receive(:username).and_return("testuser")

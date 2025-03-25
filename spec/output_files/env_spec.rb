@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe Mobilis::OutputFiles::Env do
-  let(:project) { Mobilis::Project.new }
+  let(:project) { build(:metaproject) }
 
   describe "development.env" do
     let(:expected) do

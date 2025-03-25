@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :kafka_instance, class: "Mobilis::KafkaInstance" do
+  factory :kafka_instance, class: "Mobilis::Project::KafkaInstance" do
     metaproject
     name { "kafka_project" }
 

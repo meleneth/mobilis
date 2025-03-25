@@ -1,64 +1,64 @@
 # frozen_string_literal: true
 
 module Mobilis
-  class MysqlInstance < GenericProject
-    def generate
-      FileUtils.mkdir_p data_dir
-    end
-
-    def child_env_vars
-      []
-    end
-
-    def env_vars
-      vars = []
-      if linked_to_rails_project
-        vars << "MYSQL_DATABASE=${#{env_name}_MYSQL_DATABASE}"
+  module Project
+    class MysqlInstance < GenericProject
+      def generate
+        FileUtils.mkdir_p data_dir
       end
-      vars.concat [
-        "MYSQL_USER=${#{env_name}_MYSQL_USER}",
-        "MYSQL_PASSWORD=${#{env_name}_MYSQL_PASSWORD}",
-        "MYSQL_RANDOM_ROOT_PASSWORD=true"
-      ]
-    end
 
-    def global_env_vars(environment)
-      {
-        "#{env_name}_EXTERNAL_PORT_NO": 'AUTO_EXTERNAL_PORT',
-        "#{env_name}_INTERNAL_PORT_NO": 3306,
-        "#{env_name}_MYSQL_USER": name,
-        "#{env_name}_MYSQL_PASSWORD": password,
-        "#{env_name}_MYSQL_DATA": "./data/#{environment}/#{name}",
-        "#{env_name}_MYSQL_URL": url
-      }
-    end
+      def child_env_vars
+        []
+      end
 
-    def env_name
-      name.upcase.tr("-", "_")
-    end
+      def env_vars
+        vars = []
+        vars << "MYSQL_DATABASE=${#{env_name}_MYSQL_DATABASE}" if linked_to_rails_project
+        vars.concat [
+          "MYSQL_USER=${#{env_name}_MYSQL_USER}",
+          "MYSQL_PASSWORD=${#{env_name}_MYSQL_PASSWORD}",
+          "MYSQL_RANDOM_ROOT_PASSWORD=true"
+        ]
+      end
 
-    def data_dir
-      "./data/#{name}"
-    end
+      def global_env_vars(environment)
+        {
+          "#{env_name}_EXTERNAL_PORT_NO": "AUTO_EXTERNAL_PORT",
+          "#{env_name}_INTERNAL_PORT_NO": 3306,
+          "#{env_name}_MYSQL_USER": name,
+          "#{env_name}_MYSQL_PASSWORD": password,
+          "#{env_name}_MYSQL_DATA": "./data/#{environment}/#{name}",
+          "#{env_name}_MYSQL_URL": url
+        }
+      end
 
-    def has_local_build
-      false
-    end
+      def env_name
+        name.upcase.tr("-", "_")
+      end
 
-    def url
-      "mysql2://#{username}:#{password}@#{name}:3306/?pool=5"
-    end
+      def data_dir
+        "./data/#{name}"
+      end
 
-    def username
-      name
-    end
+      def has_local_build
+        false
+      end
 
-    def password
-      "#{name}_password"
-    end
+      def url
+        "mysql2://#{username}:#{password}@#{name}:3306/?pool=5"
+      end
 
-    def is_datastore_project?
-      true
+      def username
+        name
+      end
+
+      def password
+        "#{name}_password"
+      end
+
+      def is_datastore_project?
+        true
+      end
     end
   end
 end
