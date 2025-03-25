@@ -1,9 +1,9 @@
 class Mobilis::EnvVar
   attr_reader raw: untyped
-  def initialize: (e: untyped) -> void
+  def initialize: (String) -> void
   def self.[]: (String) -> Mobilis::EnvVar
-  def child: (suffix) -> Mobilis::EnvVar
+  def child: (String) -> Mobilis::EnvVar
   def to_s: () -> String
   def ref: () -> String
-  def normalize: (str) -> String
+  def normalize: (String) -> String
 end

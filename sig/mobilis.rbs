@@ -1,4 +1,6 @@
 module Mobilis
+  def self.logger: () -> ::Logger
+
   module Project
   end
   class InteractiveDesigner

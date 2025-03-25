@@ -1,7 +1,7 @@
-class Mobilis::Project::RedisInstance
+class Mobilis::Project::RedisInstance < Mobilis::Project::GenericProject
   def initialize: () -> void
   def generate: () -> void
-  def child_env_vars: () -> Array[String]
+  def child_env_vars: () -> void
   def env_name: () -> String
   def data_dir: () -> String
   def has_local_build: () -> bool

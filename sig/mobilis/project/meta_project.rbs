@@ -1,3 +1,36 @@
+type project_data_hash = {
+  name: String,
+  type: Symbol,
+  controllers?: Array[String],
+  models?: Array[String],
+  options?: Array[Symbol],
+  attributes?: Hash[Symbol, untyped]
+}
+
+type meta_project_data_hash = {
+  projects: Array[ProjectData],
+  username: String,
+  starting_port_no: Integer,
+  port_gap: Integer,
+  name: String
+}
+
+type attributes_hash = {
+  projects: Hash[Symbol, untyped],
+  new_relic_license_key: String,
+} & Hash[Symbol, Integer]  # additional keys are generated dynamically
+
+type writer_mapping_hash = {
+  kafka: singleton(KafkaInstance),
+  localgem: singleton(LocalgemProject),
+  mysql: singleton(MysqlInstance),
+  postgresql: singleton(PostgresqlInstance),
+  rack: singleton(RackProject),
+  rails: singleton(RailsProject),
+  redis: singleton(RedisInstance)
+}
+
+
 class Mobilis::Project::MetaProject
   include Mobilis::ActionsProjectsTake
   include Mobilis::NewRelic
@@ -26,7 +59,7 @@ class Mobilis::Project::MetaProject
   def build: () -> void
   def rails_builder_image: () -> void
   def build_rails_builder: () -> void
-  def load_from_file: (filename) -> void
+  def load_from_file: (String) -> void
   def save_project: () -> void
   def each_project_for_environment : (Mobilis::ExecutionEnvironment) -> void
   def save_docker_compose: () -> void
@@ -35,7 +68,7 @@ class Mobilis::Project::MetaProject
   def display: () -> void
   def add_prime_stack_rails_project: (String) -> Mobilis::Project::RailsProject
   def add_omakase_stack_rails_project: (String) -> Mobilis::Project::RailsProject
-  def add_postgresql_instance: (String) -> Mobilis::Project::PosgresProject
+  def add_postgresql_instance: (String) -> Mobilis::Project::PostgresqlProject
   def add_mysql_instance: (String) -> Mobilis::Project::MysqlProject
   def add_redis_instance: (String) -> Mobilis::Project::RedisProject
   def add_rails_project: (String, options) -> Mobilis::Project::RailsProject

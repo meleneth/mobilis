@@ -6,7 +6,6 @@ require "git"
 module Mobilis
   ##
   # this is NOT a GenericProject, this is the metaproject
-  # TODO: s/Project/Meta/g
   module Project
     class MetaProject
       include ActionsProjectsTake
@@ -15,6 +14,7 @@ module Mobilis
       attr_accessor :data, :projects
 
       def initialize
+        # @type var data: MetaProjectDataHash
         @data = {
           projects: [],
           username: ENV.fetch("USER", ENV.fetch("USERNAME", "")),
@@ -247,6 +247,7 @@ module Mobilis
       end
 
       def writer_for_project(project)
+        # @type var mapping: WriterMappingHash
         mapping = {
           kafka: KafkaInstance,
           localgem: LocalgemProject,

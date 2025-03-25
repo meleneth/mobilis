@@ -1,6 +1,40 @@
 class Mobilis::Project::GenericProject
   include Mobilis::ActionsProjectsTake
-  attr_reader metaproject: Mobilis::Project
-  attr_reader data: Hash
-  def initialize: (a: untyped,t: untyped) -> void
+  extend Forwardable
+
+  attr_reader metaproject: Mobilis::Project::MetaProject
+  attr_reader data: Hash[Symbol, untyped]
+
+  def initialize: (Hash[Symbol, untyped], Mobilis::Project::MetaProject) -> void
+
+  def child_env_vars: () -> Array[String]
+  def each_project_for_environment: (?untyped) { (Mobilis::Project::GenericProject) -> void } -> void
+  def env_vars: () -> Array[String]
+  def env_name: () -> String
+  def links_to_actually_link: (?untyped) -> Array[String]
+  def children: (?untyped) -> Array[Mobilis::Project::GenericProject]
+  def parents: (?untyped) { (Mobilis::Project::GenericProject) -> void } -> void
+  def linked_to_rails_project: () { (Mobilis::Project::RailsProject) -> void } -> void
+  def linked_to_localgem_project: () -> bool
+  def linked_localgem_projects: () -> Array[Mobilis::Project::LocalgemProject]
+  def display: () -> void
+  def name: () -> String
+  def options: () -> Array[Symbol]
+  def type: () -> Symbol
+  def links: () -> Array[String]
+  def set_links: (Array[String]) -> void
+  def add_link: (String) -> void
+  def _p: (String) -> String
+  def to_h: () -> Hash[Symbol, untyped]
+  def docker_image_name: () -> String
+  def generate_build_sh: () -> void
+  def is_datastore_project?: () -> bool
+  def compose_filename: () -> String
+  def generate: () -> void
+  def global_env_vars: (untyped) -> Hash[String, String]
+  def is_service_project: () -> bool
+  def starting_port: () -> Integer
+  def port_gap: () -> Integer
+  def username: () -> String
+  def getwd: () -> String
 end

@@ -7,5 +7,6 @@ target :lib do
   library "fileutils"
   library "singleton"
   library "forwardable"
+  library "logger"
 end
 

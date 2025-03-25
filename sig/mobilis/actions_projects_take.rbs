@@ -2,4 +2,8 @@ module Mobilis::ActionsProjectsTake
   def append_line: (String, String) -> void
   def write_file: (String)  { (untyped) -> void } -> void
   def run_command: (String, bool) -> void
+  def set_file_contents: (String, String) -> void
+  def oblivious_run_command: (String) -> void
+  def run_docker: (String) -> void
+  def set_second_line: (String, String) -> void
 end
