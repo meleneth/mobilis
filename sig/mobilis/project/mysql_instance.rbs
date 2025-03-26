@@ -1,3 +1,16 @@
-class Mobilis::Project::MysqlInstance < Mobilis::Project::GenericProject
-  def initialize: () -> void
+module Mobilis::Project
+  class MysqlInstance < GenericProject
+    def generate: () -> void
+    def child_env_vars: () -> Array[untyped]
+    def env_vars: () -> Array[String]
+    def global_env_vars: (String) -> Hash[Symbol, untyped]
+    def env_name: () -> String
+    def data_dir: () -> String
+    def has_local_build: () -> bool
+    def url: () -> String
+    def username: () -> String
+    def password: () -> String
+    def is_datastore_project?: () -> bool
+  end
 end
+

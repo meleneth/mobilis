@@ -1,55 +1,57 @@
-class Mobilis::Project::RailsProject < Mobilis::Project::GenericProject
-  attr_accessor models: Array[Mobilis::Project::RailsModel]
+module Mobilis::Project
+  class RailsProject < GenericProject
+    attr_accessor models: Array[Mobilis::Project::RailsModel]
 
-  def initialize: (Hash[Symbol, untyped], Mobilis::Project::MetaProject) -> void
-  def each_project_for_environment: (?untyped) { (Mobilis::Project::GenericProject) -> void } -> void
-  def display: () -> void
-  def child_env_vars: () -> Array[String]
-  def to_h: () -> Hash[Symbol, untyped]
-  def controllers: () -> Array[untyped]
-  def name: () -> String
-  def graphql_enabled?: () -> bool
-  def add_linked_postgresql_instance: (?String) -> Mobilis::Project::PostgresqlInstance
-  def add_linked_mysql_instance: (?String) -> Mobilis::Project::MysqlInstance
-  def add_linked_redis_instance: (?String) -> Mobilis::Project::RedisInstance
-  def database: () -> (Mobilis::Project::PostgresqlInstance | Mobilis::Project::MysqlInstance | nil)
-  def toggle_rails_api_mode: () -> void
-  def toggle_rails_graphql_integration: () -> void
-  def toggle_uuid_primary_keys: () -> void
-  def add_rails_option: (Symbol) -> void
-  def remove_rails_option: (Symbol) -> void
-  def add_controller: (String) -> Hash[Symbol, untyped]
-  def add_model: (String) -> Mobilis::Project::RailsModel
-  def rails_builder_image: () -> String
-  def rails_image: () -> String
-  def rails_run_command: (String) -> void
-  def project_rails_run_command: (String, ?String) -> void
-  def bundle_run: (String) -> void
-  def project_bundle_run: (String, ?String) -> void
-  def generate: (Mobilis::Services::Directory) -> void
-  def has_models?: () -> bool
-  def read_rails_master_key: () -> void
-  def rails_master_key: () -> String
-  def patchup_master_key_env: () -> void
-  def generate_wait_until: () -> void
-  def generate_models: (Mobilis::Services::Directory) -> void
-  def build_image: (Mobilis::Services::Directory) -> void
-  def comment_out_cmd: (Mobilis::Services::Directory) -> void
-  def uncomment_cmd: (Mobilis::Services::Directory) -> void
-  def generate_Dockerfile: () -> void
-  def generate_gitignore: () -> void
-  def generate_entrypoint_sh: () -> void
-  def wait_until_line: () -> (String | nil)
-  def install_graphql: () -> void
-  def generate_graphql_wrapper_for_model: (Mobilis::Project::RailsModel) -> void
-  def install_rspec: () -> void
-  def bundle_install: () -> void
-  def install_factory_bot: () -> void
-  def generate_bundle_run: () -> void
-  def install_super_diff: () -> void
-  def rails_new_command_line: () -> String
-  def global_env_vars: (untyped) -> Hash[Symbol, untyped]
+    def initialize: (Hash[Symbol, untyped], Mobilis::Project::MetaProject) -> void
+    def each_project_for_environment: (?untyped) { (Mobilis::Project::GenericProject) -> void } -> void
+    def display: () -> void
+    def child_env_vars: () -> Array[String]
+    def to_h: () -> Hash[Symbol, untyped]
+    def controllers: () -> Array[untyped]
+    def name: () -> String
+    def graphql_enabled?: () -> bool
+    def add_linked_postgresql_instance: (?String) -> Mobilis::Project::PostgresqlInstance
+    def add_linked_mysql_instance: (?String) -> Mobilis::Project::MysqlInstance
+    def add_linked_redis_instance: (?String) -> Mobilis::Project::RedisInstance
+    def database: () -> (Mobilis::Project::PostgresqlInstance | Mobilis::Project::MysqlInstance | nil)
+    def toggle_rails_api_mode: () -> void
+    def toggle_rails_graphql_integration: () -> void
+    def toggle_uuid_primary_keys: () -> void
+    def add_rails_option: (Symbol) -> void
+    def remove_rails_option: (Symbol) -> void
+    def add_controller: (String) -> Hash[Symbol, untyped]
+    def add_model: (String) -> Mobilis::Project::RailsModel
+    def rails_builder_image: () -> String
+    def rails_image: () -> String
+    def rails_run_command: (String) -> void
+    def project_rails_run_command: (String, ?String) -> void
+    def bundle_run: (String) -> void
+    def project_bundle_run: (String, ?String) -> void
+    def generate: (Mobilis::Services::Directory) -> void
+    def has_models?: () -> bool
+    def read_rails_master_key: () -> void
+    def rails_master_key: () -> String
+    def patchup_master_key_env: () -> void
+    def generate_wait_until: () -> void
+    def generate_models: (Mobilis::Services::Directory) -> void
+    def build_image: (Mobilis::Services::Directory) -> void
+    def comment_out_cmd: (Mobilis::Services::Directory) -> void
+    def uncomment_cmd: (Mobilis::Services::Directory) -> void
+    def generate_Dockerfile: () -> void
+    def generate_gitignore: () -> void
+    def generate_entrypoint_sh: () -> void
+    def wait_until_line: () -> (String | nil)
+    def install_graphql: () -> void
+    def generate_graphql_wrapper_for_model: (Mobilis::Project::RailsModel) -> void
+    def install_rspec: () -> void
+    def bundle_install: () -> void
+    def install_factory_bot: () -> void
+    def generate_bundle_run: () -> void
+    def install_super_diff: () -> void
+    def rails_new_command_line: () -> String
+    def global_env_vars: (untyped) -> Hash[Symbol, untyped]
 
-  private def generate_index: (Mobilis::Services::Directory, Mobilis::Project::RailsModel, Array[String]) -> void
-  private def camelize: (String) -> String
+    private def generate_index: (Mobilis::Services::Directory, Mobilis::Project::RailsModel, Array[String]) -> void
+    private def camelize: (String) -> String
+  end
 end

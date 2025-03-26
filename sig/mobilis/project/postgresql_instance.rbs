@@ -1,3 +1,4 @@
-class Mobilis::Project::PostgresqlInstance < Mobilis::Project::GenericProject
-  def initialize: () -> void
+module Mobilis::Project
+  class PostgresqlInstance < GenericProject
+  end
 end

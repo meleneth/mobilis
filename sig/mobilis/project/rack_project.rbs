@@ -1,3 +1,5 @@
-class Mobilis::Project::RackProject < Mobilis::Project::GenericProject
-  def initialize: () -> void
+module Mobilis::Project
+  class RackProject < GenericProject
+    def initialize: () -> void
+  end
 end

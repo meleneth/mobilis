@@ -14,7 +14,7 @@ module Mobilis
     def after_transition: (untyped) -> void
   end
 
-  class Services
+  module Services
   end
   class Error
   end

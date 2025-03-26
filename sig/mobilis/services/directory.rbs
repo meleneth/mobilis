@@ -22,8 +22,8 @@ class Mobilis::Services::Directory
   def git_commit_all: (String) -> void
   def git_untracked_files: () -> void
   def git: () -> void
-  def generate_dir: () -> void
-  def environment_dir: (String) -> void
-  def rails_builder_dir: () -> void
-  def localgems_dir: () -> void
+  def generate_dir: () -> String
+  def environment_dir: (String) -> String
+  def rails_builder_dir: () -> String
+  def localgems_dir: () -> String
 end

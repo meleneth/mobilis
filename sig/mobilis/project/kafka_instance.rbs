@@ -1,3 +1,5 @@
-class Mobilis::Project::KafkaInstance < Mobilis::Project::GenericProject
-  def initialize: () -> void
+module Mobilis::Project
+  class KafkaInstance < GenericProject
+    def initialize: () -> void
+  end
 end

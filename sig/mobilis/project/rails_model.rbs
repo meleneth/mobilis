@@ -1,15 +1,17 @@
-class Mobilis::Project::RailsModel
-  attr_reader graphql_fields: untyped
-  attr_accessor name: String
-  attr_accessor fields: Array[String]
-  attr_accessor indexes: Array[String]
-  attr_accessor rails_project: Mobilis::Project::RailsProject
+module Mobilis::Project
+  class RailsModel
+    attr_reader graphql_fields: untyped
+    attr_accessor name: String
+    attr_accessor fields: Array[String]
+    attr_accessor indexes: Array[String]
+    attr_accessor rails_project: Mobilis::Project::RailsProject
 
-  def initialize: (String, Mobilis::Project::RailsProject) -> void
-  def line: () -> void
-  def add_field: (name: String, type: Symbol) -> void
-  def add_references: (Mobilis::Project::RailsModel) -> void
-  def add_index: (*String) -> void
-  def set_graphql_fields: (*String) -> void
-  def to_h: () -> Hash
+    def initialize: (String, Mobilis::Project::RailsProject) -> void
+    def line: () -> void
+    def add_field: (name: String, type: Symbol) -> void
+    def add_references: (Mobilis::Project::RailsModel) -> void
+    def add_index: (*String) -> void
+    def set_graphql_fields: (*String) -> void
+    def to_h: () -> Hash
+  end
 end
