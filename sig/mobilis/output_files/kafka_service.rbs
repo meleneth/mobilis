@@ -1,3 +1,5 @@
-class Mobilis::OutputFiles::KafkaService < Mobilis::SingleServiceOutputFile
-  def initialize: () -> void
+module Mobilis::OutputFiles
+  class KafkaService < Mobilis::SingleServiceOutputFile
+    def initialize: () -> void
+  end
 end

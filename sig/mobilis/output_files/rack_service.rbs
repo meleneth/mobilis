@@ -1,3 +1,5 @@
-class Mobilis::OutputFiles::RackService < Mobilis::SingleServiceOutputFile
-  def initialize: () -> void
+module Mobilis::OutputFiles
+  class RackService < Mobilis::SingleServiceOutputFile
+    def initialize: () -> void
+  end
 end

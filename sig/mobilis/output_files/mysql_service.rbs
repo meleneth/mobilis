@@ -1,3 +1,5 @@
-class Mobilis::OutputFiles::MysqlService < Mobilis::SingleServiceOutputFile
-  def initialize: () -> void
+module Mobilis::OutputFiles
+  class MySQLService < Mobilis::SingleServiceOutputFile
+    def initialize: () -> void
+  end
 end

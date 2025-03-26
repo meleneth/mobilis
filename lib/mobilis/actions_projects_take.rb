@@ -2,7 +2,7 @@
 
 module Mobilis
   module ActionsProjectsTake
-    def append_line filename, line
+    def append_line(filename, line)
       lines = IO.readlines filename
       lines << line
       write_file filename do |f|
@@ -10,34 +10,34 @@ module Mobilis
       end
     end
 
-    def run_command command, ignore_errors = false
+    def run_command(command, ignore_errors = false)
       # fixme
       # Mobilis.logger.info "$ #{command.join " "}"
       puts "-> Running --> #{command}"
       system command
       return if ignore_errors
 
-      if $?
-        puts "-> Error running command!"
-        exit(1)
-      end
+      return unless $?
+
+      puts "-> Error running command!"
+      exit(1)
     end
 
-    def oblivious_run_command command
+    def oblivious_run_command(command)
       # fixme
       # Mobilis.logger.info "$ #{command.join " "}"
       puts "-> Running --> #{command}"
       system command
     end
 
-    def run_docker cmd
+    def run_docker(cmd)
       oblivious_run_command "docker #{cmd}"
     end
 
-    def set_second_line filename, line
+    def set_second_line(filename, line)
       lines = IO.readlines filename
       lines.reverse!
-      first_line = lines.pop
+      first_line = lines.pop || ""
       lines << line
       lines << first_line
       lines.reverse!
@@ -46,13 +46,13 @@ module Mobilis
       end
     end
 
-    def set_file_contents filename, contents
+    def set_file_contents(filename, contents)
       write_file filename do |f|
         f.write contents
       end
     end
 
-    def write_file filename, &block
+    def write_file(filename, &block)
       puts " -> Writing --> #{filename}"
       File.open(filename, "wb", &block)
     end

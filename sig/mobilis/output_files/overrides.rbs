@@ -1,5 +1,7 @@
-class Mobilis::OutputFiles::Overrides
-  attr_reader environment: untyped
-  attr_reader project_config: untyped
-  def initialize: (t: untyped,g: untyped) -> void
+module Mobilis::OutputFiles
+  class Overrides
+    attr_reader environment: untyped
+    attr_reader project_config: untyped
+    def initialize: (t: untyped,g: untyped) -> void
+  end
 end
