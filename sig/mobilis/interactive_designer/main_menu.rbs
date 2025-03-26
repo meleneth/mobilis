@@ -1,5 +1,6 @@
 module Mobilis::InteractiveDesigner
   class MainMenu < Mobilis::SceneFSM
+    include Mobilis::InteractiveDesigner::LinkEditor
     attr_accessor project: Mobilis::Project::MetaProject
     attr_accessor selected_rails_project: Mobilis::Project::RailsProject
 
@@ -8,6 +9,7 @@ module Mobilis::InteractiveDesigner
     def fancy_tp: (Array[untyped], *untyped) -> void
     def reload!: (?bool) -> true
     def project: () -> Mobilis::Project::MetaProject
+
   end
 end
 

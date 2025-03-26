@@ -1,8 +1,8 @@
 class Mobilis::SymbolKeyHash < Hash[Symbol, String]
-  def []=: (key: String | Symbol, value: String) -> String
-  def []: (key: String | Symbol) -> String?
-  def fetch: (key: String | Symbol, ?default: String) { (String | Symbol) -> String } -> String
-  def key?: (key: String | Symbol) -> bool
-  def merge!: (other_hash: Hash[untyped, String]) -> SymbolKeyHash
-  def update: (other_hash: Hash[untyped, String]) -> SymbolKeyHash
+  def []=: (String | Symbol, value: String) -> String
+  def []: (String | Symbol) -> String
+  def fetch: (String | Symbol, ?default: String) { (String | Symbol) -> String } -> String
+  def key?: (String | Symbol) -> bool
+  def merge!: (Hash[String | Symbol, String]) -> Mobilis::SymbolKeyHash
+  def update: (Hash[String | Symbol, String]) -> Mobilis::SymbolKeyHash
 end

@@ -19,7 +19,7 @@ class Mobilis::Services::Directory
   def chdir_generate: () -> void
   def chdir_localgems: () -> void
   def project_dir: (Mobilis::Project::GenericProject) -> void
-  def git_commit_all: (message) -> void
+  def git_commit_all: (String) -> void
   def git_untracked_files: () -> void
   def git: () -> void
   def generate_dir: () -> void

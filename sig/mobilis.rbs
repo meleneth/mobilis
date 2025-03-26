@@ -7,6 +7,13 @@ module Mobilis
   module OutputFiles
   end
 
+  module InteractiveDesigner
+    def state: (Symbol, untyped) -> void
+    def event: (Symbol, untyped) -> void
+    def transition: (untyped) -> void
+    def after_transition: (untyped) -> void
+  end
+
   class Services
   end
   class Error

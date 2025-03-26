@@ -12,6 +12,10 @@ module Mel
     def still_running?: () -> bool
     def choose_destination: () -> (void | false)
     def decobox: (*Array[String]) -> void
+
+    def state: (Symbol, untyped) -> void
+    def transition: (Hash[Symbol | Array[Symbol] | :any, Symbol]) -> void
+    def event: (Symbol) -> void
   end
 end
 
