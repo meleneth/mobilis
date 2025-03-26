@@ -2,7 +2,7 @@
 
 module Mobilis
   module Project
-    class PostgresqlInstance < GenericProject
+    class PostgreSQLInstance < GenericProject
       def generate(directory_service:)
       end
 

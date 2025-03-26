@@ -2,7 +2,7 @@
 
 module Mobilis
   module Project
-    class MysqlInstance < GenericProject
+    class MySQLInstance < GenericProject
       def generate
         FileUtils.mkdir_p data_dir
       end

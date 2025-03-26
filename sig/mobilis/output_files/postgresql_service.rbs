@@ -1,6 +1,4 @@
 module Mobilis::OutputFiles
-  class PostgreSQLService < Mobilis::SingleServiceOutputFile
-    attr_reader service: Mobilis::Project::PostgreSQLInstance
-    def initialize: () -> void
+  class PostgreSQLService < Mobilis::SingleServiceOutputFile[Mobilis::Project::PostgreSQLInstance]
   end
 end

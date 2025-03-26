@@ -2,7 +2,7 @@ module Mobilis
   module OutputFiles
     class RailsService < Mobilis::SingleServiceOutputFile
       def service_data
-        vars = []
+        vars = [] # : Array[String]
         vars << "RAILS_ENV=production"
         vars << "RAILS_MASTER_KEY=#{service.rails_master_key}"
         vars << "RAILS_MIN_THREADS=5"

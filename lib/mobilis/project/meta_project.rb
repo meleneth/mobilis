@@ -8,22 +8,22 @@ module Mobilis
   # this is NOT a GenericProject, this is the metaproject
   module Project
     class MetaProject
-      include ActionsProjectsTake
+      include ActionsTake
       include Mobilis::NewRelic
 
-      attr_accessor :data, :projects
+      attr_accessor :data, :
 
       def initialize
         # @type var data: MetaProjectDataHash
         @data = {
-          projects: [],
+          : [],
           username: ENV.fetch("USER", ENV.fetch("USERNAME", "")),
           starting_port_no: 10_000,
           port_gap: 100,
           name: "generate"
         }
         @auto_port_index = 0
-        @projects = []
+        @ = []
         @directory_service = Mobilis::Services::Directory.new
       end
 
@@ -66,7 +66,7 @@ module Mobilis
       def each_datastore_project
         return enum_for(:each_datastore_project) unless block_given?
 
-        projects.each do |p|
+        .each do |p|
           yield p if p.is_datastore_project?
         end
       end
@@ -74,7 +74,7 @@ module Mobilis
       def each_non_datastore_project
         return enum_for(:each_non_datastore_project) unless block_given?
 
-        projects.each do |p|
+        .each do |p|
           yield p unless p.is_datastore_project?
         end
       end
@@ -98,7 +98,7 @@ module Mobilis
       end
 
       def has_datastore_instance?
-        projects.any?(&:is_datastore_project?)
+        .any?(&:is_datastore_project?)
       end
 
       def runasuser
@@ -196,16 +196,16 @@ module Mobilis
       end
 
       def has_rails_project?
-        projects.each do |p|
+        .each do |p|
           return true if p.type.to_sym == :rails
         end
         false
       end
 
       def generate_attributes
-        attributes = { projects: {},
+        attributes = { : {},
                        new_relic_license_key: ENV.fetch("NEW_RELIC_LICENSE_KEY", "some_invalid_key_NREAL") }
-        projects.each_with_index do |project, index|
+        .each_with_index do |project, index|
           attributes["#{project.name}_internal_port_no".to_sym] =
             @data[:starting_port_no] + (index * @data[:port_gap])
         end
@@ -229,8 +229,8 @@ module Mobilis
       def load_from_file(filename)
         data = File.read filename
         @data = JSON.parse data, { symbolize_names: true }
-        @projects = @data[:projects].map { |p| project_for_line(p) }
-        @data[:projects] = []
+        @ = @data[:projects].map { |p| project_for_line(p) }
+        @data[:] = []
       end
 
       def save_project
@@ -238,7 +238,7 @@ module Mobilis
       end
 
       def each_project_for_environment(target_environment = nil, &block)
-        projects.each do |project|
+        .each do |project|
           project.each_project_for_environment(target_environment, &block)
         end
       end
@@ -269,7 +269,7 @@ module Mobilis
       end
 
       def project_by_name(name)
-        projects.find { |p| p.name == name }
+        .find { |p| p.name == name }
       end
 
       def display
@@ -289,7 +289,7 @@ module Mobilis
           name: name,
           type: :postgresql
         }
-        (@projects << PostgresqlInstance.new(data, self))[-1]
+        (@ << PostgresqlInstance.new(data, self))[-1]
       end
 
       def add_mysql_instance(name)
@@ -297,7 +297,7 @@ module Mobilis
           name: name,
           type: :mysql
         }
-        (@projects << MysqlInstance.new(data, self))[-1]
+        (@ << MysqlInstance.new(data, self))[-1]
       end
 
       def add_redis_instance(name)
@@ -305,7 +305,7 @@ module Mobilis
           name: name,
           type: :redis
         }
-        (@projects << RedisInstance.new(data, self))[-1]
+        (@ << RedisInstance.new(data, self))[-1]
       end
 
       def add_rails_project(name, options)
@@ -317,7 +317,7 @@ module Mobilis
           options: options.clone,
           attributes: {}
         }
-        (@projects << RailsProject.new(data, self))[-1]
+        (@ << RailsProject.new(data, self))[-1]
       end
 
       def add_kafka_instance(name)
@@ -326,7 +326,7 @@ module Mobilis
           type: :kafka,
           attributes: {}
         }
-        (@projects << KafkaInstance.new(data, self))[-1]
+        (@ << KafkaInstance.new(data, self))[-1]
       end
 
       def add_localgem_project(name)
@@ -335,7 +335,7 @@ module Mobilis
           type: :localgem,
           attributes: {}
         }
-        (@projects << LocalgemProject.new(data, self))[-1]
+        (@ << LocalgemProject.new(data, self))[-1]
       end
 
       def add_rack_project(name)
@@ -344,7 +344,7 @@ module Mobilis
           type: :rack,
           attributes: {}
         }
-        (@projects << RackProject.new(data, self))[-1]
+        (@ << RackProject.new(data, self))[-1]
       end
 
       def getwd
@@ -356,7 +356,7 @@ module Mobilis
 
       def to_h
         my_data = @data.clone
-        my_data[:projects] = projects.collect(&:to_h)
+        my_data[:] = projects.collect(&:to_h)
         my_data
       end
 
@@ -373,25 +373,25 @@ module Mobilis
           # the db's will complain if they see a .gitkeep file
           # ... or maybe make the containers rm the mounted .gitkeep file?
           # anyways, we want it to work so here we go
-          datastore_projects.each do |project|
+          each_datastore_project do |project|
             @directory_service.mkdir_environment_datadir_forproject(target_environment, project)
             project.generate directory_service: @directory_service
           end
         end
         @directory_service.chdir_generate
-        @directory_service.git_commit_all("environment datastore projects")
+        @directory_service.git_commit_all("environment datastore ")
       end
 
       def pull_dev_datastore_instances
         @directory_service.chdir_generate
-        datastore_projects.each do |project|
+        each_datastore_project do |project|
           run_docker "compose -f compose-development.yml pull #{project.name}"
         end
       end
 
       def start_dev_datastore_instances
         @directory_service.chdir_generate
-        datastore_projects.each do |project|
+        each_datastore_project do |project|
           puts "Starting datastore project #{project.name}"
           run_docker "compose -f compose-development.yml up -d #{project.name}"
         end
@@ -401,7 +401,7 @@ module Mobilis
 
       def create_project_instances
         create_rails_builder if has_rails_project?
-        non_datastore_projects.each do |project|
+        each_non_datastore_project do |project|
           project.generate directory_service: @directory_service
         end
       end

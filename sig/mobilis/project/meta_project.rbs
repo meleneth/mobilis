@@ -35,6 +35,8 @@ module Mobilis::Project
     include Mobilis::ActionsProjectsTake
     include Mobilis::NewRelic
 
+    attr_reader projects: Array[Mobilis::Project::GenericProject]
+
     def initialize: () -> void
     def return_to_start_directory: () -> void
     def return_to_target_directory: () -> void
@@ -61,8 +63,15 @@ module Mobilis::Project
     def build_rails_builder: () -> void
     def load_from_file: (String) -> void
     def save_project: () -> void
-    def each_project_for_environment : (?String) { (GenericProject) -> void } -> void
-                                     | () -> Enumerator[GenericProject]
+    def each_datastore_project: () { (GenericProject) -> void } -> void
+                           | () -> Enumerator[GenericProject]
+
+    def each_non_datastore_project: () { (GenericProject) -> void } -> void
+                                  | () -> Enumerator[GenericProject]
+
+    def each_project_for_environment: (?String) { (GenericProject) -> void } -> void
+                                    | (?String) -> Enumerator[GenericProject]
+
     def save_docker_compose: () -> void
     def writer_for_project: (Mobilis::Project::GenericProject) -> Mobilis::OutputFile
     def project_by_name: (String) -> Mobilis::Project::GenericProject

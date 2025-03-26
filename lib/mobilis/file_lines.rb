@@ -14,7 +14,7 @@ module Mobilis
     def_delegator :@lines, :[]=
 
     def self.from_glob(my_glob)
-      files = []
+      files = [] # : Array[FileLines]
       Dir.glob(my_glob).each do |filename|
         File.open(filename) do |fh|
           files << from_filehandle(filename: filename, handle: fh)
@@ -53,7 +53,7 @@ module Mobilis
       @lines.each do |line|
         return line.delete_prefix(key) if line.start_with? key
       end
-      raise "Could not get value #{key} from", @lines
+      raise "Could not get value #{key} from #{@lines.inspect}"
     end
 
     def gsub!(pattern, replacement)

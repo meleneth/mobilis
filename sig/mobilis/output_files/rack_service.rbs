@@ -1,6 +1,4 @@
 module Mobilis::OutputFiles
-  class RackService < Mobilis::SingleServiceOutputFile
-    attr_reader service: Mobilis::Project::RackInstance
-    def initialize: () -> void
+  class RackService < Mobilis::SingleServiceOutputFile[Mobilis::Project::RackProject]
   end
 end

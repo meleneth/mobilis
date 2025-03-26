@@ -10,7 +10,7 @@ class Mobilis::FileLines
   def []: (Integer) -> String
   def []=: (Integer, String) -> untyped
 
-  def self.from_glob: (String) -> Mobilis::FileLines
+  def self.from_glob: (String) -> Array[Mobilis::FileLines]
   def self.from_file: (filename: String) -> Mobilis::FileLines
   def self.from_contents: (filename: String, contents: String) -> Mobilis::FileLines
   def self.from_filehandle: (filename: String, handle: untyped) -> Mobilis::FileLines
@@ -21,6 +21,6 @@ class Mobilis::FileLines
   def save: () -> void
   def match: (untyped) -> void
   def bare_filename: () -> String
-  def index_of: (untyped) -> Integer
+  def index_of: (untyped) -> Integer?
   def insert_line_at: (String, Integer) -> void
 end

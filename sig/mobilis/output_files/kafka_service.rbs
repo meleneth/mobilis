@@ -1,6 +1,4 @@
 module Mobilis::OutputFiles
-  class KafkaService < Mobilis::SingleServiceOutputFile
-    attr_reader service: Mobilis::Project::KafkaInstance
-    def initialize: () -> void
+  class KafkaService < Mobilis::SingleServiceOutputFile[Mobilis::Project::KafkaInstance]
   end
 end
