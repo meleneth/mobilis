@@ -8,5 +8,6 @@ target :lib do
   library "singleton"
   library "forwardable"
   library "logger"
+  library 'yaml'
 end
 

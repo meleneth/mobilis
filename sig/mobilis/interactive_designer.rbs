@@ -5,7 +5,7 @@ module Mobilis::InteractiveDesigner
   def action: () -> void
   def choices: () -> void
 
-  def state: (Symbol, untyped) -> void
+  def state: () -> void
 
   def go_add_kafka_instance: () -> void
   def go_add_localgem_project: () -> void
@@ -51,5 +51,7 @@ module Mobilis::InteractiveDesigner
   def go_rails_project_toggle_uuid_primary_keys: () -> void
   def go_save_project: () -> void
   def go_show_configuration: () -> void
+
+   def fancy_tp: (untyped, untyped) -> void
 end
 

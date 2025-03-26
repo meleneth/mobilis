@@ -1,5 +1,5 @@
 module Mobilis::OutputFiles
   class RedisService < Mobilis::SingleServiceOutputFile
-    attr_reader service: Mobilis::Project::RedisService
+    attr_reader service: Mobilis::Project::RedisInstance
   end
 end

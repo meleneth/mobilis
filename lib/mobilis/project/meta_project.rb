@@ -63,12 +63,20 @@ module Mobilis
         %i[production development test].each { |env| yield Mobilis::ExecutionEnvironment.new(env) }
       end
 
-      def datastore_projects
-        projects.select { |p| p.is_datastore_project? }
+      def each_datastore_project
+        return enum_for(:each_datastore_project) unless block_given?
+
+        projects.each do |p|
+          yield p if p.is_datastore_project?
+        end
       end
 
-      def non_datastore_projects
-        projects.select { |p| !p.is_datastore_project? }
+      def each_non_datastore_project
+        return enum_for(:each_non_datastore_project) unless block_given?
+
+        projects.each do |p|
+          yield p unless p.is_datastore_project?
+        end
       end
 
       def generate_files

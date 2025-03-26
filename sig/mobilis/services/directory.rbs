@@ -1,6 +1,6 @@
 module Mobilis::Services
   class Directory
-    def initialize: (String) -> void
+    def initialize: () -> void
     def chdir_start: () -> void
     def chdir_rails_builder: () -> void
     def chdir_project: (Mobilis::Project::GenericProject) -> void
@@ -9,7 +9,7 @@ module Mobilis::Services
     def chdir_environment: (String) -> void
     def mkdir_environment_datadir_forproject: (String, Mobilis::Project::GenericProject) -> void
     def chdir_environment_datadir_forproject: (String, Mobilis::Project::GenericProject) -> void
-    def environment_datadir_forproject: (String, Mobilis::Project::GenericProject) -> void
+    def environment_datadir_forproject: (String, Mobilis::Project::GenericProject) -> String
     def mkdir_generate: () -> void
     def rm_localgems_project_gitdir: (Mobilis::Project::GenericProject) -> void
     def mkdir_localgems: () -> void
@@ -19,10 +19,10 @@ module Mobilis::Services
     def mkdir_env_datadir: (String) -> void
     def chdir_generate: () -> void
     def chdir_localgems: () -> void
-    def project_dir: (Mobilis::Project::GenericProject) -> void
+    def project_dir: (Mobilis::Project::GenericProject) -> String
     def git_commit_all: (String) -> void
     def git_untracked_files: () -> void
-    def git: () -> void
+    def git: () -> Git::Base
     def generate_dir: () -> String
     def environment_dir: (String) -> String
     def rails_builder_dir: () -> String

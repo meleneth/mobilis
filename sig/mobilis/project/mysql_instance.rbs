@@ -1,5 +1,5 @@
 module Mobilis::Project
-  class MysqlInstance < GenericProject
+  class MySQLInstance < GenericProject
     def generate: () -> void
     def child_env_vars: () -> Array[untyped]
     def env_vars: () -> Array[String]

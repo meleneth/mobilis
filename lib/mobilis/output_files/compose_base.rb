@@ -12,7 +12,7 @@ module Mobilis
       end
 
       def render
-        includes = []
+        includes = [] # : Array[Hash[String, String]]
         project_config.each_project_for_environment(@environment) do |project|
           next unless project.is_service_project?
 

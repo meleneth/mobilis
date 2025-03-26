@@ -1,5 +1,6 @@
 module Mobilis::OutputFiles
   class MySQLService < Mobilis::SingleServiceOutputFile
+    attr_reader service: Mobilis::Project::MySQLInstance
     def initialize: () -> void
   end
 end

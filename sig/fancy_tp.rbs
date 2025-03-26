@@ -1,0 +1,4 @@
+class Object
+  def fancy_tp: (untyped, *untyped) -> void
+end
+

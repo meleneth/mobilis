@@ -10,10 +10,10 @@ module Mobilis::Project
     def controllers: () -> Array[untyped]
     def name: () -> String
     def graphql_enabled?: () -> bool
-    def add_linked_postgresql_instance: (?String) -> Mobilis::Project::PostgresqlInstance
-    def add_linked_mysql_instance: (?String) -> Mobilis::Project::MysqlInstance
+    def add_linked_postgresql_instance: (?String) -> Mobilis::Project::PostgreSQLInstance
+    def add_linked_mysql_instance: (?String) -> Mobilis::Project::MySQLInstance
     def add_linked_redis_instance: (?String) -> Mobilis::Project::RedisInstance
-    def database: () -> (Mobilis::Project::PostgresqlInstance | Mobilis::Project::MysqlInstance | nil)
+    def database: () -> (Mobilis::Project::PostgreSQLInstance | Mobilis::Project::MySQLInstance | nil)
     def toggle_rails_api_mode: () -> void
     def toggle_rails_graphql_integration: () -> void
     def toggle_uuid_primary_keys: () -> void

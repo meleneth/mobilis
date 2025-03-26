@@ -12,7 +12,7 @@ module Mobilis
       end
 
       def render
-        services = {}
+        services = {} # : hash[String, untyped]
         project_config.each_project_for_environment(@environment) do |project|
           next unless project.respond_to? :production_links_overrides
 

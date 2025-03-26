@@ -1,4 +1,4 @@
 module Mobilis::Project
-  class PostgresqlInstance < GenericProject
+  class PostgreSQLInstance < GenericProject
   end
 end

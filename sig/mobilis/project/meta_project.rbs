@@ -23,8 +23,8 @@ type attributes_hash = {
 type writer_mapping_hash = {
   kafka: singleton(Mobilis::Project::KafkaInstance),
   localgem: singleton(Mobilis::Project::LocalgemProject),
-  mysql: singleton(Mobilis::Project::MysqlInstance),
-  postgresql: singleton(Mobilis::Project::PostgresqlInstance),
+  mysql: singleton(Mobilis::Project::MySQLInstance),
+  postgresql: singleton(Mobilis::Project::PostgreSQLInstance),
   rack: singleton(Mobilis::Project::RackProject),
   rails: singleton(Mobilis::Project::RailsProject),
   redis: singleton(Mobilis::Project::RedisInstance)
@@ -61,19 +61,20 @@ module Mobilis::Project
     def build_rails_builder: () -> void
     def load_from_file: (String) -> void
     def save_project: () -> void
-    def each_project_for_environment : (Mobilis::ExecutionEnvironment) -> void
+    def each_project_for_environment : (?String) { (GenericProject) -> void } -> void
+                                     | () -> Enumerator[GenericProject]
     def save_docker_compose: () -> void
     def writer_for_project: (Mobilis::Project::GenericProject) -> Mobilis::OutputFile
     def project_by_name: (String) -> Mobilis::Project::GenericProject
     def display: () -> void
     def add_prime_stack_rails_project: (String) -> Mobilis::Project::RailsProject
     def add_omakase_stack_rails_project: (String) -> Mobilis::Project::RailsProject
-    def add_postgresql_instance: (String) -> Mobilis::Project::PostgresqlInstance
-    def add_mysql_instance: (String) -> Mobilis::Project::MysqlInstance
+    def add_postgresql_instance: (String) -> Mobilis::Project::PostgreSQLInstance
+    def add_mysql_instance: (String) -> Mobilis::Project::MySQLInstance
     def add_redis_instance: (String) -> Mobilis::Project::RedisInstance
-    def add_rails_project: (String, options) -> Mobilis::Project::RailsProject
+    def add_rails_project: (String, untyped) -> Mobilis::Project::RailsProject
     def add_kafka_instance: (String) -> Mobilis::Project::KafkaInstance
-    def add_localgem_project: (String) -> Mobilis::Project::LocalGemProject
+    def add_localgem_project: (String) -> Mobilis::Project::LocalgemProject
     def add_rack_project: (String) -> Mobilis::Project::RackProject
     def getwd: () -> void
     def to_h: () -> void

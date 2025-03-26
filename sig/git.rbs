@@ -1,0 +1,27 @@
+module Git
+  class Base
+    def self.open: (String) -> Git::Base
+    def self.clone: (String, String, **untyped) -> Git::Base
+
+    def status: () -> Git::Status
+    def pull: () -> void
+    def add: (String | Array[String]) -> void
+    def commit: (String) -> void
+    def push: () -> void
+    def branch: (String) -> Git::Branch
+    def checkout: (String) -> void
+    def tags: () -> Array[String]
+    def tag: (String) -> void
+  end
+
+  class Status
+    def added: () -> Hash[String, untyped]
+    def changed: () -> Hash[String, untyped]
+    def deleted: () -> Hash[String, untyped]
+    def untracked: () -> Hash[String, untyped]
+  end
+
+  class Branch
+    def checkout: () -> void
+  end
+end

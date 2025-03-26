@@ -1,3 +1,5 @@
-class Mobilis::Logger
-  def initialize: () -> void
+class Logger
+  def self.info: (String) -> void
 end
+
+
