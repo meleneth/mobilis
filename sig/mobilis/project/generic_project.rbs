@@ -33,7 +33,7 @@ module Mobilis::Project
     def compose_filename: () -> String
     def generate: () -> void
     def global_env_vars: (untyped) -> Hash[String, String]
-    def is_service_project: () -> bool
+    def is_service_project?: () -> bool
     def starting_port: () -> Integer
     def port_gap: () -> Integer
     def username: () -> String

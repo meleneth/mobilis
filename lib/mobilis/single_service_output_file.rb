@@ -17,7 +17,7 @@ module Mobilis
 
     def render_data
       service_definition = service_data
-      if service.linked_to_localgem_project
+      if service.linked_to_localgem_project?
         service_definition["build"] = {
           "context" => "./",
           "dockerfile" => "./#{service.name}/Dockerfile"

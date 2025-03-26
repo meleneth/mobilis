@@ -16,7 +16,7 @@ module Mobilis
 
       def env_vars
         vars = []
-        linked_to_rails_project do |rails_project|
+        each_linked_to_rails_project do |rails_project|
           vars << "POSTGRES_DB=${#{env_name}_POSTGRES_DB}"
         end
         vars.concat [
@@ -39,7 +39,7 @@ module Mobilis
           "#{env_name}_POSTGRES_DATA": "./data/#{environment}/#{name}",
           "#{env_name}_POSTGRES_URL": url(environment)
         }
-        linked_to_rails_project do |rails_project|
+        each_linked_to_rails_project do |rails_project|
           vars["#{rails_project.env_name}_DATABASE_URL"] = url(environment)
         end
         vars

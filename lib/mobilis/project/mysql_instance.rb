@@ -13,7 +13,7 @@ module Mobilis
 
       def env_vars
         vars = []
-        vars << "MYSQL_DATABASE=${#{env_name}_MYSQL_DATABASE}" if linked_to_rails_project
+        vars << "MYSQL_DATABASE=${#{env_name}_MYSQL_DATABASE}" if linked_to_rails_project?
         vars.concat [
           "MYSQL_USER=${#{env_name}_MYSQL_USER}",
           "MYSQL_PASSWORD=${#{env_name}_MYSQL_PASSWORD}",

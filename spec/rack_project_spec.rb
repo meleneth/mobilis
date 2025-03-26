@@ -16,7 +16,7 @@ RSpec.describe "Rack Project" do
       rack = project.add_rack_project "some_rack_project"
       project.add_localgem_project "some_nifty_gem"
       rack.set_links(["some_nifty_gem"])
-      expect(rack.linked_to_localgem_project).to eq(true)
+      expect(rack.linked_to_localgem_project?).to eq(true)
     end
   end
 

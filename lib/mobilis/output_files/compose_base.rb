@@ -14,7 +14,7 @@ module Mobilis
       def render
         includes = []
         project_config.each_project_for_environment(@environment) do |project|
-          next unless project.is_service_project
+          next unless project.is_service_project?
 
           includes << {
             "path" => "./compose/#{project.name}.yml",

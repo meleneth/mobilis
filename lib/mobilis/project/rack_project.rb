@@ -87,13 +87,13 @@ module Mobilis
       end
 
       def localgem_prefix
-        return "" unless linked_to_localgem_project
+        return "" unless linked_to_localgem_project?
 
         "#{name}/"
       end
 
       def get_Dockerfile
-        if linked_to_localgem_project
+        if linked_to_localgem_project?
           get_Dockerfile_with_localgems
         else
           get_Dockerfile_default
@@ -117,7 +117,7 @@ module Mobilis
 
       def get_Dockerfile_with_localgems
         localgem_lines = []
-        linked_localgem_projects.each do |p|
+        each_linked_to_localgem_project.each do |p|
           localgem_lines << "COPY ./localgems/#{p.name} /myapp/localgems/#{p.name}"
           localgem_lines << "WORKDIR /myapp/localgems/#{p.name}"
           localgem_lines << "RUN bundle install"

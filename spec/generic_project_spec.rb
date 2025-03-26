@@ -11,7 +11,7 @@ RSpec.describe "Generic Project" do
   describe "#children" do
     it "has linked projects" do
       prime_stack.set_links([mysql_instance.name])
-      expect(prime_stack.children[0].name).to eq("testm-db")
+      expect(prime_stack.each_child.first.name).to eq("testm-db")
     end
   end
 
@@ -19,7 +19,7 @@ RSpec.describe "Generic Project" do
     it "has projects that link to us" do
       prime_stack.set_links([mysql_instance.name])
       seen_parents = []
-      mysql_instance.parents do |parent|
+      mysql_instance.each_parent do |parent|
         seen_parents << parent.name
       end
       expect(seen_parents).to eq(["prime"])
@@ -30,7 +30,7 @@ RSpec.describe "Generic Project" do
     it "returns first linked rails project, if there is one" do
       prime_stack.set_links([mysql_instance.name])
       rails_project = []
-      mysql_instance.linked_to_rails_project do |rails|
+      mysql_instance.each_linked_to_rails_project do |rails|
         rails_project << rails.name
       end
       expect(rails_project).to eq(["prime"])

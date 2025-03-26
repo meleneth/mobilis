@@ -21,7 +21,7 @@ module Mobilis
         directory_service.git_commit_all "Generated localgem #{name}"
       end
 
-      def is_service_project
+      def is_service_project?
         false
       end
     end

@@ -15,7 +15,6 @@ RSpec.describe "MySQL Instance" do
             "image" => "mysql:debian",
             "restart" => "always",
             "environment" => [
-              "MYSQL_DATABASE=${TEST_DB_MYSQL_DATABASE}",
               "MYSQL_USER=${TEST_DB_MYSQL_USER}",
               "MYSQL_PASSWORD=${TEST_DB_MYSQL_PASSWORD}",
               "MYSQL_RANDOM_ROOT_PASSWORD=true"

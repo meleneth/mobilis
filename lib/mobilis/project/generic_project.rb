@@ -31,6 +31,8 @@ module Mobilis
       end
 
       def each_project_for_environment(environment = nil)
+        return enum_for(:each_project_for_environment) unless block_given?
+
         yield self
       end
 
@@ -44,37 +46,50 @@ module Mobilis
       end
 
       def links_to_actually_link(environment = nil)
-        children(environment).filter { |l| !l.instance_of? Mobilis::Project::LocalgemProject }
-                             .map { |l| l.name }
+        each_child(environment)
+          .reject { |l| l.instance_of?(Mobilis::Project::LocalgemProject) }
+          .map(&:name)
+          .to_a
       end
 
-      # projects who are linked to us
-      def children(environment = nil)
-        links.map { |name| @metaproject.project_by_name name }
+      def each_child(environment = nil)
+        return enum_for(:each_child) unless block_given?
+
+        links.each do |link|
+          yield @metaproject.project_by_name(link)
+        end
       end
 
-      # projects we are linked to
-      def parents(environment = nil)
+      def each_parent(environment = nil)
+        return enum_for(:each_parent) unless block_given?
+
         @metaproject.each_project_for_environment(environment) do |project|
           yield project if project.links.include? name
         end
       end
 
-      def linked_to_rails_project
-        parents do |project|
-          if project.instance_of? Mobilis::Project::RailsProject
-            yield project
-            return
-          end
+      def linked_to_rails_project?
+        each_linked_to_rails_project.any?
+      end
+
+      def each_linked_to_rails_project
+        return enum_for(:each_linked_to_rails_project) unless block_given?
+
+        each_parent do |project|
+          yield project if project.instance_of? Mobilis::Project::RailsProject
         end
       end
 
-      def linked_to_localgem_project
-        linked_localgem_projects.length.positive?
+      def linked_to_localgem_project?
+        each_linked_to_localgem_project.any?
       end
 
-      def linked_localgem_projects
-        children.find_all { |l| l.instance_of? Mobilis::Project::LocalgemProject }
+      def each_linked_to_localgem_project
+        return enum_for(:each_linked_to_localgem_project) unless block_given?
+
+        each_child do |child|
+          yield child if child.instance_of? Mobilis::Project::LocalgemProject
+        end
       end
 
       def display
@@ -106,7 +121,7 @@ module Mobilis
       end
 
       def _p(path)
-        return path unless linked_to_localgem_project
+        return path unless linked_to_localgem_project?
 
         "./#{name}/#{path}"
       end
@@ -142,7 +157,7 @@ module Mobilis
         {}
       end
 
-      def is_service_project
+      def is_service_project?
         true
       end
     end
