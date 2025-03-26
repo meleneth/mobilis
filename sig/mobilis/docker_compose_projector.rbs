@@ -5,8 +5,8 @@ class Mobilis::DockerComposeProjector
      singleton(Mobilis::OutputFiles::RailsService) | 
      singleton(Mobilis::OutputFiles::RedisService) | 
      singleton(Mobilis::OutputFiles::RackService) | 
-     singleton(Mobilis::OutputFiles::MysqlService) | 
-     singleton(Mobilis::OutputFiles::PostgresqlService))]
+     singleton(Mobilis::OutputFiles::MySQLService) | 
+     singleton(Mobilis::OutputFiles::PostgreSQLService))]
 
   def self.project_multi: (Mobilis::Project::MetaProject) -> void
   def self.project_base: (untyped, Mobilis::Project::MetaProject) -> void

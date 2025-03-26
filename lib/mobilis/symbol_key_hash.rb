@@ -13,8 +13,16 @@ module Mobilis
       super(key.to_sym)
     end
 
-    def fetch(key, *args, &block)
-      super(key.to_sym, *args, &block)
+    def fetch(key, default_value = nil, &block)
+      sym_key = key.to_sym
+      if block
+        super(sym_key) { |k| block.call(k) }
+      elsif default_value
+
+        super(sym_key, default_value)
+      else
+        super(sym_key)
+      end
     end
 
     def key?(key)

@@ -14,8 +14,8 @@ module Mobilis
         rails: Mobilis::OutputFiles::RailsService,
         redis: Mobilis::OutputFiles::RedisService,
         rack: Mobilis::OutputFiles::RackService,
-        mysql: Mobilis::OutputFiles::MysqlService,
-        postgresql: Mobilis::OutputFiles::PostgresqlService
+        mysql: Mobilis::OutputFiles::MySQLService,
+        postgresql: Mobilis::OutputFiles::PostgreSQLService
       }
     end
 
@@ -27,7 +27,7 @@ module Mobilis
     end
 
     def self.project_base(target_environment, project)
-      file = Mobilis::OutputFile::ComposeBase.new(target_environment, project)
+      file = Mobilis::OutputFiles::ComposeBase.new(target_environment, project)
       file.write_to(".")
     end
   end

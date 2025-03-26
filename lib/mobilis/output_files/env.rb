@@ -21,7 +21,7 @@ module Mobilis
         end
         env_vars["ENVIRONMENT"] = environment
         env_vars["RUNASUSER"] = runasuser
-        env_lines = []
+        env_lines = [] # : Array[String]
         env_vars.keys.sort.each do |key|
           value = env_vars[key]
           value = @allocate_port_no_proc.call if value == "AUTO_EXTERNAL_PORT"

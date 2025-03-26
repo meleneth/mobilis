@@ -1,4 +1,14 @@
-class Mobilis::ExecutionEnvironment
-  attr_reader value: untyped
-  def initialize: (e: untyped) -> void
+module Mobilis
+  class ExecutionEnvironment
+    attr_reader value: Symbol
+
+    def initialize: (String) -> void
+
+    def is_dev?: () -> bool
+    def is_test?: () -> bool
+    def is_production?: () -> bool
+    def is_staging?: () -> bool
+
+    def to_s: () -> String
+  end
 end

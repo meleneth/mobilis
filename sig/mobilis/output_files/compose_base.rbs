@@ -2,6 +2,7 @@ module Mobilis::OutputFiles
   class ComposeBase
     attr_reader environment: untyped
     attr_reader project_config: untyped
-    def initialize: (t: untyped,g: untyped) -> void
+    def initialize: (Mobilis::ExecutionEnvironment, Mobilis::Project::MetaProject) -> void
+    def write_to: (string) -> void
   end
 end
