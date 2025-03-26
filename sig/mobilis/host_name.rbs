@@ -1,4 +1,16 @@
-class Mobilis::HostName
-  attr_reader raw: untyped
-  def initialize: (e: untyped) -> void
+module Mobilis
+  class HostName
+    attr_reader raw: String
+
+    def self.[]: (String) -> HostName
+
+    def initialize: (String) -> void
+
+    def child: (String) -> HostName
+
+    def to_s: () -> String
+
+    private
+    def normalize: (String) -> String
+  end
 end

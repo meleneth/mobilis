@@ -1,29 +1,31 @@
-class Mobilis::Services::Directory
-  def initialize: (String) -> void
-  def chdir_start: () -> void
-  def chdir_rails_builder: () -> void
-  def chdir_project: (Mobilis::Project::GenericProject) -> void
-  def mkdir_project: (Mobilis::Project::GenericProject) -> void
-  def mkdir_environment: (String) -> void
-  def chdir_environment: (String) -> void
-  def mkdir_environment_datadir_forproject: (String, Mobilis::Project::GenericProject) -> void
-  def chdir_environment_datadir_forproject: (String, Mobilis::Project::GenericProject) -> void
-  def environment_datadir_forproject: (String, Mobilis::Project::GenericProject) -> void
-  def mkdir_generate: () -> void
-  def rm_localgems_project_gitdir: (Mobilis::Project::GenericProject) -> void
-  def mkdir_localgems: () -> void
-  def mkdir_rails_builder: () -> void
-  def mkdir_compose: () -> void
-  def mkdir_datadir: () -> void
-  def mkdir_env_datadir: (String) -> void
-  def chdir_generate: () -> void
-  def chdir_localgems: () -> void
-  def project_dir: (Mobilis::Project::GenericProject) -> void
-  def git_commit_all: (String) -> void
-  def git_untracked_files: () -> void
-  def git: () -> void
-  def generate_dir: () -> String
-  def environment_dir: (String) -> String
-  def rails_builder_dir: () -> String
-  def localgems_dir: () -> String
+module Mobilis::Services
+  class Directory
+    def initialize: (String) -> void
+    def chdir_start: () -> void
+    def chdir_rails_builder: () -> void
+    def chdir_project: (Mobilis::Project::GenericProject) -> void
+    def mkdir_project: (Mobilis::Project::GenericProject) -> void
+    def mkdir_environment: (String) -> void
+    def chdir_environment: (String) -> void
+    def mkdir_environment_datadir_forproject: (String, Mobilis::Project::GenericProject) -> void
+    def chdir_environment_datadir_forproject: (String, Mobilis::Project::GenericProject) -> void
+    def environment_datadir_forproject: (String, Mobilis::Project::GenericProject) -> void
+    def mkdir_generate: () -> void
+    def rm_localgems_project_gitdir: (Mobilis::Project::GenericProject) -> void
+    def mkdir_localgems: () -> void
+    def mkdir_rails_builder: () -> void
+    def mkdir_compose: () -> void
+    def mkdir_datadir: () -> void
+    def mkdir_env_datadir: (String) -> void
+    def chdir_generate: () -> void
+    def chdir_localgems: () -> void
+    def project_dir: (Mobilis::Project::GenericProject) -> void
+    def git_commit_all: (String) -> void
+    def git_untracked_files: () -> void
+    def git: () -> void
+    def generate_dir: () -> String
+    def environment_dir: (String) -> String
+    def rails_builder_dir: () -> String
+    def localgems_dir: () -> String
+  end
 end

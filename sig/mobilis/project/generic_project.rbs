@@ -8,16 +8,22 @@ module Mobilis::Project
 
     def initialize: (Hash[Symbol, untyped], Mobilis::Project::MetaProject) -> void
 
+    def each_child: (?String) { (Mobilis::Project::GenericProject) -> void } -> void
+    def linked_to_localgem_project?: () -> bool
+    def each_linked_to_localgem_project: () { (Mobilis::Project::LocalgemProject) -> void } -> void
+                                       | () -> Enumerator[Mobilis::Project::LocalgemProject]
+
+    def each_parent: (?String) { (GenericProject) -> void } -> void
+                               | () -> Enumerator[GenericProject]
+
+    def each_child: (?String) { (GenericProject) -> void } -> void
+                              | () -> Enumerator[GenericProject]
+
     def child_env_vars: () -> Array[String]
     def each_project_for_environment: (?untyped) { (Mobilis::Project::GenericProject) -> void } -> void
     def env_vars: () -> Array[String]
     def env_name: () -> String
     def links_to_actually_link: (?untyped) -> Array[String]
-    def children: (?untyped) -> Array[Mobilis::Project::GenericProject]
-    def parents: (?untyped) { (Mobilis::Project::GenericProject) -> void } -> void
-    def linked_to_rails_project: () { (Mobilis::Project::RailsProject) -> void } -> void
-    def linked_to_localgem_project: () -> bool
-    def linked_localgem_projects: () -> Array[Mobilis::Project::LocalgemProject]
     def display: () -> void
     def name: () -> String
     def options: () -> Array[Symbol]

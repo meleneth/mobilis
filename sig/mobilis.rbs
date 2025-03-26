@@ -1,6 +1,8 @@
 module Mobilis
   def self.logger: () -> ::Logger
 
+  VERSION: String
+
   module Project
   end
 
@@ -16,6 +18,10 @@ module Mobilis
 
   module Services
   end
+
+  module OS
+  end
+
   class Error
   end
 end
