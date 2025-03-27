@@ -206,11 +206,6 @@ module Mobilis::InteractiveDesigner
           models["user"].add_field(name: "authentication_domain_id", type: Mobilis::RAILS_MODEL_TYPE_UUID)
           models["user"].add_field(name: "organization", type: Mobilis::RAILS_MODEL_TYPE_REFERENCE)
 
-          @project.new_relic do
-            set_license_key "some_invalid_key_NREAL"
-            enable_distributed_tracing
-          end
-
           go_back
         end
       end
