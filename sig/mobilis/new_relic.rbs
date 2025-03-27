@@ -1,5 +1,0 @@
-module Mobilis::NewRelic
-  def new_relic: () { (untyped) -> untyped } -> void
-  def set_license_key: (String) -> void
-  def enable_distributed_tracing: () -> void
-end

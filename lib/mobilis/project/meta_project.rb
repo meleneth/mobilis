@@ -9,7 +9,6 @@ module Mobilis
   module Project
     class MetaProject
       include ActionsProjectsTake
-      include Mobilis::NewRelic
 
       attr_accessor :data, :projects
 

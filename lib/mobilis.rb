@@ -38,7 +38,6 @@ require_relative "mobilis/output_files/rails_service"
 require_relative "mobilis/output_files/redis_service"
 
 require_relative "mobilis/actions_projects_take"
-require_relative "mobilis/new_relic"
 require_relative "mobilis/scene_fsm"
 require_relative "mobilis/rails_model_type"
 require_relative "mobilis/file_lines"

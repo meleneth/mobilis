@@ -67,9 +67,6 @@ RSpec.describe Mobilis::OutputFiles::RailsService do
               "REDIS_HOST_CACHE=cache",
               "REDIS_PORT_CACHE=6379",
               "REDIS_PASSWORD_CACHE=cache_password"
-              #              "NEW_RELIC_APP_NAME=prime",
-              #              "NEW_RELIC_LICENSE_KEY=some_invalid_key_NREAL",
-              #              "NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true"
             ],
             "ports" => ["${PRIME_EXTERNAL_PORT_NO}:${PRIME_INTERNAL_PORT_NO}"]
           }
@@ -87,10 +84,6 @@ RSpec.describe Mobilis::OutputFiles::RailsService do
       project.add_rack_project "somerack"
       project.add_localgem_project "some_local_gem"
       prime_stack.set_links(%w[testp-db testm-db cache some_local_gem])
-      project.new_relic do
-        set_license_key "some_invalid_key_NREAL"
-        enable_distributed_tracing
-      end
       result = YAML.safe_load(Mobilis::OutputFiles::RailsService.new(prime_stack).render, aliases: true)
       expect(result).to eq(expected)
     end

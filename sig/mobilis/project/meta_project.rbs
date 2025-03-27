@@ -33,7 +33,6 @@ type writer_mapping_hash = {
 module Mobilis::Project
   class MetaProject
     include Mobilis::ActionsProjectsTake
-    include Mobilis::NewRelic
 
     attr_reader projects: Array[Mobilis::Project::GenericProject]
 
