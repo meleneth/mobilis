@@ -8,7 +8,7 @@ type project_data_hash = {
 }
 
 type meta_project_data_hash = {
-  projects: Array[ProjectData],
+  projects: Array[untyped],
   username: String,
   starting_port_no: Integer,
   port_gap: Integer,
@@ -45,7 +45,7 @@ module Mobilis::Project
     def attributes: () -> void
     def username: () -> void
     def target_directory: () -> void
-    def target_environments: () -> void
+    def each_target_environment: () { (Mobilis::ExecutionEnvironment) -> void}-> void | () -> Enumerator[Mobilis::ExecutionEnvironment]
     def datastore_projects: () -> void
     def non_datastore_projects: () -> void
     def generate_files: () -> void
@@ -62,15 +62,9 @@ module Mobilis::Project
     def build_rails_builder: () -> void
     def load_from_file: (String) -> void
     def save_project: () -> void
-    def each_datastore_project: () { (GenericProject) -> void } -> void
-                           | () -> Enumerator[GenericProject]
-
-    def each_non_datastore_project: () { (GenericProject) -> void } -> void
-                                  | () -> Enumerator[GenericProject]
-
-    def each_project_for_environment: (?String) { (GenericProject) -> void } -> void
-                                    | (?String) -> Enumerator[GenericProject]
-
+    def each_datastore_project: () { (GenericProject) -> void } -> void | () -> Enumerator[GenericProject]
+    def each_non_datastore_project: () { (GenericProject) -> void } -> void | () -> Enumerator[GenericProject]
+    def each_project_for_environment: (?Mobilis::ExecutionEnvironment) { (GenericProject) -> void } -> void | (?String) -> Enumerator[GenericProject]
     def save_docker_compose: () -> void
     def writer_for_project: (Mobilis::Project::GenericProject) -> Mobilis::OutputFile
     def project_by_name: (String) -> Mobilis::Project::GenericProject
@@ -84,8 +78,8 @@ module Mobilis::Project
     def add_kafka_instance: (String) -> Mobilis::Project::KafkaInstance
     def add_localgem_project: (String) -> Mobilis::Project::LocalgemProject
     def add_rack_project: (String) -> Mobilis::Project::RackProject
-    def getwd: () -> void
-    def to_h: () -> void
+    def getwd: () -> String
+    def to_h: () -> untyped
     def create_datastore_directories: () -> void
     def pull_dev_datastore_instances: () -> void
     def start_dev_datastore_instances: () -> void

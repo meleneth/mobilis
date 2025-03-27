@@ -21,8 +21,8 @@ module Mobilis::Services
     def chdir_localgems: () -> void
     def project_dir: (Mobilis::Project::GenericProject) -> String
     def git_commit_all: (String) -> void
-    def git_untracked_files: () -> void
-    def git: () -> Git::Base
+    def git_untracked_files: () -> Array[untyped]
+    def git: () -> Git
     def generate_dir: () -> String
     def environment_dir: (String) -> String
     def rails_builder_dir: () -> String

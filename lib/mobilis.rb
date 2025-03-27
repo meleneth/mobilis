@@ -61,7 +61,6 @@ require_relative "mobilis/project/rails_field"
 require_relative "mobilis/command_line"
 require_relative "mobilis/os"
 
-require_relative "mobilis/docker_compose_projector"
 require_relative "mobilis/interactive_designer/add_project_menu"
 require_relative "mobilis/interactive_designer/fsm_designer"
 require_relative "mobilis/interactive_designer/link_editor"

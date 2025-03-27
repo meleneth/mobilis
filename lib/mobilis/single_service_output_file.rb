@@ -35,9 +35,9 @@ module Mobilis
       end
       service_definition
     end
-  end
 
-  def service_data
-    raise "Subclass must implement"
+    def service_data
+      raise "Subclass must implement"
+    end
   end
 end

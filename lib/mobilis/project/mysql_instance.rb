@@ -3,7 +3,7 @@
 module Mobilis
   module Project
     class MySQLInstance < GenericProject
-      def generate
+      def generate(directory_service:)
         FileUtils.mkdir_p data_dir
       end
 
@@ -12,7 +12,7 @@ module Mobilis
       end
 
       def env_vars
-        vars = []
+        vars = [] # : Array[String]
         vars << "MYSQL_DATABASE=${#{env_name}_MYSQL_DATABASE}" if linked_to_rails_project?
         vars.concat [
           "MYSQL_USER=${#{env_name}_MYSQL_USER}",

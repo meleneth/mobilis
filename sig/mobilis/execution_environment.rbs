@@ -2,7 +2,7 @@ module Mobilis
   class ExecutionEnvironment
     attr_reader value: Symbol
 
-    def initialize: (String) -> void
+    def initialize: (Symbol) -> void
 
     def is_dev?: () -> bool
     def is_test?: () -> bool

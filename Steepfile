@@ -9,5 +9,6 @@ target :lib do
   library "forwardable"
   library "logger"
   library 'yaml'
+  library "json"
 end
 

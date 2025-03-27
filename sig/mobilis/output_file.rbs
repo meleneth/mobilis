@@ -2,5 +2,5 @@ class Mobilis::OutputFile
   attr_reader filename: String
   def initialize: (String) -> void
   def render: () -> String
-  def write_to: (String, force_overwrite: bool) -> void
+  def write_to: (String, ?force_overwrite: bool) -> void
 end

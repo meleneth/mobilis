@@ -44,7 +44,7 @@ module Mobilis
 
       def mkdir_generate
         if Dir.exist? generate_dir
-          puts "Removing existing #{ generate_dir } directory"
+          puts "Removing existing #{generate_dir} directory"
           FileUtils.rm_rf(generate_dir)
         end
         Dir.mkdir generate_dir
@@ -92,14 +92,14 @@ module Mobilis
         File.join(generate_dir, project.name)
       end
 
-      def git_commit_all message
+      def git_commit_all(message)
         my_git = git
-        my_git.add
+        my_git.add "."
         my_git.commit(message)
       end
 
       def git_untracked_files
-        git.status.filter { |f| !f.untracked.nil? }
+        git.status.files.values.select { |f| !f.untracked.nil? }
       end
 
       private

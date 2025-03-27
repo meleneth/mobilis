@@ -3,7 +3,7 @@
 module Mobilis
   module Project
     class RedisInstance < GenericProject
-      def generate
+      def generate(directory_service:)
         FileUtils.mkdir_p data_dir
       end
 

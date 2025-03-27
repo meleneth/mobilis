@@ -15,7 +15,7 @@ module Mobilis
       def initialize
         # @type var data: MetaProjectDataHash
         @data = {
-          projects: [],
+          projects: [], # : Array[String]
           username: ENV.fetch("USER", ENV.fetch("USERNAME", "")),
           starting_port_no: 10_000,
           port_gap: 100,
@@ -58,7 +58,9 @@ module Mobilis
         "generate"
       end
 
-      def target_environments
+      def each_target_environment
+        return enum_for(:each_target_environment) unless block_given?
+
         %i[production development test].each { |env| yield Mobilis::ExecutionEnvironment.new(env) }
       end
 
@@ -109,8 +111,8 @@ module Mobilis
           NEW_RELIC_LICENSE_KEY=
         EOFENV
 
-        target_environments do |environment|
-          env_file = Mobilis::OutputFile::Env.new(environment, self, method(:next_auto_port_no))
+        each_target_environment do |environment|
+          env_file = Mobilis::OutputFiles::Env.new(environment, self, method(:next_auto_port_no))
           env_file.write_to("compose")
         end
       end
@@ -202,7 +204,7 @@ module Mobilis
       end
 
       def generate_attributes
-        attributes = { projects: {},
+        attributes = { projects: {}, # : Hash[String, untyped]
                        new_relic_license_key: ENV.fetch("NEW_RELIC_LICENSE_KEY", "some_invalid_key_NREAL") }
         projects.each_with_index do |project, index|
           attributes["#{project.name}_internal_port_no".to_sym] =
@@ -228,8 +230,10 @@ module Mobilis
       def load_from_file(filename)
         data = File.read filename
         @data = JSON.parse data, { symbolize_names: true }
-        @projects = @data[:projects].map { |p| project_for_line(p) }
-        @data[:projects] = []
+        raise "This is broken"
+        # @projects = @data[:projects].map { |p| project_for_line(p) }
+        projects = [] # : Array[untyped]
+        @data[:projects] = projects
       end
 
       def save_project
@@ -243,28 +247,12 @@ module Mobilis
       end
 
       def save_docker_compose
-        DockerComposeProjector.project_multi self
-        target_environments do |target_environment|
-          DockerComposeProjector.project_base target_environment, self
+        each_target_environment do |target_environment|
+          Mobilis::OutputFiles::ComposeBase.new(target_environment, self).write_to(".")
           each_project_for_environment(target_environment) do |project|
-            writer = writer_for_project(project)
-            writer.write_to("compose")
+            project.service_writer&.write_to("compose")
           end
         end
-      end
-
-      def writer_for_project(project)
-        # @type var mapping: WriterMappingHash
-        mapping = {
-          kafka: KafkaInstance,
-          localgem: LocalgemProject,
-          mysql: MysqlInstance,
-          postgresql: PostgresqlInstance,
-          rack: RackProject,
-          rails: RailsProject,
-          redis: RedisInstance
-        }
-        mapping[project.data[:type].to_sym].new(project, self)
       end
 
       def project_by_name(name)
@@ -287,63 +275,77 @@ module Mobilis
         data = {
           name: name,
           type: :postgresql
-        }
-        (@projects << PostgreSQLInstance.new(data, self))[-1]
+        } # : Hash[name: String, type: Symbol, attributes: untyped]
+        new_project = PostgreSQLInstance.new(data, self)
+        @projects << new_project
+        new_project
       end
 
       def add_mysql_instance(name)
         data = {
           name: name,
           type: :mysql
-        }
-        (@projects << MySQLInstance.new(data, self))[-1]
+        } # : Hash[name: String, type: Symbol, attributes: untyped]
+        new_project = MySQLInstance.new(data, self)
+        @projects <<  new_project
+        new_project
       end
 
       def add_redis_instance(name)
         data = {
           name: name,
           type: :redis
-        }
-        (@projects << RedisInstance.new(data, self))[-1]
+        } # : Hash[name: String, type: Symbol, attributes: untyped]
+        new_project = RedisInstance.new(data, self)
+        @projects << new_project
+        new_project
       end
 
       def add_rails_project(name, options)
         data = {
           name: name,
           type: :rails,
-          controllers: [],
-          models: [],
+          controllers: [], # : Array[untyped]
+          models: [], # : Array[untyped]
           options: options.clone,
-          attributes: {}
-        }
-        (@projects << RailsProject.new(data, self))[-1]
+          attributes: {} # : Hash[String, untyped]
+        } # : Hash[name: String, type: Symbol, attributes: untyped]
+        new_project = RailsProject.new(data, self)
+        @projects <<  new_project
+        new_project
       end
 
       def add_kafka_instance(name)
         data = {
           name: name,
           type: :kafka,
-          attributes: {}
-        }
-        (@projects << KafkaInstance.new(data, self))[-1]
+          attributes: {} # : Hash[String, untyped]
+        } # : Hash[name: String, type: Symbol, attributes: untyped]
+        new_project = KafkaInstance.new(data, self)
+        @projects << new_project
+        new_project
       end
 
       def add_localgem_project(name)
         data = {
           name: name,
           type: :localgem,
-          attributes: {}
-        }
-        (@projects << LocalgemProject.new(data, self))[-1]
+          attributes: {} # : Hash[String, untyped]
+        } # : Hash[name: String, type: Symbol, attributes: untyped]
+        new_project = LocalgemProject.new(data, self)
+        @projects << new_project
+        new_project
       end
 
       def add_rack_project(name)
         data = {
           name: name,
           type: :rack,
-          attributes: {}
-        }
-        (@projects << RackProject.new(data, self))[-1]
+          attributes: {} # : Hash[Symbol, untyped]
+        } # : Hash[name: String, type: Symbol, attributes: untyped]
+        new_project = RackProject.new(data, self)
+        @projects << new_project
+        new_project
       end
 
       def getwd
@@ -365,7 +367,7 @@ module Mobilis
         # creates storage directories, per-environment, per-datastore
         return unless has_datastore_instance?
 
-        target_environments do |target_environment|
+        each_target_environment do |target_environment|
           @directory_service.mkdir_environment(target_environment)
           @directory_service.chdir_environment(target_environment)
           # TODO: make script for creating datastore directories after checkout, since

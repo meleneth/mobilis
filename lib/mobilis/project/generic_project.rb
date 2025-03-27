@@ -27,7 +27,7 @@ module Mobilis
       ##
       # environment env vars added to linked child services
       def child_env_vars
-        []
+        [] # : Array[String]
       end
 
       def each_project_for_environment(environment = nil)
@@ -37,7 +37,7 @@ module Mobilis
       end
 
       def env_vars
-        []
+        [] # : Array[String]
       end
 
       # all caps env name
@@ -58,6 +58,10 @@ module Mobilis
         links.each do |link|
           yield @metaproject.project_by_name(link)
         end
+      end
+
+      def service_writer
+        nil
       end
 
       def each_parent(environment = nil)
@@ -149,7 +153,7 @@ module Mobilis
       end
 
       # generate the local file structure to support the project
-      def generate
+      def generate(directory_service:)
         FileUtils.mkdir_p name
       end
 

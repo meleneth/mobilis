@@ -15,7 +15,7 @@ module Mobilis
       end
 
       def env_vars
-        vars = []
+        vars = [] # : Array[String]
         each_linked_to_rails_project do |rails_project|
           vars << "POSTGRES_DB=${#{env_name}_POSTGRES_DB}"
         end

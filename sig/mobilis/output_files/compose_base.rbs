@@ -1,6 +1,6 @@
 module Mobilis::OutputFiles
   class ComposeBase < Mobilis::OutputFile
-    attr_reader environment: untyped
+    attr_reader environment: Mobilis::ExecutionEnvironment
     attr_reader project_config: Mobilis::Project::MetaProject
     def initialize: (Mobilis::ExecutionEnvironment, Mobilis::Project::MetaProject) -> void
     def write_to: (string) -> void

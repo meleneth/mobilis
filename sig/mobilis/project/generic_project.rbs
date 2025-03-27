@@ -8,41 +8,35 @@ module Mobilis::Project
 
     def initialize: (Hash[Symbol, untyped], Mobilis::Project::MetaProject) -> void
 
-    def each_child: (?String) { (Mobilis::Project::GenericProject) -> void } -> void
-    def linked_to_localgem_project?: () -> bool
-    def each_linked_to_localgem_project: () { (Mobilis::Project::LocalgemProject) -> void } -> void
-                                       | () -> Enumerator[Mobilis::Project::LocalgemProject]
-
-    def each_parent: (?String) { (GenericProject) -> void } -> void
-                               | () -> Enumerator[GenericProject]
-
-    def each_child: (?String) { (GenericProject) -> void } -> void
-                              | () -> Enumerator[GenericProject]
-
+    def add_link: (String) -> void
     def child_env_vars: () -> Array[String]
-    def each_project_for_environment: (?untyped) { (Mobilis::Project::GenericProject) -> void } -> void
-    def env_vars: () -> Array[String]
-    def env_name: () -> String
-    def links_to_actually_link: (?untyped) -> Array[String]
+    def compose_filename: () -> String
     def display: () -> void
+    def docker_image_name: () -> String
+    def each_child: (?Mobilis::ExecutionEnvironment) { (GenericProject) -> void } -> void | () -> Enumerator[GenericProject]
+    def each_linked_to_localgem_project: () { (Mobilis::Project::LocalgemProject) -> void } -> void | () -> Enumerator[Mobilis::Project::LocalgemProject]
+    def each_linked_to_rails_project: () { (Mobilis::Project::RailsProject) -> void } -> void | () -> Enumerator[Mobilis::Project::RailsProject]
+    def each_parent: (?Mobilis::ExecutionEnvironment) { (GenericProject) -> void } -> void | () -> Enumerator[GenericProject]
+    def each_project_for_environment: (?Mobilis::ExecutionEnvironment) { (Mobilis::Project::GenericProject) -> void } -> void
+    def env_name: () -> String
+    def env_vars: () -> Array[String]
+    def generate_build_sh: () -> void
+    def generate: (directory_service: Mobilis::Services::Directory) -> void
+    def getwd: () -> String
+    def global_env_vars: (untyped) -> Hash[String, String]
+    def is_datastore_project?: () -> bool
+    def is_service_project?: () -> bool
+    def linked_to_localgem_project?: () -> bool
+    def links: () -> Array[String]
+    def links_to_actually_link: (?untyped) -> Array[String]
     def name: () -> String
     def options: () -> Array[Symbol]
-    def type: () -> Symbol
-    def links: () -> Array[String]
-    def set_links: (Array[String]) -> void
-    def add_link: (String) -> void
-    def _p: (String) -> String
-    def to_h: () -> Hash[Symbol, untyped]
-    def docker_image_name: () -> String
-    def generate_build_sh: () -> void
-    def is_datastore_project?: () -> bool
-    def compose_filename: () -> String
-    def generate: () -> void
-    def global_env_vars: (untyped) -> Hash[String, String]
-    def is_service_project?: () -> bool
-    def starting_port: () -> Integer
     def port_gap: () -> Integer
+    def _p: (String) -> String
+    def set_links: (Array[String]) -> void
+    def starting_port: () -> Integer
+    def to_h: () -> Hash[Symbol, untyped]
+    def type: () -> Symbol
     def username: () -> String
-    def getwd: () -> String
   end
 end

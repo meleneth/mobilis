@@ -1,5 +1,4 @@
 module Mobilis::Project
   class LocalgemProject < GenericProject
-    def generate: (directory: Mobilis::Services::Directory) -> void
   end
 end

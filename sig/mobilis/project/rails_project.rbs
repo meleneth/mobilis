@@ -27,7 +27,6 @@ module Mobilis::Project
     def project_rails_run_command: (String, ?String) -> void
     def bundle_run: (String) -> void
     def project_bundle_run: (String, ?String) -> void
-    def generate: (Mobilis::Services::Directory) -> void
     def has_models?: () -> bool
     def read_rails_master_key: () -> void
     def rails_master_key: () -> String

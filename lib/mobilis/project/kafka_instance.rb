@@ -3,7 +3,11 @@
 module Mobilis
   module Project
     class KafkaInstance < GenericProject
-      def generate(git)
+      def generate(directory_service:)
+      end
+
+      def service_writer
+        Mobilis::OutputFiles::KafkaInstance.new
       end
 
       def child_env_vars

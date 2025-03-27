@@ -147,7 +147,10 @@ module Mobilis
       end
 
       def add_controller(name)
-        controller = { name: name, actions: [] }
+        controller = {
+          name: name,
+          actions: [] # : Array[untyped]
+        }
         @data[:controllers] << controller
         controller
       end
@@ -290,6 +293,8 @@ module Mobilis
           hostname = Socket.gethostname
           lines = FileLines.from_file(filename: "../compose/development.env")
           db = database
+          rails "Cannot create models with no database" unless db
+
           external_db_port = lines.get_value("#{db.name}_EXTERNAL_PORT_NO")
           project_bundle_run model.line,
                              "-e DATABASE_URL=postgres://#{db.name}-development-user:#{db.name}-development-password@#{hostname}:#{external_db_port}/#{db.name}-development"

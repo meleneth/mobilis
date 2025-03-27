@@ -9,9 +9,9 @@ module Mobilis
       def initialize(name, rails_project)
         @rails_project = rails_project
         @name = name
-        @fields = []
-        @indexes = []
-        @graphql_fields = []
+        @fields = [] # : Array[Mobilis::Project::RailsField]
+        @indexes = [] # : Array[String]
+        @graphql_fields = [] # : Array[Mobilis::Project::RailsField]
       end
 
       def line

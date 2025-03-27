@@ -116,7 +116,7 @@ module Mobilis
       end
 
       def get_Dockerfile_with_localgems
-        localgem_lines = []
+        localgem_lines = [] # : Array[String]
         each_linked_to_localgem_project.each do |p|
           localgem_lines << "COPY ./localgems/#{p.name} /myapp/localgems/#{p.name}"
           localgem_lines << "WORKDIR /myapp/localgems/#{p.name}"

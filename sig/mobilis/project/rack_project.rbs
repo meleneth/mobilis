@@ -1,5 +1,18 @@
-module Mobilis::Project
-  class RackProject < GenericProject
-    def initialize: () -> void
+module Mobilis
+  module Project
+    class RackProject < GenericProject
+      def name: () -> String
+
+      def global_env_vars: (String) -> Hash[Symbol, untyped]
+      def add_url_handler: (String, String) -> self
+      def generate_config_ru: () -> void
+      def generate_Gemfile: () -> void
+      def generate_Gemfile_lock: () -> void
+      def generate_Dockerfile: () -> void
+      def localgem_prefix: () -> String
+      def get_Dockerfile: () -> String
+      def get_Dockerfile_default: () -> String
+      def get_Dockerfile_with_localgems: () -> String
+    end
   end
 end

@@ -1,27 +1,65 @@
-module Git
-  class Base
-    def self.open: (String) -> Git::Base
-    def self.clone: (String, String, **untyped) -> Git::Base
+class Git
+  # Class methods
+  def self.init: (?String) -> Git
+  def self.clone: (String, ?String) -> Git
+  def self.open: (String) -> Git
 
-    def status: () -> Git::Status
-    def pull: () -> void
-    def add: (String | Array[String]) -> void
-    def commit: (String) -> void
-    def push: () -> void
-    def branch: (String) -> Git::Branch
-    def checkout: (String) -> void
-    def tags: () -> Array[String]
-    def tag: (String) -> void
-  end
-
-  class Status
-    def added: () -> Hash[String, untyped]
-    def changed: () -> Hash[String, untyped]
-    def deleted: () -> Hash[String, untyped]
-    def untracked: () -> Hash[String, untyped]
-  end
-
-  class Branch
-    def checkout: () -> void
-  end
+  # Instance methods (common subset)
+  def add: (String) -> void
+  def commit: (String) -> void
+  def push: () -> void
+  def pull: () -> void
+  def status: () -> Git::Status
+  def log: () -> Git::Log
+  def checkout: (String) -> void
+  def branch: () -> Git::Branches
+  def branches: () -> Git::Branches
+  def current_branch: () -> String
+  def merge: (String) -> void
+  def tag: (?String) -> Git::Tag
+  def tags: () -> Git::TagCollection
 end
+
+class Git::Status
+  def added: () -> Array[String]
+  def changed: () -> Array[String]
+  def deleted: () -> Array[String]
+  def untracked: () -> Array[String]
+  def files: () -> Hash[String, Git::Status::StatusFile]
+end
+
+class Git::Log
+  def size: () -> Integer
+  def each: () { (Git::Object) -> void } -> void
+end
+
+class Git::Branches
+  def local: () -> Array[Git::Branch]
+  def remote: () -> Array[Git::Branch]
+end
+
+class Git::Branch
+  def name: () -> String
+  def checkout: () -> void
+end
+
+class Git::Tag
+  def name: () -> String
+end
+
+class Git::TagCollection
+  def []: (String) -> Git::Tag
+  def each: () { (Git::Tag) -> void } -> void
+end
+
+class Git::Object
+  def sha: () -> String
+  def message: () -> String
+  def author: () -> String
+  def date: () -> Time
+end
+
+class Git::Status::StatusFile
+  def untracked: () -> bool?
+end
+
