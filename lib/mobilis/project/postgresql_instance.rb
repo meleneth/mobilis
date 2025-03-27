@@ -14,8 +14,12 @@ module Mobilis
         "#{Process.uid}:#{Process.gid}"
       end
 
+      def _empty_vars
+        []
+      end
+
       def env_vars
-        vars = [] # : Array[String]
+        vars = _empty_vars
         each_linked_to_rails_project do |rails_project|
           vars << "POSTGRES_DB=${#{env_name}_POSTGRES_DB}"
         end
@@ -38,9 +42,9 @@ module Mobilis
           "#{env_name}_POSTGRES_PASSWORD": password(environment),
           "#{env_name}_POSTGRES_DATA": "./data/#{environment}/#{name}",
           "#{env_name}_POSTGRES_URL": url(environment)
-        }
+        } # : Hash[Symbol, untyped]
         each_linked_to_rails_project do |rails_project|
-          vars["#{rails_project.env_name}_DATABASE_URL"] = url(environment)
+          vars["#{rails_project.env_name}_DATABASE_URL".to_sym] = url(environment)
         end
         vars
       end

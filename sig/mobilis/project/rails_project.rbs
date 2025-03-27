@@ -48,7 +48,6 @@ module Mobilis::Project
     def generate_bundle_run: () -> void
     def install_super_diff: () -> void
     def rails_new_command_line: () -> String
-    def global_env_vars: (untyped) -> Hash[Symbol, untyped]
 
     private def generate_index: (Mobilis::Services::Directory, Mobilis::Project::RailsModel, Array[String]) -> void
     private def camelize: (String) -> String

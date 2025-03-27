@@ -236,10 +236,11 @@ module Mobilis
         install_graphql
         directory_service.git_commit_all "#{name} - rails g graphql:install"
         models.each do |model|
-          if model.has_graphql_fields?
-            generate_graphql_wrapper_for_model(model)
-            directory_service.git_commit_all "#{name} - #{model.name} - add index #{index.join ","}"
-          end
+          raise "Graphql support is broken, fix here"
+          # if model.has_graphql_fields?
+          #  generate_graphql_wrapper_for_model(model)
+          #  directory_service.git_commit_all "#{name} - #{model.name} - add index #{index.join ","}"
+          # end
         end
       end
 
@@ -293,7 +294,7 @@ module Mobilis
           hostname = Socket.gethostname
           lines = FileLines.from_file(filename: "../compose/development.env")
           db = database
-          rails "Cannot create models with no database" unless db
+          raise "Cannot create models with no database" unless db
 
           external_db_port = lines.get_value("#{db.name}_EXTERNAL_PORT_NO")
           project_bundle_run model.line,

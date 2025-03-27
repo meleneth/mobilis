@@ -10,5 +10,6 @@ target :lib do
   library "logger"
   library 'yaml'
   library "json"
+  library "socket"
 end
 

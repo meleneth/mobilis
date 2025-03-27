@@ -1,11 +1,14 @@
 module Mobilis::InteractiveDesigner
-  def self.add_edit_links_states: (Mobilis::SceneFSM) -> void
+  def self.add_edit_links_states: (Mobilis::InteractiveDesigner::MainMenu) -> void
+  def self.add_project_edit_menu_states: (Mobilis::InteractiveDesigner::MainMenu) -> void
+  def self.add_rails_model_edit_states: (Mobilis::InteractiveDesigner::MainMenu) -> void
+  def self.add_rails_project_edit_states: (Mobilis::InteractiveDesigner::MainMenu) -> void
 
   def display: () -> void
   def action: () -> void
   def choices: () -> void
 
-  def state: (Symbol, untyped) -> void
+
 
   def go_add_kafka_instance: () -> void
   def go_add_localgem_project: () -> void

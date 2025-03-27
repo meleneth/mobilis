@@ -1,3 +1,0 @@
-class Mobilis::InteractiveDesigner::RackAppDesigner
-  def initialize: () -> void
-end

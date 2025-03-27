@@ -1,3 +1,0 @@
-class Mobilis::InteractiveDesigner::KafkaEdit
-  def initialize: () -> void
-end

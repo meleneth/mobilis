@@ -1,3 +1,0 @@
-class Mobilis::InteractiveDesigner::RailsModelEdit
-  def initialize: () -> void
-end

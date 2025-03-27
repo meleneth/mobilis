@@ -3,7 +3,6 @@ module Mobilis
     class RackProject < GenericProject
       def name: () -> String
 
-      def global_env_vars: (String) -> Hash[Symbol, untyped]
       def add_url_handler: (String, String) -> self
       def generate_config_ru: () -> void
       def generate_Gemfile: () -> void

@@ -1,3 +1,0 @@
-class Mobilis::InteractiveDesigner::EditLinks
-  def initialize: () -> void
-end

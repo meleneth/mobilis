@@ -7,7 +7,7 @@ module Mobilis::Project
     attr_accessor rails_project: Mobilis::Project::RailsProject
 
     def initialize: (String, Mobilis::Project::RailsProject) -> void
-    def line: () -> void
+    def line: () -> String
     def add_field: (name: String, type: Mobilis::RailsModelType) -> void
     def add_references: (Mobilis::Project::RailsModel) -> void
     def add_index: (*String) -> void

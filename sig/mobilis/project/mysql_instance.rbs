@@ -1,9 +1,8 @@
 module Mobilis::Project
   class MySQLInstance < GenericProject
-    def generate: () -> void
+    def generate: (directory_service: Mobilis::Services::Directory) -> void
     def child_env_vars: () -> Array[untyped]
     def env_vars: () -> Array[String]
-    def global_env_vars: (String) -> Hash[Symbol, untyped]
     def env_name: () -> String
     def data_dir: () -> String
     def has_local_build: () -> bool
@@ -11,6 +10,7 @@ module Mobilis::Project
     def username: () -> String
     def password: () -> String
     def is_datastore_project?: () -> bool
+    def _empty_vars: () -> Array[String]
   end
 end
 

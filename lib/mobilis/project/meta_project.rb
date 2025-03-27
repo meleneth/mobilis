@@ -112,8 +112,7 @@ module Mobilis
         EOFENV
 
         each_target_environment do |environment|
-          env_file = Mobilis::OutputFiles::Env.new(environment, self, method(:next_auto_port_no))
-          env_file.write_to("compose")
+          Mobilis::OutputFiles::Env.new(environment, self).write_to("compose")
         end
       end
 
@@ -241,6 +240,8 @@ module Mobilis
       end
 
       def each_project_for_environment(target_environment = nil, &block)
+        return enum_for(:each_project_for_environment, target_environment) unless block_given?
+
         projects.each do |project|
           project.each_project_for_environment(target_environment, &block)
         end
@@ -256,7 +257,10 @@ module Mobilis
       end
 
       def project_by_name(name)
-        projects.find { |p| p.name == name }
+        projects.each do |project|
+          return project if project.name == name
+        end
+        raise "Could not find project #{name}"
       end
 
       def display

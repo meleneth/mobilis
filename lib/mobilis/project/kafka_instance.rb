@@ -7,7 +7,7 @@ module Mobilis
       end
 
       def service_writer
-        Mobilis::OutputFiles::KafkaInstance.new
+        Mobilis::OutputFiles::KafkaService.new self
       end
 
       def child_env_vars

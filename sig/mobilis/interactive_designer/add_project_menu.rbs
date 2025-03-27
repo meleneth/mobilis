@@ -1,3 +1,0 @@
-class Mobilis::InteractiveDesigner::AddProjectMenu
-  def initialize: () -> void
-end

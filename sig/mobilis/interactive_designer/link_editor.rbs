@@ -1,3 +1,0 @@
-module Mobilis::InteractiveDesigner::LinkEditor
-  def self.add_edit_links_states: (Mobilis::InteractiveDesigner::MainMenu) -> void
-end

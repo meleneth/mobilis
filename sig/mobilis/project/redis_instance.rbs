@@ -7,6 +7,5 @@ module Mobilis::Project
     def username: () -> String
     def password: () -> String
     def is_datastore_project?: () -> bool
-    def global_env_vars: (Mobilis::ExecutionEnvironment) -> Hash
   end
 end

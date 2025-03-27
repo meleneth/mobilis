@@ -1,5 +1,6 @@
 module Mobilis::Project
   class KafkaInstance < GenericProject
-    def initialize: () -> void
+    def initialize: (Hash[untyped, untyped], Mobilis::Project::MetaProject) -> void
+    def has_local_build: () -> bool
   end
 end
