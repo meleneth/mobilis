@@ -3,7 +3,7 @@ require "optimist"
 module Mobilis
   class CommandLine
     def self.parse_args(args)
-      # @type var options: Hash[Symbol, Symbol]
+      # @type var options: Hash[Symbol, untyped]
       options = {}
       Optimist.options(args) do
         banner "multi-project codebase generation toolkit"
@@ -22,7 +22,7 @@ module Mobilis
       when :help
         puts "I think we'd all like a little help."
       else
-        Optimist.die "unknown subcommand #{cmd.inspect}"
+        Optimist.die "unknown subcommand #{options[:subcommand].inspect}"
       end
       options
     end

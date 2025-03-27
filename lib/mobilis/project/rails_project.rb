@@ -105,8 +105,8 @@ module Mobilis
       def database
         links.each do |link|
           project = @metaproject.project_by_name link
-          return project if project.instance_of? Mobilis::Project::PostgresqlInstance
-          return project if project.instance_of? Mobilis::Project::MysqlInstance
+          return project if project.instance_of? Mobilis::Project::PostgreSQLInstance
+          return project if project.instance_of? Mobilis::Project::MySQLInstance
         end
         nil
       end
@@ -440,7 +440,7 @@ module Mobilis
       def wait_until_line
         # TODO: FIXME
         #
-        if database.is_a? Mobilis::Project::PostgresqlInstance
+        if database.is_a? Mobilis::Project::PostgreSQLInstance
           return <<~POSTGRES_LINE
             /myapp/wait-until "psql $DATABASE_URL -c 'select 1'"
           POSTGRES_LINE
@@ -448,7 +448,7 @@ module Mobilis
 
         # instance_of? is a code smell - maybe this should be database.wait_until_line ?
         db = database
-        if db.is_a? Mobilis::Project::MysqlInstance
+        if db.is_a? Mobilis::Project::MySQLInstance
 
           return <<~MYSQL_LINE
             /myapp/wait-until "mysql -D #{name}_production -h #{db.name} -u #{db.username} -p#{db.password} -e 'select 1'"

@@ -1,3 +1,4 @@
 module Optimist
   def self.options: (Array[String]) { (untyped) -> void } -> Hash[Symbol, untyped]
+  def self.die: (String) -> void
 end
