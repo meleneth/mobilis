@@ -287,7 +287,7 @@ module Mobilis::InteractiveDesigner
       true
     end
 
-    def project
+    def metaproject
       @metaproject ||= ::Mobilis::Project::MetaProject.new
     end
   end

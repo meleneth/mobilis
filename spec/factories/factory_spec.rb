@@ -23,7 +23,7 @@ RSpec.describe "Factories" do
     fsm.choices[4][:value].call
     expect(fsm.state).to eq("edit_project_menu")
     expect(fsm.choices[0][:name]).to eq("return to Main Menu")
-    expect(fsm.project.projects[0]).to eq(rails_project)
+    expect(fsm.metaproject.projects[0]).to eq(rails_project)
     expect(fsm.choices[1][:name]).to eq("Edit 'somerails' project")
   end
   it "can build a graphql enabled rails project" do

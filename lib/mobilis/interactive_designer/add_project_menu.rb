@@ -49,7 +49,7 @@ module Mobilis::InteractiveDesigner
       state :add_project_menu do
         def display
           puts "Add Project"
-          fancy_tp projects, "name", "type", options: lambda { |p| p.options.join ", " }
+          fancy_tp projects, "name", "type", options: ->(p) { p.options.join ", " }
         end
 
         def choices
@@ -88,7 +88,7 @@ module Mobilis::InteractiveDesigner
 
         def action
           project_name = prompt.ask("new Prime Stack Rails project name:")
-          @selected_rails_project = project.add_prime_stack_rails_project project_name
+          @selected_rails_project = metaproject.add_prime_stack_rails_project project_name
           go_rails_project_edit
         end
       end
@@ -102,7 +102,7 @@ module Mobilis::InteractiveDesigner
 
         def action
           project_name = prompt.ask("new Rack project name:")
-          project.add_rack_project project_name
+          metaproject.add_rack_project project_name
           go_main_menu
         end
       end
@@ -116,7 +116,7 @@ module Mobilis::InteractiveDesigner
 
         def action
           project_name = prompt.ask("new Kafka instance name:")
-          project.add_kafka_instance project_name
+          metaproject.add_kafka_instance project_name
           go_main_menu
         end
       end
@@ -130,7 +130,7 @@ module Mobilis::InteractiveDesigner
 
         def action
           project_name = prompt.ask("new local gem project name:")
-          project.add_localgem_project project_name
+          metaproject.add_localgem_project project_name
           go_main_menu
         end
       end
@@ -144,7 +144,7 @@ module Mobilis::InteractiveDesigner
 
         def action
           project_name = prompt.ask("new Omakase Stack Rails project name:")
-          @selected_rails_project = project.add_omakase_stack_rails_project project_name
+          @selected_rails_project = metaproject.add_omakase_stack_rails_project project_name
           go_rails_project_edit
         end
       end
@@ -158,7 +158,7 @@ module Mobilis::InteractiveDesigner
 
         def action
           project_name = prompt.ask("new postgresql instance name:")
-          project.add_postgresql_instance project_name
+          metaproject.add_postgresql_instance project_name
           go_finished
         end
       end
@@ -172,7 +172,7 @@ module Mobilis::InteractiveDesigner
 
         def action
           project_name = prompt.ask("new mysql instance name:")
-          project.add_mysql_instance project_name
+          metaproject.add_mysql_instance project_name
           go_finished
         end
       end
@@ -186,7 +186,7 @@ module Mobilis::InteractiveDesigner
 
         def action
           project_name = prompt.ask("new redis instance name:")
-          project.add_redis_instance project_name
+          metaproject.add_redis_instance project_name
           go_finished
         end
       end
