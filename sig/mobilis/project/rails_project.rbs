@@ -3,7 +3,7 @@ module Mobilis::Project
     attr_accessor models: Array[Mobilis::Project::RailsModel]
 
     def initialize: (Hash[Symbol, untyped], Mobilis::Project::MetaProject) -> void
-    def each_project_for_environment: (?untyped) { (Mobilis::Project::GenericProject) -> void } -> void
+    def each_project_for_environment: (?Mobilis::ExecutionEnvironment) { (Mobilis::Project::GenericProject) -> void } -> void | (?Mobilis::ExecutionEnvironment) -> Enumerator[GenericProject]
     def display: () -> void
     def child_env_vars: () -> Array[String]
     def to_h: () -> Hash[Symbol, untyped]

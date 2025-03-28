@@ -57,8 +57,9 @@ module Mobilis::Project
     def display: () -> void
     def each_datastore_project: () { (GenericProject) -> void } -> void | () -> Enumerator[GenericProject]
     def each_non_datastore_project: () { (GenericProject) -> void } -> void | () -> Enumerator[GenericProject]
-    def each_project_for_environment: (?Mobilis::ExecutionEnvironment) { (Mobilis::Project::GenericProject) -> void } -> void | (?Mobilis::ExecutionEnvironment) -> Enumerator[Mobilis::Project::GenericProject, void]
     def each_target_environment: () { (Mobilis::ExecutionEnvironment) -> void}-> void | () -> Enumerator[Mobilis::ExecutionEnvironment]
+    def each_project_for_environment: (?::Mobilis::ExecutionEnvironment) -> Enumerator[Mobilis::Project::GenericProject, void] | (?::Mobilis::ExecutionEnvironment) { () -> void } -> void
+
     def generate_attributes: () -> void
     def generate_env_files: () -> void
     def generate_files: () -> void

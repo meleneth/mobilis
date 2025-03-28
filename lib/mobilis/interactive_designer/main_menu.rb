@@ -2,11 +2,10 @@
 
 module Mobilis::InteractiveDesigner
   class MainMenu < Mobilis::SceneFSM
-    extend Forwardable
-    def_delegators :project, :projects, :load_from_file
-    attr_accessor :project
+    attr_accessor :metaproject, :selected_rails_project
 
-    attr_accessor :selected_rails_project
+    extend Forwardable
+    def_delegators :metaproject, :projects, :load_from_file
 
     def select_rails_project_for_editing(rails_project)
       puts "Selecting rails project for editing"
@@ -124,7 +123,7 @@ module Mobilis::InteractiveDesigner
 
       state :generate do
         def action
-          project.generate_files
+          metaproject.generate_files
           go_back
         end
 
@@ -135,7 +134,7 @@ module Mobilis::InteractiveDesigner
 
       state :build do
         def action
-          project.build
+          metaproject.build
           go_back
         end
 
@@ -146,7 +145,7 @@ module Mobilis::InteractiveDesigner
 
       state :save_project do
         def action
-          project.save_project
+          metaproject.save_project
           go_back
         end
 
@@ -157,7 +156,7 @@ module Mobilis::InteractiveDesigner
 
       state :show_configuration do
         def action
-          project.show
+          metaproject.show
           go_back
         end
 
@@ -174,7 +173,7 @@ module Mobilis::InteractiveDesigner
         def create_rails_service_with_postgres_db(service_name); end
 
         def action
-          @project = ::Mobilis::Project::MetaProject.new
+          @metaproject = ::Mobilis::Project::MetaProject.new
           # @project.add_localgem_project "api_models"
           services = {}
           models = {}
@@ -182,7 +181,7 @@ module Mobilis::InteractiveDesigner
           postgres_prime_rails_projects = %w[organization account user credential authorization notification
                                              authenticationdomain group]
           postgres_prime_rails_projects.each do |name|
-            new_service = @project.add_prime_stack_rails_project "#{name}-service"
+            new_service = metaproject.add_prime_stack_rails_project "#{name}-service"
             new_service.add_linked_postgresql_instance("#{name}db")
             # new_service.add_link "api_models"
             new_service.toggle_uuid_primary_keys
@@ -190,7 +189,7 @@ module Mobilis::InteractiveDesigner
           end
 
           %w[token login scim].each do |name|
-            services[name] = @project.add_rack_project("#{name}-service")
+            services[name] = metaproject.add_rack_project("#{name}-service")
             # services[name].add_link "api_models"
           end
 
@@ -218,21 +217,21 @@ module Mobilis::InteractiveDesigner
         def create_rails_service_with_postgres_db(service_name); end
 
         def action
-          @project = ::Mobilis::Project.new
+          @metaproject = ::Mobilis::Project::MetaProject.new
           # @project.add_localgem_project "api_models"
-          services = {}
-          models = {}
+          services = {} # : Hash[String, untyped]
+          models = {} # : Hash[String, untyped]
 
           postgres_prime_rails_projects = %w[user]
           postgres_prime_rails_projects.each do |name|
-            new_service = @project.add_prime_stack_rails_project "#{name}-service"
+            new_service = metaproject.add_prime_stack_rails_project "#{name}-service"
             new_service.add_linked_postgresql_instance("#{name}db")
             new_service.toggle_uuid_primary_keys
             services[name] = new_service
           end
 
           %w[token].each do |name|
-            services[name] = @project.add_rack_project("#{name}-service")
+            services[name] = @metaproject.add_rack_project("#{name}-service")
             # services[name].add_link "api_models"
           end
 
@@ -289,7 +288,7 @@ module Mobilis::InteractiveDesigner
     end
 
     def project
-      @project ||= ::Mobilis::Project::MetaProject.new
+      @metaproject ||= ::Mobilis::Project::MetaProject.new
     end
   end
 end

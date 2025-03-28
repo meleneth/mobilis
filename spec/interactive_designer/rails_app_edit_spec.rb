@@ -7,7 +7,7 @@ RSpec.describe "RailsAppEdit" do
   let(:rails_project) { build(:rails_prime, metaproject: metaproject, name: "somerails") }
   let(:fsm) do
     rails_project
-    build(:fsm, project: metaproject)
+    build(:fsm, metaproject: metaproject)
   end
   let(:prompt) { fsm.prompt }
   let(:nav) { FSMNavigator.new fsm: fsm }

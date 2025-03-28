@@ -2,7 +2,7 @@
 
 require "mobilis/interactive_designer/main_menu"
 
-RSpec.describe 'RailsModelEdit' do
+RSpec.describe "RailsModelEdit" do
   let(:metaproject) { build(:metaproject) }
   let(:rails_project) do
     p = build(:rails_prime, metaproject: metaproject)
@@ -12,18 +12,18 @@ RSpec.describe 'RailsModelEdit' do
   end
   let(:fsm) do
     rails_project
-    build(:fsm, project: metaproject)
+    build(:fsm, metaproject: metaproject)
   end
   let(:prompt) { fsm.prompt }
   let(:nav) { FSMNavigator.new fsm: fsm }
 
   describe "Can get to model edit screen" do
-    let(:name_field) { {name: "name", type: :string} }
-    let(:author_field) { {name: "author", type: :references} }
-    let(:post_model) { {name: "Post", fields: [author_field, subject_field], indexes: []} }
-    let(:author_model) { {name: "Author", fields: [name_field], indexes: []} }
-    let(:subject_field) { {name: "subject", type: :string} }
-    let(:options) { [:rspec, :api, :simplecov, :standard, :factorybot] }
+    let(:name_field) { { name: "name", type: :string } }
+    let(:author_field) { { name: "author", type: :references } }
+    let(:post_model) { { name: "Post", fields: [author_field, subject_field], indexes: [] } }
+    let(:author_model) { { name: "Author", fields: [name_field], indexes: [] } }
+    let(:subject_field) { { name: "subject", type: :string } }
+    let(:options) { %i[rspec api simplecov standard factorybot] }
     let(:models) { [author_model, post_model] }
     let(:expected) do
       {

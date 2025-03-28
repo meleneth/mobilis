@@ -1,5 +1,7 @@
 module TTY
   class Prompt
     def select: (String, Array[Hash[Symbol, untyped]], per_page: Integer) -> untyped
+    def ask: (String) -> untyped
+    def multi_select: (String) { () -> untyped } -> untyped
   end
 end

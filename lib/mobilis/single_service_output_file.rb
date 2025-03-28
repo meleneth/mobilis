@@ -1,34 +1,34 @@
 module Mobilis
   class SingleServiceOutputFile < OutputFile
-    attr_reader :service
+    attr_reader :project
 
-    def initialize(service)
-      super(service.compose_filename)
-      @service = service
+    def initialize(project)
+      super(project.compose_filename)
+      @project = project
     end
 
-    def project
-      @service.metaproject
+    def metaproject
+      @project.metaproject
     end
 
     def render
-      YAML.dump({ "services" => { service.name => render_data } })
+      YAML.dump({ "services" => { project.name => render_data } })
     end
 
     def render_data
       service_definition = service_data
-      if service.linked_to_localgem_project?
+      if project.linked_to_localgem_project?
         service_definition["build"] = {
           "context" => "./",
-          "dockerfile" => "./#{service.name}/Dockerfile"
+          "dockerfile" => "./#{project.name}/Dockerfile"
         }
       end
-      return service_definition unless service.links.count.positive?
+      return service_definition unless project.links.count.positive?
 
-      service_definition["links"] = service.links_to_actually_link.map(&:to_s)
-      service_definition["depends_on"] = service.links_to_actually_link.map(&:to_s)
-      service.links.each do |link|
-        linked_service = project.project_by_name link
+      service_definition["links"] = project.links_to_actually_link.map(&:to_s)
+      service_definition["depends_on"] = project.links_to_actually_link.map(&:to_s)
+      project.links.each do |link|
+        linked_service = metaproject.project_by_name link
         linked_service.child_env_vars.each do |var|
           service_definition["environment"] << var
         end

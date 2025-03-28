@@ -9,7 +9,7 @@ require "mobilis/interactive_designer/main_menu"
 #   quit
 
 RSpec.describe "AddProjectMenu" do
-  let(:fsm) { Mobilis::InteractiveDesigner::MainMenu.new }
+  let(:fsm) { build(:fsm) }
   let(:prompt) { fsm.prompt }
 
   def select_choice(name)
@@ -106,7 +106,7 @@ RSpec.describe "AddProjectMenu" do
     let(:rails_project) { build(:rails_prime, metaproject: metaproject, name: "somerails") }
     let(:fsm) do
       rails_project
-      build(:fsm, project: metaproject)
+      build(:fsm, metaproject: metaproject)
     end
     let(:prompt) { fsm.prompt }
     it "Allows selecting an existing project" do

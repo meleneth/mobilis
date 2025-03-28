@@ -4,22 +4,22 @@ module Mobilis
       def service_data
         vars = [] # : Array[String]
         vars << "RAILS_ENV=production"
-        vars << "RAILS_MASTER_KEY=#{service.rails_master_key}"
+        vars << "RAILS_MASTER_KEY=#{project.rails_master_key}"
         vars << "RAILS_MIN_THREADS=5"
         vars << "RAILS_MAX_THREADS=5"
 
-        database = service.database
-        vars << "DATABASE_URL=${#{service.env_name}_DATABASE_URL}" if database
+        database = project.database
+        vars << "DATABASE_URL=${#{project.env_name}_DATABASE_URL}" if database
 
-        # vars << "NEW_RELIC_APP_NAME=#{ service.name }"
+        # vars << "NEW_RELIC_APP_NAME=#{ project.name }"
         # vars << "NEW_RELIC_LICENSE_KEY=#{ attributes[:new_relic_license_key] }"
         # vars << "NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true"
         {
-          "image" => service.docker_image_name,
-          "ports" => ["${#{service.env_name}_EXTERNAL_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
+          "image" => project.docker_image_name,
+          "ports" => ["${#{project.env_name}_EXTERNAL_PORT_NO}:${#{project.env_name}_INTERNAL_PORT_NO}"],
           "environment" => vars,
           "build" => {
-            "context" => "./#{service.name}"
+            "context" => "./#{project.name}"
           }
         }
       end

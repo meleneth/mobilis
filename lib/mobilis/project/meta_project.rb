@@ -239,13 +239,16 @@ module Mobilis
         File.write("mproj.json", JSON.pretty_generate(to_h))
       end
 
-      def each_project_for_environment(target_environment = nil, &block)
+      # rubocop:disable Style/ExplicitBlockArgument
+      # it's normally a fine autofix, but it makes this function impossible for RBS sig
+      def each_project_for_environment(target_environment = nil)
         return enum_for(:each_project_for_environment, target_environment) unless block_given?
 
         projects.each do |project|
-          project.each_project_for_environment(target_environment, &block)
+          project.each_project_for_environment(target_environment) { |p| yield p }
         end
       end
+      # rubocop:enable Style/ExplicitBlockArgument
 
       def save_docker_compose
         each_target_environment do |target_environment|

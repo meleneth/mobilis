@@ -3,12 +3,14 @@ module Mobilis::InteractiveDesigner
   def self.add_project_edit_menu_states: (Mobilis::InteractiveDesigner::MainMenu) -> void
   def self.add_rails_model_edit_states: (Mobilis::InteractiveDesigner::MainMenu) -> void
   def self.add_rails_project_edit_states: (Mobilis::InteractiveDesigner::MainMenu) -> void
+  def self.add_project_menu_states: (Mobilis::InteractiveDesigner::MainMenu) -> void
 
   def display: () -> void
   def action: () -> void
   def choices: () -> void
-
-
+  def prompt: () -> TTY::Prompt
+  def project: () -> Mobilis::Project::MetaProject
+  def projects: () -> Array[Mobilis::Project::GenericProject]
 
   def go_add_kafka_instance: () -> void
   def go_add_localgem_project: () -> void
@@ -54,7 +56,6 @@ module Mobilis::InteractiveDesigner
   def go_rails_project_toggle_uuid_primary_keys: () -> void
   def go_save_project: () -> void
   def go_show_configuration: () -> void
-
-   def fancy_tp: (untyped, untyped) -> void
+  def spacer: () -> void
 end
 

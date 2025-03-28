@@ -6,10 +6,10 @@ module Mobilis
           "image" => "postgres:16.2-bookworm",
           "user" => "${RUNASUSER}",
           "restart" => "always",
-          "environment" => service.env_vars,
-          "ports" => ["${#{service.env_name}_EXTERNAL_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
+          "environment" => project.env_vars,
+          "ports" => ["${#{project.env_name}_EXTERNAL_PORT_NO}:${#{project.env_name}_INTERNAL_PORT_NO}"],
           "volumes" => [
-            "${#{service.env_name}_POSTGRES_DATA}:/var/lib/postgresql/data"
+            "${#{project.env_name}_POSTGRES_DATA}:/var/lib/postgresql/data"
           ]
         }
       end

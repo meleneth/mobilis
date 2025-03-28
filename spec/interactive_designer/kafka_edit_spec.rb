@@ -6,11 +6,11 @@ RSpec.describe Mobilis::InteractiveDesigner::KafkaEdit do
 
   let(:fsm) do
     kafka_instance
-    build(:fsm, project: metaproject)
+    build(:fsm, metaproject: metaproject)
   end
   let(:prompt) { fsm.prompt }
 
-  def select_choice name
+  def select_choice(name)
     show_current_location
     puts "Selecting #{name}"
 

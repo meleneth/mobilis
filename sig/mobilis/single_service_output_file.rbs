@@ -3,7 +3,8 @@ module Mobilis
     attr_reader service: T
 
     def initialize: (T) -> void
-    def project: () -> Mobilis::Project::MetaProject
+    def project: () -> Mobilis::Project::GenericProject
+    def metaproject: () -> Mobilis::Project::MetaProject
     def render: () -> String
     def render_data: () -> Hash[String, untyped]
     def service_data: () -> Hash[String, untyped]

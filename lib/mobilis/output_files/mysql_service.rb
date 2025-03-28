@@ -5,10 +5,10 @@ module Mobilis
         {
           "image" => "mysql:debian",
           "restart" => "always",
-          "environment" => service.env_vars,
-          "ports" => ["${#{service.env_name}_EXTERNAL_PORT_NO}:${#{service.env_name}_INTERNAL_PORT_NO}"],
+          "environment" => project.env_vars,
+          "ports" => ["${#{project.env_name}_EXTERNAL_PORT_NO}:${#{project.env_name}_INTERNAL_PORT_NO}"],
           "volumes" => [
-            "${#{service.env_name}_MYSQL_DATA}:/var/lib/mysql"
+            "${#{project.env_name}_MYSQL_DATA}:/var/lib/mysql"
           ]
         }
       end

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe Mobilis::OutputFiles::Env do
-  let(:project) { build(:metaproject) }
+  let(:metaproject) { build(:metaproject) }
 
   describe "development.env" do
     let(:expected) do
@@ -29,13 +29,13 @@ RSpec.describe Mobilis::OutputFiles::Env do
     end
 
     it "Generates correct env file" do
-      project.add_postgresql_instance "testp-db"
-      project.add_mysql_instance "testm-db"
-      project.add_redis_instance "cache"
-      project.add_rack_project "somerack"
-      project.add_localgem_project "some_local_gem"
+      metaproject.add_postgresql_instance "testp-db"
+      metaproject.add_mysql_instance "testm-db"
+      metaproject.add_redis_instance "cache"
+      metaproject.add_rack_project "somerack"
+      metaproject.add_localgem_project "some_local_gem"
 
-      result = Mobilis::OutputFiles::Env.new(:test, project, project.method(:next_auto_port_no)).render
+      result = Mobilis::OutputFiles::Env.new(:test, metaproject).render
       expect(result).to eq(expected)
     end
   end

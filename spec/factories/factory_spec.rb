@@ -1,8 +1,11 @@
-RSpec.describe 'Factories' do
+RSpec.describe "Factories" do
   let(:metaproject) { build(:metaproject) }
   let(:rails_project) { build(:rails_prime, metaproject: metaproject, name: "somerails") }
   let(:graphql_rails_project) { build(:rails_project, metaproject: metaproject, name: "somerails", graphql: true) }
-  let(:fsm) { rails_project ; build(:fsm, project: metaproject) }
+  let(:fsm) do
+    rails_project
+    build(:fsm, metaproject: metaproject)
+  end
   let(:prompt) { fsm.prompt }
 
   it "Assigns rails_project to metaproject" do
@@ -13,7 +16,7 @@ RSpec.describe 'Factories' do
     expect(rails_project.metaproject).to eq(metaproject)
   end
   it "Assigns metaproject to the fsm project" do
-    expect(fsm.project).to eq(metaproject)
+    expect(fsm.metaproject).to eq(metaproject)
   end
   it "mention things to force them to build" do
     expect(fsm.state).to eq("main_menu")
