@@ -3,17 +3,17 @@
 module Mobilis
   module OutputFiles
     class ComposeBase < Mobilis::OutputFile
-      attr_reader :environment, :project_config
+      attr_reader :environment, :metaproject
 
-      def initialize(environment, project_config)
+      def initialize(environment, metaproject)
         super("compose-#{environment}.yml")
         @environment = environment
-        @project_config = project_config
+        @metaproject = metaproject
       end
 
       def render
         includes = [] # : Array[Hash[String, String]]
-        project_config.each_project_for_environment(@environment) do |project|
+        metaproject.each_project_for_environment(@environment) do |project|
           next unless project.is_service_project?
 
           includes << {
@@ -25,7 +25,7 @@ module Mobilis
 
         info = {
           "include" => includes,
-          "name" => "#{project_config.name}-#{environment}"
+          "name" => "#{metaproject.name}-#{environment}"
         }
         YAML.dump(info)
       end

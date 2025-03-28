@@ -1,19 +1,23 @@
 module Mobilis::InteractiveDesigner
   class MainMenu < Mobilis::SceneFSM
+    extend Forwardable
+
     attr_accessor metaproject: Mobilis::Project::MetaProject
     attr_accessor selected_rails_project: Mobilis::Project::RailsProject
 
     def projects: () -> Array[Mobilis::Project::GenericProject]
 
     def select_rails_project_for_editing: (Mobilis::Project::RailsProject) -> void
-    def new_relic_license_key: () -> (String | false)
     def reload!: (?bool) -> true
 
     def self.state: (Symbol) { () -> void } -> void
     def self.event: (Symbol) { () -> void } -> void
 
     def self.transition: (untyped) -> void
-    def self.after_transition: (untyped) -> void
+    def self.after_transition: (untyped) { (untyped) -> untyped } -> void
+
+
+    def go_rails_project_edit: () -> void
 
     def self.prompt: () -> TTY::Prompt
     def go_back: () -> void
@@ -27,6 +31,8 @@ module Mobilis::InteractiveDesigner
     def go_generate: () -> void
     def go_build: () -> void
     def go_quit: () -> void
+
+    def self.any: () -> untyped
   end
 end
 

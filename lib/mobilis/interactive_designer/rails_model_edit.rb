@@ -59,7 +59,7 @@ module Mobilis::InteractiveDesigner
       state :rails_model_edit do
         def display
           puts @selected_rails_project.name
-          fancy_tp @selected_rails_model.fields, "name", type: lambda { |f| f.type.name }
+          fancy_tp @selected_rails_model.fields, "name", type: ->(f) { f.type.name }
         end
 
         def default
@@ -86,7 +86,10 @@ module Mobilis::InteractiveDesigner
             *(@selected_rails_model.fields.map do |field|
               {
                 name: "Edit '#{field.name}' :#{field.type.name} field",
-                value: -> { @selected_rails_field = field ; go_rails_field_edit }
+                value: lambda {
+                  @selected_rails_field = field
+                  go_rails_field_edit
+                }
               }
             end)
           ]
@@ -147,11 +150,15 @@ module Mobilis::InteractiveDesigner
             *(Mobilis::NON_REFERENCE_MODEL_TYPES.map do |field|
               {
                 name: "Add '#{field.name}' #{field.description} field",
-                value: -> { @selected_rails_field_new_type = field ; go_rails_model_add_field_enter_name }
+                value: lambda {
+                  @selected_rails_field_new_type = field
+                  go_rails_model_add_field_enter_name
+                }
               }
             end)
           ]
         end
+
         def action = false
       end
 
@@ -166,7 +173,10 @@ module Mobilis::InteractiveDesigner
             *(@selected_rails_project.models.map do |model|
               {
                 name: "Reference '#{model.name}'",
-                value: -> { @selected_rails_model.add_references(model) ; go_rails_model_edit }
+                value: lambda {
+                  @selected_rails_model.add_references(model)
+                  go_rails_model_edit
+                }
               }
             end)
           ]
@@ -196,7 +206,7 @@ module Mobilis::InteractiveDesigner
 
         def action
           name = prompt.ask("new controller name:")
-          @selected_rails_controller = answer.add_controller name
+          @selected_rails_controller.add_controller name
           go_edit_rails_controller
         end
       end

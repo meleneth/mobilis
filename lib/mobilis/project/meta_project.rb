@@ -107,10 +107,6 @@ module Mobilis
       end
 
       def generate_env_files
-        set_file_contents ".env", <<~EOFENV
-          NEW_RELIC_LICENSE_KEY=
-        EOFENV
-
         each_target_environment do |environment|
           Mobilis::OutputFiles::Env.new(environment, self).write_to("compose")
         end
@@ -203,8 +199,7 @@ module Mobilis
       end
 
       def generate_attributes
-        attributes = { projects: {}, # : Hash[String, untyped]
-                       new_relic_license_key: ENV.fetch("NEW_RELIC_LICENSE_KEY", "some_invalid_key_NREAL") }
+        attributes = { projects: {} } # : Hash[(String | Symbol), untyped]
         projects.each_with_index do |project, index|
           attributes["#{project.name}_internal_port_no".to_sym] =
             @data[:starting_port_no] + (index * @data[:port_gap])

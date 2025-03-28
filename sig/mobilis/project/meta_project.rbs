@@ -17,7 +17,6 @@ type meta_project_data_hash = {
 
 type attributes_hash = {
   projects: Hash[Symbol, untyped],
-  new_relic_license_key: String,
 } & Hash[Symbol, Integer]  # additional keys are generated dynamically
 
 type writer_mapping_hash = {
@@ -58,7 +57,7 @@ module Mobilis::Project
     def each_datastore_project: () { (GenericProject) -> void } -> void | () -> Enumerator[GenericProject]
     def each_non_datastore_project: () { (GenericProject) -> void } -> void | () -> Enumerator[GenericProject]
     def each_target_environment: () { (Mobilis::ExecutionEnvironment) -> void}-> void | () -> Enumerator[Mobilis::ExecutionEnvironment]
-    def each_project_for_environment: (?::Mobilis::ExecutionEnvironment) -> Enumerator[Mobilis::Project::GenericProject, void] | (?::Mobilis::ExecutionEnvironment) { () -> void } -> void
+    def each_project_for_environment: (?::Mobilis::ExecutionEnvironment) -> Enumerator[Mobilis::Project::GenericProject] | (?::Mobilis::ExecutionEnvironment) { (Mobilis::Project::GenericProject) -> void } -> void
 
     def generate_attributes: () -> void
     def generate_env_files: () -> void

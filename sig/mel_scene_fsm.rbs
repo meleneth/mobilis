@@ -18,6 +18,7 @@ module Mel
     def any: () -> untyped
     def event: (Symbol) { () -> void } -> void
     def transition: (Hash[Symbol | Array[Symbol] | :any, Symbol]) -> void
+    def self.state_machine: (Symbol, **untyped) { () -> void } -> void
   end
 end
 

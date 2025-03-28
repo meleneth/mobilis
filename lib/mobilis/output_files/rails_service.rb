@@ -11,9 +11,6 @@ module Mobilis
         database = project.database
         vars << "DATABASE_URL=${#{project.env_name}_DATABASE_URL}" if database
 
-        # vars << "NEW_RELIC_APP_NAME=#{ project.name }"
-        # vars << "NEW_RELIC_LICENSE_KEY=#{ attributes[:new_relic_license_key] }"
-        # vars << "NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true"
         {
           "image" => project.docker_image_name,
           "ports" => ["${#{project.env_name}_EXTERNAL_PORT_NO}:${#{project.env_name}_INTERNAL_PORT_NO}"],

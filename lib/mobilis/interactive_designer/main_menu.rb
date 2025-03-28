@@ -170,13 +170,11 @@ module Mobilis::InteractiveDesigner
 
         def display = false
 
-        def create_rails_service_with_postgres_db(service_name); end
-
         def action
           @metaproject = ::Mobilis::Project::MetaProject.new
           # @project.add_localgem_project "api_models"
-          services = {}
-          models = {}
+          services = {} # : Hash[untyped, untyped]
+          models = {} # : Hash[untyped, untyped]
 
           postgres_prime_rails_projects = %w[organization account user credential authorization notification
                                              authenticationdomain group]
@@ -213,8 +211,6 @@ module Mobilis::InteractiveDesigner
         def choices = false
 
         def display = false
-
-        def create_rails_service_with_postgres_db(service_name); end
 
         def action
           @metaproject = ::Mobilis::Project::MetaProject.new
@@ -262,9 +258,6 @@ module Mobilis::InteractiveDesigner
     end
 
     # display, choices, and action methods all change per-state
-    def new_relic_license_key
-      ENV.fetch "NEW_RELIC_LICENSE_KEY", false
-    end
 
     def fancy_tp(data, *options)
       TablePrint::Config.set(:max_width, [160])
@@ -276,7 +269,7 @@ module Mobilis::InteractiveDesigner
     def reload!(print = true)
       puts "Reloading ..." if print
       # Main project directory.
-      root_dir = File.expand_path("../..", __dir__)
+      root_dir = File.expand_path("../..", __dir__ || ".")
       # Directories within the project that should be reloaded.
       reload_dirs = %w[lib]
       # Loop through and reload every file in all relevant project directories.

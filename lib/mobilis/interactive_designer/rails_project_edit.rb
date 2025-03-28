@@ -6,15 +6,15 @@ module Mobilis::InteractiveDesigner
   def self.add_rails_project_edit_states(instance)
     instance.instance_eval do
       event :go_rails_project_edit do
-        transition [
-          :rails_project_toggle_uuid_primary_keys,
-          :rails_project_add_linked_postgres,
-          :rails_project_add_linked_mysql,
-          :rails_project_add_linked_redis,
-          :rails_project_add_index_select_model,
-          :rails_project_add_index_to_model,
-          :rails_project_toggle_graphql_integration,
-          :rails_model_edit
+        transition %i[
+          rails_project_toggle_uuid_primary_keys
+          rails_project_add_linked_postgres
+          rails_project_add_linked_mysql
+          rails_project_add_linked_redis
+          rails_project_add_index_select_model
+          rails_project_add_index_to_model
+          rails_project_toggle_graphql_integration
+          rails_model_edit
         ] => :rails_project_edit
       end
 
@@ -67,9 +67,9 @@ module Mobilis::InteractiveDesigner
       end
 
       event :go_rails_model_edit do
-        transition [
-          :rails_add_model,
-          :rails_project_edit
+        transition %i[
+          rails_add_model
+          rails_project_edit
         ] => :rails_model_edit
       end
 
@@ -123,7 +123,7 @@ module Mobilis::InteractiveDesigner
             *(@selected_rails_project.models.map do |model|
               {
                 name: "Edit '#{model.name}' model",
-                value: -> do
+                value: lambda do
                   @selected_rails_model = model
                   go_rails_model_edit
                 end
@@ -219,7 +219,7 @@ module Mobilis::InteractiveDesigner
 
       state :rails_project_add_index_select_model do
         def display
-          fancy_tp @selected_rails_project.models, "name", type: lambda { |model| model.fields.map(&:name).join ", " }
+          fancy_tp @selected_rails_project.models, "name", type: ->(model) { model.fields.map(&:name).join ", " }
         end
 
         def choices
@@ -232,7 +232,7 @@ module Mobilis::InteractiveDesigner
           @selected_rails_project.models.each do |model|
             c << {
               name: model.name,
-              value: -> {
+              value: lambda {
                 @selected_rails_model = model
                 go_rails_project_add_index_to_model
               }
@@ -246,7 +246,7 @@ module Mobilis::InteractiveDesigner
 
       state :rails_project_add_index_to_model do
         def display
-          fancy_tp @selected_rails_project.models, "name", type: lambda { |m| model.fields.join ", " }
+          fancy_tp @selected_rails_project.models, "name", type: ->(m) { m.fields.join ", " }
         end
 
         def choices = false
@@ -285,7 +285,7 @@ module Mobilis::InteractiveDesigner
 
         def action
           name = prompt.ask("new controller name:")
-          @rails_controller = answer.add_controller name
+          @selected_rails_project.add_controller name
           go_rails_app_edit_screen
         end
       end
