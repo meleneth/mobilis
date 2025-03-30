@@ -1,8 +1,0 @@
-module Mobilis::OutputFiles
-  class Overrides < Mobilis::OutputFile
-    attr_reader environment: untyped
-    attr_reader project_config: untyped
-    def initialize: (Mobilis::ExecutionEnvironment, Mobilis::Project::MetaProject) -> void
-    def render: () -> String
-  end
-end

@@ -1,4 +1,0 @@
-module Mobilis::OutputFiles
-  class MySQLService < Mobilis::SingleServiceOutputFile[Mobilis::Project::MySQLInstance]
-  end
-end

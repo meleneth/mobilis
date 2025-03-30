@@ -1,5 +1,0 @@
-class Logger
-  def self.info: (String) -> void
-end
-
-

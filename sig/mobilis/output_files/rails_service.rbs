@@ -1,5 +1,0 @@
-module Mobilis::OutputFiles
-  class RailsService < Mobilis::SingleServiceOutputFile[Mobilis::Project::RailsProject]
-    def project: () -> Mobilis::Project::RailsProject
-  end
-end

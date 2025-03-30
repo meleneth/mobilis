@@ -1,4 +1,0 @@
-module Mobilis::OutputFiles
-  class PostgreSQLService < Mobilis::SingleServiceOutputFile[Mobilis::Project::PostgreSQLInstance]
-  end
-end

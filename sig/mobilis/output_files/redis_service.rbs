@@ -1,5 +1,0 @@
-module Mobilis::OutputFiles
-  class RedisService < Mobilis::SingleServiceOutputFile[Mobilis::Project::RedisInstance]
-  def project: () -> Mobilis::Project::RedisInstance
-  end
-end

@@ -1,5 +1,0 @@
-class String
-  def camelcase: () -> String
-  def pluralize: () -> String
-end
-

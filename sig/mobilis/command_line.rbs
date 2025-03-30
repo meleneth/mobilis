@@ -1,7 +1,0 @@
-class Mobilis::CommandLine
-  def initialize: () -> void
-  def self.parse_args: (Array[String]) -> untyped
-  def self.banner: (String) -> void
-  def self.stop_on: (Array[String]) -> void
-
-end

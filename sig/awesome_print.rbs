@@ -1,7 +1,0 @@
-module AwesomePrint
-  def self.ap: (untyped) -> void
-end
-
-module Kernel
-  def ap: (untyped) -> void
-end

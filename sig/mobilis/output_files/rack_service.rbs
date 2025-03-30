@@ -1,4 +1,0 @@
-module Mobilis::OutputFiles
-  class RackService < Mobilis::SingleServiceOutputFile[Mobilis::Project::RackProject]
-  end
-end

@@ -1,4 +1,0 @@
-module Mobilis::Project
-  class LocalgemProject < GenericProject
-  end
-end

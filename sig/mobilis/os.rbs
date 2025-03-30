@@ -1,7 +1,0 @@
-module Mobilis::OS
-  def self.windows?: () -> bool
-  def self.mac?: () -> bool
-  def self.unix?: () -> bool
-  def self.linux?: () -> bool
-  def self.jruby?: () -> bool
-end
