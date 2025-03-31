@@ -1,0 +1,4 @@
+class SecureRandom
+  def self.uuid: () -> String
+end
+

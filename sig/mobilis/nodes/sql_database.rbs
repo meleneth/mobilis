@@ -1,0 +1,6 @@
+module Mobilis
+  module Nodes
+    class SQLDatabase < Mobilis::Node
+    end
+  end
+end

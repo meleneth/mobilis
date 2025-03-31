@@ -1,0 +1,29 @@
+module Mobilis
+  class Node
+    attr_reader id: String
+    attr_reader raw_data: Hash[String, untyped]
+
+    def initialize: (id?: String, **untyped) -> void
+
+    def self.instance_variable_get: (Symbol) -> untyped
+    def instance_variable_get: (Symbol) -> untyped
+
+    # @SteepIgnore
+    def self._make_id_getter: (Symbol) -> untyped
+    # @SteepIgnore
+    def self._make_ids_getter: (Symbol) -> untyped
+
+    def self.ref_attr: (*Symbol) -> void
+    def self.ref_list: (*Symbol) -> void
+
+    def self.ref_attrs: () -> Array[Symbol]
+    def self.ref_lists: () -> Array[Symbol]
+
+    def to_h: () -> Hash[Symbol, untyped]
+
+    def raw_data=: (Hash[String, untyped]) -> void
+
+    def resolve_references_using: (Hash[String, Mobilis::Node]) -> void
+  end
+end
+

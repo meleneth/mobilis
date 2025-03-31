@@ -4,6 +4,10 @@ target :lib do
 
   ignore "spec/**/*"
 
+  # this sucks, but the dynamic bits are .. gnarly to type
+  ignore "lib/mobilis/node.rb"
+
+
   library "fileutils"
   library "singleton"
   library "forwardable"
