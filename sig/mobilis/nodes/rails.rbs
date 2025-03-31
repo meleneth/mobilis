@@ -1,0 +1,6 @@
+module Mobilis
+  module Nodes
+    class Rails < Mobilis::Nodes::Ruby
+    end
+  end
+end

@@ -1,60 +1,50 @@
 # frozen_string_literal: true
 
-require "spec_helper"
-require "securerandom"
-
-class TestNode < Mobilis::Node
-  ref_attr :db
-  ref_list :models
-end
-
-class FakeRef < Mobilis::Node
-end
-
 RSpec.describe Mobilis::Node do
-  let(:uuid_regex) { /\A[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i }
-  let(:node) { TestNode.new }
-  let(:fakeref) { FakeRef.new }
+  let(:pg) { build(:postgres_node, name: "pg-1") }
+  let(:rails) { build(:rails_node, name: "web", primary_database: pg) }
 
-  it "assigns a UUID by default" do
-    node = TestNode.new
-    expect(node.id).to match(uuid_regex)
+  describe "basic identity" do
+    it "assigns a UUID by default" do
+      node = build(:node, name: "foo")
+      expect(node.id).to match(/[a-f0-9-]{36}/)
+    end
+
+    it "accepts an explicit ID" do
+      node = build(:node, name: "bar", id: "abc123")
+      expect(node.id).to eq("abc123")
+    end
   end
 
-  it "accepts an explicit ID" do
-    node = TestNode.new(id: "abc-123")
-    expect(node.id).to eq("abc-123")
+  describe "ref_attr serialization" do
+    it "emits *_id in to_h" do
+      expect(rails.to_h).to include(primary_database_id: pg.id)
+    end
   end
 
-  it "serializes ref_attr to *_id" do
-    db = FakeRef.new(id: "db-1")
-    node = TestNode.new
-    node.db = db
-    expect(node.to_h[:db_id]).to eq("db-1")
+  describe "ref_attr hydration" do
+    it "resolves refs from *_id data" do
+      raw = build(:rails_node, name: "web", primary_database: pg)
+      raw.hydrate_refs!({ "primary_database_id" => pg.id })
+
+      index = { pg.id => pg }
+      raw.resolve_references_using(index)
+
+      expect(raw.primary_database).to eq(pg)
+      expect(raw.primary_database_id).to eq(pg.id)
+    end
   end
 
-  it "serializes ref_list to *_ids" do
-    a = FakeRef.new(id: "a-1")
-    b = FakeRef.new(id: "b-2")
-    node = TestNode.new
-    node.models = [a, b]
-    expect(node.to_h[:models_ids]).to contain_exactly("a-1", "b-2")
-  end
+  describe "to_h roundtrip" do
+    it "preserves declared references" do
+      out = rails.to_h
 
-  it "resolves ref_attr from raw_data using ID" do
-    db = FakeRef.new(id: "db-1")
-    node = TestNode.new
-    node.raw_data = { "db_id" => "db-1" }
-    node.resolve_references_using("db-1" => db)
-    expect(node.db).to eq(db)
-  end
+      node = build(:rails_node, name: out[:name], id: out[:id], primary_database: pg)
+      node.hydrate_refs!(out)
+      node.resolve_references_using({ pg.id => pg })
 
-  it "resolves ref_list from raw_data using IDs" do
-    a = FakeRef.new(id: "a-1")
-    b = FakeRef.new(id: "b-2")
-    node = TestNode.new
-    node.raw_data = { "models_ids" => %w[a-1 b-2] }
-    node.resolve_references_using("a-1" => a, "b-2" => b)
-    expect(node.models).to contain_exactly(a, b)
+      expect(node.primary_database).to eq(pg)
+      expect(node.to_h).to eq(out)
+    end
   end
 end

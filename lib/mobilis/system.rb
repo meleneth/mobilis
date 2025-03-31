@@ -1,0 +1,59 @@
+# frozen_string_literal: true
+
+module Mobilis
+  class System
+    attr_reader :nodes
+
+    def initialize
+      @nodes = {}
+    end
+
+    def <<(node)
+      raise ArgumentError, "Node must have an id" unless node.respond_to?(:id) && node.id
+
+      @nodes[node.id] = node
+    end
+
+    def [](id)
+      @nodes[id]
+    end
+
+    def resolve!
+      @nodes.each_value do |node|
+        node.resolve_references_using(@nodes) if node.respond_to?(:resolve_references_using)
+      end
+    end
+
+    def to_h
+      {
+        name: "mobilis",
+        nodes: @nodes.values.map(&:to_h)
+      }
+    end
+
+    def to_json(*args)
+      to_h.to_json(*args)
+    end
+
+    def self.from_h(hash)
+      sys = new
+      raw_nodes = hash[:nodes] || []
+
+      raw_nodes.each do |node_data|
+        klass = Object.const_get(node_data[:type])
+        node_data.delete(:type)
+        data = node_data.transform_keys(&:to_sym)
+        name = data.delete(:name)
+        node = klass.new(name, **data)
+        sys << node
+      end
+
+      sys.resolve!
+      sys
+    end
+
+    def self.from_json(json)
+      from_h(JSON.parse(json, symbolize_names: true))
+    end
+  end
+end

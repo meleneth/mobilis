@@ -20,3 +20,5 @@ gem "webrick", "~> 1.9.1"
 group :development do
   gem "steep"
 end
+
+gem "awesome_print", "~> 1.9"

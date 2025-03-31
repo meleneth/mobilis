@@ -234,6 +234,7 @@ PLATFORMS
   x86_64-linux-musl
 
 DEPENDENCIES
+  awesome_print (~> 1.9)
   debug (>= 1.10.0)
   factory_bot (~> 6.5.1)
   git (~> 3.0.0)
