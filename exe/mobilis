@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+
+require "pry"
+
+require "mobilis"
+
+#options = Mobilis::CommandLine.parse_args(ARGV)
+#program = Mobilis::InteractiveDesigner::MainMenu.new
+#program.load_from_file options[:filename] if options[:subcommand] == :load
+#program.visit_submachine program
+
