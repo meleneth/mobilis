@@ -3,10 +3,11 @@ image: ruby:3.4.2
 before_script:
   - apt-get update && apt-get install -y git
   - bundle install
+  - rake install
 
 rspec:
   script:
-    - bin/rspec
+    - bundle exec rspec
 
 steep:
   script:
