@@ -17,6 +17,7 @@ build_image:
   stage: build_image
   script:
     - echo "🧱 Building mobilis-dev image..."
+    - env
     - docker build -t mobilis-dev:latest .
 
 # 🧪 RSpec tests
