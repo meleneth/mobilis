@@ -3,60 +3,56 @@ stages:
   - test
   - build
 
-variables:
-  DOCKER_HOST: tcp://docker:2375
-  DOCKER_TLS_CERTDIR: ""
-
 default:
   image: docker:24.0.7-cli
   services:
     - docker:24.0.7-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
   before_script:
     - apk add --no-cache curl git bash
 
-# 👷 Build the custom Ruby + Docker Compose image
+# 🛠️ Build custom image with Ruby + Compose
 build_image:
   stage: build_image
   script:
-    - echo "🛠️ Building mobilis-dev image..."
+    - echo "🧱 Building mobilis-dev image..."
     - docker build -t mobilis-dev:latest .
 
-# 🧪 Run RSpec inside the custom image
+# 🧪 RSpec tests
 rspec:
   stage: test
   needs: [build_image]
   script:
-    - docker run --rm -v "$PWD:/app" -w /app mobilis-dev:latest \
-        bash -c '
-          set -eux
-          printf "\033[1;34m🧪 Running RSpec...\033[0m\n"
-          bundle install
-          bundle exec rspec --format=documentation --color
-        '
+    - docker run --rm -v "$PWD:/app" -w /app mobilis-dev:latest bash -c '
+        set -eux
+        printf "\033[1;34m🧪 Running RSpec...\033[0m\n"
+        bundle install
+        bundle exec rspec --format=documentation --color
+      '
 
-# 🔍 Run Steep inside the custom image
+# 🔍 Steep check
 steep:
   stage: test
   needs: [build_image]
   script:
-    - docker run --rm -v "$PWD:/app" -w /app mobilis-dev:latest \
-        bash -c '
-          set -eux
-          printf "\033[1;36m🔍 Running Steep...\033[0m\n"
-          bundle install
-          bundle exec steep check
-        '
+    - docker run --rm -v "$PWD:/app" -w /app mobilis-dev:latest bash -c '
+        set -eux
+        printf "\033[1;36m🔍 Running Steep...\033[0m\n"
+        bundle install
+        bundle exec steep check
+      '
 
-# 🚀 Run Mobilis generator with Docker Compose support
+# 🚀 Mobilis generator with Compose support
 build_env:
   stage: build
   needs: [build_image]
   script:
-    - docker run --rm -v "$PWD:/app" -w /app \
-        --privileged \
-        -e DOCKER_HOST=$DOCKER_HOST \
-        mobilis-dev:latest \
-        bash -c '
+    - docker run --rm \
+        -v "$PWD:/app" \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        -w /app \
+        mobilis-dev:latest bash -c '
           set -eux
           docker compose version
           bundle install
