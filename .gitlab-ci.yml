@@ -1,44 +1,67 @@
-image: ruby:3.4.2
+stages:
+  - build_image
+  - test
+  - build
 
-before_script:
-  - apt-get update && apt-get install -y git
-  - bundle install
-  - rake install
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
 
-rspec:
-  script:
-    - echo -e "\e[1;34m🧪 Running RSpec tests...\e[0m"
-    - bundle exec rspec --format=documentation --color
-
-steep:
-  script:
-    - echo -e "\e[1;36m🔍 Running Steep type checker...\e[0m"
-    - bundle exec steep check
-
-build_env:
-  image: ruby:3.4.2
+default:
+  image: docker:24.0.7-cli
   services:
     - docker:24.0.7-dind
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
   before_script:
-    - echo -e "\e[1;33m🔧 Installing Docker Compose plugin...\e[0m"
-    - apt-get update -qq && apt-get install -y curl gnupg git
-    - mkdir -p /usr/local/lib/docker/cli-plugins
-    - curl -SL https://github.com/docker/compose/releases/download/v2.24.2/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
-    - chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
-    - echo -e "\e[1;35m📦 Setting up Ruby dependencies...\e[0m"
-    - gem install bundler
-    - bundle install
+    - apk add --no-cache curl git bash
+
+# 👷 Build the custom Ruby + Docker Compose image
+build_image:
+  stage: build_image
   script:
-    - echo -e "\e[1;34m🐳 Docker Compose version:\e[0m"
-    - docker compose version
-    - echo -e "\e[1;35m📦 Building Mobilis gem...\e[0m"
-    - rake build
-    - echo -e "\e[1;32m🧪 Installing Mobilis gem...\e[0m"
-    - gem install pkg/mobilis-*.gem --no-document --install-dir /usr/local/lib/ruby/gems/3.4.0
-    - export PATH="/usr/local/lib/ruby/gems/3.4.0/bin:$PATH"
-    - echo -e "\e[1;36m🚀 Running Mobilis generate...\e[0m"
-    - which mobilis
-    - bundle exec /usr/local/bundle/bin/mobilis generate testcases/rails-postgres.json
+    - echo "🛠️ Building mobilis-dev image..."
+    - docker build -t mobilis-dev:latest .
+
+# 🧪 Run RSpec inside the custom image
+rspec:
+  stage: test
+  needs: [build_image]
+  script:
+    - docker run --rm -v "$PWD:/app" -w /app mobilis-dev:latest \
+        bash -c '
+          set -eux
+          printf "\033[1;34m🧪 Running RSpec...\033[0m\n"
+          bundle install
+          bundle exec rspec --format=documentation --color
+        '
+
+# 🔍 Run Steep inside the custom image
+steep:
+  stage: test
+  needs: [build_image]
+  script:
+    - docker run --rm -v "$PWD:/app" -w /app mobilis-dev:latest \
+        bash -c '
+          set -eux
+          printf "\033[1;36m🔍 Running Steep...\033[0m\n"
+          bundle install
+          bundle exec steep check
+        '
+
+# 🚀 Run Mobilis generator with Docker Compose support
+build_env:
+  stage: build
+  needs: [build_image]
+  script:
+    - docker run --rm -v "$PWD:/app" -w /app \
+        --privileged \
+        -e DOCKER_HOST=$DOCKER_HOST \
+        mobilis-dev:latest \
+        bash -c '
+          set -eux
+          docker compose version
+          bundle install
+          rake build
+          gem install pkg/mobilis-*.gem --no-document
+          export PATH="$(ruby -e '\''puts Gem.bindir'\''):$PATH"
+          bundle exec mobilis generate testcases/rails-postgres.json
+        '
