@@ -34,10 +34,10 @@ module Mobilis
     def run_nasty_compose!
       Dir.chdir(build_dir) do
         puts "💥 Spinning up dirty docker-compose..."
-        puts "docker compose build"
-        system("docker compose build")
-        puts "docker compose up --detach"
-        system("docker compose up --detach") || raise("🔥 docker compose up failed")
+        puts "docker-compose build"
+        system("docker-compose build")
+        puts "docker-compose up --detach"
+        system("docker-compose up --detach") || raise("🔥 docker compose up failed")
       end
     end
 
