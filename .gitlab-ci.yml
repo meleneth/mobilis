@@ -29,6 +29,5 @@ build_env:
     - gem install pkg/mobilis-*.gem --no-document --install-dir /usr/local/lib/ruby/gems/3.4.0
     - export PATH="/usr/local/lib/ruby/gems/3.4.0/bin:$PATH"
     - which mobilis
-    - docker compose version
+    - docker-compose version
     - bundle exec /usr/local/bundle/bin/mobilis generate testcases/rails-postgres.json
-
