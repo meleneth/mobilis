@@ -3,16 +3,17 @@ stages:
   - test
   - build
 
+variables:
+  DOCKER_TLS_CERTDIR: ""
+
 default:
   image: docker:24.0.7-cli
   services:
     - docker:24.0.7-dind
-  variables:
-    DOCKER_TLS_CERTDIR: ""
   before_script:
     - apk add --no-cache curl git bash
 
-# 🛠️ Build custom image with Ruby + Compose
+# 🛠️ Build custom image with Ruby + Docker Compose
 build_image:
   stage: build_image
   script:
@@ -43,7 +44,7 @@ steep:
         bundle exec steep check
       '
 
-# 🚀 Mobilis generator with Compose support
+# 🚀 Mobilis generator with Docker Compose support
 build_env:
   stage: build
   needs: [build_image]
