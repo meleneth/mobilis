@@ -14,7 +14,7 @@ steep:
     - bundle exec steep check
 
 build_env:
-  image: ruby:3.2
+  image: ruby:3.4.2
   services:
     - docker:dind
   variables:
