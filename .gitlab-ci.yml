@@ -3,17 +3,16 @@ stages:
   - test
   - build
 
+# 🔧 If your runner is configured to mount /var/run/docker.sock globally, skip this
 variables:
   DOCKER_TLS_CERTDIR: ""
 
 default:
   image: docker:24.0.7-cli
-  services:
-    - docker:24.0.7-dind
   before_script:
     - apk add --no-cache curl git bash
 
-# 🛠️ Build custom image with Ruby + Docker Compose
+# 🧱 Build the custom Ruby + Docker Compose image
 build_image:
   stage: build_image
   script:
@@ -25,26 +24,34 @@ rspec:
   stage: test
   needs: [build_image]
   script:
-    - docker run --rm -v "$PWD:/app" -w /app mobilis-dev:latest bash -c '
-        set -eux
-        printf "\033[1;34m🧪 Running RSpec...\033[0m\n"
-        bundle install
-        bundle exec rspec --format=documentation --color
-      '
+    - docker run --rm \
+        -v "$PWD:/app" \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        -w /app \
+        mobilis-dev:latest bash -c '
+          set -eux
+          printf "\033[1;34m🧪 Running RSpec...\033[0m\n"
+          bundle install
+          bundle exec rspec --format=documentation --color
+        '
 
 # 🔍 Steep check
 steep:
   stage: test
   needs: [build_image]
   script:
-    - docker run --rm -v "$PWD:/app" -w /app mobilis-dev:latest bash -c '
-        set -eux
-        printf "\033[1;36m🔍 Running Steep...\033[0m\n"
-        bundle install
-        bundle exec steep check
-      '
+    - docker run --rm \
+        -v "$PWD:/app" \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        -w /app \
+        mobilis-dev:latest bash -c '
+          set -eux
+          printf "\033[1;36m🔍 Running Steep...\033[0m\n"
+          bundle install
+          bundle exec steep check
+        '
 
-# 🚀 Mobilis generator with Docker Compose support
+# 🚀 Mobilis generator with Compose support
 build_env:
   stage: build
   needs: [build_image]
