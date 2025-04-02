@@ -4,14 +4,13 @@
     {
       "id": "574c9e69-51d4-42e4-965a-5b72358ebf0f",
       "name": "user",
-      "type": "Mobilis::Nodes::Rails",
+      "type": "Mobilis::Node::Rails",
       "primary_database_id": "c21cf384-d4e8-442b-bffe-60f17c6236a7"
     },
     {
       "id": "c21cf384-d4e8-442b-bffe-60f17c6236a7",
       "name": "user-db",
-      "type": "Mobilis::Nodes::PostgreSQL"
+      "type": "Mobilis::Node::PostgreSQL"
     }
   ]
 }
-
