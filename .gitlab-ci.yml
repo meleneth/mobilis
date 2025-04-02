@@ -26,5 +26,3 @@ build_env:
     - bundle install
   script:
     - ruby bin/mobilis generate
-  tags:
-    - docker
