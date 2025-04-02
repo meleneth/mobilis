@@ -12,3 +12,19 @@ rspec:
 steep:
   script:
     - bundle exec steep check
+
+build_env:
+  image: ruby:3.2
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - apt-get update -qq && apt-get install -y docker-compose git
+    - gem install bundler
+    - bundle install
+  script:
+    - ruby bin/mobilis generate
+  tags:
+    - docker
