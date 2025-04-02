@@ -25,4 +25,5 @@ build_env:
     - gem install bundler
     - bundle install
   script:
-    - ruby bin/mobilis generate
+    - rake install
+    - mobilis generate testcases/rails-postgres.json
