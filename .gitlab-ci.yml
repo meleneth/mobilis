@@ -25,5 +25,8 @@ build_env:
     - gem install bundler
     - bundle install
   script:
-    - rake install
+    - rake build
+    - gem install pkg/mobilis-*.gem --no-document --install-dir /usr/local/lib/ruby/gems/3.4.0
+    - export PATH="/usr/local/lib/ruby/gems/3.4.0/bin:$PATH"
+    - which mobilis
     - mobilis generate testcases/rails-postgres.json
