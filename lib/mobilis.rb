@@ -1,4 +1,5 @@
 require "mobilis/system"
+require "mobilis/realized_env"
 
 require "mobilis/ref_slot"
 require "mobilis/node"
