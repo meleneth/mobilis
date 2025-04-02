@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 FactoryBot.define do
-  factory :rails_node, class: Mobilis::Nodes::Rails do
+  factory :rails_node, class: Mobilis::Node::Rails do
     name { "rails" }
     transient { id { nil } }
 

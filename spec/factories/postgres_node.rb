@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 FactoryBot.define do
-  factory :postgres_node, class: Mobilis::Nodes::PostgreSQL do
+  factory :postgres_node, class: Mobilis::Node::PostgreSQL do
     name { "pg" }
     transient { id { nil } }
 

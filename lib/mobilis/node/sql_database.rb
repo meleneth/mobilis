@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 module Mobilis
-  module Nodes
+  module Node
     # Base class for SQL Databases
-    class MySQL < Mobilis::Nodes::SQLDatabase
+    class SQLDatabase < Mobilis::Base::Node
     end
   end
 end

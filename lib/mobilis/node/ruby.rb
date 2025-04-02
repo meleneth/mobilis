@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 module Mobilis
-  module Nodes
+  module Node
     # Base class for Ruby
-    class Ruby < Mobilis::Node
+    class Ruby < Mobilis::Base::Node
     end
   end
 end

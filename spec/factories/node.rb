@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :node, class: Mobilis::Node do
+  factory :node, class: Mobilis::Base::Node do
     transient do
       id { nil }
     end
