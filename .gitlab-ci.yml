@@ -3,7 +3,6 @@ stages:
   - test
   - build
 
-# 🔧 If your runner is configured to mount /var/run/docker.sock globally, skip this
 variables:
   DOCKER_TLS_CERTDIR: ""
 
@@ -17,8 +16,12 @@ default:
 build_image:
   stage: build_image
   script:
-    - echo "🧱 Building mobilis-dev image..."
-    - docker build -t mobilis-dev:latest .
+    - docker run --rm \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        -v "$PWD:/app" \
+        -w /app \
+        docker:24.0.7-cli \
+        sh -c "docker build -t mobilis-dev:latest ."
 
 # 🧪 RSpec tests
 rspec:
@@ -26,8 +29,8 @@ rspec:
   needs: [build_image]
   script:
     - docker run --rm \
-        -v "$PWD:/app" \
         -v /var/run/docker.sock:/var/run/docker.sock \
+        -v "$PWD:/app" \
         -w /app \
         mobilis-dev:latest bash -c '
           set -eux
@@ -36,14 +39,14 @@ rspec:
           bundle exec rspec --format=documentation --color
         '
 
-# 🔍 Steep check
+# 🔍 Steep type checking
 steep:
   stage: test
   needs: [build_image]
   script:
     - docker run --rm \
-        -v "$PWD:/app" \
         -v /var/run/docker.sock:/var/run/docker.sock \
+        -v "$PWD:/app" \
         -w /app \
         mobilis-dev:latest bash -c '
           set -eux
@@ -52,14 +55,14 @@ steep:
           bundle exec steep check
         '
 
-# 🚀 Mobilis generator with Compose support
+# 🚀 Mobilis generator and Compose test
 build_env:
   stage: build
   needs: [build_image]
   script:
     - docker run --rm \
-        -v "$PWD:/app" \
         -v /var/run/docker.sock:/var/run/docker.sock \
+        -v "$PWD:/app" \
         -w /app \
         mobilis-dev:latest bash -c '
           set -eux
