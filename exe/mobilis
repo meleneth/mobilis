@@ -1,11 +1,8 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
-require "pry"
-
+require "bundler/setup"
 require "mobilis"
+require "mobilis/cli"
 
-#options = Mobilis::CommandLine.parse_args(ARGV)
-#program = Mobilis::InteractiveDesigner::MainMenu.new
-#program.load_from_file options[:filename] if options[:subcommand] == :load
-#program.visit_submachine program
-
+Mobilis::CLI.run(ARGV)

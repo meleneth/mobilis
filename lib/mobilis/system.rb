@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "json"
+
 module Mobilis
   class System
     attr_reader :nodes
@@ -32,7 +34,11 @@ module Mobilis
     end
 
     def to_json(*args)
-      to_h.to_json(*args)
+      JSON.dump(to_h)
+    end
+
+    def node_count
+      @nodes.count
     end
 
     def self.from_h(hash)
