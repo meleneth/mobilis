@@ -10,6 +10,7 @@ variables:
 default:
   image: docker:24.0.7-cli
   before_script:
+    - unset DOCKER_HOST
     - apk add --no-cache curl git bash
 
 # 🧱 Build the custom Ruby + Docker Compose image
@@ -17,7 +18,6 @@ build_image:
   stage: build_image
   script:
     - echo "🧱 Building mobilis-dev image..."
-    - env
     - docker build -t mobilis-dev:latest .
 
 # 🧪 RSpec tests
