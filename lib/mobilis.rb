@@ -1,6 +1,9 @@
 require "mobilis/system"
 require "mobilis/realized_env"
 
+require "mobilis/docker_env_var"
+require "mobilis/execution_environment"
+
 require "mobilis/ref_slot"
 require "mobilis/node"
 
