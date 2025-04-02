@@ -26,8 +26,7 @@ build_env:
     - echo -e "\e[1;33m🔧 Installing Docker Compose plugin...\e[0m"
     - apt-get update -qq && apt-get install -y curl gnupg git
     - mkdir -p /usr/local/lib/docker/cli-plugins
-    - curl -SL https://github.com/docker/compose/releases/download/v2.24.2/docker-compose-linux-x86_64 \
-        -o /usr/local/lib/docker/cli-plugins/docker-compose
+    - curl -SL https://github.com/docker/compose/releases/download/v2.24.2/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
     - chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
     - echo -e "\e[1;35m📦 Setting up Ruby dependencies...\e[0m"
     - gem install bundler
