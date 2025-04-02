@@ -35,6 +35,12 @@ module Mobilis
       system = Mobilis::System.from_json(File.read(filename))
       # Replace with actual emit logic as it comes online
       puts "[mobilis] loaded system from #{filename} with #{system.node_count} nodes"
+      env = Mobilis::RealizedEnv.new(system: nil, env_name: "nasty_pg")
+      env.generate_nasty_postgres_compose!
+      env.run_nasty_compose!
+
+      # Later...
+      env.destroy_nasty_compose!
     end
 
     def usage
