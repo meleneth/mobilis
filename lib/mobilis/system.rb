@@ -4,6 +4,7 @@ require "json"
 
 module Mobilis
   class System
+    include Mobilis::PrettyPrint::DSL
     attr_reader :nodes
 
     def initialize
@@ -60,6 +61,20 @@ module Mobilis
 
     def self.from_json(json)
       from_h(JSON.parse(json, symbolize_names: true))
+    end
+
+    def pretty_print(pp)
+      ppx(pp) do
+        heading object.class.name
+        line "name", object.name
+        section "nodes", object.nodes do |node|
+          line node.name, node.class.name
+        end
+        section "plugins", object.plugins do |plugin|
+          line plugin.class.name
+        end
+      end
+      pp
     end
   end
 end

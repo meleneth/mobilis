@@ -12,6 +12,7 @@ require "mobilis/port_map"
 require "mobilis/ref_slot"
 require "mobilis/base/node"
 require "mobilis/base/realized_node"
+require "mobilis/base/plugin"
 
 require "mobilis/node/sql_database"
 require "mobilis/node/ruby"
