@@ -3,17 +3,20 @@
 module Mobilis
   module Realized
     class Rails < Mobilis::Base::RealizedNode
+      attr_reader :primary_database
+      
       def initialize(env, node)
         super(env, node)
 
         @has_service_dir = true
         @has_data_volume = false
 
-        # Register a DATABASE_URL from linked primary database
+      end
+
+      def after_all_nodes_realized(realized_env)
         return unless node.primary_database
 
-        db_realized = env.realized_node_for(node.primary_database)
-        env_vars << db_realized.consumer_url_env_var(for: name) if db_realized.respond_to?(:consumer_url_env_var)
+        primary_database = realized_env.realized_node_for(node.primary_database)
       end
     end
   end

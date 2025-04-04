@@ -27,6 +27,7 @@ module Mobilis
       @nodes.each do |possible|
         return possible if possible.node == system_node
       end
+      nil
     end
 
     private

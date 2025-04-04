@@ -81,9 +81,6 @@ RSpec.describe Mobilis::RealizedEnv do
       realized_env.nodes.each do |realized_node|
         expect(realized_node).to receive(:after_all_nodes_realized).with(realized_env)
       end
-      puts "WTF BOSS"
-      pp realized_env
-      realized_env.invoke_after_all_nodes_realized_callbacks # hypothetical explicit method to trigger callbacks if not automatic
     end
   end
 end
