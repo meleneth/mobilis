@@ -21,3 +21,4 @@ require "mobilis/node/sqlite"
 
 require "mobilis/realized/sql_database"
 require "mobilis/realized/postgresql"
+require "mobilis/realized/rails"

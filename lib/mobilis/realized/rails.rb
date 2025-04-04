@@ -1,9 +1,5 @@
 # frozen_string_literal: true
 
-require "mobilis/base/realized_node"
-require "mobilis/docker_env_var"
-require "mobilis/env_var"
-
 module Mobilis
   module Realized
     class Rails < Mobilis::Base::RealizedNode

@@ -31,17 +31,18 @@ Gem::Specification.new do |spec|
   spec.executables << "mobilis"
 
   # Uncomment to register a new dependency of your gem
+  spec.add_dependency "activesupport"
   spec.add_dependency "awesome_print"
+  spec.add_dependency "git"
   spec.add_dependency "optimist"
+  spec.add_dependency "pastel"
   spec.add_dependency "pry"
   spec.add_dependency "state_machines"
   spec.add_dependency "table_print"
   spec.add_dependency "tty-prompt"
-  spec.add_dependency "git"
-  spec.add_dependency "activesupport"
 
-  spec.add_development_dependency "super_diff"
   spec.add_development_dependency "simplecov"
+  spec.add_development_dependency "super_diff"
 
   # spec.add_dependency "example-gem", "~> 1.0"
 

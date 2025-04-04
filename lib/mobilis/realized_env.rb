@@ -1,23 +1,43 @@
 # frozen_string_literal: true
 
-# Represents the concrete, environment-specific transformation of a Mobilis::System.
-# RealizedEnv is a structural container. It holds RealizedNode objects,
-# but does not define or introspect their internals.
 module Mobilis
   class RealizedEnv
-    attr_reader :system, :nodes, :environment
+    attr_reader :system, :environment, :nodes
 
     def initialize(system, environment)
       @system = system
-      @nodes = []
       @environment = environment
+      @nodes = []
+
+      build_all_nodes!
     end
 
-    # Adds a fully-formed RealizedNode to the environment
-    #
-    # @param node [Mobilis::Base::RealizedNode]
+    def to_s
+      environment.to_s
+    end
+
     def <<(node)
       nodes << node
+    end
+
+    private
+
+    def build_all_nodes!
+      system.nodes.each do |node|
+        realized = build_realized_node(node)
+        nodes << realized if realized
+      end
+    end
+
+    def build_realized_node(node)
+      case node
+      when Mobilis::Node::PostgreSQL
+        RealizedNode::PostgreSQL.new(self, node, external_port_no: 15_432) # <-- for now, hardcoded or stubbed
+      when Mobilis::Node::Rails
+        RealizedNode::Rails.new(self, node)
+      else
+        nil
+      end
     end
   end
 end
