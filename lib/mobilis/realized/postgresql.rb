@@ -4,6 +4,8 @@ module Mobilis
   module Realized
     class PostgreSQL < SQLDatabase
       INTERNAL_PORT_NO = 5432
+      include Mobilis::PrettyPrint::DSL
+
       def initialize(env, node, external_port_no:)
         super
         env_vars << DockerEnvVar.new(
@@ -24,6 +26,17 @@ module Mobilis
 
       def internal_port_no
         INTERNAL_PORT_NO
+      end
+
+      def pretty_print(pp)
+        ppx(pp) do
+          heading object.class.name
+          section "db_port_map", [object.db_port_map]
+          line "env", object.environment
+          line "url", object.url
+          section "env_vars", object.env_vars
+        end
+        pp
       end
     end
   end

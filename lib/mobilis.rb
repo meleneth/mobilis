@@ -1,3 +1,5 @@
+require "mobilis/pretty_print/dsl"
+
 require "mobilis/env_var"
 require "mobilis/system"
 require "mobilis/realized_env"

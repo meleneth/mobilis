@@ -6,6 +6,7 @@ PATH
       awesome_print
       git
       optimist
+      pastel
       pry
       state_machines
       table_print
