@@ -30,11 +30,14 @@ module Mobilis
       nil
     end
 
+    def find_node_by_name(name)
+      nodes.find { |no| no.name == name }
+    end
+
     private
 
     def build_all_nodes!
-      system.nodes.each do |node|
-        pp node
+      system.each_node do |node|
         realized = build_realized_node(node)
         nodes << realized if realized
       end
@@ -46,9 +49,9 @@ module Mobilis
     def build_realized_node(node)
       case node
       when Mobilis::Node::PostgreSQL
-        RealizedNode::PostgreSQL.new(self, node, external_port_no: 15_432) # <-- for now, hardcoded or stubbed
+        Mobilis::Realized::PostgreSQL.new(self, node, external_port_no: 15_432) # <-- for now, hardcoded or stubbed
       when Mobilis::Node::Rails
-        RealizedNode::Rails.new(self, node)
+        Mobilis::Realized::Rails.new(self, node)
       else
         nil
       end

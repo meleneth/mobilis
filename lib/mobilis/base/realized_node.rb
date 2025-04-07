@@ -25,6 +25,9 @@ module Mobilis
         @has_data_volume = false
         @has_service_dir = false
       end
+
+      def after_all_nodes_realized(realized_env)
+      end
     end
   end
 end

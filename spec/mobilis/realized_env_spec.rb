@@ -22,8 +22,8 @@ RSpec.describe Mobilis::RealizedEnv do
     end
 
     it "maintains relationships between realized nodes" do
-      rails_node = realized_env.nodes.find { |n| n.is_a?(Mobilis::RealizedNode::Rails) }
-      postgres_node = realized_env.nodes.find { |n| n.is_a?(Mobilis::RealizedNode::PostgreSQL) }
+      rails_node = realized_env.nodes.find { |n| n.is_a?(Mobilis::Realized::Rails) }
+      postgres_node = realized_env.nodes.find { |n| n.is_a?(Mobilis::Realized::PostgreSQL) }
 
       expect(rails_node.primary_database).to eq(postgres_node)
     end
@@ -38,10 +38,6 @@ RSpec.describe Mobilis::RealizedEnv do
 
   describe "#find_node_by_name" do
     let(:node_name) { "test-db" }
-
-    before do
-      allow(system).to receive(:find_node).with(node_name).and_return(double(name: node_name))
-    end
 
     it "returns the corresponding realized node" do
       result = realized_env.find_node_by_name(node_name)

@@ -21,6 +21,12 @@ module Mobilis
       @nodes[id]
     end
 
+    def each_node(&block)
+      return enum_for(:each_node) unless block_given?
+
+      @nodes.values.each(&block)
+    end
+
     def resolve!
       @nodes.each_value do |node|
         node.resolve_references_using(@nodes) if node.respond_to?(:resolve_references_using)

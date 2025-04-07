@@ -20,6 +20,10 @@ module Mobilis
       "#{specific_name}=#{@value}"
     end
 
+    def as(name)
+      DockerEnvVar.new(name, specific_name, value)
+    end
+
     def pretty_print(pp)
       ppx(pp) do
         row pastel.green(object.resolved_name), pastel.yellow(object.value), note: object.specific_name

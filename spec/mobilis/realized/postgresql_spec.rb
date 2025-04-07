@@ -33,8 +33,7 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
     expect(keys).to include(
       "USERDB_POSTGRES_DB",
       "USERDB_POSTGRES_USER",
-      "USERDB_POSTGRES_PASSWORD",
-      "USERDB_POSTGRES_URL"
+      "USERDB_POSTGRES_PASSWORD"
     )
   end
 
@@ -42,5 +41,11 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
     expect(realized_pg.url).to eq(
       "postgres://userdb-test-user:userdb-test-password@userdb:5432/userdb_test"
     )
+  end
+
+  it "#env_db_url" do
+    expect(realized_pg.env_db_url.resolved_name).to eq("")
+    expect(realized_pg.env_db_url.specific_name).to eq("USERDB_DATABASE_URL")
+    expect(realized_pg.env_db_url.value).to eq("postgres://userdb-test-user:userdb-test-password@userdb:5432/userdb_test")
   end
 end

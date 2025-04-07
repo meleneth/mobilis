@@ -5,14 +5,13 @@ module Mobilis
     class PostgreSQL < SQLDatabase
       INTERNAL_PORT_NO = 5432
       include Mobilis::PrettyPrint::DSL
+      attr_reader :env_db_url
 
       def initialize(env, node, external_port_no:)
         super
-        env_vars << DockerEnvVar.new(
-          Mobilis::EnvVar.new(name).child("postgres_url").raw,
-          "POSTGRES_URL",
-          url
-        )
+        @env_db_url = DockerEnvVar.new("",
+                                       Mobilis::EnvVar.new(name).child("database_url").raw,
+                                       url)
         env_key = EnvVar.new(name)
 
         env_vars << DockerEnvVar.new(env_key.child("postgres_db").raw,       "POSTGRES_DB",       db_name)
