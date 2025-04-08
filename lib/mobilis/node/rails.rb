@@ -12,7 +12,7 @@ module Mobilis
           heading object.class.name
           line "name", object.name
           line "primary_database", object.primary_database&.name
-          line "plugins", object.plugins.map(&:class).join(", ")
+          # line "plugins", object.plugins.map(&:class).join(", ")
         end
         pp
       end

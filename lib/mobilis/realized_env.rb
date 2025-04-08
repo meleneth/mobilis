@@ -60,7 +60,7 @@ module Mobilis
     def pretty_print(pp)
       ppx(pp) do
         heading object.class.name
-        line "environment", object.execution_environment.to_s
+        line "environment", object.environment.to_s
         section "realized_nodes", object.nodes.sort_by(&:name) do |node|
           line node.name, node.class.name
         end

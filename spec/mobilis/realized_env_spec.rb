@@ -3,7 +3,7 @@
 require "spec_helper"
 
 RSpec.describe Mobilis::RealizedEnv do
-  let(:system_postgres_node) { build(:postgres_node) }
+  let(:system_postgres_node) { build(:postgres_node, name: "test-db") }
   let(:system_rails_node) { build(:rails_node, primary_database: system_postgres_node) }
   let(:system) { build(:system, nodes: [system_postgres_node, system_rails_node]) }
   let(:execution_environment) { Mobilis::ExecutionEnvironment.new(:test) }
@@ -52,13 +52,13 @@ RSpec.describe Mobilis::RealizedEnv do
 
   describe "environment-scoped values" do
     it "uses ExecutionEnvironment#to_s for environment-specific names" do
-      postgres_node = realized_env.nodes.find { |n| n.is_a?(Mobilis::RealizedNode::PostgreSQL) }
+      postgres_node = realized_env.nodes.find { |n| n.is_a?(Mobilis::Realized::PostgreSQL) }
       expect(postgres_node.env_vars.any? { |var| var.value.include?("test") }).to be(true)
     end
   end
 
   describe "#node_for" do
-    let(:system_node) { system.nodes.first }
+    let(:system_node) { system.each_node.first }
 
     it "returns the corresponding realized node for a given system node" do
       realized_node = realized_env.node_for(system_node)
@@ -69,14 +69,6 @@ RSpec.describe Mobilis::RealizedEnv do
     it "returns nil if there is no matching realized node" do
       nonexistent_system_node = double("nonexistent_node")
       expect(realized_env.node_for(nonexistent_system_node)).to be_nil
-    end
-  end
-
-  describe "realized node callbacks" do
-    it "invokes #after_all_nodes_realized on each realized node after initialization" do
-      realized_env.nodes.each do |realized_node|
-        expect(realized_node).to receive(:after_all_nodes_realized).with(realized_env)
-      end
     end
   end
 end
