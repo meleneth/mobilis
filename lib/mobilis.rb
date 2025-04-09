@@ -1,4 +1,9 @@
 require "mobilis/pretty_print/dsl"
+require "mobilis/pretty_print/jobes_war"
+require "mobilis/pretty_print/row"
+require "mobilis/pretty_print/column"
+require "mobilis/pretty_print/column_builder"
+require "mobilis/pretty_print/layout_engine"
 
 require "mobilis/env_var"
 require "mobilis/system"

@@ -11,6 +11,7 @@ PATH
       state_machines
       table_print
       tty-prompt
+      tty-screen
 
 GEM
   remote: https://rubygems.org/
