@@ -2,7 +2,7 @@ module Mobilis
   class PortMap
     attr_reader :internal_port_no, :external_port_no, :memo
 
-    include Mobilis::PrettyPrint::DSL
+    include Mobilis::PrettyPrint::PrettyPrintable
 
     def initialize(external_port_no, internal_port_no, memo = "Unknown port mapping")
       @internal_port_no = internal_port_no

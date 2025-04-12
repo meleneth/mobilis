@@ -2,7 +2,7 @@
 
 module Mobilis
   class ExecutionEnvironment
-    include Mobilis::PrettyPrint::DSL
+    include Mobilis::PrettyPrint::PrettyPrintable
     attr_reader :value
 
     def initialize(value)

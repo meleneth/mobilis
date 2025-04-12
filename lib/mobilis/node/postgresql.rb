@@ -4,16 +4,11 @@ module Mobilis
   module Node
     # Base class for SQL Databases
     class PostgreSQL < Mobilis::Node::SQLDatabase
-      include Mobilis::PrettyPrint::DSL
+      include Mobilis::PrettyPrint::PrettyPrintable
 
-      def pretty_print(pp)
-        ppx(pp) do
-          heading object.class.name
-          line "name", object.name
-        end
-        pp
+      def ppx_fields(dsl)
+        dsl.instance_value "name", name
       end
-
     end
   end
 end

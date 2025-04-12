@@ -4,7 +4,7 @@ module Mobilis
   # Holds the realized graph layer.  This extends the config only graph
   # to hold the actual details that will be written to disk later, for plugin extension
   class RealizedEnv
-    include Mobilis::PrettyPrint::DSL
+    include Mobilis::PrettyPrint::PrettyPrintable
     attr_reader :system, :environment, :nodes
 
     def initialize(system, environment)

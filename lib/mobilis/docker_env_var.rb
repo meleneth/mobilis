@@ -2,7 +2,7 @@
 
 module Mobilis
   class DockerEnvVar
-    include Mobilis::PrettyPrint::DSL
+    include Mobilis::PrettyPrint::PrettyPrintable
     attr_reader :resolved_name, :specific_name
     attr_accessor :value
 

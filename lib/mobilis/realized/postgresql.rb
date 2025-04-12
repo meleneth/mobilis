@@ -4,7 +4,7 @@ module Mobilis
   module Realized
     class PostgreSQL < SQLDatabase
       INTERNAL_PORT_NO = 5432
-      include Mobilis::PrettyPrint::DSL
+      include Mobilis::PrettyPrint::PrettyPrintable
       attr_reader :env_db_url
 
       def initialize(env, node, external_port_no:)

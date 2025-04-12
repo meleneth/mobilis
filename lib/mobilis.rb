@@ -2,8 +2,11 @@ require "jobes_war/base/node"
 require "jobes_war/node/value"
 require "jobes_war/node/box"
 require "jobes_war/node/tic_tac"
+require "jobes_war/dsl"
+
 require "jobes_war/diagram"
 require "mobilis/pretty_print/dsl"
+require "mobilis/pretty_print/pretty_printable"
 
 require "mobilis/env_var"
 require "mobilis/system"

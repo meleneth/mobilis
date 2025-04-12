@@ -4,7 +4,7 @@ require "json"
 
 module Mobilis
   class System
-    include Mobilis::PrettyPrint::DSL
+    include Mobilis::PrettyPrint::PrettyPrintable
     attr_reader :nodes
 
     def initialize

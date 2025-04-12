@@ -24,7 +24,7 @@
 module JobesWar
   def self.draw(&block)
     diagram = Diagram.new
-    DSL.new(diagram).instance_eval(&block)
+    result = block.arity.zero? ? DSL.new(diagram).instance_eval(&block) : block.call(diagram)
     diagram
   end
 

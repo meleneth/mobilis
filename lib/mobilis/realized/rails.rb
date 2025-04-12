@@ -3,7 +3,7 @@
 module Mobilis
   module Realized
     class Rails < Mobilis::Base::RealizedNode
-      include Mobilis::PrettyPrint::DSL
+      include Mobilis::PrettyPrint::PrettyPrintable
       attr_reader :primary_database, :env_db_url
 
       def initialize(env, node)

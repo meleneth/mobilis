@@ -1,3 +1,7 @@
+# frozen_string_literal: true
+
+require "pastel"
+
 # Diagram is the root container and rendering context for the layout tree
 module JobesWar
   class Diagram < Base::Node
@@ -6,7 +10,7 @@ module JobesWar
     def initialize(screen_width: nil)
       super(parent: nil)
       @children = []
-      @pastel = Pastel.new
+      @pastel = ::Pastel.new
       @screen_width = screen_width || default_terminal_width
     end
 

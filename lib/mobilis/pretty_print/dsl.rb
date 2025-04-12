@@ -1,117 +1,85 @@
 # frozen_string_literal: true
 
-require "pastel"
+#
+# Mobilis::PrettyPrint::DSL
+# Depth-aware JobesWar DSL for structured object visualization
+# Supports child-only rendering: top-level and direct children render fully,
+# deeper levels emit object summaries.
 
 module Mobilis
   module PrettyPrint
-    module DSL
-      def ppx(pp, &block)
-        is_highlander = Thread.current[:ppx_highlander].nil?
-        if is_highlander
-          Thread.current[:ppx_highlander] = :there_can_be_only_one
-          Thread.current[:ppx_depth] = 0
-        end
-        context = Context.new(pp, self)
-        context.instance_eval(&block)
-      rescue StandardError => e
-        warn "[ppx] pretty_print failed for #{obj.class}: #{e.message}"
-        warn e.backtrace.first(6).join("\n")
-        raise
+    class DSL
+      def self.render(object, parent, &block)
+        Thread.current[:ppx_depth] ||= 0
+        new(object, parent).instance_eval(&block)
       ensure
-        if is_highlander
-          Thread.current[:ppx_depth] = nil
-          Thread.current[:ppx_highlander] = nil
+        Thread.current[:ppx_depth] = nil if Thread.current[:ppx_depth] == 0
+      end
+
+      def initialize(object, parent)
+        @object = object
+        @parent = parent
+      end
+
+      def ruby_class(object = @object, styles: %i[blue bold], &block)
+        label = @object.class.name
+        box = JobesWar::Node::Box.new(label: label, styles: styles)
+        @parent << box
+
+        with_depth(box, object) do
+          @object.ppx_fields(self) if @object.respond_to?(:ppx_fields)
+          block&.call(self)
         end
       end
 
-      class Context
-        attr_reader :pp, :indent_level, :pastel, :target
+      def instance_value(label, value, styles: [:dim])
+        return if value.nil?
 
-        def initialize(pp, target)
-          @pp = pp
-          @indent_level = Thread.current[:ppx_depth]
-          @target = target
-          @pastel = ::Pastel.new(enabled: ENV["DISABLE_COLOR_OUTPUT"] != "1")
+        @parent << JobesWar::Node::Value.new("#{label}: #{value}", styles: styles)
+      end
+
+      def child_object(label, child)
+        return if child.nil?
+
+        if distant_relative?
+          summary = child_summary(child)
+          instance_value(label, summary)
+        else
+          sub_box = JobesWar::Node::Box.new(label: label, styles: [:magenta])
+          @parent << sub_box
+          with_depth(sub_box, child) { child.ppx_box(sub_box) }
         end
+      end
 
-        def object
-          target
-        end
+      private
 
-        def heading(text)
-          return emit_single_line_summary if distant_relative?
+      def with_depth(parent_box, object, &block)
+        Thread.current[:ppx_depth] += 1
+        self.class.new(object, parent_box).instance_eval(&block)
+      ensure
+        Thread.current[:ppx_depth] -= 1
+      end
 
-          pp.text(indent + pastel.bold.blue(text.to_s))
-          pp.breakable
-        end
+      def depth
+        Thread.current[:ppx_depth] ||= 0
+      end
 
-        def line(label, value)
-          return if distant_relative?
+      def top_level?
+        depth == 0
+      end
 
-          pp.breakable
-          pp.text(sub_indent + pastel.cyan("#{label}: ") + value.to_s)
-        end
+      def direct_child?
+        depth == 1
+      end
 
-        def row(*columns, note: nil)
-          return if distant_relative?
+      def distant_relative?
+        depth >= 2
+      end
 
-          columns = columns.map(&:to_s)
-          width = columns.map(&:length).max
-          padded = columns.map { |c| c.ljust(width) }.join(pastel.white(" | "))
-          padded += "  #{pastel.dim("# #{note}")}" if note
-          pp.breakable
-          pp.text(sub_indent + padded)
-        end
-
-        def section(label, items)
-          return if distant_relative?
-
-          pp.text(indent + pastel.magenta("#{label}:"))
-          items.each do |item|
-            item.pretty_print(pp) # Each item will run its own DSL with shared pp
-          end
-        end
-
-        private
-
-        def indent
-          " " * indent_level * 2
-        end
-
-        def sub_indent
-          "  #{indent}"
-        end
-
-        def emit_single_line_summary
-          puts "hi, it was #{indent_level}"
-          pp.text(single_line_target_representation)
-        end
-
-        def top_level?
-          indent_level.zero?
-        end
-
-        def direct_child?
-          indent_level == 1
-        end
-
-        def distant_relative?
-          !(top_level? || direct_child?)
-        end
-
-        def name_of_named_target
-          return nil unless target.respond_to? :name
-
-          target.name
-        end
-
-        def single_line_target_representation
-          "<#{target.class} #{target_memory_address} #{name_of_named_target}>"
-        end
-
-        def target_memory_address
-          "0x#{(target.object_id << 1).to_s(16)}"
-        end
+      def child_summary(obj)
+        name = obj.respond_to?(:name) ? obj.name.inspect : nil
+        addr = "0x#{(obj.object_id << 1).to_s(16)}"
+        "<#{obj.class} #{addr}#{name ? " #{name}" : ""}>"
       end
     end
   end
