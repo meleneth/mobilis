@@ -28,13 +28,27 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
     expect(port.memo).to match(/PostgreSQL/)
   end
 
-  it "constructs environment variables using EnvVar" do
-    keys = realized_pg.env_vars.map(&:resolved_name)
+  it "constructs environment variables using EnvVar - specific_name" do
+    keys = realized_pg.env_vars.map(&:specific_name)
     expect(keys).to include(
       "USERDB_POSTGRES_DB",
       "USERDB_POSTGRES_USER",
       "USERDB_POSTGRES_PASSWORD"
     )
+  end
+  it "constructs environment variables using EnvVar - realized_name" do
+    keys = realized_pg.env_vars.map(&:resolved_name)
+    expect(keys).to include(
+      "POSTGRES_DB",
+      "POSTGRES_USER",
+      "POSTGRES_PASSWORD"
+    )
+  end
+
+  it "has correct values for the created env vars" do
+    var = realized_pg.env_vars[0]
+    expect(var.resolved_name).to eq("POSTGRES_DB")
+    expect(var.specific_name).to eq("USERDB_POSTGRES_DB")
   end
 
   it "constructs the expected URL" do

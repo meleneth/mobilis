@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 module Mobilis
+  # resolved_name is the name that is actually fed to the docker container,
+  # and is usually required to be a name that the container is looking for.
+  # the specific name will ususally have the name of the instance in it, so that
+  # you can use multiple containers of the same type but with different configs.
   class DockerEnvVar
     include Mobilis::PrettyPrint::PrettyPrintable
     attr_reader :resolved_name, :specific_name

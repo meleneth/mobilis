@@ -14,9 +14,9 @@ module Mobilis
                                        url)
         env_key = EnvVar.new(name)
 
-        env_vars << DockerEnvVar.new(env_key.child("postgres_db").raw,       "POSTGRES_DB",       db_name)
-        env_vars << DockerEnvVar.new(env_key.child("postgres_user").raw,     "POSTGRES_USER",     user)
-        env_vars << DockerEnvVar.new(env_key.child("postgres_password").raw, "POSTGRES_PASSWORD", password)
+        env_vars << DockerEnvVar.new("POSTGRES_DB", env_key.child("postgres_db").raw, db_name)
+        env_vars << DockerEnvVar.new("POSTGRES_USER", env_key.child("postgres_user").raw, user)
+        env_vars << DockerEnvVar.new("POSTGRES_PASSWORD", env_key.child("postgres_password").raw, password)
       end
 
       def scheme
