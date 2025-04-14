@@ -21,17 +21,15 @@ module Mobilis
         @env_vars << @env_db_url if @env_db_url
       end
 
-      def pretty_print(pp)
-        ppx(pp) do
-          heading object.class.name
-          section "primary_database", [object.primary_database]
-          section "env_db_url", [object.env_db_url]
-          line "name", object.name
-          line "has_service_dir", object.has_service_dir
-          line "has_data_volume", object.has_data_volume
-          section "env_vars", object.env_vars
-        end
-        pp
+      def ppx_fields(dsl)
+        dsl.instance_value "name", name
+        dsl.instance_value "environment", environment
+        dsl.instance_value "has_service_dir", has_service_dir
+        dsl.instance_value "has_data_volume", has_data_volume
+        dsl.child_object "env_db_url", env_db_url
+        dsl.child_object "primary_database", primary_database
+        dsl.child_object "node", node
+        dsl.env_vars env_vars
       end
     end
   end

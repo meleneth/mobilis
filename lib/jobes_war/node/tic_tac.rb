@@ -34,7 +34,7 @@ module JobesWar
       def column_max_widths
         return [] unless @children.length
 
-        result = Array.new(@children.length, 0)
+        result = Array.new(@children.first.length, 0)
         @children.each do |child|
           (0...child.length).each do |index|
             result[index] = child[index].calculated_width if child[index].calculated_width > result[index]

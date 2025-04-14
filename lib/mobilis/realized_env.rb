@@ -34,6 +34,13 @@ module Mobilis
       nodes.find { |no| no.name == name }
     end
 
+    def ppx_fields(dsl)
+      dsl.instance_value "environment", environment
+      nodes.sort_by(&:name).each do |node|
+        dsl.child_object node.name, node
+      end
+    end
+
     private
 
     def build_all_nodes!
@@ -55,17 +62,6 @@ module Mobilis
       else
         nil
       end
-    end
-
-    def pretty_print(pp)
-      ppx(pp) do
-        heading object.class.name
-        line "environment", object.environment.to_s
-        section "realized_nodes", object.nodes.sort_by(&:name) do |node|
-          line node.name, node.class.name
-        end
-      end
-      pp
     end
   end
 end

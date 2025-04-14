@@ -24,10 +24,10 @@ module Mobilis
       DockerEnvVar.new(name, specific_name, value)
     end
 
-    def pretty_print(pp)
-      ppx(pp) do
-        row pastel.green(object.resolved_name), pastel.yellow(object.value), note: object.specific_name
-      end
+    def ppx_fields(dsl)
+      dsl.instance_value "resolved", resolved_name, styles: [:green]
+      dsl.instance_value "specific", specific_name, styles: [:blue]
+      dsl.instance_value "value", value, styles: [:yellow]
     end
   end
 end

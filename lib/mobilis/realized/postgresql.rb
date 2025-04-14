@@ -27,15 +27,15 @@ module Mobilis
         INTERNAL_PORT_NO
       end
 
-      def pretty_print(pp)
-        ppx(pp) do
-          heading object.class.name
-          section "db_port_map", [object.db_port_map]
-          line "env", object.environment
-          line "url", object.url
-          section "env_vars", object.env_vars
-        end
-        pp
+      def ppx_fields(dsl)
+        dsl.instance_value "environment", environment
+        dsl.instance_value "has_data_volume", has_data_volume
+        dsl.instance_value "has_service_dir", has_service_dir
+        dsl.instance_value "name", name
+        dsl.instance_value "url", url
+        dsl.child_object "db_port_map", db_port_map
+        dsl.child_object "node", node
+        dsl.env_vars env_vars
       end
     end
   end

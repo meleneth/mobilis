@@ -29,12 +29,8 @@ module Mobilis
       @value.to_s
     end
 
-    def pretty_print(pp)
-      ppx(pp) do
-        heading object.class.name
-        line "env_name", object.to_s
-      end
-      pp
+    def ppx_fields(dsl)
+      dsl.instance_value "env_name", to_s
     end
   end
 end

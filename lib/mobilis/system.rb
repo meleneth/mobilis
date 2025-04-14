@@ -69,18 +69,11 @@ module Mobilis
       from_h(JSON.parse(json, symbolize_names: true))
     end
 
-    def pretty_print(pp)
-      ppx(pp) do
-        heading object.class.name
-        line "name", object.name
-        section "nodes", object.nodes do |node|
-          line node.name, node.class.name
-        end
-        section "plugins", object.plugins do |plugin|
-          line plugin.class.name
-        end
+    def ppx_fields(dsl)
+      dsl.instance_value "name", name
+      nodes.sort_by(&:name).each do |node|
+        dsl.child_object node.name, node
       end
-      pp
     end
   end
 end

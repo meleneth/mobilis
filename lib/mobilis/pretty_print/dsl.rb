@@ -38,6 +38,22 @@ module Mobilis
         @parent << JobesWar::Node::Value.new("#{label}: #{value}", styles: styles)
       end
 
+      def env_vars(vars)
+        box = JobesWar::Node::Box.new
+        table = JobesWar::Node::TicTac.new
+
+        vars.each do |var|
+          row = []
+          row << JobesWar::Node::Value.new(var.resolved_name, styles: [:green])
+          row << JobesWar::Node::Value.new(var.specific_name, styles: [:blue])
+          row << JobesWar::Node::Value.new(var.value, styles: [:yellow])
+          table << row
+        end
+
+        box << table
+        @parent << box
+      end
+
       def child_object(label, child)
         return if child.nil?
 
