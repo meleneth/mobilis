@@ -21,6 +21,10 @@ module Mobilis
         @env_vars << @env_db_url if @env_db_url
       end
 
+      def required_plugins
+        [Mobilis::Plugin::RailsBuilder]
+      end
+
       def ppx_fields(dsl)
         dsl.instance_value "name", name
         dsl.instance_value "environment", environment

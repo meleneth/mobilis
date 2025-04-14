@@ -54,6 +54,12 @@ module Mobilis
         @parent << box
       end
 
+      def plugins(plugins)
+        plugins.each do |plugin|
+          child_object("plugin", plugin)
+        end
+      end
+
       def child_object(label, child)
         return if child.nil?
 

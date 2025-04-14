@@ -28,6 +28,10 @@ module Mobilis
 
       def after_all_nodes_realized(realized_env)
       end
+
+      def required_plugins
+        []
+      end
     end
   end
 end

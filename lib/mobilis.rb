@@ -8,6 +8,9 @@ require "jobes_war/diagram"
 require "mobilis/pretty_print/dsl"
 require "mobilis/pretty_print/pretty_printable"
 
+require "mobilis/base/plugin"
+require "mobilis/plugin/rails_builder"
+
 require "mobilis/env_var"
 require "mobilis/system"
 require "mobilis/realized_env"
