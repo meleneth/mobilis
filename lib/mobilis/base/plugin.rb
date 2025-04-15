@@ -4,9 +4,10 @@ module Mobilis
   module Base
     class Plugin
       include PrettyPrint::PrettyPrintable
+      attr_reader :manifest
 
-      def initialize(realized_env)
-        @realized_env = realized_env
+      def initialize(manifest)
+        @manifest = manifest
       end
     end
   end

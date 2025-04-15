@@ -39,7 +39,12 @@ module Mobilis
       nodes.sort_by(&:name).each do |node|
         dsl.child_object node.name, node
       end
-      dsl.plugins @plugins
+    end
+
+    def required_plugins
+      nodes
+        .flat_map(&:required_plugins)
+        .uniq
     end
 
     private
@@ -52,14 +57,6 @@ module Mobilis
       nodes.each do |node|
         node.after_all_nodes_realized(self)
       end
-      setup_plugins
-    end
-
-    def setup_plugins
-      @plugins = nodes
-                 .flat_map(&:required_plugins)
-                 .uniq
-                 .map { |klass| klass.new(self) }
     end
 
     def build_realized_node(node)

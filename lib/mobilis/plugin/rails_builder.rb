@@ -3,7 +3,11 @@
 module Mobilis
   module Plugin
     class RailsBuilder < Mobilis::Base::Plugin
-      def hook_before_services_written(directory_service)
+      include Forwardable
+
+      def_delegators :@manifest, :directory_service
+
+      def hook_before_services_written
         directory_service.mkdir_rails_builder
         directory_service.chdir_rails_builder
         create_rails_builder_dockerfile

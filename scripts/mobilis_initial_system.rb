@@ -14,4 +14,7 @@ execution_env = Mobilis::ExecutionEnvironment.new(:test)
 
 realized_env = Mobilis::RealizedEnv.new(system, execution_env)
 
-puts realized_env.pp
+manifest = Mobilis::Manifest.new(system)
+
+manifest.materialize
+
