@@ -13,10 +13,12 @@ module Mobilis
       @realized_envs = environments.map do |env|
         Mobilis::RealizedEnv.new(system, env)
       end
+      setup_plugins
     end
 
     def materialize
       directory_service.chdir_start
+      directory_service.mkdir_generate
       run_plugin_hooks :hook_before_services_written
     end
 

@@ -3,7 +3,7 @@
 module Mobilis
   module Base
     class Plugin
-      include PrettyPrint::PrettyPrintable
+      include Mobilis::PrettyPrint::PrettyPrintable
       attr_reader :manifest
 
       def initialize(manifest)

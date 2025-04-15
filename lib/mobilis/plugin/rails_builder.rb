@@ -3,7 +3,7 @@
 module Mobilis
   module Plugin
     class RailsBuilder < Mobilis::Base::Plugin
-      include Forwardable
+      extend Forwardable
 
       def_delegators :@manifest, :directory_service
 
@@ -20,12 +20,27 @@ module Mobilis
         "#{username}/rails-builder"
       end
 
+      def username
+        ENV.fetch("USER", ENV.fetch("USERNAME", ""))
+      end
+
+      def oblivious_run_command(command)
+        # fixme
+        # Mobilis.logger.info "$ #{command.join " "}"
+        puts "-> Running --> #{command}"
+        system command
+      end
+
+      def run_docker(cmd)
+        oblivious_run_command "docker #{cmd}"
+      end
+
       def build_rails_builder
         run_docker "build -t #{rails_builder_image} --build-arg USER_ID=#{Process.uid} --build-arg GROUP_ID=#{Process.gid} ."
       end
 
       def set_file_contents(filename, contents)
-        write_file filename do |f|
+        File.open(filename, "w") do |f|
           f.write contents
         end
       end
