@@ -47,6 +47,14 @@ module Mobilis
         .uniq
     end
 
+    def each_node_of_type(klass)
+      return enum_for(:each_node_of_type) unless block_given?
+
+      nodes.each do |node|
+        yield node if node.instance_of? klass
+      end
+    end
+
     private
 
     def build_all_nodes!

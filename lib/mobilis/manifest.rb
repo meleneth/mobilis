@@ -14,6 +14,11 @@ module Mobilis
         Mobilis::RealizedEnv.new(system, env)
       end
       setup_plugins
+      run_plugin_hooks :hook_envs_realized
+    end
+
+    def realized_production_env
+      @realized_envs.find(&:is_production?)
     end
 
     def materialize

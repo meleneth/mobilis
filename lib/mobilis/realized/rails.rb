@@ -22,7 +22,7 @@ module Mobilis
       end
 
       def required_plugins
-        [Mobilis::Plugin::RailsBuilder]
+        [Mobilis::Plugin::RailsBuilder, Mobilis::Plugin::RailsDBFanout]
       end
 
       def ppx_fields(dsl)
