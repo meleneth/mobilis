@@ -40,7 +40,7 @@ module Mobilis
         @env_vars.each do |env_var|
           return env_var if env_var.resolved_name == resolved_name
         end
-        rails "No such environment variable #{resolved_name} for #{name}"
+        raise "No such environment variable #{resolved_name} for #{name}"
       end
     end
   end

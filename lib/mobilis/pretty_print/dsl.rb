@@ -46,7 +46,7 @@ module Mobilis
           row = []
           row << JobesWar::Node::Value.new(var.resolved_name, styles: [:green])
           row << JobesWar::Node::Value.new(var.specific_name, styles: [:blue])
-          row << JobesWar::Node::Value.new(var.value, styles: [:yellow])
+          row << JobesWar::Node::Value.new(truncate_with_ellipsis(var.value), styles: [:yellow])
           table << row
         end
 
@@ -102,6 +102,11 @@ module Mobilis
         name = obj.respond_to?(:name) ? obj.name.inspect : nil
         addr = "0x#{(obj.object_id << 1).to_s(16)}"
         "<#{obj.class} #{addr}#{name ? " #{name}" : ""}>"
+      end
+
+      def truncate_with_ellipsis(str)
+        str = str.to_s
+        str.length >= 40 ? str[0...37] + "..." : str
       end
     end
   end

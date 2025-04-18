@@ -11,8 +11,8 @@ module Mobilis
     attr_accessor :value
 
     def initialize(resolved_name, specific_name, value)
-      @resolved_name = resolved_name
-      @specific_name = specific_name
+      @resolved_name = normalize(resolved_name)
+      @specific_name = normalize(specific_name)
       @value = value
     end
 
@@ -32,6 +32,12 @@ module Mobilis
       dsl.instance_value "resolved", resolved_name, styles: [:green]
       dsl.instance_value "specific", specific_name, styles: [:blue]
       dsl.instance_value "value", value, styles: [:yellow]
+    end
+
+    private
+
+    def normalize(value)
+      value.to_s.upcase.tr("-", "_")
     end
   end
 end
