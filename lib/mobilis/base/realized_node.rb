@@ -13,12 +13,11 @@ module Mobilis
       attr_accessor :has_data_volume, :has_service_dir
 
       def_delegators :@node, :name
-      def_delegators :@env, :environment
 
       # @param env [Mobilis::RealizedEnv]
       # @param node [Mobilis::Node]
       def initialize(env, node)
-        @env = env
+        @realized_env = env
         @node = node
         @port_maps = []
         @env_vars = []
@@ -26,11 +25,22 @@ module Mobilis
         @has_service_dir = false
       end
 
-      def after_all_nodes_realized(realized_env)
+      def environment
+        @realized_env.to_s
+      end
+
+      def after_all_nodes_realized
       end
 
       def required_plugins
         []
+      end
+
+      def env_var(resolved_name)
+        @env_vars.each do |env_var|
+          return env_var if env_var.resolved_name == resolved_name
+        end
+        rails "No such environment variable #{resolved_name} for #{name}"
       end
     end
   end

@@ -17,22 +17,22 @@ FactoryBot.define do
 
     trait :with_postgres do
       after(:build) do |system|
-        postgres_node = build(:postgres_node, name: "test-db")
+        postgres_node = build(:postgres_node, name: "userdb")
         system << postgres_node
       end
     end
 
     trait :with_rails do
       after(:build) do |system|
-        rails_node = build(:rails_node, name: "test-app")
+        rails_node = build(:rails_node, name: "user")
         system << rails_node
       end
     end
 
     trait :with_rails_and_postgres do
       transient do
-        rails_name { "myapp" }
-        db_name    { "pg_main" }
+        rails_name { "user" }
+        db_name    { "userdb" }
       end
 
       after(:build) do |system, evaluator|

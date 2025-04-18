@@ -13,10 +13,10 @@ module Mobilis
         @has_data_volume = false
       end
 
-      def after_all_nodes_realized(realized_env)
+      def after_all_nodes_realized
         return unless node.primary_database
 
-        @primary_database = realized_env.node_for(node.primary_database)
+        @primary_database = @realized_env.node_for(node.primary_database)
         @env_db_url = @primary_database.env_db_url.as("DATABASE_URL")
         @env_vars << @env_db_url if @env_db_url
       end

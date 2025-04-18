@@ -70,7 +70,6 @@ module Mobilis
     end
 
     def ppx_fields(dsl)
-      dsl.instance_value "name", name
       nodes.sort_by(&:name).each do |node|
         dsl.child_object node.name, node
       end

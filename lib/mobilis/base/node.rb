@@ -10,7 +10,7 @@ module Mobilis
       attr_reader :id, :name
 
       def initialize(name, id: nil, **refs)
-        @name = name
+        @name = name.tr("_", "-")
 
         @id = id || SecureRandom.uuid
 

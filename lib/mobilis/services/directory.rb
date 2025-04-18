@@ -1,6 +1,8 @@
 module Mobilis
   module Services
     class Directory
+      include PrettyPrint::PrettyPrintable
+
       def initialize
         @start_position = Dir.pwd
       end
@@ -100,6 +102,10 @@ module Mobilis
 
       def git_untracked_files
         git.status.files.values.select { |f| !f.untracked.nil? }
+      end
+
+      def ppx_fields(dsl)
+        dsl.instance_value "start_position", @start_position
       end
 
       private

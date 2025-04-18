@@ -4,8 +4,11 @@ module Mobilis
   # Holds the realized graph layer.  This extends the config only graph
   # to hold the actual details that will be written to disk later, for plugin extension
   class RealizedEnv
+    extend Forwardable
     include Mobilis::PrettyPrint::PrettyPrintable
     attr_reader :system, :environment, :nodes
+
+    def_delegators :@environment, :is_production?, :is_development?, :is_test?
 
     def initialize(system, environment)
       @system = system
@@ -30,6 +33,13 @@ module Mobilis
       nil
     end
 
+    def node_by_name(name)
+      @nodes.each do |possible|
+        return possible if possible.name == name
+      end
+      raise "Could not find node for name #{name} on #{environment}"
+    end
+
     def find_node_by_name(name)
       nodes.find { |no| no.name == name }
     end
@@ -51,7 +61,7 @@ module Mobilis
       return enum_for(:each_node_of_type) unless block_given?
 
       nodes.each do |node|
-        yield node if node.instance_of? klass
+        yield self, node if node.instance_of? klass
       end
     end
 
@@ -63,7 +73,7 @@ module Mobilis
         nodes << realized if realized
       end
       nodes.each do |node|
-        node.after_all_nodes_realized(self)
+        node.after_all_nodes_realized
       end
     end
 

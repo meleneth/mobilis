@@ -9,6 +9,12 @@ module Mobilis
       def initialize(manifest)
         @manifest = manifest
       end
+
+      def hook_envs_realized
+      end
+
+      def hook_before_services_written
+      end
     end
   end
 end
