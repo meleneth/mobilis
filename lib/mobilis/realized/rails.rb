@@ -25,6 +25,10 @@ module Mobilis
         [Mobilis::Plugin::RailsBuilder, Mobilis::Plugin::RailsDBFanout]
       end
 
+      def service_writer
+        Mobilis::ServiceWriter::Rails
+      end
+
       def ppx_fields(dsl)
         dsl.instance_value "name", name
         dsl.instance_value "environment", environment

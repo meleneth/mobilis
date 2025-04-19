@@ -34,6 +34,7 @@ module Mobilis
       directory_service.chdir_start
       directory_service.mkdir_generate
       run_plugin_hooks :hook_before_services_written
+      emit_all_services
     end
 
     def setup_plugins
@@ -46,6 +47,12 @@ module Mobilis
     def run_plugin_hooks(hook)
       @plugins.each do |plugin|
         plugin.send(hook)
+      end
+    end
+
+    def plugin_for(klass)
+      @plugins.each do |plugin|
+        return plugin if plugin.instance_of? klass
       end
     end
 
@@ -70,6 +77,30 @@ module Mobilis
     def environments
       %i[test development production].map do |env|
         Mobilis::ExecutionEnvironment.new env
+      end
+    end
+
+    def emit_all_services
+      service_dirs_written = {}
+      @realized_envs.each do |realized_env|
+        realized_env.nodes.each do |node|
+          name = node.name
+
+          if node.has_service_dir
+            next if service_dirs_written[name]
+
+            directory_service.mkdir_project(node)
+            directory_service.chdir_project(node)
+            node.service_writer.new(self, realized_env, node).write
+            directory_service.chdir_generate
+            service_dirs_written[name] = true
+          end
+
+          if node.has_data_volume
+            directory_service.mkdir_environment_datadir_forproject(realized_env.environment,
+                                                                   node)
+          end
+        end
       end
     end
   end

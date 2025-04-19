@@ -39,6 +39,14 @@ module Mobilis
         run_docker "build -t #{rails_builder_image} --build-arg USER_ID=#{Process.uid} --build-arg GROUP_ID=#{Process.gid} ."
       end
 
+      def container_run(command)
+        run_docker "run --rm -v #{getwd}:/usr/src/app -w /usr/src/app #{rails_builder_image} #{command}"
+      end
+
+      def getwd
+        Dir.pwd
+      end
+
       def set_file_contents(filename, contents)
         File.open(filename, "w") do |f|
           f.write contents
@@ -63,17 +71,25 @@ module Mobilis
             && rm -rf /var/cache/apt/archives/* \\
             && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \\
             && truncate -s 0 /var/log/*log
-          RUN gem update bundle
-          RUN gem update --system
 
-          COPY Gemfile .
-          RUN bundle install
+          ENV BUNDLE_PATH=/tmp/bundle \
+          BUNDLE_USER_HOME=/tmp/bundle \
+          BUNDLE_APP_CONFIG=/tmp/bundle/config
+          ENV PATH="/tmp/bundle/bin:$PATH"
 
           ARG USER_ID
           ARG GROUP_ID
           RUN addgroup --gid $GROUP_ID rubyuser
           RUN adduser --disabled-password --gecos '' --uid $USER_ID --gid $GROUP_ID rubyuser
+          RUN mkdir -p /tmp/bundle && chown -R rubyuser:rubyuser /tmp/bundle
+          RUN mkdir -p /app && chown -R rubyuser:rubyuser /app
+          WORKDIR /app
           USER rubyuser
+          RUN bundle config set --global path /tmp/bundle
+          RUN bundle config set --global bin /tmp/bundle/bin
+          RUN gem update bundle
+          RUN gem update --system
+          RUN gem install rails pg mysql2 minitest rspec-rails puma jbuilder sqlite3 redis kredis bcrypt image_processing
         EOF
         # it makes no sense that these values were hardcoded at 200 when I was passing
         # in the id's, why did that happen?

@@ -36,6 +36,10 @@ module Mobilis
         []
       end
 
+      def service_writer
+        raise "No service writer for #{self.class}"
+      end
+
       def env_var(resolved_name)
         @env_vars.each do |env_var|
           return env_var if env_var.resolved_name == resolved_name
