@@ -31,33 +31,33 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
   it "constructs environment variables using EnvVar - specific_name" do
     keys = realized_pg.compose_env_vars.map(&:specific_name)
     expect(keys).to eq(%w[
-                         USERDB_POSTGRES_DB
                          USERDB_POSTGRES_USER
                          USERDB_POSTGRES_PASSWORD
+                         USERDB_POSTGRES_DB
                        ])
   end
   it "constructs per-environment variables including data dir" do
     keys = realized_pg.per_env_vars.map(&:specific_name)
     expect(keys).to eq(%w[
-                         USERDB_POSTGRES_DB
                          USERDB_POSTGRES_USER
                          USERDB_POSTGRES_PASSWORD
+                         USERDB_POSTGRES_DB
                          USERDB_POSTGRES_DATA
                        ])
   end
   it "constructs environment variables using EnvVar - realized_name" do
     keys = realized_pg.compose_env_vars.map(&:resolved_name)
     expect(keys).to eq(%w[
-                         POSTGRES_DB
                          POSTGRES_USER
                          POSTGRES_PASSWORD
+                         POSTGRES_DB
                        ])
   end
 
   it "has correct values for the created env vars" do
     var = realized_pg.env_vars[0]
-    expect(var.resolved_name).to eq("POSTGRES_DB")
-    expect(var.specific_name).to eq("USERDB_POSTGRES_DB")
+    expect(var.resolved_name).to eq("POSTGRES_USER")
+    expect(var.specific_name).to eq("USERDB_POSTGRES_USER")
   end
 
   it "constructs the expected URL" do
