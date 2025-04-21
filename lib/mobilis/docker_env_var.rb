@@ -17,7 +17,7 @@ module Mobilis
     end
 
     def docker_repr
-      "#{resolved_name}: ${#{specific_name}}"
+      "#{resolved_name}=${#{specific_name}}"
     end
 
     def env_repr

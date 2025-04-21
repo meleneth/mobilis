@@ -72,6 +72,11 @@ module Mobilis
         Dir.mkdir "compose"
       end
 
+      def chdir_compose
+        chdir_generate
+        Dir.chdir("compose")
+      end
+
       def mkdir_datadir
         chdir_generate
         Dir.mkdir "data"

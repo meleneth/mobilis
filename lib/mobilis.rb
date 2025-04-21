@@ -18,6 +18,7 @@ require "mobilis/realized/sql_database"
 
 require "mobilis/service_writer/rails"
 require "mobilis/docker_env_var"
+require "mobilis/basic_env_var"
 require "mobilis/docker_image_registry"
 require "mobilis/env_var"
 require "mobilis/execution_environment"

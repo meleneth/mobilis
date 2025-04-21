@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
+require "git"
 module Mobilis
   # here it is, the main class that actually orchestratest the entire
   # dance of file creation.
   class Manifest
     include Mobilis::PrettyPrint::PrettyPrintable
-    attr_reader :system, :realized_envs, :directory_service
+    attr_reader :system, :realized_envs, :directory_service, :git_repo
 
     def initialize(system, suppress_plugins: false)
       @system = system
@@ -33,8 +34,26 @@ module Mobilis
     def materialize
       directory_service.chdir_start
       directory_service.mkdir_generate
+      directory_service.mkdir_compose
+      directory_service.chdir_generate
+      write_gitignore
+      @git_repo = Git.init(".")
+      commit_all("Basic .gitignore")
       run_plugin_hooks :hook_before_services_written
       emit_all_services
+      emit_compose_wrappers
+      emit_env_files
+    end
+
+    def write_gitignore
+      File.open(".gitignore", "w") do |f|
+        f.write("data\n")
+      end
+    end
+
+    def commit_all(message)
+      @git_repo.add(all: true)
+      @git_repo.commit("[mobilis] #{message}")
     end
 
     def setup_plugins
@@ -72,12 +91,49 @@ module Mobilis
       end
     end
 
+    def username
+      ENV.fetch("USER", ENV.fetch("USERNAME", ""))
+    end
+
     private
 
     def environments
       %i[test development production].map do |env|
         Mobilis::ExecutionEnvironment.new env
       end
+    end
+
+    def emit_env_files
+      directory_service.chdir_generate
+      @realized_envs.each do |realized_env|
+        lines = []
+        realized_env.nodes.each do |node|
+          node.each_docker_env_var do |env_var|
+            lines << env_var.env_repr
+          end
+        end
+        File.write("compose/#{realized_env.environment}.env", lines.join("\n"))
+      end
+      commit_all "env files"
+    end
+
+    def emit_compose_wrappers
+      directory_service.chdir_generate
+      @realized_envs.each do |realized_env|
+        details = {}
+        details["name"] = "generate-#{realized_env}"
+        includes = []
+        realized_env.nodes.each do |node|
+          node_details = {}
+          node_details["path"] = "./compose/#{node.name}.yml"
+          node_details["project_directory"] = "./"
+          node_details["env_file"] = "./compose/#{realized_env.environment}.env"
+          includes << node_details
+        end
+        details["includes"] = includes
+        File.write("#{realized_env}-compose.yml", YAML.dump(details))
+      end
+      commit_all("compose wrappers")
     end
 
     def emit_all_services
@@ -91,7 +147,9 @@ module Mobilis
 
             directory_service.mkdir_project(node)
             directory_service.chdir_project(node)
-            node.service_writer.new(self, realized_env, node).write
+            writer = node.service_writer.new(self, realized_env, node)
+            writer.write
+            writer.write_compose_file
             directory_service.chdir_generate
             service_dirs_written[name] = true
           end

@@ -4,6 +4,10 @@ module Mobilis
   module Base
     class Plugin
       include Mobilis::PrettyPrint::PrettyPrintable
+      extend Forwardable
+
+      def_delegators :@manifest, :directory_service, :username
+
       attr_reader :manifest
 
       def initialize(manifest)

@@ -46,6 +46,13 @@ module Mobilis
         end
         raise "No such environment variable #{resolved_name} for #{name}"
       end
+
+      def each_docker_env_var
+        enum_for :each_docker_env_var unless block_given?
+        env_vars.each do |env_var|
+          yield env_var if env_var.instance_of? Mobilis::DockerEnvVar
+        end
+      end
     end
   end
 end

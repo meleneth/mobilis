@@ -19,6 +19,9 @@ module Mobilis
         @primary_database = @realized_env.node_for(node.primary_database)
         @env_db_url = @primary_database.env_db_url.as("DATABASE_URL")
         @env_vars << @env_db_url if @env_db_url
+        @env_vars << BasicEnvVar.new("RAILS_ENV", "production") # TODO: this needs meditation
+        @env_vars << BasicEnvVar.new("RAILS_MIN_THREADS", 5)
+        @env_vars << BasicEnvVar.new("RAILS_MAX_THREADS", 5)
       end
 
       def required_plugins
