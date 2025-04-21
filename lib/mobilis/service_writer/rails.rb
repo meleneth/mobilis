@@ -23,7 +23,7 @@ module Mobilis
         services = { services: service }
 
         directory_service.chdir_compose
-        File.write("#{realized_node.name}.yml", YAML.dump(deep_stringify_keys(services)))
+        File.write("#{realized_node.name}.yml", YAML.dump(Mobilis::YAML.deep_stringify_keys(services)))
         commit_all("Compose for #{realized_node.name}")
 
         #---

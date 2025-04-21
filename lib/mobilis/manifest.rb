@@ -108,11 +108,11 @@ module Mobilis
       @realized_envs.each do |realized_env|
         lines = []
         realized_env.nodes.each do |node|
-          node.each_docker_env_var do |env_var|
+          node.per_env_vars do |env_var|
             lines << env_var.env_repr
           end
         end
-        File.write("compose/#{realized_env.environment}.env", lines.join("\n"))
+        File.write("compose/#{realized_env.environment}.env", "#{lines.join("\n")}\n")
       end
       commit_all "env files"
     end
@@ -130,8 +130,8 @@ module Mobilis
           node_details["env_file"] = "./compose/#{realized_env.environment}.env"
           includes << node_details
         end
-        details["includes"] = includes
-        File.write("#{realized_env}-compose.yml", YAML.dump(details))
+        details["include"] = includes
+        File.write("#{realized_env}-compose.yml", ::YAML.dump(details))
       end
       commit_all("compose wrappers")
     end
@@ -149,15 +149,13 @@ module Mobilis
             directory_service.chdir_project(node)
             writer = node.service_writer.new(self, realized_env, node)
             writer.write
-            writer.write_compose_file
             directory_service.chdir_generate
             service_dirs_written[name] = true
           end
 
-          if node.has_data_volume
-            directory_service.mkdir_environment_datadir_forproject(realized_env.environment,
-                                                                   node)
-          end
+          directory_service.mkdir_environment_datadir_forproject(realized_env.environment, node) if node.has_data_volume
+
+          File.write("compose/#{node.name}.yml", ::YAML.dump(Mobilis::YAML.deep_stringify_keys(node.compose)))
         end
       end
     end

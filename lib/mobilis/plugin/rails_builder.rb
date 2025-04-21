@@ -47,7 +47,7 @@ module Mobilis
 
       def create_rails_builder_dockerfile
         set_file_contents "Dockerfile", <<~EOF
-          FROM ruby:latest
+          FROM #{Mobilis::ContainerVersions::RUBY}
           RUN apt-get update -qq && apt-get install -y nodejs postgresql-client
           # Common dependencies
           RUN apt-get update -qq \\

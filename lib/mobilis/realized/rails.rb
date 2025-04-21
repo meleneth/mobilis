@@ -32,6 +32,33 @@ module Mobilis
         Mobilis::ServiceWriter::Rails
       end
 
+      def compose
+        @compose ||= begin
+          fragment = {
+            image: "#{username}/#{name}", # Replace with the actual builder output if needed
+            # container_name: name,
+            ports: port_maps.map(&:to_compose),
+            environment: env_vars.map(&:to_compose),
+            volumes: service_dir_mounts,
+            build: "./#{name}"
+          }
+
+          if primary_database
+            fragment[:depends_on] = {
+              primary_database.name => {
+                condition: primary_database.has_healthcheck? ? "service_healthy" : "service_started"
+              }
+            }
+          end
+
+          { services: { name => fragment.compact } }
+        end
+      end
+
+      def service_dir_mounts
+        nil
+      end
+
       def ppx_fields(dsl)
         dsl.instance_value "name", name
         dsl.instance_value "environment", environment

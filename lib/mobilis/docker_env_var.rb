@@ -24,6 +24,10 @@ module Mobilis
       "#{specific_name}=#{@value}"
     end
 
+    def to_compose
+      docker_repr
+    end
+
     def as(name)
       DockerEnvVar.new(name, specific_name, value)
     end

@@ -14,9 +14,17 @@ module Mobilis
                                        url)
         env_key = EnvVar.new(name)
 
-        env_vars << DockerEnvVar.new("POSTGRES_DB", env_key.child("postgres_db").raw, db_name)
-        env_vars << DockerEnvVar.new("POSTGRES_USER", env_key.child("postgres_user").raw, user)
+        @postgres_user_env_var = DockerEnvVar.new("POSTGRES_USER", env_key.child("postgres_user").raw, user)
+        env_vars << @postgres_user_env_var
         env_vars << DockerEnvVar.new("POSTGRES_PASSWORD", env_key.child("postgres_password").raw, password)
+        @postgres_db_env_var = DockerEnvVar.new("POSTGRES_DB", env_key.child("postgres_db").raw, db_name)
+        env_vars << @postgres_db_env_var
+        @per_env_vars << data_volume_env_var
+      end
+
+      def data_volume_env_var
+        @data_volume_env_var ||= BasicEnvVar.new(Mobilis::EnvVar.new("#{name}_postgres_data").raw,
+                                                 "./data/#{environment}/#{node.name}")
       end
 
       def scheme
@@ -25,6 +33,32 @@ module Mobilis
 
       def internal_port_no
         INTERNAL_PORT_NO
+      end
+
+      def compose
+        @compose ||= {
+          services: {
+            name => {
+              image: Mobilis::ContainerVersions::POSTGRES,
+              #              container_name: name,
+              ports: port_maps.map(&:to_compose),
+              environment: env_vars.map(&:to_compose),
+              volumes: volume_paths,
+              healthcheck: {
+                test: ["CMD-SHELL",
+                       "pg_isready -U ${#{@postgres_user_env_var.specific_name}} -d ${#{@postgres_db_env_var.specific_name}}"],
+                interval: "10s",
+                timeout: "5s",
+                retries: 5,
+                start_period: "5s"
+              }
+            }
+          }
+        }.compact
+      end
+
+      def volume_paths
+        ["${#{data_volume_env_var.specific_name}}:/var/lib/postgresql/data"]
       end
 
       def ppx_fields(dsl)
