@@ -3,10 +3,16 @@
 module Mobilis
   # Holds the realized graph layer.  This extends the config only graph
   # to hold the actual details that will be written to disk later, for plugin extension
+  class NoSuchNode < StandardError
+  end
+
   class RealizedEnv
     extend Forwardable
     include Mobilis::PrettyPrint::PrettyPrintable
     attr_reader :system, :environment, :nodes
+
+    @@next_port_no = 11_000
+    @@port_spacing = 10
 
     def_delegators :@environment, :is_production?, :is_development?, :is_test?
 
@@ -37,7 +43,7 @@ module Mobilis
       @nodes.each do |possible|
         return possible if possible.name == name
       end
-      raise "Could not find node for name #{name} on #{environment}"
+      raise Mobilis::NoSuchNode.new("Could not find node for name #{name} on #{environment}")
     end
 
     def find_node_by_name(name)
@@ -65,6 +71,12 @@ module Mobilis
       end
     end
 
+    def each_node(&block)
+      return enum_for(:each_node) unless block_given?
+
+      nodes.each(&block)
+    end
+
     private
 
     def build_all_nodes!
@@ -80,7 +92,7 @@ module Mobilis
     def build_realized_node(node)
       case node
       when Mobilis::Node::PostgreSQL
-        Mobilis::Realized::PostgreSQL.new(self, node, external_port_no: 15_432) # <-- for now, hardcoded or stubbed
+        Mobilis::Realized::PostgreSQL.new(self, node) # <-- for now, hardcoded or stubbed
       when Mobilis::Node::Rails
         Mobilis::Realized::Rails.new(self, node)
       else

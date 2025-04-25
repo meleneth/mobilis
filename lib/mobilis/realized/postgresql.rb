@@ -7,7 +7,7 @@ module Mobilis
       include Mobilis::PrettyPrint::PrettyPrintable
       attr_reader :env_db_url
 
-      def initialize(env, node, external_port_no:)
+      def initialize(env, node)
         super
         @env_db_url = DockerEnvVar.new("",
                                        Mobilis::EnvVar.new(name).child("database_url").raw,
@@ -20,6 +20,8 @@ module Mobilis
         @postgres_db_env_var = DockerEnvVar.new("POSTGRES_DB", env_key.child("postgres_db").raw, db_name)
         env_vars << @postgres_db_env_var
         @per_env_vars << data_volume_env_var
+        register_external_port(internal_port_no, "#{name}_POSTGRES_PORT",
+                               "#{name} database port")
       end
 
       def data_volume_env_var
@@ -42,7 +44,7 @@ module Mobilis
               image: Mobilis::ContainerVersions::POSTGRES,
               #              container_name: name,
               ports: port_maps.map(&:to_compose),
-              environment: env_vars.map(&:to_compose),
+              environment: env_vars_to_resolve.map(&:to_compose),
               volumes: volume_paths,
               healthcheck: {
                 test: ["CMD-SHELL",
@@ -67,7 +69,9 @@ module Mobilis
         dsl.instance_value "has_service_dir", has_service_dir
         dsl.instance_value "name", name
         dsl.instance_value "url", url
-        dsl.child_object "db_port_map", db_port_map
+        port_maps.each do |port_map|
+          dsl.child_object "port_map", port_map
+        end
         dsl.child_object "node", node
         dsl.env_vars env_vars
       end

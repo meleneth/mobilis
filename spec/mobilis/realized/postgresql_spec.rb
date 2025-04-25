@@ -8,7 +8,7 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
   let(:env)           { Mobilis::RealizedEnv.new(system, Mobilis::ExecutionEnvironment.new("test")) }
 
   subject(:realized_pg) do
-    described_class.new(env, postgres_node, external_port_no: 15_432)
+    described_class.new(env, postgres_node)
   end
 
   it "uses fixed internal port" do
@@ -23,9 +23,9 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
   it "produces a single PortMap with a memo" do
     expect(realized_pg.port_maps.size).to eq(1)
     port = realized_pg.port_maps.first
-    expect(port.external_port_no).to eq(15_432)
+    expect(port.external_port_no).to eq("${USERDB_POSTGRES_PORT}")
     expect(port.internal_port_no).to eq(5432)
-    expect(port.memo).to match(/PostgreSQL/)
+    expect(port.memo).to match(/userdb database port/)
   end
 
   it "constructs environment variables using EnvVar - specific_name" do

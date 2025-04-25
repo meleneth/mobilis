@@ -5,19 +5,11 @@ module Mobilis
     class SQLDatabase < Mobilis::Base::RealizedNode
       attr_reader :db_port_map
 
-      def initialize(env, node, external_port_no:)
+      def initialize(env, node)
         super(env, node)
 
         @has_data_volume = true
         @has_service_dir = false
-
-        @db_port_map = Mobilis::PortMap.new(
-          external_port_no,
-          internal_port_no,
-          "#{self.class.name.split("::").last} default port"
-        )
-
-        port_maps << @db_port_map
       end
 
       def user

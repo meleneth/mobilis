@@ -8,12 +8,13 @@ module Mobilis
   class DockerEnvVar
     include Mobilis::PrettyPrint::PrettyPrintable
     attr_reader :resolved_name, :specific_name
-    attr_accessor :value
+    attr_accessor :value, :do_not_resolve
 
-    def initialize(resolved_name, specific_name, value)
+    def initialize(resolved_name, specific_name, value, do_not_resolve: false)
       @resolved_name = normalize(resolved_name)
       @specific_name = normalize(specific_name)
       @value = value
+      @do_not_resolve = do_not_resolve
     end
 
     def docker_repr

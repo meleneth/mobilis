@@ -43,6 +43,9 @@ module Mobilis
       emit_all_services
       emit_compose_wrappers
       emit_env_files
+      write_overrides_for(:development)
+      write_overrides_for(:production)
+      commit_all("Compose overrides")
     end
 
     def write_gitignore
@@ -52,6 +55,7 @@ module Mobilis
     end
 
     def commit_all(message)
+      puts " -- git commit: #{message} --"
       @git_repo.add(all: true)
       @git_repo.commit("[mobilis] #{message}")
     end
@@ -95,6 +99,33 @@ module Mobilis
       ENV.fetch("USER", ENV.fetch("USERNAME", ""))
     end
 
+    def depends_on_overrides_for(target_env)
+      test_env = realized_env(:test)
+      return nil if test_env.equal?(target_env)
+
+      overrides = { services: {} }
+
+      target_env.each_node do |node|
+        target_compose = node.compose[:services][node.name]
+        target_deps = target_compose[:depends_on]
+        next unless target_deps
+
+        test_deps =
+          begin
+            test_node = test_env.node_by_name(node.name)
+            test_node.compose[:services][test_node.name][:depends_on]
+          rescue Mobilis::NoSuchNode
+            nil
+          end
+
+        next if target_deps == test_deps
+
+        overrides[:services][node.name] = { depends_on: target_deps }
+      end
+
+      overrides[:services].empty? ? nil : overrides
+    end
+
     private
 
     def environments
@@ -112,7 +143,7 @@ module Mobilis
             lines << env_var.env_repr
           end
         end
-        File.write("compose/#{realized_env.environment}.env", "#{lines.join("\n")}\n")
+        File.write("#{realized_env.environment}.env", "#{lines.join("\n")}\n")
       end
       commit_all "env files"
     end
@@ -127,7 +158,7 @@ module Mobilis
           node_details = {}
           node_details["path"] = "./compose/#{node.name}.yml"
           node_details["project_directory"] = "./"
-          node_details["env_file"] = "./compose/#{realized_env.environment}.env"
+          node_details["env_file"] = "./#{realized_env.environment}.env"
           includes << node_details
         end
         details["include"] = includes
@@ -152,12 +183,19 @@ module Mobilis
             directory_service.chdir_generate
             service_dirs_written[name] = true
           end
-
+          directory_service.chdir_generate
           directory_service.mkdir_environment_datadir_forproject(realized_env.environment, node) if node.has_data_volume
 
           File.write("compose/#{node.name}.yml", ::YAML.dump(Mobilis::YAML.deep_stringify_keys(node.compose)))
         end
       end
+    end
+
+    def write_overrides_for(env)
+      overrides = depends_on_overrides_for(realized_env(env))
+      return if overrides.nil?
+
+      File.write("#{env}-overrides.yml", ::YAML.dump(Mobilis::YAML.deep_stringify_keys(overrides)))
     end
   end
 end

@@ -4,11 +4,13 @@ module Mobilis
   class BasicEnvVar
     include Mobilis::PrettyPrint::PrettyPrintable
     attr_reader :specific_name
+    attr_reader :do_not_resolve
     attr_accessor :value
 
-    def initialize(specific_name, value)
+    def initialize(specific_name, value, do_not_resolve: false)
       @specific_name = normalize(specific_name)
       @value = value
+      @do_not_resolve = do_not_resolve
     end
 
     def docker_repr

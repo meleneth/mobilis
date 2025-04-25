@@ -13,4 +13,32 @@ RSpec.describe Mobilis::Manifest do
       rails_realized_node = realized_env.node_by_name("user")
     end
   end
+  describe "#depends_on_overrides_for" do
+    subject(:manifest) { build(:manifest, :with_rails_and_postgres) }
+    it "returns the correct value" do
+      realized_env = manifest.realized_env(:production)
+      expect(manifest.depends_on_overrides_for(realized_env)).to eq({ services: { "user" => {
+
+                                                                      depends_on: {
+                                                                        "userdb" => {
+                                                                          condition: "service_healthy",
+                                                                          restart: true
+                                                                        },
+                                                                        "userdb-cache" => {
+                                                                          condition: "service_healthy",
+                                                                          restart: true
+                                                                        },
+                                                                        "userdb-cable" => {
+                                                                          condition: "service_healthy",
+                                                                          restart: true
+                                                                        },
+                                                                        "userdb-queue" => {
+                                                                          condition: "service_healthy",
+                                                                          restart: true
+                                                                        }
+                                                                      }
+
+                                                                    } } })
+    end
+  end
 end

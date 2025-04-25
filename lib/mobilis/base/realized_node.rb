@@ -14,6 +14,9 @@ module Mobilis
 
       def_delegators :@node, :name
 
+      @@next_port_no = 11_000
+      @@next_port_increment = 10
+
       # @param env [Mobilis::RealizedEnv]
       # @param node [Mobilis::Node]
       def initialize(env, node)
@@ -26,8 +29,21 @@ module Mobilis
         @has_service_dir = false
       end
 
+      def env_vars_to_resolve
+        env_vars.reject { |e| e.do_not_resolve }
+      end
+
       def environment
         @realized_env.to_s
+      end
+
+      def register_external_port(internal_port_no, env_var, memo)
+        new_port_no = @@next_port_no
+        env_var = Mobilis::EnvVar.new(env_var).raw
+        @@next_port_no += @@next_port_increment
+        new_port = PortMap.new("${#{env_var}}", internal_port_no, memo)
+        @port_maps << new_port
+        env_vars << BasicEnvVar.new(env_var, new_port_no, do_not_resolve: true)
       end
 
       def compose
@@ -67,17 +83,17 @@ module Mobilis
       def compose_env_vars
         return enum_for :compose_env_vars unless block_given?
         @env_vars.each do |env_var|
-          yield env_var
+          yield env_var unless env_var.do_not_resolve
         end
       end
 
       def per_env_vars
         return enum_for :per_env_vars unless block_given?
         @env_vars.each do |env_var|
-          yield env_var
+          yield env_var unless env_var.do_not_resolve
         end
         @per_env_vars.each do |env_var|
-          yield env_var
+          yield env_var unless env_var.do_not_resolve
         end
       end
       # rubocop:enable all

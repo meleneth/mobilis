@@ -32,6 +32,10 @@ module Mobilis
         Mobilis::ServiceWriter::Rails
       end
 
+      def extra_depends_on
+        @extra_depends_on ||= []
+      end
+
       def compose
         @compose ||= begin
           fragment = {
@@ -50,6 +54,14 @@ module Mobilis
                 restart: primary_database.dependant_services_require_restart?
               }.compact
             }
+          end
+
+          extra_depends_on.each do |other_node|
+            fragment[:depends_on] ||= {}
+            fragment[:depends_on][other_node.name] = {
+              condition: other_node.has_healthcheck? ? "service_healthy" : "service_started",
+              restart: other_node.dependant_services_require_restart?
+            }.compact
           end
 
           { services: { name => fragment.compact } }
