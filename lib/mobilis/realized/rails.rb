@@ -46,8 +46,9 @@ module Mobilis
           if primary_database
             fragment[:depends_on] = {
               primary_database.name => {
-                condition: primary_database.has_healthcheck? ? "service_healthy" : "service_started"
-              }
+                condition: primary_database.has_healthcheck? ? "service_healthy" : "service_started",
+                restart: primary_database.dependant_services_require_restart?
+              }.compact
             }
           end
 

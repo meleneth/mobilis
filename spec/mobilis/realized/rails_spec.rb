@@ -17,4 +17,23 @@ RSpec.describe Mobilis::Realized::Rails do
     expect(env_db_url.specific_name).to eq("USERDB_DATABASE_URL")
     expect(env_db_url.value).to eq("postgres://userdb-test-user:userdb-test-password@userdb:5432/userdb_test")
   end
+
+  it "#compose" do
+    expect(realized_rails_node.compose).to eq(
+      { services:
+        { "user" =>
+          { image: "meleneth/user", ports: [],
+            environment: [
+              "DATABASE_URL=${USERDB_DATABASE_URL}",
+              "RAILS_ENV=production",
+              "RAILS_MIN_THREADS=5",
+              "RAILS_MAX_THREADS=5"
+            ],
+            build: "./user",
+            depends_on:
+            {
+              "userdb" => { condition: "service_healthy", restart: true }
+            } } } }
+    )
+  end
 end

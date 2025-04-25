@@ -49,6 +49,10 @@ module Mobilis
         )
       end
 
+      def dependant_services_require_restart?
+        true
+      end
+
       # Subclasses must define this to provide the URL scheme (e.g., "postgres", "mysql2")
       def scheme
         raise NotImplementedError, "#{self.class} must implement #scheme"

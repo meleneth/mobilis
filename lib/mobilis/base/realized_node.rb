@@ -90,8 +90,12 @@ module Mobilis
       end
 
       def has_healthcheck?
-        healthcheck = compose[:healthcheck]
+        healthcheck = compose[:services][name][:healthcheck]
         healthcheck.is_a?(Hash) && healthcheck.key?(:test)
+      end
+
+      def dependant_services_require_restart?
+        false
       end
     end
   end

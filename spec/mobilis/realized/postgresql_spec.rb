@@ -71,4 +71,11 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
     expect(realized_pg.env_db_url.specific_name).to eq("USERDB_DATABASE_URL")
     expect(realized_pg.env_db_url.value).to eq("postgres://userdb-test-user:userdb-test-password@userdb:5432/userdb_test")
   end
+
+  it "#has_healthcheck?" do
+    expect(realized_pg.has_healthcheck?).to be_truthy
+  end
+  it "#dependant_services_require_restart?" do
+    expect(realized_pg.dependant_services_require_restart?).to be_truthy
+  end
 end
