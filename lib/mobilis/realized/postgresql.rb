@@ -19,7 +19,7 @@ module Mobilis
         env_vars << DockerEnvVar.new("POSTGRES_PASSWORD", env_key.child("postgres_password").raw, password)
         @postgres_db_env_var = DockerEnvVar.new("POSTGRES_DB", env_key.child("postgres_db").raw, db_name)
         env_vars << @postgres_db_env_var
-        @per_env_vars << data_volume_env_var
+        per_env_vars << data_volume_env_var
         register_external_port(internal_port_no, "#{name}_POSTGRES_PORT",
                                "#{name} database port")
       end

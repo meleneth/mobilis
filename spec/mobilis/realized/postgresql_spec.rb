@@ -37,7 +37,7 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
                        ])
   end
   it "constructs per-environment variables including data dir" do
-    keys = realized_pg.per_env_vars.map(&:specific_name)
+    keys = realized_pg.all_env_vars.map(&:specific_name)
     expect(keys).to eq(%w[
                          USERDB_POSTGRES_USER
                          USERDB_POSTGRES_PASSWORD

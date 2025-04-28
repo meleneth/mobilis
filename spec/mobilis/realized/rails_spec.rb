@@ -25,7 +25,7 @@ RSpec.describe Mobilis::Realized::Rails do
           { image: "meleneth/user", ports: [],
             environment: [
               "DATABASE_URL=${USERDB_DATABASE_URL}",
-              "RAILS_ENV=production",
+              "RAILS_ENV=test",
               "RAILS_MIN_THREADS=5",
               "RAILS_MAX_THREADS=5"
             ],

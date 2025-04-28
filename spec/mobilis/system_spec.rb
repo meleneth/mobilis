@@ -5,7 +5,7 @@ RSpec.describe Mobilis::System do
     pg = build(:postgres_node, name: "pg_main")
     rails = build(:rails_node, name: "myapp", primary_database: pg)
 
-    system = described_class.new
+    system = described_class.new("generate")
     system << pg
     system << rails
 

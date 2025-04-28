@@ -2,11 +2,12 @@
 
 FactoryBot.define do
   factory :system, class: "Mobilis::System" do
-    initialize_with { new }
+    initialize_with { new(meta_project_name) }
 
     # Empty by default — use traits to populate nodes
     transient do
       nodes { [] }
+      meta_project_name { "generate" }
     end
 
     after(:build) do |system, evaluator|

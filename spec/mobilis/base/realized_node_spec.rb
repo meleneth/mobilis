@@ -8,7 +8,7 @@ RSpec.describe Mobilis::Base::RealizedNode do
 
   describe "#env_var_realized" do
     it "returns DockerEnvVar for name" do
-      realized_node.env_vars << Mobilis::DockerEnvVar.new("SOME_VAR", "SOME_NODE_SOME_VAR", "some_value")
+      realized_node.add_docker_env_var("SOME_VAR", "SOME_NODE_SOME_VAR", "some_value")
       expect(realized_node.env_var_resolved("SOME_VAR").specific_name).to eq("SOME_NODE_SOME_VAR")
     end
   end

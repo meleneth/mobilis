@@ -9,6 +9,11 @@ require "mobilis/ref_slot"
 require "mobilis/pretty_print/pretty_printable"
 require "mobilis/container_versions"
 
+require "mobilis/mixins/realized_node/has_env_vars"
+require "mobilis/mixins/realized_node/has_overrides"
+require "mobilis/mixins/realized_node/has_ports"
+require "mobilis/mixins/realized_node/has_volumes"
+
 require "mobilis/base/node"
 require "mobilis/base/plugin"
 require "mobilis/base/realized_node"

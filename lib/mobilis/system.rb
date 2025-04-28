@@ -6,9 +6,11 @@ module Mobilis
   class System
     include Mobilis::PrettyPrint::PrettyPrintable
     attr_reader :nodes
+    attr_reader :meta_project_name
 
-    def initialize
+    def initialize(meta_project_name)
       @nodes = {}
+      @meta_project_name = meta_project_name
     end
 
     def <<(node)
@@ -36,6 +38,7 @@ module Mobilis
     def to_h
       {
         name: "mobilis",
+        meta_project_name: meta_project_name,
         nodes: @nodes.values.map(&:to_h)
       }
     end
@@ -49,7 +52,7 @@ module Mobilis
     end
 
     def self.from_h(hash)
-      sys = new
+      sys = new(hash[:meta_project_name])
       raw_nodes = hash[:nodes] || []
 
       raw_nodes.each do |node_data|
