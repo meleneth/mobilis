@@ -75,7 +75,40 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
   it "#has_healthcheck?" do
     expect(realized_pg.has_healthcheck?).to be_truthy
   end
+
   it "#dependant_services_require_restart?" do
     expect(realized_pg.dependant_services_require_restart?).to be_truthy
+  end
+
+  it "#compose" do
+    expected = {
+      services: {
+        "userdb" => {
+          image: "postgres:17.4-bookworm",
+          ports: [
+            "${USERDB_POSTGRES_PORT}:5432"
+          ],
+          environment: [
+            "POSTGRES_USER=${USERDB_POSTGRES_USER}",
+            "POSTGRES_PASSWORD=${USERDB_POSTGRES_PASSWORD}",
+            "POSTGRES_DB=${USERDB_POSTGRES_DB}"
+          ],
+          volumes: [
+            "${USERDB_POSTGRES_DATA}:/var/lib/postgresql/data"
+          ],
+          healthcheck: {
+            test: [
+              "CMD-SHELL",
+              "pg_isready -U ${USERDB_POSTGRES_USER} -d ${USERDB_POSTGRES_DB}"
+            ],
+            interval: "10s",
+            timeout: "5s",
+            retries: 5,
+            start_period: "5s"
+          }
+        }
+      }
+    }
+    expect(realized_pg.compose).to eq(expected)
   end
 end
