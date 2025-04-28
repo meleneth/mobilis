@@ -1,5 +1,6 @@
 {
-  "name": "rails-mysql",
+  "name": "mobilis",
+  "meta_project_name": "rails-mysql",
   "nodes": [
     {
       "id": "2b45ce2a-e026-4212-a623-c04f64e7dcfb",

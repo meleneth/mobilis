@@ -1,5 +1,6 @@
 {
   "name": "rails-postgres",
+  "meta_project_name": "rails-postgres",
   "nodes": [
     {
       "id": "574c9e69-51d4-42e4-965a-5b72358ebf0f",
