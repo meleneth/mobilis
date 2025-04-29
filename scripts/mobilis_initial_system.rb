@@ -1,8 +1,8 @@
-# frozen_string_literal: true
+#!/usr/bin/env ruby
 
 require "mobilis"
 
-system = Mobilis::System.new
+system = Mobilis::System.new("generate")
 
 rails = Mobilis::Node::Rails.new("user")
 user_db = Mobilis::Node::PostgreSQL.new("user-db")
