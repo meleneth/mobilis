@@ -39,5 +39,11 @@ FactoryBot.define do
         system_traits { [:with_rails_and_postgres] }
       end
     end
+
+    trait :with_two_rails_and_postgres do
+      transient do
+        system_traits { [:with_two_rails_and_postgres] }
+      end
+    end
   end
 end

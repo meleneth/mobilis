@@ -6,8 +6,8 @@ module Mobilis
       include Mobilis::PrettyPrint::PrettyPrintable
       attr_reader :primary_database, :env_db_url
 
-      def initialize(env, node)
-        super(env, node)
+      def initialize(env, config_node)
+        super(env, config_node)
 
         @has_service_dir = true
         @has_data_volume = false
@@ -30,10 +30,6 @@ module Mobilis
 
       def service_writer
         Mobilis::ServiceWriter::Rails
-      end
-
-      def extra_depends_on
-        @extra_depends_on ||= []
       end
 
       def compose

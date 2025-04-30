@@ -41,4 +41,60 @@ RSpec.describe Mobilis::Manifest do
                                                                     } } })
     end
   end
+  describe "#depends_on_overrides_for" do
+    subject(:manifest) { build(:manifest, :with_two_rails_and_postgres) }
+    it "returns the correct value" do
+      realized_env = manifest.realized_env(:production)
+      expected = { services:
+        { "user" =>
+          {
+            depends_on: {
+              "userdb" => {
+                condition: "service_healthy",
+                restart: true
+              },
+              "userdb-cache" => {
+                condition: "service_healthy",
+                restart: true
+              },
+              "userdb-cable" => {
+                condition: "service_healthy",
+                restart: true
+              },
+              "userdb-queue" => {
+                condition: "service_healthy",
+                restart: true
+              }
+            }
+          },
+          "account" => {
+            depends_on: {
+              "accountdb" => {
+                condition: "service_healthy",
+                restart: true
+              },
+              "accountdb-cache" => {
+                condition: "service_healthy",
+                restart: true
+              },
+              "accountdb-cable" => {
+                condition: "service_healthy",
+                restart: true
+              },
+              "accountdb-queue" => {
+                condition: "service_healthy",
+                restart: true
+              },
+              "user" => {
+                condition: "service_started",
+                restart: false
+              }
+            }
+          } } }
+      expect(manifest.depends_on_overrides_for(realized_env)).to eq(expected)
+
+      #      expect(manifest.compose["services"]["user"]["depends_on"]).to include("userdb")
+      #      expect(manifest.compose["services"]["account"]["depends_on"]).to include("user", "accountdb")
+    end
+  end
 end

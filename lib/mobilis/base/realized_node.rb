@@ -15,6 +15,7 @@ module Mobilis
       extend Forwardable
 
       attr_reader :config_node, :has_data_volume, :has_service_dir
+      attr_accessor :extra_depends_on
 
       def_delegators :@config_node, :name
 
@@ -25,6 +26,7 @@ module Mobilis
         @config_node = config_node
         @has_data_volume = false
         @has_service_dir = false
+        @extra_depends_on = config_node.extra_depends_on.dup
       end
 
       def environment

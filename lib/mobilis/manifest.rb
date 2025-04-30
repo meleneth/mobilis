@@ -14,10 +14,23 @@ module Mobilis
       @realized_envs = environments.map do |env|
         Mobilis::RealizedEnv.new(system, env)
       end
+
+      resolve_extra_depends_on
+
       return if suppress_plugins
 
       setup_plugins
       run_plugin_hooks :hook_envs_realized
+    end
+
+    def resolve_extra_depends_on
+      @realized_envs.each do |realized_env|
+        realized_env.each_node do |realized_node|
+          realized_node.extra_depends_on = realized_node.config_node.extra_depends_on.map do |inner_node|
+            realized_env.realized_node_for_config_node(inner_node)
+          end
+        end
+      end
     end
 
     def realized_production_env

@@ -95,8 +95,6 @@ module Mobilis
         Mobilis::Realized::PostgreSQL.new(self, config_node) # <-- for now, hardcoded or stubbed
       when Mobilis::Node::Rails
         Mobilis::Realized::Rails.new(self, config_node)
-      else
-        nil
       end
     end
   end

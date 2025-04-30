@@ -7,12 +7,14 @@ module Mobilis
     class Node
       include Mobilis::RefSlot
 
-      attr_reader :id, :name
+      attr_reader :id, :name, :extra_depends_on
 
       def initialize(name, id: nil, **refs)
         @name = name.tr("_", "-")
 
         @id = id || SecureRandom.uuid
+
+        @extra_depends_on = []
 
         # Store raw ref ids (like primary_database_id)
         refs.each do |k, v|
@@ -24,7 +26,8 @@ module Mobilis
         h = {
           id: id,
           name: name,
-          type: self.class.name
+          type: self.class.name,
+          extra_depends_on: extra_depends_on.map(&:name)
         }
 
         each_ref_id do |ref, id|
