@@ -26,7 +26,7 @@ module Mobilis
 
       def data_volume_env_var
         @data_volume_env_var ||= BasicEnvVar.new(Mobilis::EnvVar.new("#{name}_postgres_data").raw,
-                                                 "./data/#{environment}/#{node.name}")
+                                                 "./data/#{environment}/#{config_node.name}")
       end
 
       def scheme

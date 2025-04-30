@@ -8,26 +8,26 @@ module Mobilis
       def_delegators :@manifest
 
       def hook_envs_realized
-        @manifest.each_node_of_type(Mobilis::Realized::Rails) do |realized_env, node|
-          next unless node.primary_database
+        @manifest.each_node_of_type(Mobilis::Realized::Rails) do |realized_env, realized_node|
+          next unless realized_node.primary_database
           next unless realized_env.is_production?
 
-          wireup_variant(realized_env, node, "cache")
-          wireup_variant(realized_env, node, "cable")
-          wireup_variant(realized_env, node, "queue")
+          wireup_variant(realized_env, realized_node, "cache")
+          wireup_variant(realized_env, realized_node, "cable")
+          wireup_variant(realized_env, realized_node, "queue")
         end
       end
 
-      def wireup_variant(realized_env, node, name)
-        db = node.primary_database
+      def wireup_variant(realized_env, realized_node, name)
+        db = realized_node.primary_database
         db_name = "#{db.name}-#{name}"
 
-        new_db_node = db.node.class.new(db_name)
-        new_db = db.class.new(node.environment, new_db_node)
+        new_db_node = db.config_node.class.new(db_name)
+        new_db = db.class.new(realized_node.environment, new_db_node)
         realized_env << new_db
         env_db_url = new_db.env_db_url.as("#{name}_DATABASE_URL")
-        node.env_vars << env_db_url
-        node.extra_depends_on << new_db
+        realized_node.env_vars << env_db_url
+        realized_node.extra_depends_on << new_db
       end
 
       def ppx_fields(dsl)

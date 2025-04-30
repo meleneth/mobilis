@@ -34,7 +34,7 @@ module Mobilis
 
     def node_for(system_node)
       @nodes.each do |possible|
-        return possible if possible.node == system_node
+        return possible if possible.config_node == system_node
       end
       nil
     end

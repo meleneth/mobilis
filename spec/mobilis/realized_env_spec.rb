@@ -42,7 +42,7 @@ RSpec.describe Mobilis::RealizedEnv do
     it "returns the corresponding realized node" do
       result = realized_env.find_node_by_name(node_name)
       expect(result).to be_a(Mobilis::Base::RealizedNode)
-      expect(result.node.name).to eq(node_name)
+      expect(result.config_node.name).to eq(node_name)
     end
 
     it "returns nil if no matching node exists" do
@@ -63,7 +63,7 @@ RSpec.describe Mobilis::RealizedEnv do
     it "returns the corresponding realized node for a given system node" do
       realized_node = realized_env.node_for(system_node)
       expect(realized_node).to be_a(Mobilis::Base::RealizedNode)
-      expect(realized_node.node).to eq(system_node)
+      expect(realized_node.config_node).to eq(system_node)
     end
 
     it "returns nil if there is no matching realized node" do

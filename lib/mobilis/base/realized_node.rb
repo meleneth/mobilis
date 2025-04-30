@@ -14,15 +14,15 @@ module Mobilis
 
       extend Forwardable
 
-      attr_reader :node, :has_data_volume, :has_service_dir
+      attr_reader :config_node, :has_data_volume, :has_service_dir
 
-      def_delegators :@node, :name
+      def_delegators :@config_node, :name
 
       # @param env [Mobilis::RealizedEnv]
       # @param node [Mobilis::Node]
-      def initialize(realized_env, node)
+      def initialize(realized_env, config_node)
         @realized_env = realized_env
-        @node = node
+        @config_node = config_node
         @has_data_volume = false
         @has_service_dir = false
       end
@@ -35,8 +35,7 @@ module Mobilis
         raise "class #{self.class} does not implement #compose"
       end
 
-      def after_all_nodes_realized
-      end
+      def after_all_nodes_realized; end
 
       def required_plugins
         []

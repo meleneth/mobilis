@@ -14,9 +14,9 @@ module Mobilis
       end
 
       def after_all_nodes_realized
-        return unless node.primary_database
+        return unless config_node.primary_database
 
-        @primary_database = @realized_env.node_for(node.primary_database)
+        @primary_database = @realized_env.node_for(config_node.primary_database)
         @env_db_url = @primary_database.env_db_url.as("DATABASE_URL")
         add_env_var @env_db_url if @env_db_url
         add_basic_env_var("RAILS_ENV", environment.to_s)
@@ -79,7 +79,7 @@ module Mobilis
         dsl.instance_value "has_data_volume", has_data_volume
         dsl.child_object "env_db_url", env_db_url
         dsl.child_object "primary_database", primary_database
-        dsl.child_object "node", node
+        dsl.child_object "config_node", config_node
         dsl.env_vars env_vars
       end
     end
