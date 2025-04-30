@@ -16,7 +16,7 @@ module Mobilis
       def after_all_nodes_realized
         return unless config_node.primary_database
 
-        @primary_database = @realized_env.node_for(config_node.primary_database)
+        @primary_database = @realized_env.realized_node_for_config_node(config_node.primary_database)
         @env_db_url = @primary_database.env_db_url.as("DATABASE_URL")
         add_env_var @env_db_url if @env_db_url
         add_basic_env_var("RAILS_ENV", environment.to_s)

@@ -9,7 +9,7 @@ module Mobilis
   class RealizedEnv
     extend Forwardable
     include Mobilis::PrettyPrint::PrettyPrintable
-    attr_reader :system, :environment, :nodes
+    attr_reader :system, :environment, :realized_nodes
 
     @@next_port_no = 11_000
     @@port_spacing = 10
@@ -19,7 +19,7 @@ module Mobilis
     def initialize(system, environment)
       @system = system
       @environment = environment
-      @nodes = []
+      @realized_nodes = []
 
       build_all_nodes!
     end
@@ -28,37 +28,37 @@ module Mobilis
       environment.to_s
     end
 
-    def <<(node)
-      nodes << node
+    def <<(realized_node)
+      realized_nodes << realized_node
     end
 
-    def node_for(system_node)
-      @nodes.each do |possible|
+    def realized_node_for_config_node(system_node)
+      realized_nodes.each do |possible|
         return possible if possible.config_node == system_node
       end
       nil
     end
 
-    def node_by_name(name)
-      @nodes.each do |possible|
+    def realized_node_by_name(name)
+      realized_nodes.each do |possible|
         return possible if possible.name == name
       end
       raise Mobilis::NoSuchNode.new("Could not find node for name #{name} on #{environment}")
     end
 
-    def find_node_by_name(name)
-      nodes.find { |no| no.name == name }
+    def find_realized_node_by_name(name)
+      realized_nodes.find { |no| no.name == name }
     end
 
     def ppx_fields(dsl)
       dsl.instance_value "environment", environment
-      nodes.sort_by(&:name).each do |node|
+      realized_nodes.sort_by(&:name).each do |node|
         dsl.child_object node.name, node
       end
     end
 
     def required_plugins
-      nodes
+      realized_nodes
         .flat_map(&:required_plugins)
         .uniq
     end
@@ -66,7 +66,7 @@ module Mobilis
     def each_node_of_type(klass)
       return enum_for(:each_node_of_type) unless block_given?
 
-      nodes.each do |node|
+      realized_nodes.each do |node|
         yield self, node if node.instance_of? klass
       end
     end
@@ -74,27 +74,27 @@ module Mobilis
     def each_node(&block)
       return enum_for(:each_node) unless block_given?
 
-      nodes.each(&block)
+      realized_nodes.each(&block)
     end
 
     private
 
     def build_all_nodes!
-      system.each_node do |node|
-        realized = build_realized_node(node)
-        nodes << realized if realized
+      system.each_config_node do |config_node|
+        realized = build_realized_node(config_node)
+        realized_nodes << realized if realized
       end
-      nodes.each do |node|
-        node.after_all_nodes_realized
+      realized_nodes.each do |realized_node|
+        realized_node.after_all_nodes_realized
       end
     end
 
-    def build_realized_node(node)
-      case node
+    def build_realized_node(config_node)
+      case config_node
       when Mobilis::Node::PostgreSQL
-        Mobilis::Realized::PostgreSQL.new(self, node) # <-- for now, hardcoded or stubbed
+        Mobilis::Realized::PostgreSQL.new(self, config_node) # <-- for now, hardcoded or stubbed
       when Mobilis::Node::Rails
-        Mobilis::Realized::Rails.new(self, node)
+        Mobilis::Realized::Rails.new(self, config_node)
       else
         nil
       end

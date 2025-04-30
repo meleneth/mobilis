@@ -17,22 +17,24 @@ RSpec.describe Mobilis::RealizedEnv do
     end
 
     it "generates RealizedNode instances for each node in system" do
-      expect(realized_env.nodes.count).to eq(system.nodes.count)
-      expect(realized_env.nodes).to all(be_a(Mobilis::Base::RealizedNode))
+      expect(realized_env.realized_nodes.count).to eq(system.config_nodes.count)
+      expect(realized_env.realized_nodes).to all(be_a(Mobilis::Base::RealizedNode))
     end
 
     it "maintains relationships between realized nodes" do
-      rails_node = realized_env.nodes.find { |n| n.is_a?(Mobilis::Realized::Rails) }
-      postgres_node = realized_env.nodes.find { |n| n.is_a?(Mobilis::Realized::PostgreSQL) }
+      rails_node = realized_env.realized_nodes.find { |n| n.is_a?(Mobilis::Realized::Rails) }
+      postgres_node = realized_env.realized_nodes.find { |n| n.is_a?(Mobilis::Realized::PostgreSQL) }
 
       expect(rails_node.primary_database).to eq(postgres_node)
     end
   end
 
-  describe "#nodes" do
+  describe "#realized_nodes" do
     it "returns an array of realized node instances" do
-      expect(realized_env.nodes).to be_an(Array)
-      expect(realized_env.nodes).to all(satisfy { |node| node.is_a?(Mobilis::Base::RealizedNode) })
+      expect(realized_env.realized_nodes).to be_an(Array)
+      expect(realized_env.realized_nodes).to all(satisfy { |realized_node|
+        realized_node.is_a?(Mobilis::Base::RealizedNode)
+      })
     end
   end
 
@@ -40,35 +42,35 @@ RSpec.describe Mobilis::RealizedEnv do
     let(:node_name) { "test-db" }
 
     it "returns the corresponding realized node" do
-      result = realized_env.find_node_by_name(node_name)
+      result = realized_env.find_realized_node_by_name(node_name)
       expect(result).to be_a(Mobilis::Base::RealizedNode)
       expect(result.config_node.name).to eq(node_name)
     end
 
     it "returns nil if no matching node exists" do
-      expect(realized_env.find_node_by_name("nonexistent")).to be_nil
+      expect(realized_env.find_realized_node_by_name("nonexistent")).to be_nil
     end
   end
 
   describe "environment-scoped values" do
     it "uses ExecutionEnvironment#to_s for environment-specific names" do
-      postgres_node = realized_env.nodes.find { |n| n.is_a?(Mobilis::Realized::PostgreSQL) }
+      postgres_node = realized_env.realized_nodes.find { |n| n.is_a?(Mobilis::Realized::PostgreSQL) }
       expect(postgres_node.env_vars.any? { |var| var.value.include?("test") }).to be(true)
     end
   end
 
   describe "#node_for" do
-    let(:system_node) { system.each_node.first }
+    let(:system_node) { system.each_config_node.first }
 
     it "returns the corresponding realized node for a given system node" do
-      realized_node = realized_env.node_for(system_node)
+      realized_node = realized_env.realized_node_for_config_node(system_node)
       expect(realized_node).to be_a(Mobilis::Base::RealizedNode)
       expect(realized_node.config_node).to eq(system_node)
     end
 
     it "returns nil if there is no matching realized node" do
       nonexistent_system_node = double("nonexistent_node")
-      expect(realized_env.node_for(nonexistent_system_node)).to be_nil
+      expect(realized_env.realized_node_for_config_node(nonexistent_system_node)).to be_nil
     end
   end
 end

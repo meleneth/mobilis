@@ -112,7 +112,7 @@ module Mobilis
 
         test_deps =
           begin
-            test_node = test_env.node_by_name(node.name)
+            test_node = test_env.realized_node_by_name(node.name)
             test_node.compose[:services][test_node.name][:depends_on]
           rescue Mobilis::NoSuchNode
             nil

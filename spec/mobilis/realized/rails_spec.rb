@@ -4,7 +4,7 @@ require "spec_helper"
 
 RSpec.describe Mobilis::Realized::Rails do
   let(:realized_env) { build(:realized_env, :with_rails_and_postgres) }
-  let(:realized_rails_node) { realized_env.find_node_by_name("user") }
+  let(:realized_rails_node) { realized_env.find_realized_node_by_name("user") }
 
   it "sets service directory and data volume flags" do
     expect(realized_rails_node.has_service_dir).to be true

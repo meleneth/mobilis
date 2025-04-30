@@ -5,33 +5,33 @@ require "json"
 module Mobilis
   class System
     include Mobilis::PrettyPrint::PrettyPrintable
-    attr_reader :nodes
+    attr_reader :config_nodes
     attr_reader :meta_project_name
 
     def initialize(meta_project_name)
-      @nodes = {}
+      @config_nodes = {}
       @meta_project_name = meta_project_name
     end
 
-    def <<(node)
-      raise ArgumentError, "Node must have an id" unless node.respond_to?(:id) && node.id
+    def <<(config_node)
+      raise ArgumentError, "Node must have an id" unless config_node.respond_to?(:id) && config_node.id
 
-      @nodes[node.id] = node
+      config_nodes[config_node.id] = config_node
     end
 
     def [](id)
-      @nodes[id]
+      config_nodes[id]
     end
 
-    def each_node(&block)
-      return enum_for(:each_node) unless block_given?
+    def each_config_node(&block)
+      return enum_for(:each_config_node) unless block_given?
 
-      @nodes.values.each(&block)
+      config_nodes.values.each(&block)
     end
 
     def resolve!
-      @nodes.each_value do |node|
-        node.resolve_references_using(@nodes) if node.respond_to?(:resolve_references_using)
+      config_nodes.each_value do |node|
+        node.resolve_references_using(config_nodes) if node.respond_to?(:resolve_references_using)
       end
     end
 
@@ -39,7 +39,7 @@ module Mobilis
       {
         name: "mobilis",
         meta_project_name: meta_project_name,
-        nodes: @nodes.values.map(&:to_h)
+        nodes: config_nodes.values.map(&:to_h)
       }
     end
 
@@ -48,7 +48,7 @@ module Mobilis
     end
 
     def node_count
-      @nodes.count
+      config_nodes.count
     end
 
     def self.from_h(hash)
@@ -60,8 +60,8 @@ module Mobilis
         node_data.delete(:type)
         data = node_data.transform_keys(&:to_sym)
         name = data.delete(:name)
-        node = klass.new(name, **data)
-        sys << node
+        config_node = klass.new(name, **data)
+        sys << config_node
       end
 
       sys.resolve!
@@ -73,8 +73,8 @@ module Mobilis
     end
 
     def ppx_fields(dsl)
-      nodes.sort_by(&:name).each do |node|
-        dsl.child_object node.name, node
+      config_nodes.sort_by(&:name).each do |config_node|
+        dsl.child_object config_node.name, node
       end
     end
   end

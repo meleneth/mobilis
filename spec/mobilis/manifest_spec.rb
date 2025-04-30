@@ -10,7 +10,7 @@ RSpec.describe Mobilis::Manifest do
     end
     it "... which has a rails realized node" do
       realized_env = manifest.realized_env(:test)
-      rails_realized_node = realized_env.node_by_name("user")
+      rails_realized_node = realized_env.realized_node_by_name("user")
     end
   end
   describe "#depends_on_overrides_for" do
