@@ -154,8 +154,8 @@ module Mobilis
       directory_service.chdir_generate
       @realized_envs.each do |realized_env|
         lines = []
-        realized_env.nodes.each do |node|
-          node.per_env_vars do |env_var|
+        realized_env.realized_nodes.each do |realized_node|
+          realized_node.per_env_vars do |env_var|
             lines << env_var.env_repr
           end
         end
@@ -170,7 +170,7 @@ module Mobilis
         details = {}
         details["name"] = "generate-#{realized_env}"
         includes = []
-        realized_env.nodes.each do |node|
+        realized_env.realized_nodes.each do |node|
           node_details = {}
           node_details["path"] = "./compose/#{node.name}.yml"
           node_details["project_directory"] = "./"
@@ -186,32 +186,35 @@ module Mobilis
     def emit_all_services
       service_dirs_written = {}
       @realized_envs.each do |realized_env|
-        realized_env.nodes.each do |node|
-          name = node.name
+        realized_env.realized_nodes.each do |realized_node|
+          name = realized_node.name
 
-          if node.has_service_dir
+          if realized_node.has_service_dir
             next if service_dirs_written[name]
 
-            directory_service.mkdir_project(node)
-            directory_service.chdir_project(node)
-            writer = node.service_writer.new(self, realized_env, node)
+            directory_service.mkdir_project(realized_node)
+            directory_service.chdir_project(realized_node)
+            writer = realized_node.service_writer.new(self, realized_env, realized_node)
             writer.write
             directory_service.chdir_generate
             service_dirs_written[name] = true
           end
           directory_service.chdir_generate
-          directory_service.mkdir_environment_datadir_forproject(realized_env.environment, node) if node.has_data_volume
+          if realized_node.has_data_volume
+            directory_service.mkdir_environment_datadir_forproject(realized_env.environment,
+                                                                   realized_node)
+          end
 
-          File.write("compose/#{node.name}.yml", node.render_compose)
+          File.write("compose/#{realized_node.name}.yml", realized_node.compose.clean_shrunk.to_yaml)
         end
       end
     end
 
-    def write_overrides_for(env)
-      overrides = depends_on_overrides_for(realized_env(env))
+    def write_overrides_for(raw_env)
+      overrides = overrides_for(realized_env(raw_env))
       return if overrides.nil?
 
-      File.write("#{env}-overrides.yml", node.render_compose_overrides)
+      File.write("#{raw_env}-overrides.yml", overrides.to_yaml)
     end
   end
 end

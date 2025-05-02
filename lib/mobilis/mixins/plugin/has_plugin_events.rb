@@ -13,6 +13,9 @@ module Mobilis
 
         def generate_compose_overrides
         end
+
+        def hook_before_services_written
+        end
       end
     end
   end
