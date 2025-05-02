@@ -2,17 +2,19 @@
 
 module Mobilis
   module Base
-    class Plugin
+    class RealizedNodePlugin
       include Mobilis::PrettyPrint::PrettyPrintable
       include Mobilis::Mixins::Plugin::HasPluginEvents
       extend Forwardable
 
       def_delegators :@manifest, :directory_service, :username
+      def_delegators :realized_node, :realized_env
 
-      attr_reader :manifest
+      attr_reader :manifest, :realized_node
 
-      def initialize(manifest)
+      def initialize(manifest, realized_node)
         @manifest = manifest
+        @realized_node = realized_node
       end
     end
   end

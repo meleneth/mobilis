@@ -29,15 +29,15 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
   end
 
   it "constructs environment variables using EnvVar - specific_name" do
-    keys = realized_pg.compose_env_vars.map(&:specific_name)
-    expect(keys).to eq(%w[
-                         USERDB_POSTGRES_USER
-                         USERDB_POSTGRES_PASSWORD
-                         USERDB_POSTGRES_DB
+    keys = realized_pg.compose_env_vars.map(&:docker_repr)
+    expect(keys).to eq([
+                         "POSTGRES_USER=${USERDB_POSTGRES_USER}",
+                         "POSTGRES_PASSWORD=${USERDB_POSTGRES_PASSWORD}",
+                         "POSTGRES_DB=${USERDB_POSTGRES_DB}"
                        ])
   end
   it "constructs per-environment variables including data dir" do
-    keys = realized_pg.all_env_vars.map(&:specific_name)
+    keys = realized_pg.all_env_vars.to_a.map(&:specific_name)
     expect(keys).to eq(%w[
                          USERDB_POSTGRES_USER
                          USERDB_POSTGRES_PASSWORD
@@ -46,11 +46,11 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
                        ])
   end
   it "constructs environment variables using EnvVar - realized_name" do
-    keys = realized_pg.compose_env_vars.map(&:resolved_name)
-    expect(keys).to eq(%w[
-                         POSTGRES_USER
-                         POSTGRES_PASSWORD
-                         POSTGRES_DB
+    keys = realized_pg.compose_env_vars.to_a.map(&:docker_repr)
+    expect(keys).to eq([
+                         "POSTGRES_USER=${USERDB_POSTGRES_USER}",
+                         "POSTGRES_PASSWORD=${USERDB_POSTGRES_PASSWORD}",
+                         "POSTGRES_DB=${USERDB_POSTGRES_DB}"
                        ])
   end
 
@@ -82,33 +82,29 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
 
   it "#compose" do
     expected = {
-      services: {
-        "userdb" => {
-          image: "postgres:17.4-bookworm",
-          ports: [
-            "${USERDB_POSTGRES_PORT}:5432"
-          ],
-          environment: [
-            "POSTGRES_USER=${USERDB_POSTGRES_USER}",
-            "POSTGRES_PASSWORD=${USERDB_POSTGRES_PASSWORD}",
-            "POSTGRES_DB=${USERDB_POSTGRES_DB}"
-          ],
-          volumes: [
-            "${USERDB_POSTGRES_DATA}:/var/lib/postgresql/data"
-          ],
-          healthcheck: {
-            test: [
-              "CMD-SHELL",
-              "pg_isready -U ${USERDB_POSTGRES_USER} -d ${USERDB_POSTGRES_DB}"
-            ],
-            interval: "10s",
-            timeout: "5s",
-            retries: 5,
-            start_period: "5s"
-          }
-        }
+      image: "postgres:17.4-bookworm",
+      ports: [
+        "${USERDB_POSTGRES_PORT}:5432"
+      ],
+      environment: [
+        "POSTGRES_USER=${USERDB_POSTGRES_USER}",
+        "POSTGRES_PASSWORD=${USERDB_POSTGRES_PASSWORD}",
+        "POSTGRES_DB=${USERDB_POSTGRES_DB}"
+      ],
+      volumes: [
+        "${USERDB_POSTGRES_DATA}:/var/lib/postgresql/data"
+      ],
+      healthcheck: {
+        test: [
+          "CMD-SHELL",
+          "pg_isready -U ${USERDB_POSTGRES_USER} -d ${USERDB_POSTGRES_DB}"
+        ],
+        interval: "10s",
+        timeout: "5s",
+        retries: 5,
+        start_period: "5s"
       }
     }
-    expect(realized_pg.compose).to eq(expected)
+    expect(realized_pg.compose.clean_shrunk).to eq(expected)
   end
 end

@@ -11,13 +11,16 @@ module Mobilis
       include Mobilis::Mixins::RealizedNode::HasVolumes
       include Mobilis::Mixins::RealizedNode::HasPorts
       include Mobilis::Mixins::RealizedNode::HasOverrides
+      include Mobilis::Mixins::RealizedNode::HasCompose
+      include Mobilis::Mixins::RealizedNode::HasHealthCheck
 
       extend Forwardable
 
-      attr_reader :config_node, :has_data_volume, :has_service_dir
+      attr_reader :config_node, :has_data_volume, :has_service_dir, :realized_env
       attr_accessor :extra_depends_on
 
       def_delegators :@config_node, :name
+      def_delegators :@realized_env, :meta_project_name
 
       # @param env [Mobilis::RealizedEnv]
       # @param node [Mobilis::Node]
@@ -30,14 +33,11 @@ module Mobilis
       end
 
       def environment
-        @realized_env.to_s
+        realized_env.to_s
       end
 
-      def compose
-        raise "class #{self.class} does not implement #compose"
+      def after_all_nodes_realized
       end
-
-      def after_all_nodes_realized; end
 
       def required_plugins
         []
@@ -51,13 +51,11 @@ module Mobilis
         ENV.fetch("USER", ENV.fetch("USERNAME", ""))
       end
 
-      def has_healthcheck?
-        healthcheck = compose[:services][name][:healthcheck]
-        healthcheck.is_a?(Hash) && healthcheck.key?(:test)
-      end
-
       def dependant_services_require_restart?
         false
+      end
+
+      def populate_compose_depends_on
       end
     end
   end

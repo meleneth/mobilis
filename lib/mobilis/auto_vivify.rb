@@ -2,160 +2,170 @@
 
 # Mobilis::AutoVivify
 # ---
-# A smart Hash that auto-vivifies missing keys.
+# A smart Hash that auto-vivifies missing keys into structured data.
+# - `[]` and `[]=` auto-initialize nested keys as AutoNode
+# - `<<` initializes as an Array and appends
+# - `[]=` initializes as a Hash and assigns
+# - Clean to_h / to_a support
+# - Raises TypeError if hash/array usage is mixed
 #
-# Behavior:
-# - If you `<<` to a missing key, it becomes an Array automatically.
-# - If you `[]`-assign to a missing key, it becomes a Hash automatically.
-# - Raises a TypeError if you try to mix incompatible modes (e.g., treat an Array as a Hash).
-#
-# This allows deeply dynamic tree building while preserving clean serialization.
-# Used in Mobilis to support clean, overrideable, expandable config trees (e.g., Compose fragments).
-#
-# Note:
-# - Auto-vivification is active at runtime.
-# - Emitted JSON/YAML is pure Hashes and Arrays (no serialization artifacts).
-#
+# Used for override trees and config fragments.
+
 module Mobilis
   class AutoVivify < Hash
     def initialize
-      super do |hash, key|
-        hash[key] = AutoValue.new(key)
-      end
-
-      def to_h
-        result = {}
-        each do |k, v|
-          result[k] =
-            case v
-            when AutoValue
-              v.unwrap
-            else
-              v
-            end
-        end
-        result
-      end
+      super { |h, k| h[k] = AutoNode.new(k) }
     end
 
-    class AutoValue
-      def initialize(key)
-        @key = key
-        @backing = nil
-      end
+    def clean_shrunk
+      previous = nil
+      current = to_serial
 
-      def <<(value)
-        ensure_array!
-        @backing << value
+      until JSON.dump(current) == previous
+        previous = JSON.dump(current)
+        current = deep_compact(current)
       end
+      JSON.parse(JSON.dump(current), symbolize_names: true)
+    end
 
-      def unwrap
-        case @backing
-        when Hash
-          @backing.transform_values do |v|
-            v.respond_to?(:unwrap) ? v.unwrap : v
-          end
-        when Array
-          @backing.map do |v|
-            v.respond_to?(:unwrap) ? v.unwrap : v
-          end
-        else
-          @backing
+    def deep_compact(data)
+      case data
+      when Hash
+        data.each_with_object({}) do |(k, v), h|
+          compacted = deep_compact(v)
+          h[k] = compacted unless compacted.nil? || compacted == {} || compacted == []
         end
-      end
-
-      def []=(k, v)
-        ensure_hash!
-        @backing[k] = v
-      end
-
-      def [](k)
-        ensure_hash!
-        @backing[k]
-      end
-
-      def to_h
-        case @backing
-        when Hash
-          @backing.transform_values do |v|
-            v.respond_to?(:to_h) ? v.to_h : v
-          end
-        when Array
-          {}
-        else
-          {}
-        end
-      end
-
-      def to_a
-        case @backing
-        when Array
-          @backing.map { |v| v.respond_to?(:to_h) ? v.to_h : v }
-        when Hash
-          []
-        else
-          []
-        end
-      end
-
-      def to_json(*args)
-        case @backing
-        when Hash
-          to_h.to_json(*args)
-        when Array
-          to_a.to_json(*args)
-        else
-          {}.to_json(*args)
-        end
-      end
-
-      def as_json(*args)
-        case @backing
-        when Hash
-          to_h.as_json(*args)
-        when Array
-          to_a.as_json(*args)
-        else
-          {}
-        end
-      end
-
-      def inspect
-        case @backing
-        when Hash, Array
-          "#<AutoValue #{@backing.inspect}>"
-        else
-          "#<AutoValue nil>"
-        end
-      end
-
-      private
-
-      def ensure_array!
-        return if @backing.is_a?(Array)
-        raise TypeError, "Key #{@key.inspect} is already used as a Hash" if @backing
-
-        @backing = []
-      end
-
-      def ensure_hash!
-        return if @backing.is_a?(Hash)
-        raise TypeError, "Key #{@key.inspect} is already used as an Array" if @backing
-
-        @backing = {}
+      when Array
+        compacted = data.map { |v| deep_compact(v) }.reject { |v| v.nil? || v == {} || v == [] }
+        compacted unless compacted.empty?
+      else
+        data
       end
     end
 
     def to_h
-      result = {}
-      each do |k, v|
-        result[k] = v.respond_to?(:to_h) ? v.to_h : v
+      each_with_object({}) do |(k, v), result|
+        result[k] = v.respond_to?(:to_serial) ? v.to_serial : v
       end
-      result
+    end
+
+    def to_serial
+      to_h
+    end
+
+    def symbolize_keys_deep
+      JSON.parse(to_serial.to_json, symbolize_names: true)
+    end
+
+    def materialized?(*keys)
+      node = self
+      keys.each do |key|
+        return false unless node.respond_to?(:key?) && node.key?(key)
+
+        node = node[key]
+      end
+      true
+    end
+  end
+
+  class AutoNode
+    def initialize(key)
+      @key = key
+      @backing = nil
+    end
+
+    def <<(value)
+      ensure_array!
+      @backing << value
+    end
+
+    def merge!(other)
+      ensure_hash!
+      other.each do |k, v|
+        self[k] = v
+      end
+    end
+
+    def []=(k, v)
+      ensure_hash!
+      @backing[k] = wrap(v)
+    end
+
+    def [](k)
+      ensure_hash!
+      @backing[k] ||= AutoNode.new(k)
+    end
+
+    def to_h
+      raise TypeError, "Cannot call to_h on array-backed AutoNode (#{@key.inspect})" if @backing.is_a?(Array)
+
+      serialize_hash
+    end
+
+    def to_a
+      raise TypeError, "Cannot call to_a on hash-backed AutoNode (#{@key.inspect})" if @backing.is_a?(Hash)
+
+      serialize_array
+    end
+
+    def to_serial
+      case @backing
+      when Hash then serialize_hash
+      when Array then serialize_array
+      else nil
+      end
     end
 
     def inspect
-      "#<Mobilis::AutoVivify #{super}>"
+      backing = @backing.nil? ? "nil" : @backing.inspect
+      "#<AutoNode #{@key.inspect} => #{backing}>"
+    end
+
+    def as_json(*)
+      to_h
+    end
+
+    def to_json(*args)
+      to_h.to_json(*args)
+    end
+
+    private
+
+    def ensure_array!
+      raise_type_conflict(:Hash) if @backing && !@backing.is_a?(Array)
+      @backing ||= []
+    end
+
+    def ensure_hash!
+      raise_type_conflict(:Array) if @backing && !@backing.is_a?(Hash)
+      @backing ||= {}
+    end
+
+    def raise_type_conflict(existing)
+      raise TypeError, "AutoNode #{@key.inspect} already used as #{existing}"
+    end
+
+    def wrap(value)
+      case value
+      when Hash
+        value.transform_values { |v| wrap(v) }
+      when Array
+        value.map { |v| wrap(v) }
+      else
+        value
+      end
+    end
+
+    def serialize_hash
+      return {} unless @backing.is_a?(Hash)
+
+      @backing.transform_values { |v| v.respond_to?(:to_serial) ? v.to_serial : v }
+    end
+
+    def serialize_array
+      return [] unless @backing.is_a?(Array)
+
+      @backing.map { |v| v.respond_to?(:to_serial) ? v.to_serial : v }
     end
   end
 end

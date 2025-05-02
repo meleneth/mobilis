@@ -13,85 +13,108 @@ RSpec.describe Mobilis::Manifest do
       rails_realized_node = realized_env.realized_node_by_name("user")
     end
   end
-  describe "#depends_on_overrides_for" do
+  describe "#overrides_for" do
     subject(:manifest) { build(:manifest, :with_rails_and_postgres) }
+    let(:production_realized_env) { manifest.realized_env(:production) }
+    let(:production_rails_realized_node) { production_realized_env.realized_node_by_name("user") }
+    let(:plugin) { Mobilis::Plugin::RailsDBFanoutRealizedNode.new(manifest, production_rails_realized_node) }
+
     it "returns the correct value" do
       realized_env = manifest.realized_env(:production)
-      expect(manifest.depends_on_overrides_for(realized_env)).to eq({ services: { "user" => {
+      expected = {
+        services: {
+          user: {
+            depends_on: {
+              userdb: { condition: "service_healthy", restart: true },
+              "userdb-cache": { condition:  "service_healthy", restart: true },
+              "userdb-cable": { condition:  "service_healthy", restart: true },
+              "userdb-queue": { condition:  "service_healthy", restart: true }
+            },
+            environment: [
+              "DATABASE_URL=${USERDB_DATABASE_URL}",
+              "RAILS_ENV=production",
+              "RAILS_MIN_THREADS=5",
+              "RAILS_MAX_THREADS=5",
+              "CACHE_DATABASE_URL=${USERDB_CACHE_DATABASE_URL}",
+              "CABLE_DATABASE_URL=${USERDB_CABLE_DATABASE_URL}",
+              "QUEUE_DATABASE_URL=${USERDB_QUEUE_DATABASE_URL}"
+            ]
+          }
+        }
+      }
 
-                                                                      depends_on: {
-                                                                        "userdb" => {
-                                                                          condition: "service_healthy",
-                                                                          restart: true
-                                                                        },
-                                                                        "userdb-cache" => {
-                                                                          condition: "service_healthy",
-                                                                          restart: true
-                                                                        },
-                                                                        "userdb-cable" => {
-                                                                          condition: "service_healthy",
-                                                                          restart: true
-                                                                        },
-                                                                        "userdb-queue" => {
-                                                                          condition: "service_healthy",
-                                                                          restart: true
-                                                                        }
-                                                                      }
-
-                                                                    } } })
+      expect(manifest.overrides_for(realized_env)).to eq(expected)
     end
   end
-  describe "#depends_on_overrides_for" do
+  describe "#overrides_for" do
     subject(:manifest) { build(:manifest, :with_two_rails_and_postgres) }
     it "returns the correct value" do
       realized_env = manifest.realized_env(:production)
       expected = { services:
-        { "user" =>
+        { user:
           {
+            environment: [
+              "DATABASE_URL=${USERDB_DATABASE_URL}",
+              "RAILS_ENV=production",
+              "RAILS_MIN_THREADS=5",
+              "RAILS_MAX_THREADS=5",
+              "CACHE_DATABASE_URL=${USERDB_CACHE_DATABASE_URL}",
+              "CABLE_DATABASE_URL=${USERDB_CABLE_DATABASE_URL}",
+              "QUEUE_DATABASE_URL=${USERDB_QUEUE_DATABASE_URL}"
+            ],
             depends_on: {
-              "userdb" => {
+              userdb: {
                 condition: "service_healthy",
                 restart: true
               },
-              "userdb-cache" => {
+              "userdb-cache": {
                 condition: "service_healthy",
                 restart: true
               },
-              "userdb-cable" => {
+              "userdb-cable": {
                 condition: "service_healthy",
                 restart: true
               },
-              "userdb-queue" => {
+              "userdb-queue": {
                 condition: "service_healthy",
                 restart: true
               }
             }
           },
-          "account" => {
+          account: {
+            environment: [
+              "DATABASE_URL=${ACCOUNTDB_DATABASE_URL}",
+              "RAILS_ENV=production",
+              "RAILS_MIN_THREADS=5",
+              "RAILS_MAX_THREADS=5",
+              "CACHE_DATABASE_URL=${ACCOUNTDB_CACHE_DATABASE_URL}",
+              "CABLE_DATABASE_URL=${ACCOUNTDB_CABLE_DATABASE_URL}",
+              "QUEUE_DATABASE_URL=${ACCOUNTDB_QUEUE_DATABASE_URL}"
+            ],
             depends_on: {
-              "accountdb" => {
+              accountdb: {
                 condition: "service_healthy",
                 restart: true
               },
-              "accountdb-cache" => {
+              "accountdb-cache": {
                 condition: "service_healthy",
                 restart: true
               },
-              "accountdb-cable" => {
+              "accountdb-cable": {
                 condition: "service_healthy",
                 restart: true
               },
-              "accountdb-queue" => {
+              "accountdb-queue": {
                 condition: "service_healthy",
                 restart: true
               },
-              "user" => {
+              user: {
                 condition: "service_started",
                 restart: false
               }
             }
           } } }
-      expect(manifest.depends_on_overrides_for(realized_env)).to eq(expected)
+      expect(manifest.overrides_for(realized_env)).to eq(expected)
 
       #      expect(manifest.compose["services"]["user"]["depends_on"]).to include("userdb")
       #      expect(manifest.compose["services"]["account"]["depends_on"]).to include("user", "accountdb")

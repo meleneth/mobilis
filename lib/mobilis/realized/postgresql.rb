@@ -7,8 +7,8 @@ module Mobilis
       include Mobilis::PrettyPrint::PrettyPrintable
       attr_reader :env_db_url
 
-      def initialize(env, node)
-        super
+      def initialize(realized_env, config_node)
+        super(realized_env, config_node, Mobilis::ContainerVersions::POSTGRES)
         @env_db_url = DockerEnvVar.new("",
                                        Mobilis::EnvVar.new(name).child("database_url").raw,
                                        url)
@@ -22,6 +22,10 @@ module Mobilis
         per_env_vars << data_volume_env_var
         register_external_port(internal_port_no, "#{name}_POSTGRES_PORT",
                                "#{name} database port")
+
+        set_compose_image(Mobilis::ContainerVersions::POSTGRES)
+        set_healthcheck_command("pg_isready -U ${#{@postgres_user_env_var.specific_name}} -d ${#{@postgres_db_env_var.specific_name}}")
+        add_volume("${#{data_volume_env_var.specific_name}}", "/var/lib/postgresql/data")
       end
 
       def data_volume_env_var
@@ -37,28 +41,6 @@ module Mobilis
         INTERNAL_PORT_NO
       end
 
-      def compose
-        @compose ||= {
-          services: {
-            name => {
-              image: Mobilis::ContainerVersions::POSTGRES,
-              #              container_name: name,
-              ports: port_maps.map(&:to_compose),
-              environment: env_vars_to_resolve.map(&:to_compose),
-              volumes: volume_paths,
-              healthcheck: {
-                test: ["CMD-SHELL",
-                       "pg_isready -U ${#{@postgres_user_env_var.specific_name}} -d ${#{@postgres_db_env_var.specific_name}}"],
-                interval: "10s",
-                timeout: "5s",
-                retries: 5,
-                start_period: "5s"
-              }
-            }
-          }
-        }.compact
-      end
-
       def volume_paths
         ["${#{data_volume_env_var.specific_name}}:/var/lib/postgresql/data"]
       end
@@ -72,7 +54,7 @@ module Mobilis
         port_maps.each do |port_map|
           dsl.child_object "port_map", port_map
         end
-        dsl.child_object "node", node
+        dsl.child_object "config_node", config_node
         dsl.env_vars env_vars
       end
     end

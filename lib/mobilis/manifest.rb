@@ -6,7 +6,7 @@ module Mobilis
   # dance of file creation.
   class Manifest
     include Mobilis::PrettyPrint::PrettyPrintable
-    attr_reader :system, :realized_envs, :directory_service, :git_repo
+    attr_reader :system, :realized_envs, :directory_service, :git_repo, :plugins
 
     def initialize(system, suppress_plugins: false)
       @system = system
@@ -20,7 +20,12 @@ module Mobilis
       return if suppress_plugins
 
       setup_plugins
-      run_plugin_hooks :hook_envs_realized
+      run_plugin_hooks :generate_per_node_plugins do |plugin|
+        @plugins << plugin
+      end
+      run_plugin_hooks :create_additional_services
+      run_node_hooks :populate_compose_depends_on
+      run_plugin_hooks :generate_compose_overrides
     end
 
     def resolve_extra_depends_on
@@ -56,6 +61,7 @@ module Mobilis
       emit_all_services
       emit_compose_wrappers
       emit_env_files
+      write_overrides_for(:test)
       write_overrides_for(:development)
       write_overrides_for(:production)
       commit_all("Compose overrides")
@@ -80,9 +86,25 @@ module Mobilis
                  .map { |klass| klass.new(self) }
     end
 
-    def run_plugin_hooks(hook)
-      @plugins.each do |plugin|
-        plugin.send(hook)
+    def run_plugin_hooks(hook, &block)
+      @plugins.dup.each do |plugin|
+        if block_given?
+          plugin.send(hook, &block)
+        else
+          plugin.send(hook)
+        end
+      end
+    end
+
+    def run_node_hooks(hook)
+      realized_envs.each do |realized_env|
+        realized_env.dup.each_node do |realized_node|
+          if block_given?
+            realized_node.send(hook, &block)
+          else
+            realized_node.send(hook)
+          end
+        end
       end
     end
 
@@ -112,31 +134,12 @@ module Mobilis
       ENV.fetch("USER", ENV.fetch("USERNAME", ""))
     end
 
-    def depends_on_overrides_for(target_env)
-      test_env = realized_env(:test)
-      return nil if test_env.equal?(target_env)
-
-      overrides = { services: {} }
-
-      target_env.each_node do |node|
-        target_compose = node.compose[:services][node.name]
-        target_deps = target_compose[:depends_on]
-        next unless target_deps
-
-        test_deps =
-          begin
-            test_node = test_env.realized_node_by_name(node.name)
-            test_node.compose[:services][test_node.name][:depends_on]
-          rescue Mobilis::NoSuchNode
-            nil
-          end
-
-        next if target_deps == test_deps
-
-        overrides[:services][node.name] = { depends_on: target_deps }
+    def overrides_for(realized_env)
+      overrides = AutoVivify.new
+      realized_env.realized_nodes.each do |node|
+        overrides[:services][node.name].merge! node.compose_overrides
       end
-
-      overrides[:services].empty? ? nil : overrides
+      overrides.clean_shrunk
     end
 
     private
@@ -199,7 +202,7 @@ module Mobilis
           directory_service.chdir_generate
           directory_service.mkdir_environment_datadir_forproject(realized_env.environment, node) if node.has_data_volume
 
-          File.write("compose/#{node.name}.yml", ::YAML.dump(Mobilis::YAML.deep_stringify_keys(node.compose)))
+          File.write("compose/#{node.name}.yml", node.render_compose)
         end
       end
     end
@@ -208,7 +211,7 @@ module Mobilis
       overrides = depends_on_overrides_for(realized_env(env))
       return if overrides.nil?
 
-      File.write("#{env}-overrides.yml", ::YAML.dump(Mobilis::YAML.deep_stringify_keys(overrides)))
+      File.write("#{env}-overrides.yml", node.render_compose_overrides)
     end
   end
 end

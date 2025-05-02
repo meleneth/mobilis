@@ -15,6 +15,7 @@ module Mobilis
     @@port_spacing = 10
 
     def_delegators :@environment, :is_production?, :is_development?, :is_test?
+    def_delegators :@system, :meta_project_name
 
     def initialize(system, environment)
       @system = system

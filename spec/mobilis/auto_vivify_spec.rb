@@ -53,7 +53,7 @@ RSpec.describe Mobilis::AutoVivify do
       auto["volumes"] << "/data"
       auto["env"]["RAILS_ENV"] = "production"
 
-      json = JSON.parse(auto.to_json)
+      json = JSON.parse(auto.to_serial.to_json)
       expect(json).to eq({
                            "volumes" => ["/data"],
                            "env" => { "RAILS_ENV" => "production" }
@@ -65,5 +65,14 @@ RSpec.describe Mobilis::AutoVivify do
                            "env" => { "RAILS_ENV" => "production" }
                          })
     end
+  end
+  it "vivifies deeply even when merge! is called with nested hashes" do
+    av = described_class.new
+    av[:compose][:services].merge!({ web: { ports: [3000] } })
+
+    # Should auto-vivify the web service and allow access to inner keys
+    expect { av[:compose][:services][:web][:ports] << 4000 }.not_to raise_error
+
+    expect(av[:compose][:services][:web][:ports]).to eq([3000, 4000])
   end
 end

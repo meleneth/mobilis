@@ -2,11 +2,11 @@
 
 module Mobilis
   module Realized
-    class SQLDatabase < Mobilis::Base::RealizedNode
+    class SQLDatabase < Mobilis::Base::ImageForm
       attr_reader :db_port_map
 
-      def initialize(env, node)
-        super(env, node)
+      def initialize(realized_env, config_node, image)
+        super(realized_env, config_node, image)
 
         @has_data_volume = true
         @has_service_dir = false

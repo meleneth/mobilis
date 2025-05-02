@@ -5,12 +5,14 @@ module Mobilis
     module RealizedNode
       # Mixin to add volume mount support to RealizedNode.
       module HasVolumes
-        def volumes
-          @volumes ||= []
+        def compose_volumes
+          return @compose_volumes if defined?(@compose_volumes)
+
+          @compose_volumes = []
         end
 
         def add_volume(source, target)
-          volumes << [source, target]
+          compose_volumes << "#{source}:#{target}"
         end
       end
     end

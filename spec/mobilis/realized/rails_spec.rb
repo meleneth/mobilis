@@ -6,6 +6,10 @@ RSpec.describe Mobilis::Realized::Rails do
   let(:realized_env) { build(:realized_env, :with_rails_and_postgres) }
   let(:realized_rails_node) { realized_env.find_realized_node_by_name("user") }
 
+  before do
+    realized_rails_node.populate_compose_depends_on
+  end
+
   it "sets service directory and data volume flags" do
     expect(realized_rails_node.has_service_dir).to be true
     expect(realized_rails_node.has_data_volume).to be false
@@ -19,21 +23,18 @@ RSpec.describe Mobilis::Realized::Rails do
   end
 
   it "#compose" do
-    expect(realized_rails_node.compose).to eq(
-      { services:
-        { "user" =>
-          { image: "meleneth/user", ports: [],
-            environment: [
-              "DATABASE_URL=${USERDB_DATABASE_URL}",
-              "RAILS_ENV=test",
-              "RAILS_MIN_THREADS=5",
-              "RAILS_MAX_THREADS=5"
-            ],
-            build: "./user",
-            depends_on:
-            {
-              "userdb" => { condition: "service_healthy", restart: true }
-            } } } }
+    expect(realized_rails_node.compose.clean_shrunk).to eq(
+      { image: "generate/user",
+        environment: [
+          "DATABASE_URL=${USERDB_DATABASE_URL}",
+          "RAILS_ENV=test",
+          "RAILS_MIN_THREADS=5",
+          "RAILS_MAX_THREADS=5"
+        ],
+        build: { context: "./user" },
+        depends_on: {
+          userdb: { condition: "service_healthy", restart: true }
+        } }
     )
   end
 end

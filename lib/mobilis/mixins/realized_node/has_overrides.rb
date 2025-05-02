@@ -5,8 +5,14 @@ module Mobilis
     module RealizedNode
       # Mixin to add service override support to RealizedNode.
       module HasOverrides
-        def overrides
-          @overrides ||= {}
+        def compose_overrides
+          return @compose_overrides if defined?(@compose_overrides)
+
+          @compose_overrides = AutoVivify.new
+        end
+
+        def render_compose_overrides
+          render_helper(compose_overrides)
         end
 
         def add_override(key, value)
