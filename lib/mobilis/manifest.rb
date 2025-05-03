@@ -178,7 +178,7 @@ module Mobilis
           includes << node_details
         end
         details["include"] = includes
-        File.write("#{realized_env}-compose.yml", ::YAML.dump(details))
+        Mobilis::YAMLWriter.write_yaml("#{realized_env}-compose.yml", details)
       end
       commit_all("compose wrappers")
     end
@@ -204,8 +204,8 @@ module Mobilis
             directory_service.mkdir_environment_datadir_forproject(realized_env.environment,
                                                                    realized_node)
           end
-
-          File.write("compose/#{realized_node.name}.yml", realized_node.compose.clean_shrunk.to_yaml)
+          Mobilis::YAMLWriter.write_yaml("compose/#{realized_node.name}.yml",
+                                         realized_node.service_wrapped_compose)
         end
       end
     end
@@ -214,7 +214,7 @@ module Mobilis
       overrides = overrides_for(realized_env(raw_env))
       return if overrides.nil?
 
-      File.write("#{raw_env}-overrides.yml", overrides.to_yaml)
+      Mobilis::YAMLWriter.write_yaml("#{raw_env}-overrides.yml", overrides)
     end
   end
 end

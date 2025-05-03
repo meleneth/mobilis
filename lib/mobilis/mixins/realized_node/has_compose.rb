@@ -51,11 +51,9 @@ module Mobilis
           @compose_ports = port_maps.map(&:to_compose)
         end
 
-        def render_compose
-          { services: { name => render_helper(compose) } }
+        def service_wrapped_compose
+          { services: { name => compose.clean_shrunk } }
         end
-
-        private
       end
     end
   end
