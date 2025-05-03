@@ -6,6 +6,7 @@ require "jobes_war/node/tic_tac"
 require "jobes_war/node/value"
 
 require "mobilis/ref_slot"
+require "mobilis/emit_var"
 require "mobilis/yaml_writer"
 require "mobilis/auto_vivify"
 require "mobilis/pretty_print/pretty_printable"
