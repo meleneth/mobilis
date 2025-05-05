@@ -16,11 +16,12 @@ require "mobilis/compose/depends_on"
 
 require "mobilis/mixins/plugin/has_plugin_events"
 require "mobilis/mixins/realized_node/has_compose"
+require "mobilis/mixins/realized_node/has_depends_on"
 require "mobilis/mixins/realized_node/has_env_vars"
+require "mobilis/mixins/realized_node/has_healthcheck"
 require "mobilis/mixins/realized_node/has_overrides"
 require "mobilis/mixins/realized_node/has_ports"
 require "mobilis/mixins/realized_node/has_volumes"
-require "mobilis/mixins/realized_node/has_healthcheck"
 
 require "mobilis/base/node"
 require "mobilis/base/realized_node"

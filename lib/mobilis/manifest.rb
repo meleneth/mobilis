@@ -15,8 +15,6 @@ module Mobilis
         Mobilis::RealizedEnv.new(system, env)
       end
 
-      resolve_extra_depends_on
-
       return if suppress_plugins
 
       setup_plugins
@@ -24,18 +22,6 @@ module Mobilis
         @plugins << plugin
       end
       run_plugin_hooks :create_additional_services
-      run_node_hooks :populate_compose_depends_on
-      run_plugin_hooks :generate_compose_overrides
-    end
-
-    def resolve_extra_depends_on
-      @realized_envs.each do |realized_env|
-        realized_env.each_node do |realized_node|
-          realized_node.extra_depends_on = realized_node.config_node.extra_depends_on.map do |inner_node|
-            realized_env.realized_node_for_config_node(inner_node)
-          end
-        end
-      end
     end
 
     def realized_production_env

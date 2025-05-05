@@ -18,6 +18,7 @@ module Mobilis
 
         @primary_database = @realized_env.realized_node_for_config_node(config_node.primary_database)
         @env_db_url = @primary_database.env_db_url.as("DATABASE_URL")
+        register_depends_on(@primary_database)
         add_env_var @env_db_url if @env_db_url
         add_basic_env_var("RAILS_ENV", environment.to_s)
         add_basic_env_var("RAILS_MIN_THREADS", 5)
@@ -30,22 +31,6 @@ module Mobilis
 
       def service_writer
         Mobilis::ServiceWriter::Rails
-      end
-
-      def populate_compose_depends_on
-        if primary_database
-          compose_depends_on[ primary_database.name ] = {
-            condition: primary_database.has_healthcheck? ? "service_healthy" : "service_started",
-            restart: primary_database.dependant_services_require_restart?
-          }.compact
-
-        end
-        extra_depends_on.each do |other_node|
-          compose_depends_on[other_node.name] = {
-            condition: other_node.has_healthcheck? ? "service_healthy" : "service_started",
-            restart: other_node.dependant_services_require_restart?
-          }.compact
-        end
       end
 
       def service_dir_mounts

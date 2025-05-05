@@ -11,9 +11,6 @@ module Mobilis
         def generate_per_node_plugins
         end
 
-        def generate_compose_overrides
-        end
-
         def hook_before_services_written
         end
       end

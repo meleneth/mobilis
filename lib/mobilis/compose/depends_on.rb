@@ -10,8 +10,11 @@ module Mobilis
         @base = base
       end
 
-      def register(name, value)
-        @data[name] = value
+      def register(realized_node)
+        @data[realized_node.name.to_sym] = {
+          condition: realized_node.has_healthcheck? ? "service_healthy" : "service_started",
+          restart: realized_node.dependant_services_require_restart? || nil
+        }.compact
       end
 
       def as_json(*_args)

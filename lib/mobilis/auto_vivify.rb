@@ -19,7 +19,7 @@ module Mobilis
 
     def clean_shrunk
       previous = nil
-      current = to_serial
+      current = deep_compact(JSON.parse(to_serial.to_json))
 
       until JSON.dump(current) == previous
         previous = JSON.dump(current)
