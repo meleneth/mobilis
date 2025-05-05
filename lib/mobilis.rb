@@ -12,6 +12,8 @@ require "mobilis/auto_vivify"
 require "mobilis/pretty_print/pretty_printable"
 require "mobilis/container_versions"
 
+require "mobilis/compose/depends_on"
+
 require "mobilis/mixins/plugin/has_plugin_events"
 require "mobilis/mixins/realized_node/has_compose"
 require "mobilis/mixins/realized_node/has_env_vars"
