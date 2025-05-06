@@ -2,13 +2,14 @@
 
 require "spec_helper"
 
-RSpec.describe Mobilis::EmitVar do
+RSpec.describe Mobilis::Primitives::EmitVar do
   describe ".for" do
     it "builds a resolved and specific pair from service/type" do
-      var = Mobilis::EmitVar.for("user", "postgres_url", "db://x")
+      var = Mobilis::Primitives::EmitVar.for("user", "postgres_url", "db://x")
       expect(var.container_name).to eq("POSTGRES_URL")
       expect(var.envfile_name).to eq("USER_POSTGRES_URL")
       expect(var.value).to eq("db://x")
+      expect(var.compose_repr).to eq("POSTGRES_URL=${USER_POSTGRES_URL}")
     end
   end
 
@@ -36,8 +37,13 @@ RSpec.describe Mobilis::EmitVar do
     end
 
     it "emits correct bash and ref syntax" do
-      expect(var.docker_repr).to eq("APP_URL=${MY_APP_URL}")
+      expect(var.compose_repr).to eq("APP_URL=${MY_APP_URL}")
       expect(var.env_repr).to eq("MY_APP_URL=https://example.com")
+    end
+
+    it "has ref methods for both names" do
+      expect(var.container_var_ref).to eq("${APP_URL}")
+      expect(var.env_var_ref).to eq("${MY_APP_URL}")
     end
 
     describe "#as" do

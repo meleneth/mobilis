@@ -19,11 +19,23 @@ module Mobilis
 
         def register_external_port(internal_port_no, env_var, memo)
           new_port_no = @@next_port_no
-          env_var = Mobilis::EnvVar.new(env_var).raw
+          env_var = Mobilis::Primitives::EmitVar.new(env_var)
           @@next_port_no += @@next_port_increment
-          new_port = PortMap.new("${#{env_var}}", internal_port_no, memo)
-          port_maps << new_port
-          add_basic_env_var(env_var, new_port_no, do_not_resolve: true)
+          new_port = Mobilis::Primitives::PortMap.new(env_var.container_var_ref, internal_port_no, memo)
+          compose_ports.add(new_port)
+          add_env_only_var(env_var, new_port_no)
+        end
+
+        def compose_ports
+          @compose_ports = Mobilis::Compose::Ports.new unless defined?(@compose_ports) && @compose_ports
+          @compose_ports
+        end
+
+        def compose_ports_override
+          unless defined?(@compose_ports_override) && @compose_ports_override
+            @compose_ports_override = Mobilis::Compose::Ports.new(base: compose_ports)
+          end
+          @compose_ports_override
         end
       end
     end

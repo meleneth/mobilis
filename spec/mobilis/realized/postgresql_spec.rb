@@ -21,15 +21,15 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
   end
 
   it "produces a single PortMap with a memo" do
-    expect(realized_pg.port_maps.size).to eq(1)
-    port = realized_pg.port_maps.first
+    expect(realized_pg.compose_ports.data.size).to eq(1)
+    port = realized_pg.compose_ports.data.first
     expect(port.external_port_no).to eq("${USERDB_POSTGRES_PORT}")
     expect(port.internal_port_no).to eq(5432)
     expect(port.memo).to match(/userdb database port/)
   end
 
   it "constructs environment variables using EnvVar - specific_name" do
-    keys = realized_pg.compose_env_vars.map(&:docker_repr)
+    keys = realized_pg.compose_environment.data.to_a.map(&:compose_repr)
     expect(keys).to eq([
                          "POSTGRES_USER=${USERDB_POSTGRES_USER}",
                          "POSTGRES_PASSWORD=${USERDB_POSTGRES_PASSWORD}",
@@ -37,7 +37,7 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
                        ])
   end
   it "constructs per-environment variables including data dir" do
-    keys = realized_pg.all_env_vars.to_a.map(&:specific_name)
+    keys = realized_pg.envfile_vars.data.to_a.map(&:envfile_name)
     expect(keys).to eq(%w[
                          USERDB_POSTGRES_USER
                          USERDB_POSTGRES_PASSWORD
@@ -46,7 +46,7 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
                        ])
   end
   it "constructs environment variables using EnvVar - realized_name" do
-    keys = realized_pg.compose_env_vars.to_a.map(&:docker_repr)
+    keys = realized_pg.compose_environment
     expect(keys).to eq([
                          "POSTGRES_USER=${USERDB_POSTGRES_USER}",
                          "POSTGRES_PASSWORD=${USERDB_POSTGRES_PASSWORD}",
@@ -56,8 +56,8 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
 
   it "has correct values for the created env vars" do
     var = realized_pg.env_vars[0]
-    expect(var.resolved_name).to eq("POSTGRES_USER")
-    expect(var.specific_name).to eq("USERDB_POSTGRES_USER")
+    expect(var.container_name).to eq("POSTGRES_USER")
+    expect(var.envfile_name).to eq("USERDB_POSTGRES_USER")
   end
 
   it "constructs the expected URL" do
@@ -67,8 +67,8 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
   end
 
   it "#env_db_url" do
-    expect(realized_pg.env_db_url.resolved_name).to eq("")
-    expect(realized_pg.env_db_url.specific_name).to eq("USERDB_DATABASE_URL")
+    expect(realized_pg.env_db_url.container_name).to eq("")
+    expect(realized_pg.env_db_url.envfile_name).to eq("USERDB_DATABASE_URL")
     expect(realized_pg.env_db_url.value).to eq("postgres://userdb-test-user:userdb-test-password@userdb:5432/userdb_test")
   end
 

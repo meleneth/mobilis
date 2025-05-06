@@ -44,8 +44,8 @@ module Mobilis
 
         vars.each do |var|
           row = []
-          row << JobesWar::Node::Value.new(var.resolved_name, styles: [:green])
-          row << JobesWar::Node::Value.new(var.specific_name, styles: [:blue])
+          row << JobesWar::Node::Value.new(var.compose_name, styles: [:green])
+          row << JobesWar::Node::Value.new(var.envfile_name, styles: [:blue])
           row << JobesWar::Node::Value.new(truncate_with_ellipsis(var.value), styles: [:yellow])
           table << row
         end

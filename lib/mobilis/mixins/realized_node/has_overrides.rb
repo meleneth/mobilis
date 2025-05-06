@@ -9,10 +9,10 @@ module Mobilis
           return @compose_overrides if defined?(@compose_overrides)
 
           @compose_overrides = AutoVivify.new
-        end
-
-        def render_compose_overrides
-          render_helper(compose_overrides)
+          @compose_overrides[:environment] = compose_environment_override
+          @compose_overrides[:ports] = compose_ports_override
+          @compose_overrides[:depends_on] = compose_depends_on_override
+          @compose_overrides
         end
 
         def add_override(key, value)

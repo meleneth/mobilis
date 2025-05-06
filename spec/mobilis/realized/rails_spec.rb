@@ -17,8 +17,8 @@ RSpec.describe Mobilis::Realized::Rails do
 
   it "registers a DATABASE_URL referencing the primary database" do
     env_db_url = realized_rails_node.env_db_url
-    expect(env_db_url.resolved_name).to eq("DATABASE_URL")
-    expect(env_db_url.specific_name).to eq("USERDB_DATABASE_URL")
+    expect(env_db_url.container_name).to eq("DATABASE_URL")
+    expect(env_db_url.envfile_name).to eq("USERDB_DATABASE_URL")
     expect(env_db_url.value).to eq("postgres://userdb-test-user:userdb-test-password@userdb:5432/userdb_test")
   end
 

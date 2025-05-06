@@ -17,12 +17,16 @@ module Mobilis
         return unless config_node.primary_database
 
         @primary_database = @realized_env.realized_node_for_config_node(config_node.primary_database)
-        @env_db_url = @primary_database.env_db_url.as("DATABASE_URL")
         register_depends_on(@primary_database)
-        add_env_var @env_db_url if @env_db_url
-        add_basic_env_var("RAILS_ENV", environment.to_s)
-        add_basic_env_var("RAILS_MIN_THREADS", 5)
-        add_basic_env_var("RAILS_MAX_THREADS", 5)
+        db_env_db_url = @primary_database&.env_db_url
+        if db_env_db_url
+          @env_db_url = add_compose_aliased_var("DATABASE_URL",
+                                                db_env_db_url.envfile_name,
+                                                db_env_db_url.value)
+        end
+        add_compose_raw_var("RAILS_ENV", environment.to_s)
+        add_compose_raw_var("RAILS_MIN_THREADS", 5)
+        add_compose_raw_var("RAILS_MAX_THREADS", 5)
       end
 
       def required_plugins

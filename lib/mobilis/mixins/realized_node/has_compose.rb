@@ -10,7 +10,7 @@ module Mobilis
           @compose = AutoVivify.new
           @compose[:image] = compose_image
           @compose[:ports] = compose_ports
-          @compose[:environment] = compose_env_vars.map(&:docker_repr)
+          @compose[:environment] = compose_environment
           @compose[:volumes] = compose_volumes
           @compose[:build][:context] = compose_build_context
           @compose[:healthcheck] = compose_healthcheck # defined in Mobilis::Mixins::RealizedNode::HasHealthCheck
@@ -43,12 +43,6 @@ module Mobilis
           return @compose_depends_on if defined?(@compose_depends_on)
 
           @compose_depends_on = Mobilis::AutoVivify.new
-        end
-
-        def compose_ports
-          return @compose_ports if defined?(@compose_ports)
-
-          @compose_ports = port_maps.map(&:to_compose)
         end
 
         def service_wrapped_compose
