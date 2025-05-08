@@ -11,7 +11,7 @@ module Mobilis
           @compose_overrides = AutoVivify.new
           @compose_overrides[:environment] = compose_environment_override
           @compose_overrides[:ports] = compose_ports_override
-          @compose_overrides[:depends_on] = compose_depends_on_override
+          @compose_overrides[:depends_on] = compose_depends_on_overrides
           @compose_overrides
         end
 

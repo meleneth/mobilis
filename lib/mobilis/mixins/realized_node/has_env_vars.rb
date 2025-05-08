@@ -63,7 +63,7 @@ module Mobilis
 
         def compose_environment_override
           unless defined?(@compose_environment_override) && @compose_environment_override
-            @compose_environment_override = Mobilis::Compose::Environment.new
+            @compose_environment_override = Mobilis::Compose::Environment.new(base: compose_environment)
           end
           @compose_environment_override
         end

@@ -20,17 +20,18 @@ RSpec.describe Mobilis::Plugin::RailsDBFanoutRealizedNode do
     it "initializes with a Mobilis::System and ExecutionEnvironment" do
       expect(production_rails_realized_node.instance_of?(Mobilis::Realized::Rails)).to eq(true)
     end
-    xit "sets DATABASE_URL on the rails container" do
+    it "sets DATABASE_URL on the rails container" do
       # err, this plugin doesn't actually do this? TODO FIXME MAYBE (here's my number)
+      production_rails_realized_node
       expect(override_env_vars).to include("DATABASE_URL=${USERDB_DATABASE_URL}")
     end
-    xit "sets CACHE_DATABASE_URL on the rails container" do
+    it "sets CACHE_DATABASE_URL on the rails container" do
       expect(override_env_vars).to include("CACHE_DATABASE_URL=${USERDB_CACHE_DATABASE_URL}")
     end
-    xit "sets CABLE_DATABASE_URL on the rails container" do
+    it "sets CABLE_DATABASE_URL on the rails container" do
       expect(override_env_vars).to include("CABLE_DATABASE_URL=${USERDB_CABLE_DATABASE_URL}")
     end
-    xit "sets QUEUE_DATABASE_URL on the rails container" do
+    it "sets QUEUE_DATABASE_URL on the rails container" do
       expect(override_env_vars).to include("QUEUE_DATABASE_URL=${USERDB_QUEUE_DATABASE_URL}")
     end
     it "sets up compose_overrides in production" do
