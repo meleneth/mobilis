@@ -11,10 +11,10 @@ module Mobilis
         end
 
         def add_compose_aliased_var(container_name, envfile_name, value, override: false)
-          myvar = Mobilis::Primitives::EmitVar.new(container_name, envfile_name, value)
+          myvar = Mobilis::Primitives::EmitVar.new(container_name, envfile_name, value, aliased: true)
           envfile_vars.add(myvar)
           if override
-            compose_environment_override.add(myvar, override: override)
+            compose_environment_override.add(myvar)
           else
             compose_environment.add(myvar)
           end

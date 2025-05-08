@@ -18,7 +18,7 @@ module Mobilis
         merged = {}
         @base&.data&.each { |item| merged[item.key] = item.value }
         @data.each { |item| merged[item.key] = item.value }
-        merged.sort.map { |name, value| "#{name}=#{value}" }
+        merged.sort.map { |name, value| "#{name}:#{value}" }
       end
 
       def to_json(*_args)

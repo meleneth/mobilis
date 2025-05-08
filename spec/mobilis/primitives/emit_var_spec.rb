@@ -5,11 +5,12 @@ require "spec_helper"
 RSpec.describe Mobilis::Primitives::EmitVar do
   describe ".for" do
     it "builds a resolved and specific pair from service/type" do
-      var = Mobilis::Primitives::EmitVar.for("user", "postgres_url", "db://x")
+      var = Mobilis::Primitives::EmitVar.for("user", "postgres_url", "db://x", aliased: true)
       expect(var.container_name).to eq("POSTGRES_URL")
       expect(var.envfile_name).to eq("USER_POSTGRES_URL")
       expect(var.value).to eq("db://x")
       expect(var.compose_repr).to eq("POSTGRES_URL=${USER_POSTGRES_URL}")
+      expect(var.env_repr).to eq("USER_POSTGRES_URL=db://x")
     end
   end
 
@@ -24,7 +25,7 @@ RSpec.describe Mobilis::Primitives::EmitVar do
   end
 
   describe "with envfile_name" do
-    subject(:var) { described_class.new("APP_URL", "MY_APP_URL", "https://example.com") }
+    subject(:var) { described_class.new("APP_URL", "MY_APP_URL", "https://example.com", aliased: true) }
 
     it "has both names and value" do
       expect(var.container_name).to eq("APP_URL")

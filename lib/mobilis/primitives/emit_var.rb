@@ -7,23 +7,26 @@ module Mobilis
     # - container_name: used inside the container, e.g., POSTGRES_URL
     # - envfile_name: key in the .env file, e.g., USER_POSTGRES_URL
     # - value: actual value to inject
+    # do_not_resolve = should not appear in dockerfile
+    # aliased = when true, FOO=${USER_FOO} in dockerfile, USER_FOO=foo_value in envfile
     #
     # Compose emits:   container_name=${envfile_name}
     # .env file emits: envfile_name=value
     class EmitVar
-      attr_reader :container_name, :envfile_name, :value, :do_not_resolve
+      attr_reader :container_name, :envfile_name, :value
 
-      def self.for(service, type, value, do_not_resolve: false)
+      def self.for(service, type, value, do_not_resolve: false, aliased: false)
         container_name = type
         envfile_name = "#{service}_#{type}"
-        new(container_name, envfile_name, value, do_not_resolve: do_not_resolve)
+        new(container_name, envfile_name, value, do_not_resolve: do_not_resolve, aliased: aliased)
       end
 
-      def initialize(container_name, envfile_name = nil, value = nil, do_not_resolve: false)
+      def initialize(container_name, envfile_name = nil, value = nil, do_not_resolve: false, aliased: false)
         @container_name = normalize_name(container_name)
         @envfile_name = envfile_name ? normalize_name(envfile_name) : nil
         @value = value
         @do_not_resolve = do_not_resolve
+        @aliased = aliased
       end
 
       def has_envfile_name?
@@ -31,9 +34,13 @@ module Mobilis
       end
 
       def compose_repr
-        return "#{container_name}=#{value}" unless has_envfile_name?
+        "#{container_name}=#{compose_value}"
+      end
 
-        "#{container_name}=#{env_var_ref}"
+      def compose_value
+        return value unless @aliased
+
+        env_var_ref
       end
 
       def container_var_ref
@@ -58,6 +65,12 @@ module Mobilis
         return container_name if container_name
 
         envfile_name
+      end
+
+      def do_not_resolve
+        return true if container_name == ""
+
+        @do_not_resolve
       end
 
       private

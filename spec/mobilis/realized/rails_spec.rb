@@ -28,8 +28,8 @@ RSpec.describe Mobilis::Realized::Rails do
         environment: [
           "DATABASE_URL=${USERDB_DATABASE_URL}",
           "RAILS_ENV=test",
-          "RAILS_MIN_THREADS=5",
-          "RAILS_MAX_THREADS=5"
+          "RAILS_MAX_THREADS=5",
+          "RAILS_MIN_THREADS=5"
         ],
         build: { context: "./user" },
         depends_on: {

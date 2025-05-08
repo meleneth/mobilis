@@ -55,7 +55,7 @@ RSpec.describe Mobilis::RealizedEnv do
   describe "environment-scoped values" do
     it "uses ExecutionEnvironment#to_s for environment-specific names" do
       postgres_node = realized_env.realized_nodes.find { |n| n.is_a?(Mobilis::Realized::PostgreSQL) }
-      expect(postgres_node.env_vars.any? { |var| var.value.include?("test") }).to be(true)
+      expect(postgres_node.envfile_vars.data.any? { |var| var.value.include?("test") }).to be(true)
     end
   end
 

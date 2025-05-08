@@ -30,7 +30,7 @@ module Mobilis
         realized_env << new_db
         extra_db_nodes << new_db
         env_db_url = new_db.env_db_url.as("#{name}_DATABASE_URL")
-        @extra_env_db_urls << env_db_url.docker_repr
+        @extra_env_db_urls << env_db_url.compose_repr
         realized_node.register_depends_on(new_db, override: true)
       end
 

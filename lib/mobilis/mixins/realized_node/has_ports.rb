@@ -13,17 +13,17 @@ module Mobilis
           @port_maps
         end
 
-        def add_port_map(external_port, internal_port, memo = nil)
-          port_maps << [external_port, internal_port, memo]
-        end
+        # def add_port_map(external_port, internal_port, memo = nil)
+        #  port_maps << [external_port, internal_port, memo]
+        # end
 
         def register_external_port(internal_port_no, env_var, memo)
           new_port_no = @@next_port_no
-          env_var = Mobilis::Primitives::EmitVar.new(env_var)
+          created_env_var = add_env_only_var(env_var, new_port_no)
           @@next_port_no += @@next_port_increment
-          new_port = Mobilis::Primitives::PortMap.new(env_var.container_var_ref, internal_port_no, memo)
+          new_port = Mobilis::Primitives::PortMap.new(created_env_var.env_var_ref, internal_port_no, memo)
           compose_ports.add(new_port)
-          add_env_only_var(env_var, new_port_no)
+          new_port
         end
 
         def compose_ports

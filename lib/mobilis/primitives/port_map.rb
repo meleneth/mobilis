@@ -6,13 +6,21 @@ module Mobilis
       include Mobilis::PrettyPrint::PrettyPrintable
 
       def initialize(external_port_no, internal_port_no, memo = "Unknown port mapping")
-        @internal_port_no = internal_port_no
         @external_port_no = external_port_no
+        @internal_port_no = internal_port_no
         @memo = memo
       end
 
       def as_key
         "#{external_port_no}:#{internal_port_no}"
+      end
+
+      def key
+        external_port_no
+      end
+
+      def value
+        internal_port_no
       end
 
       def to_compose

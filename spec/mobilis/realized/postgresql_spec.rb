@@ -37,39 +37,25 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
                        ])
   end
   it "constructs per-environment variables including data dir" do
-    keys = realized_pg.envfile_vars.data.to_a.map(&:envfile_name)
-    expect(keys).to eq(%w[
-                         USERDB_POSTGRES_USER
-                         USERDB_POSTGRES_PASSWORD
-                         USERDB_POSTGRES_DB
-                         USERDB_POSTGRES_DATA
+    Mobilis::Base::RealizedNode.class_variable_set(:@@next_port_no, 42_069)
+
+    keys = subject.envfile_vars.data.map(&:env_repr)
+    expect(keys).to eq([
+                         "USERDB_DATABASE_URL=postgres://userdb-test-user:userdb-test-password@userdb:5432/userdb_test",
+                         "USERDB_POSTGRES_USER=userdb-test-user",
+                         "USERDB_POSTGRES_PASSWORD=userdb-test-password",
+                         "USERDB_POSTGRES_DB=userdb_test",
+                         "USERDB_POSTGRES_PORT=42079",
+                         "USERDB_POSTGRES_DATA=./data/test/userdb"
                        ])
   end
   it "constructs environment variables using EnvVar - realized_name" do
-    keys = realized_pg.compose_environment
+    keys = realized_pg.compose_environment.data.to_a.map(&:compose_repr)
     expect(keys).to eq([
                          "POSTGRES_USER=${USERDB_POSTGRES_USER}",
                          "POSTGRES_PASSWORD=${USERDB_POSTGRES_PASSWORD}",
                          "POSTGRES_DB=${USERDB_POSTGRES_DB}"
                        ])
-  end
-
-  it "has correct values for the created env vars" do
-    var = realized_pg.env_vars[0]
-    expect(var.container_name).to eq("POSTGRES_USER")
-    expect(var.envfile_name).to eq("USERDB_POSTGRES_USER")
-  end
-
-  it "constructs the expected URL" do
-    expect(realized_pg.url).to eq(
-      "postgres://userdb-test-user:userdb-test-password@userdb:5432/userdb_test"
-    )
-  end
-
-  it "#env_db_url" do
-    expect(realized_pg.env_db_url.container_name).to eq("")
-    expect(realized_pg.env_db_url.envfile_name).to eq("USERDB_DATABASE_URL")
-    expect(realized_pg.env_db_url.value).to eq("postgres://userdb-test-user:userdb-test-password@userdb:5432/userdb_test")
   end
 
   it "#has_healthcheck?" do
@@ -87,9 +73,9 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
         "${USERDB_POSTGRES_PORT}:5432"
       ],
       environment: [
-        "POSTGRES_USER=${USERDB_POSTGRES_USER}",
+        "POSTGRES_DB=${USERDB_POSTGRES_DB}",
         "POSTGRES_PASSWORD=${USERDB_POSTGRES_PASSWORD}",
-        "POSTGRES_DB=${USERDB_POSTGRES_DB}"
+        "POSTGRES_USER=${USERDB_POSTGRES_USER}"
       ],
       volumes: [
         "${USERDB_POSTGRES_DATA}:/var/lib/postgresql/data"

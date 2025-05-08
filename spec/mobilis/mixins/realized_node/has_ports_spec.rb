@@ -1,24 +1,15 @@
-class TestableHasEnvVars
+class TestableHasPorts
   include Mobilis::Mixins::RealizedNode::HasEnvVars
+  include Mobilis::Mixins::RealizedNode::HasPorts
 end
 
 RSpec.describe Mobilis::Mixins::RealizedNode::HasEnvVars do
-  let(:subject) { TestableHasEnvVars.new }
-  it "#add_env_only_var" do
-    subject.add_env_only_var("SOME_VALUE", 5)
-    env_vars = subject.env_vars_for_env_file.to_a.map(&:env_repr)
-    expect(env_vars).to eq(["SOME_VALUE=5"])
-  end
-  it "#add_docker_aliased_var" do
-    subject.add_docker_aliased_var("SOME_VALUE", "USER_SOME_VALUE", 5)
-    env_vars = subject.env_vars_for_env_file.to_a.map(&:env_repr)
-    expect(env_vars).to eq(["USER_SOME_VALUE=5"])
-    env_vars = subject.env_vars_for_docker_environment.to_a.map(&:compose_repr)
-    expect(env_vars).to eq(["SOME_VALUE=${USER_SOME_VALUE}"])
-  end
-  it "#add_docker_raw_var" do
-    subject.add_docker_raw_var("RAILS_MAX_THREADS", 5)
-    env_vars = subject.env_vars_for_docker_environment.to_a.map(&:compose_repr)
-    expect(env_vars).to eq(["RAILS_MAX_THREADS=5"])
+  let(:subject) { TestableHasPorts.new }
+
+  it "#register_external_port" do
+    my_port = subject.register_external_port(2432, "SOME_COOL_PORT", "a very important port in our ecosystem")
+    expect(my_port.to_compose).to eq("${SOME_COOL_PORT}:2432")
+    env_vars = subject.envfile_vars.data[0].envfile_name
+    expect(env_vars).to eq("SOME_COOL_PORT")
   end
 end

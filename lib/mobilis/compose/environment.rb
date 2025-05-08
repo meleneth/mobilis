@@ -17,15 +17,28 @@ module Mobilis
 
       def as_json(*_args)
         merged = {}
-        return @data.each { |item| item.env_repr } if @envfile
-
-        @base&.data&.each { |item| merged[item.key] = item.value }
-        @data.each { |item| merged[item.key] = item.value }
+        vars_for_compose do |item|
+          merged[item.key] = item.compose_value
+        end
         merged.sort.map { |name, value| "#{name}=#{value}" }
       end
 
       def to_json(*_args)
         as_json.to_json
+      end
+
+      def envfile_vars
+        return enum_for(:envfile_vars) unless block_given?
+
+        @base&.data&.each { |item| yield item unless item.envfile_name.nil? }
+        @data.each { |item| yield item unless item.envfile_name.nil? }
+      end
+
+      def vars_for_compose
+        return enum_for(:vars_for_compose) unless block_given?
+
+        @base&.data&.each { |item| yield item unless item.do_not_resolve }
+        @data.each { |item| yield item unless item.do_not_resolve }
       end
     end
   end
