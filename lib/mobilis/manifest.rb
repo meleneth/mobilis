@@ -138,13 +138,21 @@ module Mobilis
 
     def emit_env_files
       directory_service.chdir_generate
+
       @realized_envs.each do |realized_env|
-        lines = []
-        realized_env.realized_nodes.each do |realized_node|
-          realized_node.per_env_vars do |env_var|
-            lines << env_var.env_repr
+        vars_for_env = {}
+
+        realized_env.all_envfile_vars do |emit_var|
+          if vars_for_env.key? emit_var.key
+            unless emit_var.value == vars_for_env[emit_var.envfile_name]
+              raise "Different values for #{emit_var.envfile_name} - #{emit_var.value} vs #{vars_for_env[emit_var.envfile_name]}"
+            end
+          else
+            vars_for_env[emit_var.envfile_name] = emit_var.value
           end
         end
+        lines = vars_for_env.sort.map { |k, v| "#{k}=#{v}" }
+
         File.write("#{realized_env.environment}.env", "#{lines.join("\n")}\n")
       end
       commit_all "env files"

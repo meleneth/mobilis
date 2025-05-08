@@ -31,17 +31,24 @@ module Mobilis
           myvar
         end
 
-        def env_vars_for_env_file(&block)
+        #rubocop:disable all
+        def env_vars_for_env_file
           return enum_for(:env_vars_for_env_file) unless block_given?
 
-          envfile_vars.each(&block)
+          envfile_vars.envfile_vars do |emit_var|
+            yield emit_var
+          end
         end
 
-        def env_vars_for_compose_environment(&block)
+        def env_vars_for_compose_environment
           return enum_for(:env_vars_for_compose_environment) unless block_given?
 
-          compose_vars.each(&block)
+          compose_vars.each do |emit_var|
+            yield emit_var
+          end
         end
+
+        #rubocop:enable all
 
         def all_emit_vars
           return enum_for(:all_emit_vars) unless block_given?

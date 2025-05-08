@@ -78,6 +78,17 @@ module Mobilis
       realized_nodes.each(&block)
     end
 
+    # rubocop:disable all
+    def all_envfile_vars
+      return enum_for(:all_envfile_vars) unless block_given?
+      each_node do |realized_node|
+        realized_node.env_vars_for_env_file do |emit_var|
+          yield emit_var
+        end
+      end
+    end
+    # rubocop:enable all
+
     private
 
     def build_all_nodes!
