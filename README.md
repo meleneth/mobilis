@@ -1,3 +1,44 @@
+# Mobilis - Service Oriented Architecture scaffolding
+
+Initial setup for a service oriented project can be a pain.
+Generating initial codebases, wiring them up via environment
+variables to talk to each other, assigning ports to each one,
+setting them up for multiple environments (test, development,
+production), and starting with up to date versions for everything
+is a lot to ask for before you even get to write any code for
+your actual project.
+
+The project dreams big - if it has a docker container, support
+integrating it into a new setup via Docker Compose with very
+little work.
+
+Currently, it only works with Ruby on Rails and Postgres.
+It used to work with more, but mainenance burden and dirty
+core implementation necessitated a full rewrite.
+
+look at scripts/mobilis_initial_system.rb
+
+bundle exec ruby scripts/mobilis_initial_system.rb
+
+this will build a codebase in the 'generate' directory.
+
+There should be documentation for the project in the README.me
+in that directory, but let's look at some high level highlights:
+
+In the test environment, the 'user' rails project has it's source
+files volume mounted in the docker container.
+
+In the production environment, there are 4 databases wired up to
+the 'user' rails project. This is because rails needs the extra
+databases in production. These are all wired up, and should be
+ready to go.
+
+The databases are all stored in local files, not volumes -
+it is expected for Actual Production you will be using externally
+managed databases, use something like Vault for your env file
+juggling. But out of the box, you can build as if this stuff
+exists and it's a small step to get there.
+
 # Mobilis: The Crew Oath
 
 We are the builders of vessels,
