@@ -40,10 +40,6 @@ module Mobilis
         INTERNAL_PORT_NO
       end
 
-      def volume_paths
-        ["${#{data_volume_env_var.container_name}}:/var/lib/postgresql/data"]
-      end
-
       def ppx_fields(dsl)
         dsl.instance_value "environment", environment
         dsl.instance_value "has_data_volume", has_data_volume

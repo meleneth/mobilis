@@ -12,6 +12,7 @@ module Mobilis
           @compose_overrides[:environment] = compose_environment_override
           @compose_overrides[:ports] = compose_ports_override
           @compose_overrides[:depends_on] = compose_depends_on_overrides
+          @compose_overrides[:volumes] = compose_volumes_overrides
           @compose_overrides
         end
 

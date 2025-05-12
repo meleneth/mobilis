@@ -30,15 +30,15 @@ module Mobilis
       end
 
       def required_plugins
-        [Mobilis::Plugin::RailsBuilder, Mobilis::Plugin::RailsDBFanout]
+        [
+          Mobilis::Plugin::RailsBuilder,
+          Mobilis::Plugin::RailsDBFanout,
+          Mobilis::Plugin::RailsTestMountSourceVolume
+        ]
       end
 
       def service_writer
         Mobilis::ServiceWriter::Rails
-      end
-
-      def service_dir_mounts
-        nil
       end
 
       def ppx_fields(dsl)
