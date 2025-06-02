@@ -95,6 +95,7 @@ module Mobilis
       system.each_config_node do |config_node|
         realized = build_realized_node(config_node)
         realized_nodes << realized if realized
+        raise "No RealizedNode for #{config_node.name}" unless realized
       end
       realized_nodes.each do |realized_node|
         realized_node.after_all_nodes_realized
@@ -104,7 +105,15 @@ module Mobilis
     def build_realized_node(config_node)
       case config_node
       when Mobilis::Node::PostgreSQL
-        Mobilis::Realized::PostgreSQL.new(self, config_node) # <-- for now, hardcoded or stubbed
+        Mobilis::Realized::PostgreSQL.new(self, config_node)
+      when Mobilis::Node::OtelCollector
+        Mobilis::Realized::OtelCollector.new(self, config_node)
+      when Mobilis::Node::Jaeger
+        Mobilis::Realized::Jaeger.new(self, config_node)
+      when Mobilis::Node::Prometheus
+        Mobilis::Realized::Prometheus.new(self, config_node)
+      when Mobilis::Node::Grafana
+        Mobilis::Realized::Grafana.new(self, config_node)
       when Mobilis::Node::Rails
         Mobilis::Realized::Rails.new(self, config_node)
       end

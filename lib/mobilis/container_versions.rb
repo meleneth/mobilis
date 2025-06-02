@@ -8,17 +8,17 @@ module Mobilis
     JAVA        = "eclipse-temurin:21-jdk-jammy"
     NODE        = "node:20.10-bookworm"
     PYTHON      = "python:3.13.3-slim-bookworm"
-    RUBY        = "ruby:3.4.3-bookworm"
+    RUBY        = "ruby:3.4.4-bookworm"
     RUST        = "rust:1.86-bookworm"
 
     # ─── Databases ─────────────────────────────────────────────
     CASSANDRA   = "cassandra:4.1"
-    COUCHDB     = "couchdb:3.4.3"
+    COUCHDB     = "couchdb:3.5.0"
     MARIADB     = "mariadb:11.1.2-ubi"
     MEMCACHED   = "memcached:1.6.21-alpine"
     MONGODB     = "mongo:7.0.5"
-    MYSQL       = "mysql:8.3"
-    POSTGRES    = "postgres:17.4-bookworm"
+    MYSQL       = "mysql:9.3.0"
+    POSTGRES    = "postgres:17.5-bookworm"
     REDIS       = "redis:7.4.2-bookworm"
     SQLITE      = "nouchka/sqlite3:latest"
     VALKEY      = "valkey/valkey:7.2"
@@ -30,11 +30,11 @@ module Mobilis
     RAILS_BUILDER = "ghcr.io/your-org/rails-builder:latest"
 
     # ─── Observability / Telemetry ─────────────────────────────
-    GRAFANA     = "grafana/grafana:11.6.0"
-    JAEGER      = "jaegertracing/all-in-one:1.53"
+    GRAFANA     = "grafana/grafana:12.0.1"
+    JAEGER      = "jaegertracing/jaeger:2.6.0"
     LOKI        = "grafana/loki:2.9.2"
-    OTEL_COLLECTOR = "otel/opentelemetry-collector-contrib:0.93.0"
-    PROMETHEUS  = "prom/prometheus:v3.3.0"
+    OTEL_COLLECTOR = "otel/opentelemetry-collector-contrib:0.127.0"
+    PROMETHEUS  = "prom/prometheus:v3.4.1"
 
     # ─── Messaging / Queues ────────────────────────────────────
     KAFKA       = "bitnami/kafka:4.0.0"
