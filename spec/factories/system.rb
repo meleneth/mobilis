@@ -45,6 +45,23 @@ FactoryBot.define do
       end
     end
 
+    trait :with_otel do
+      after(:build) do |system|
+        collector_node = build(:otel_collector_node, name: "otel-collector")
+        prometheus_node = build(:prometheus_node, name: "prometheus")
+        jaeger_node = build(:jaeger_node, name: "jaeger")
+        grafana_node = build(:grafana_node, name: "grafana")
+        grafana_node.extra_depends_on << prometheus_node
+        collector_node.extra_depends_on << jaeger_node
+        prometheus_node.extra_depends_on << collector_node
+
+        system << collector_node
+        system << prometheus_node
+        system << jaeger_node
+        system << grafana_node
+      end
+    end
+
     trait :with_two_rails_and_postgres do
       transient do
         rails_one_name { "user" }

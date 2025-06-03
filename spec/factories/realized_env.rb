@@ -21,6 +21,12 @@ FactoryBot.define do
       end
     end
 
+    trait :with_otel do
+      transient do
+        system_traits { [:with_otel] }
+      end
+    end
+
     trait :with_postgres do
       transient do
         system_traits { [:with_postgres] }

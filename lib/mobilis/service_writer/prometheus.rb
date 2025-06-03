@@ -16,7 +16,7 @@ module Mobilis
       end
 
       def write
-        File.write("prometheus.yml", ::YAML.dump(Mobilis::YAML.deep_stringify_keys(datasources)))
+        File.write("prometheus.yml", ::YAML.dump(Mobilis::YAML.deep_stringify_keys(datasources.to_serial)))
       end
     end
   end

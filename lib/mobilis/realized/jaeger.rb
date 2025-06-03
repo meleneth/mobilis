@@ -7,7 +7,9 @@ module Mobilis
 
       def initialize(realized_env, config_node)
         super(realized_env, config_node, Mobilis::ContainerVersions::JAEGER)
-        @jaeger_endpoint = add_env_only_var("JAEGER_ENDPOINT", "http://jaeger:14268/api/traces")
+        # @jaeger_endpoint = add_env_only_var("JAEGER_ENDPOINT", "http://jaeger:14268/api/traces")
+        # TODO figure out which which is which
+        @jaeger_endpoint = "#{name}:4317"
 
         @has_data_volume = false
         @has_service_dir = false

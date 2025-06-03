@@ -15,7 +15,8 @@ module Mobilis
       end
 
       def write
-        File.write("otel-collector-config.yml", ::YAML.dump(Mobilis::YAML.deep_stringify_keys(otel_collector)))
+        File.write("otel-collector-config.yml",
+                   ::YAML.dump(Mobilis::YAML.deep_stringify_keys(otel_collector.to_serial)))
       end
     end
   end

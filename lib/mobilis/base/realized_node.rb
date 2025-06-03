@@ -17,7 +17,7 @@ module Mobilis
 
       extend Forwardable
 
-      attr_reader :config_node, :has_data_volume, :has_service_dir, :realized_env
+      attr_reader :config_node, :has_data_volume, :has_dockerfile, :has_service_dir, :realized_env
       attr_accessor :extra_depends_on
 
       def_delegators :@config_node, :name
@@ -30,6 +30,7 @@ module Mobilis
         @config_node = config_node
         @has_data_volume = false
         @has_service_dir = false
+        @has_dockerfile = false
         @extra_depends_on = config_node.extra_depends_on.dup
       end
 

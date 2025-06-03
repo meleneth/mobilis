@@ -22,7 +22,7 @@ module Mobilis
         Dir.chdir "provisioning"
         Dir.mkdir "datasources"
         Dir.chdir "datasources"
-        File.write("prometheus.yml", ::YAML.dump(Mobilis::YAML.deep_stringify_keys(datasources)))
+        File.write("prometheus.yml", ::YAML.dump(Mobilis::YAML.deep_stringify_keys(datasources.to_serial)))
       end
     end
   end
