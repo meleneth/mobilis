@@ -17,6 +17,9 @@ RSpec.describe Mobilis::Realized::Grafana do
   end
 
   it "#compose" do
-    expect(grafana_node.compose.clean_shrunk).to eq({ image: "grafana/grafana:12.0.1" })
+    expect(grafana_node.compose.clean_shrunk).to eq(
+      { image: "grafana/grafana:12.0.1",
+        ports: ["${GRAFANA_WEB_PORT}:3000"] }
+    )
   end
 end

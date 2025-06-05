@@ -17,6 +17,14 @@ RSpec.describe Mobilis::Realized::OtelCollector do
   end
 
   it "#compose" do
-    expect(otel_collector_node.compose.clean_shrunk).to eq({ image: "otel/opentelemetry-collector-contrib:0.127.0" })
+    puts otel_collector_node.pp
+
+    expect(otel_collector_node.compose.clean_shrunk).to eq(
+      { image: "otel/opentelemetry-collector-contrib:0.127.0",
+        volumes: [
+          "./otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml"
+        ],
+        command: ["--config=/etc/otel-collector-config.yaml"] }
+    )
   end
 end

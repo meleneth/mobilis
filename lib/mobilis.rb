@@ -20,6 +20,7 @@ require "mobilis/compose/depends_on"
 require "mobilis/compose/volume"
 
 require "mobilis/mixins/plugin/has_plugin_events"
+require "mobilis/mixins/realized_node/has_command"
 require "mobilis/mixins/realized_node/has_compose"
 require "mobilis/mixins/realized_node/has_depends_on"
 require "mobilis/mixins/realized_node/has_env_vars"

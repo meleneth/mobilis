@@ -7,6 +7,7 @@ require "forwardable"
 module Mobilis
   module Base
     class RealizedNode
+      include Mobilis::Mixins::RealizedNode::HasCommand
       include Mobilis::Mixins::RealizedNode::HasCompose
       include Mobilis::Mixins::RealizedNode::HasDependsOn
       include Mobilis::Mixins::RealizedNode::HasEnvVars

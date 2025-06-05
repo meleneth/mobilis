@@ -8,6 +8,12 @@ module Mobilis
         @has_service_dir = true
         @has_data_volume = true
         @has_dockerfile = false
+        register_external_port(exposed_port_no, "#{name}_WEB_PORT",
+                               "#{name} web interface port")
+      end
+
+      def exposed_port_no
+        3000
       end
 
       def dependant_services_require_restart?

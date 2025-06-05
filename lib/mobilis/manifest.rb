@@ -51,6 +51,19 @@ module Mobilis
       write_overrides_for(:development)
       write_overrides_for(:production)
       commit_all("Compose overrides")
+      write_commands_file
+      commit_all("Commands file")
+    end
+
+    def write_commands_file
+      File.open("commands.txt", "w") do |f|
+        f.write("Production:\n")
+        f.write("docker compose --env-file production.env -f production-compose.yml -f production-overrides.yml config\n")
+        f.write("Development:\n")
+        f.write("docker compose --env-file development.env -f development-compose.yml -f development-overrides.yml config\n")
+        f.write("Test:\n")
+        f.write("docker compose --env-file test.env -f test-compose.yml -f test-overrides.yml config\n")
+      end
     end
 
     def write_gitignore

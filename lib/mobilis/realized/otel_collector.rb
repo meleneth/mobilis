@@ -3,6 +3,7 @@
 module Mobilis
   module Realized
     class OtelCollector < Mobilis::Base::ImageForm
+      include Mobilis::PrettyPrint::PrettyPrintable
       attr_reader :otel_url
 
       def initialize(realized_env, config_node)
@@ -11,6 +12,12 @@ module Mobilis
 
         @has_data_volume = false
         @has_service_dir = true
+        add_volume("./#{name}/otel-collector-config.yaml", "/etc/otel-collector-config.yaml")
+        set_command("--config=/etc/otel-collector-config.yaml")
+      end
+
+      def prometheus_scrape_value
+        "#{name}:9464"
       end
 
       def dependant_services_require_restart?
@@ -19,6 +26,17 @@ module Mobilis
 
       def service_writer
         Mobilis::ServiceWriter::OtelCollector
+      end
+
+      def ppx_fields(dsl)
+        dsl.instance_value "name", name
+        dsl.instance_value "environment", environment
+        dsl.instance_value "has_service_dir", has_service_dir
+        dsl.instance_value "has_data_volume", has_data_volume
+        dsl.child_object "config_node", config_node
+        extra_depends_on.each do |realized_node|
+          dsl.child_object "Extra depends_on #{realized_node.name}", realized_node
+        end
       end
     end
   end
