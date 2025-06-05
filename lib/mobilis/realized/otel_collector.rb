@@ -14,6 +14,12 @@ module Mobilis
         @has_service_dir = true
         add_volume("./#{name}/otel-collector-config.yaml", "/etc/otel-collector-config.yaml")
         set_command("--config=/etc/otel-collector-config.yaml")
+        register_external_port(exposed_port_no, "#{name}_COLLECTOR_PORT",
+                               "#{name} collector port")
+      end
+
+      def exposed_port_no
+        4318 # http listener port
       end
 
       def prometheus_scrape_value

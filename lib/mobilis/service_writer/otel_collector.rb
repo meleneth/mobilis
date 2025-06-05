@@ -6,16 +6,42 @@ module Mobilis
 
         @otel_collector = Mobilis::AutoVivify.new
         protocols = @otel_collector["receivers"]["otlp"]["protocols"]
-        protocols["grpc"]
-        protocols["http"]
-        @otel_collector["processors"]
-        @otel_collector["exporters"]
-        @otel_collector["service"]["pipelines"]
+        protocols["grpc"]["endpoint"] = "0.0.0.0:4317"
+        protocols["http"]["endpoint"] = "0.0.0.0:4318"
+
+        spanmetrics = @otel_collector["connectors"]["spanmetrics"]
+        spanmetrics["dimensions"] = []
+        spanmetrics["aggregation_temporality"] = "cumulative"
+
+        @otel_collector["processors"]["batch"] = {}
+        memory_limiter = @otel_collector["processors"]["memory_limiter"]
+        memory_limiter["limit_mib"] = 500
+        memory_limiter["spike_limit_mib"] = 100
+        memory_limiter["check_interval"] = "5s"
+
+        otlp_exporter = @otel_collector["exporters"]["otlp"]
+        otlp_exporter["endpoint"] = "jaeger:4317" # YOU DID NOT JUST HARDCODE THIS SHIT TODO FUCKING TODO
+        otlp_exporter["tls"]["insecure"] = true
+
+        @otel_collector["exporters"]["prometheus"]["endpoint"] = "0.0.0.0:9464"
+
+        traces = @otel_collector["service"]["pipelines"]["traces"]
+        traces["receivers"] << "otlp"
+        traces["processors"] << "batch"
+        traces["processors"] << "memory_limiter"
+        traces["exporters"] << "otlp"
+        traces["exporters"] << "spanmetrics"
+
+        metrics = @otel_collector["service"]["pipelines"]["metrics"]
+        metrics["receivers"] << "spanmetrics"
+        metrics["processors"] << "batch"
+        metrics["exporters"] << "prometheus"
+
         @otel_collector
       end
 
       def write
-        File.write("otel-collector-config.yml",
+        File.write("otel-collector-config.yaml",
                    ::YAML.dump(Mobilis::YAML.deep_stringify_keys(otel_collector.to_serial)))
       end
     end

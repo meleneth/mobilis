@@ -27,6 +27,12 @@ module Mobilis
         add_compose_raw_var("RAILS_ENV", environment.to_s)
         add_compose_raw_var("RAILS_MIN_THREADS", 5)
         add_compose_raw_var("RAILS_MAX_THREADS", 5)
+        register_external_port(exposed_port_no, "#{name}_WEB_PORT",
+                               "#{name} web interface port")
+      end
+
+      def exposed_port_no
+        3000
       end
 
       def required_plugins
