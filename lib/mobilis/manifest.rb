@@ -53,9 +53,19 @@ module Mobilis
       commit_all("Compose overrides")
       write_commands_file
       commit_all("Commands file")
+      write_mobilis_system
+      commit_all("Mobilis system config")
+    end
+
+    def write_mobilis_system
+      directory_service.chdir_generate
+      File.open("mobilis-system.json", "w") do |f|
+        f.write(system.to_json)
+      end
     end
 
     def write_commands_file
+      directory_service.chdir_generate
       File.open("commands.txt", "w") do |f|
         f.write("Production:\n")
         f.write("docker compose --env-file production.env -f production-compose.yml -f production-overrides.yml config\n")
