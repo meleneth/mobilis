@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
+require "fileutils"
 require "git"
+
 module Mobilis
   # here it is, the main class that actually orchestratest the entire
   # dance of file creation.
@@ -55,6 +57,8 @@ module Mobilis
       commit_all("Commands file")
       write_mobilis_system
       commit_all("Mobilis system config")
+      write_dc_helpers
+      commit_all("docker compose helper scripts")
     end
 
     def write_mobilis_system
@@ -68,12 +72,40 @@ module Mobilis
       directory_service.chdir_generate
       File.open("commands.txt", "w") do |f|
         f.write("Production:\n")
-        f.write("docker compose --env-file production.env -f production-compose.yml -f production-overrides.yml config\n")
+        f.write("HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose --env-file production.env -f production-compose.yml -f production-overrides.yml config\n")
         f.write("Development:\n")
-        f.write("docker compose --env-file development.env -f development-compose.yml -f development-overrides.yml config\n")
+        f.write("HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose --env-file development.env -f development-compose.yml -f development-overrides.yml config\n")
         f.write("Test:\n")
-        f.write("docker compose --env-file test.env -f test-compose.yml -f test-overrides.yml config\n")
+        f.write("HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose --env-file test.env -f test-compose.yml -f test-overrides.yml config\n")
       end
+    end
+
+    def write_dc_helpers
+      write_dc_helper("dc_test", "test")
+      write_dc_helper("dc_dev", "development")
+      write_dc_helper("dc_prod", "production")
+    end
+
+    def write_dc_helper(filename, env_name)
+      File.write(filename, <<~HERE)
+        #!/usr/bin/env bash
+        set -e
+
+        ENV_FILE="#{env_name}.env"
+        COMPOSE_FILE="compose/#{env_name}-compose.yml"
+
+        ## Load .env only if it exists
+        #[ -f "$ENV_FILE" ] && export $(grep -v '^#' "$ENV_FILE" | xargs)
+
+        # Inject UID/GID for Unix-like systems
+        if [[ "$OSTYPE" != "msys" && "$OSTYPE" != "win32" ]]; then
+        	export HOST_UID=$(id -u)
+        	export HOST_GID=$(id -g)
+        fi
+
+        exec docker compose --env-file #{env_name}.env -f #{env_name}-compose.yml $@
+      HERE
+      FileUtils.chmod("+x", filename)
     end
 
     def write_gitignore

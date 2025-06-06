@@ -7,7 +7,7 @@ module Mobilis
     GOLANG      = "golang:1.24.2-bookworm"
     JAVA        = "eclipse-temurin:21-jdk-jammy"
     NODE        = "node:20.10-bookworm"
-    PYTHON      = "python:3.13.3-slim-bookworm"
+    PYTHON      = "python:3.13.4-bookworm"
     RUBY        = "ruby:3.4.4-bookworm"
     RUST        = "rust:1.86-bookworm"
 

@@ -114,6 +114,8 @@ module Mobilis
         Mobilis::Realized::Prometheus.new(self, config_node)
       when Mobilis::Node::Grafana
         Mobilis::Realized::Grafana.new(self, config_node)
+      when Mobilis::Node::Flask
+        Mobilis::Realized::Flask.new(self, config_node)
       when Mobilis::Node::Rails
         Mobilis::Realized::Rails.new(self, config_node)
       end

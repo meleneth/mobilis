@@ -10,7 +10,6 @@ module Mobilis
         static_config["targets"] = ["otel-collector:9464"]
         scrape_config["static_configs"] << static_config
         data["scrape_configs"] << scrape_config
-        data["apiVersion"] = 1
 
         data
       end

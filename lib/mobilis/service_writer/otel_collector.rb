@@ -9,10 +9,6 @@ module Mobilis
         protocols["grpc"]["endpoint"] = "0.0.0.0:4317"
         protocols["http"]["endpoint"] = "0.0.0.0:4318"
 
-        spanmetrics = @otel_collector["connectors"]["spanmetrics"]
-        spanmetrics["dimensions"] = []
-        spanmetrics["aggregation_temporality"] = "cumulative"
-
         @otel_collector["processors"]["batch"] = {}
         memory_limiter = @otel_collector["processors"]["memory_limiter"]
         memory_limiter["limit_mib"] = 500
@@ -30,10 +26,9 @@ module Mobilis
         traces["processors"] << "batch"
         traces["processors"] << "memory_limiter"
         traces["exporters"] << "otlp"
-        traces["exporters"] << "spanmetrics"
 
         metrics = @otel_collector["service"]["pipelines"]["metrics"]
-        metrics["receivers"] << "spanmetrics"
+        metrics["receivers"] << "otlp"
         metrics["processors"] << "batch"
         metrics["exporters"] << "prometheus"
 

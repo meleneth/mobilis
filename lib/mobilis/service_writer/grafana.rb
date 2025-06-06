@@ -18,6 +18,13 @@ module Mobilis
       end
 
       def write
+        Dir.mkdir("../data")
+        Dir.mkdir("../data/test")
+        Dir.mkdir("../data/test/grafana")
+        Dir.mkdir("../data/development")
+        Dir.mkdir("../data/development/grafana")
+        Dir.mkdir("../data/production")
+        Dir.mkdir("../data/production/grafana")
         Dir.mkdir "provisioning"
         Dir.chdir "provisioning"
         Dir.mkdir "datasources"

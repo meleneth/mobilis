@@ -8,6 +8,13 @@ module Mobilis
 
         @has_data_volume = false
         @has_service_dir = true
+        add_volume("./#{name}/prometheus.yml", "/etc/prometheus/prometheus.yml")
+        register_external_port(exposed_port_no, "#{name}_WEB_PORT",
+                               "#{name} web interface port")
+      end
+
+      def exposed_port_no
+        9090
       end
 
       def dependant_services_require_restart?
