@@ -19,7 +19,16 @@ RSpec.describe Mobilis::Realized::Grafana do
   it "#compose" do
     expect(grafana_node.compose.clean_shrunk).to eq(
       { image: "grafana/grafana:12.0.1",
-        ports: ["${GRAFANA_WEB_PORT}:3000"] }
+        ports: ["${GRAFANA_WEB_PORT}:3000"],
+        environment: [
+          "GF_PATHS_PROVISIONING=/etc/grafana/provisioning",
+          "GF_SECURITY_ADMIN_PASSWORD=admin"
+        ],
+        volumes: [
+          "./data/test/grafana:/var/lib/grafana",
+          "./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources"
+        ],
+        user: "${HOST_UID}:${HOST_GID}" }
     )
   end
 end

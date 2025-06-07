@@ -25,6 +25,9 @@ RSpec.describe Mobilis::Realized::Rails do
   it "#compose" do
     expect(realized_rails_node.compose.clean_shrunk).to eq(
       { image: "generate/user",
+        ports: [
+          "${USER_WEB_PORT}:3000"
+        ],
         environment: [
           "DATABASE_URL=${USERDB_DATABASE_URL}",
           "RAILS_ENV=test",

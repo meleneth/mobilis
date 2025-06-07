@@ -17,6 +17,14 @@ RSpec.describe Mobilis::Realized::Prometheus do
   end
 
   it "#compose" do
-    expect(prometheus_node.compose.clean_shrunk).to eq({ image: "prom/prometheus:v3.4.1" })
+    expect(prometheus_node.compose.clean_shrunk).to eq(
+      { image: "prom/prometheus:v3.4.1",
+        ports: [
+          "${PROMETHEUS_WEB_PORT}:9090"
+        ],
+        volumes: [
+          "./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml"
+        ] }
+    )
   end
 end
