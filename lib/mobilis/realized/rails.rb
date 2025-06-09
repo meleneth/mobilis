@@ -39,6 +39,7 @@ module Mobilis
         [
           Mobilis::Plugin::RailsBuilder,
           Mobilis::Plugin::RailsDBFanout,
+          Mobilis::Plugin::RailsDBLibSupport,
           Mobilis::Plugin::RailsTestMountSourceVolume
         ]
       end

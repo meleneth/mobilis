@@ -13,6 +13,12 @@ module Mobilis
 
         def hook_before_services_written
         end
+
+        def hook_after_services_written
+        end
+
+        def hook_after_dc_helpers
+        end
       end
     end
   end

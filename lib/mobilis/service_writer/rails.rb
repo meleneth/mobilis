@@ -5,6 +5,7 @@ module Mobilis
         Dir.chdir("..")
         rails_builder.container_run("rails new #{@realized_node.name} .")
         Dir.chdir(@realized_node.name)
+        rails_builder.container_run("bundle add pg")
         FileUtils.rm_rf(".git")
         @manifest.commit_all("add Rails project #{@realized_node.name}")
       end

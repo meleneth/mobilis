@@ -26,6 +26,18 @@ module Mobilis
         add_volume(data_volume_env_var.env_var_ref, "/var/lib/postgresql/data")
       end
 
+      def build_packages
+        ["libpq-dev"]
+      end
+
+      def runtime_packages
+        ["libpq5"]
+      end
+
+      def additional_gems
+        ["pg"]
+      end
+
       def data_volume_env_var
         # this var will not be in the environment for the comtainer
         # but it will be in the .env file

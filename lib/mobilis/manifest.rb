@@ -47,6 +47,7 @@ module Mobilis
       commit_all("Basic .gitignore")
       run_plugin_hooks :hook_before_services_written
       emit_all_services
+      run_plugin_hooks :hook_after_services_written
       emit_compose_wrappers
       emit_env_files
       write_overrides_for(:test)
@@ -59,6 +60,8 @@ module Mobilis
       commit_all("Mobilis system config")
       write_dc_helpers
       commit_all("docker compose helper scripts")
+      Mobilis::Util.run_command(["./dc_test build"])
+      run_plugin_hooks :hook_after_dc_helpers
     end
 
     def write_mobilis_system
