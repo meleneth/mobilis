@@ -12,7 +12,7 @@ module Mobilis
 
           test_dir_path_env_var = realized_node.add_env_only_var("#{realized_node.name}_TEST_SOURCE_PATH",
                                                                  "./#{realized_node.name}")
-          realized_node.add_volume(test_dir_path_env_var.env_var_ref, "/app", override: true)
+          realized_node.add_volume(test_dir_path_env_var.env_var_ref, "/rails", override: true)
         end
       end
 
