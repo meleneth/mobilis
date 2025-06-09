@@ -103,7 +103,7 @@ module Mobilis
         	export HOST_GID=$(id -g)
         fi
 
-        exec docker compose --env-file #{env_name}.env -f #{env_name}-compose.yml $@
+        exec docker compose --env-file #{env_name}.env -f #{env_name}-compose.yml -f #{env_name}-overrides.yml "$@"
       HERE
       FileUtils.chmod("+x", filename)
     end
