@@ -56,11 +56,21 @@ module Mobilis
       raw_nodes = hash[:nodes] || []
 
       raw_nodes.each do |node_data|
+        node_data = JSON.parse(node_data.to_json, symbolize_names: true)
         klass = Object.const_get(node_data[:type])
+        config_node = false
+        models = node_data.delete(:models) || []
+
         node_data.delete(:type)
-        data = node_data.transform_keys(&:to_sym)
-        name = data.delete(:name)
-        config_node = klass.new(name, **data)
+        name = node_data.delete(:name)
+        config_node = klass.new(name, **node_data)
+
+        models.each do |model|
+          model_klass = Object.const_get(model[:type])
+          model = model_klass.from_h(model)
+          config_node.models << model
+        end
+
         sys << config_node
       end
 

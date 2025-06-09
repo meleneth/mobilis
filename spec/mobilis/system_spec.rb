@@ -5,6 +5,8 @@ RSpec.describe Mobilis::System do
     pg = build(:postgres_node, name: "pg_main")
     rails = build(:rails_node, name: "myapp", primary_database: pg)
 
+    rails.add_rails_model("user")
+
     system = described_class.new("generate")
     system << pg
     system << rails
@@ -18,5 +20,6 @@ RSpec.describe Mobilis::System do
     expect(loaded_rails).to be_a(Mobilis::Node::Rails)
     expect(loaded_pg).to be_a(Mobilis::Node::PostgreSQL)
     expect(loaded_rails.primary_database).to eq(loaded_pg)
+    expect(loaded_rails.models[0].name).to eq("user")
   end
 end

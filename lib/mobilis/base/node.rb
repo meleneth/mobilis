@@ -6,6 +6,7 @@ module Mobilis
   module Base
     class Node
       include Mobilis::RefSlot
+      include Mobilis::Mixins::Node::HasModels
 
       attr_reader :id, :name, :extra_depends_on
 
@@ -27,7 +28,8 @@ module Mobilis
           id: id,
           name: name,
           type: self.class.name,
-          extra_depends_on: extra_depends_on.map(&:name)
+          extra_depends_on: extra_depends_on.map(&:name),
+          models: models.map(&:to_h)
         }
 
         each_ref_id do |ref, id|

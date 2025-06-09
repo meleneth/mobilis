@@ -86,6 +86,14 @@ Config nodes are the fundamental configuration primitive. They’re intentionall
 
 Config nodes live inside a System object and are never modified during realization. They do not include any container or environment-specific details.
 
+## Mobilis::Model
+
+These are per-config-node configuration fragments. They are specific to each type of config node and are not top-level system objects. They live on Config nodes as an array config_node.models
+
+Do not confuse these with general "models" — e.g., `Mobilis::Model::Rails::Model` represents a Rails table, but it exists only within a `Mobilis::Node::Rails`, not on its own.
+
+A Rails model is a `Mobilis::Model::Rails::Model`, not a `Mobilis::Model`, and not a `Mobilis::Node`.
+
 ## Realized Nodes (RealizedEnv)
 
 Realized nodes are where all the complexity lives. Each RealizedNode corresponds to a specific config node in a specific environment (e.g., test, development, production). These nodes contain everything needed to generate a working Docker Compose setup, including:

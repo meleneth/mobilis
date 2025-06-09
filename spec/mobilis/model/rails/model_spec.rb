@@ -1,0 +1,47 @@
+require "spec_helper"
+
+RSpec.describe Mobilis::Model::Rails::Model do
+  let(:model) { build(:rails_model, name: "some_model") }
+  describe "#to_h" do
+    it "serializes" do
+      expect(model.to_h).to eq(
+        {
+          name: "some_model",
+          fields: [],
+          type: "Mobilis::Model::Rails::Model"
+        }
+      )
+    end
+  end
+  describe "#string" do
+    before :each do
+      model.string("name")
+    end
+    it "adds a field of type string" do
+      expect(model.to_h).to eq(
+        {
+          name: "some_model",
+          fields: [{ name: "name", type: "string" }],
+          type: "Mobilis::Model::Rails::Model"
+        }
+      )
+    end
+    it "round trips" do
+      hydrated_model = Mobilis::Model::Rails::Model.from_h(model.to_h)
+      expect(hydrated_model.to_h).to eq(
+        {
+          name: "some_model",
+          fields: [{ name: "name", type: "string" }],
+          type: "Mobilis::Model::Rails::Model"
+        }
+      )
+    end
+  end
+  describe ".from_h" do
+    it "raises if type is incorrect" do
+      expect do
+        described_class.from_h(name: "bad", type: "Wrong::Class", fields: [])
+      end.to raise_error(ArgumentError, /Expected type/)
+    end
+  end
+end

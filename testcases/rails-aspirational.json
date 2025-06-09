@@ -1,0 +1,39 @@
+{
+  "name": "rails-postgres",
+  "meta_project_name": "rails-postgres",
+  "nodes": [
+    {
+      "id": "574c9e69-51d4-42e4-965a-5b72358ebf0f",
+      "name": "user",
+      "type": "Mobilis::Node::Rails",
+      "primary_database_id": "c21cf384-d4e8-442b-bffe-60f17c6236a7",
+      "models": [
+        {
+          "type": "Mobilis::Model::Rails::Model",
+          "name": "account",
+          "fields": [{ "name": "name", "type": "string" }]
+        },
+        {
+          "type": "Mobilis::Model::Rails::Model",
+          "name": "user",
+          "fields": [
+            { "name": "name", "type": "string" },
+            { "name": "account", "type": "references" }
+          ]
+        },
+        {
+          "type": "Mobilis::Model::Rails::GraphQL",
+          "models": ["account", "user"]
+        }
+      ],
+      "options": {
+        "api": true
+      }
+    },
+    {
+      "id": "c21cf384-d4e8-442b-bffe-60f17c6236a7",
+      "name": "user-db",
+      "type": "Mobilis::Node::PostgreSQL"
+    }
+  ]
+}
