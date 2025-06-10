@@ -24,7 +24,7 @@ module Mobilis
           end
           status = $?
         else
-          puts " >-> Running Command: #{cmd.join(" ")}"
+          puts " 𝕸 > Running Command: #{cmd.join(" ")}"
           system(full_env, *cmd)
           status = $?
         end

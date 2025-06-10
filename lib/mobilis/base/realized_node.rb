@@ -21,7 +21,7 @@ module Mobilis
       attr_reader :config_node, :has_data_volume, :has_dockerfile, :has_service_dir, :realized_env
       attr_accessor :extra_depends_on
 
-      def_delegators :@config_node, :name
+      def_delegators :@config_node, :name, :each_model_of_type
       def_delegators :@realized_env, :meta_project_name
 
       # @param env [Mobilis::RealizedEnv]

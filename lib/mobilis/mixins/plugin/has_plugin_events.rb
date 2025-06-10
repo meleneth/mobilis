@@ -19,6 +19,9 @@ module Mobilis
 
         def hook_after_dc_helpers
         end
+
+        def hook_create_rails_models
+        end
       end
     end
   end

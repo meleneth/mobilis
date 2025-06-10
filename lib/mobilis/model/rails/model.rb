@@ -26,6 +26,12 @@ module Mobilis
           @fields = []
         end
 
+        def field_args
+          fields.map do |field|
+            "#{field.name}:#{field.type}"
+          end
+        end
+
         def add_field(field_name, type, **options)
           @fields << Field.new(name: field_name, type: type, **options)
           self
@@ -33,6 +39,18 @@ module Mobilis
 
         def string(name, **options)
           add_field(name, "string", **options)
+        end
+
+        def integer(name, **options)
+          add_field(name, "integer", **options)
+        end
+
+        def text(name, **options)
+          add_field(name, "text", **options)
+        end
+
+        def references(name, **options)
+          add_field(name, "references", **options)
         end
 
         def to_h

@@ -62,6 +62,7 @@ module Mobilis
       commit_all("docker compose helper scripts")
       Mobilis::Util.run_command(["./dc_test build"])
       run_plugin_hooks :hook_after_dc_helpers
+      run_plugin_hooks :hook_create_rails_models
     end
 
     def write_mobilis_system

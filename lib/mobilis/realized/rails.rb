@@ -38,6 +38,7 @@ module Mobilis
       def required_plugins
         [
           Mobilis::Plugin::RailsBuilder,
+          Mobilis::Plugin::RailsCreateModels,
           Mobilis::Plugin::RailsDBFanout,
           Mobilis::Plugin::RailsDBLibSupport,
           Mobilis::Plugin::RailsTestMountSourceVolume
