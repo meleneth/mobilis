@@ -129,6 +129,8 @@ module Mobilis
                  .flat_map(&:required_plugins)
                  .uniq
                  .map { |klass| klass.new(self) }
+      @plugins << Mobilis::Plugin::WriteScripts.new(self)
+      @plugins
     end
 
     def run_plugin_hooks(hook, &block)
@@ -155,7 +157,7 @@ module Mobilis
 
     def plugin_for(klass)
       @plugins.each do |plugin|
-        return plugin if plugin.instance_of? klass
+        return plugin if plugin.is_a? klass
       end
     end
 

@@ -7,6 +7,7 @@ module Mobilis
     class Node
       include Mobilis::RefSlot
       include Mobilis::Mixins::Node::HasModels
+      include Mobilis::Mixins::Node::HasScripts
 
       attr_reader :id, :name, :extra_depends_on
 

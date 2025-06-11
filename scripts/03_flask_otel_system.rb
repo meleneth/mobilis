@@ -14,6 +14,12 @@ prometheus = Mobilis::Node::Prometheus.new("prometheus")
 
 flasker.extra_depends_on << otel_collector
 
+flasker.add_script("some_script.sh", <<~SHELL)
+  #!/bin/bash
+  set -exuo pipefail
+  echo hi
+SHELL
+
 grafana.extra_depends_on << prometheus
 otel_collector.extra_depends_on << jaeger
 prometheus.extra_depends_on << otel_collector

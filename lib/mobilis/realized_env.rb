@@ -68,7 +68,7 @@ module Mobilis
       return enum_for(:each_node_of_type) unless block_given?
 
       realized_nodes.each do |node|
-        yield self, node if node.instance_of? klass
+        yield self, node if node.is_a? klass
       end
     end
 
