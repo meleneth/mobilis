@@ -275,3 +275,17 @@ A comprehensive reference list of all service types you may want to support in a
 - `device_gateway`
 - `change_data_capture`
 - `delta_lake_server`
+
+---
+
+## Go
+
+- Gin
+- Echo
+
+---
+
+## misc
+
+- Django
+- Spring Boot
