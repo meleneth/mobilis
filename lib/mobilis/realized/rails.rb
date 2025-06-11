@@ -1,10 +1,15 @@
 # frozen_string_literal: true
 
+require "forwardable"
+
 module Mobilis
   module Realized
     class Rails < Mobilis::Base::BuildForm
       include Mobilis::PrettyPrint::PrettyPrintable
+      include Forwardable
       attr_reader :primary_database, :env_db_url
+
+      def_delegators :@config_node, :api_mode
 
       def initialize(env, config_node)
         super(env, config_node)

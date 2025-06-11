@@ -9,6 +9,8 @@ user_db = Mobilis::Node::PostgreSQL.new("user-db")
 
 rails.primary_database = user_db
 
+rails.api_mode = true
+
 rails.add_rails_model("user") do
   string "name"
   integer "score"

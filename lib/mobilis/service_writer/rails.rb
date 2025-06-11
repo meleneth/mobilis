@@ -3,8 +3,13 @@ module Mobilis
     class Rails < Mobilis::Base::ServiceWriter
       def write
         Dir.chdir("..")
-        rails_builder.container_run("rails new #{@realized_node.name} .")
+        if @realized_node.api_mode
+          rails_builder.container_run("rails new #{@realized_node.name} . --api")
+        else
+          rails_builder.container_run("rails new #{@realized_node.name} .")
+        end
         Dir.chdir(@realized_node.name)
+        # TODO: WTF
         rails_builder.container_run("bundle add pg")
         FileUtils.rm_rf(".git")
         @manifest.commit_all("add Rails project #{@realized_node.name}")

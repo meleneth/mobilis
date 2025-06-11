@@ -6,6 +6,7 @@ module Mobilis
     class Rails < Mobilis::Node::Ruby
       include Mobilis::PrettyPrint::PrettyPrintable
       ref_attr :primary_database
+      attr_accessor :api_mode
 
       def add_rails_model(name, &block)
         new_model = Mobilis::Model::Rails::Model.new(name)
@@ -13,6 +14,16 @@ module Mobilis
 
         models << new_model
         new_model
+      end
+
+      def to_h
+        super.merge("api_mode" => api_mode)
+      end
+
+      def self.from_h(hash)
+        new(hash["name"]).tap do |obj|
+          obj.api_mode = hash["api_mode"]
+        end
       end
 
       def ppx_fields(dsl)
