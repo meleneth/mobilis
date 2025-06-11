@@ -1,3 +1,5 @@
+require "fileutils"
+
 module Mobilis
   module ServiceWriter
     class Grafana < Mobilis::Base::ServiceWriter
@@ -18,16 +20,16 @@ module Mobilis
       end
 
       def write
-        Dir.mkdir("../data")
-        Dir.mkdir("../data/test")
-        Dir.mkdir("../data/test/grafana")
-        Dir.mkdir("../data/development")
-        Dir.mkdir("../data/development/grafana")
-        Dir.mkdir("../data/production")
-        Dir.mkdir("../data/production/grafana")
-        Dir.mkdir "provisioning"
+        FileUtils.mkdir_p("../data")
+        FileUtils.mkdir_p("../data/test")
+        FileUtils.mkdir_p("../data/test/grafana")
+        FileUtils.mkdir_p("../data/development")
+        FileUtils.mkdir_p("../data/development/grafana")
+        FileUtils.mkdir_p("../data/production")
+        FileUtils.mkdir_p("../data/production/grafana")
+        FileUtils.mkdir_p "provisioning"
         Dir.chdir "provisioning"
-        Dir.mkdir "datasources"
+        FileUtils.mkdir_p "datasources"
         Dir.chdir "datasources"
         File.write("prometheus.yml", ::YAML.dump(Mobilis::YAML.deep_stringify_keys(datasources.to_serial)))
       end
