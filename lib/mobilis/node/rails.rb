@@ -17,17 +17,18 @@ module Mobilis
       end
 
       def to_h
-        super.merge("api_mode" => api_mode)
+        super.merge({ api_mode: api_mode })
       end
 
       def self.from_h(hash)
-        new(hash["name"]).tap do |obj|
-          obj.api_mode = hash["api_mode"]
+        new(hash[:name]).tap do |obj|
+          obj.api_mode = hash[:api_mode]
         end
       end
 
       def ppx_fields(dsl)
         dsl.instance_value "name", name
+        dsl.instance_value "api_mode", api_mode
         dsl.child_object "primary_database", primary_database
       end
     end

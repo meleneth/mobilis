@@ -14,6 +14,7 @@ RSpec.describe Mobilis::Node::Rails do
         id: "27b11f5e-0df1-49b9-8892-230d167233de",
         name: "rails",
         type: "Mobilis::Node::Rails",
+        api_mode: nil,
         extra_depends_on: [],
         models: []
       }
@@ -32,6 +33,7 @@ RSpec.describe Mobilis::Node::Rails do
       expect(rails_node.to_h).to eq(
         {
           id: "27b11f5e-0df1-49b9-8892-230d167233de",
+          api_mode: nil,
           name: "rails",
           type: "Mobilis::Node::Rails",
           extra_depends_on: [],
