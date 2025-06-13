@@ -129,6 +129,7 @@ module Mobilis
                  .flat_map(&:required_plugins)
                  .uniq
                  .map { |klass| klass.new(self) }
+      @plugins << Mobilis::Plugin::WriteFiles.new(self)
       @plugins << Mobilis::Plugin::WriteScripts.new(self)
       @plugins
     end

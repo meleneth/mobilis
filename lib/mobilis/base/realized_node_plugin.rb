@@ -7,8 +7,8 @@ module Mobilis
       include Mobilis::Mixins::Plugin::HasPluginEvents
       extend Forwardable
 
-      def_delegators :@manifest, :directory_service, :username
-      def_delegators :realized_node, :realized_env
+      def_delegators :@manifest, :directory_service, :username, :commit_all
+      def_delegators :realized_node, :realized_env, :config_node
 
       attr_reader :manifest, :realized_node
 
