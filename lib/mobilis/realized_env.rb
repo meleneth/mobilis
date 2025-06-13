@@ -35,7 +35,7 @@ module Mobilis
 
     def realized_node_for_config_node(system_node)
       realized_nodes.each do |possible|
-        return possible if possible.config_node == system_node
+        return possible if possible.config_node.name == system_node.name
       end
       nil
     end
@@ -99,6 +99,9 @@ module Mobilis
       end
       realized_nodes.each do |realized_node|
         realized_node.after_all_nodes_realized
+        realized_node.extra_depends_on.each do |extra_dep|
+          extra_dep[:target] = realized_node_for_config_node(extra_dep[:target])
+        end
       end
     end
 

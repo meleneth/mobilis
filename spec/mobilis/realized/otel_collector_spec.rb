@@ -25,7 +25,13 @@ RSpec.describe Mobilis::Realized::OtelCollector do
         volumes: [
           "./otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml"
         ],
-        command: ["--config=/etc/otel-collector-config.yaml"] }
+        command: ["--config=/etc/otel-collector-config.yaml"],
+        depends_on: {
+          jaeger: {
+            condition: "service_started",
+            restart: true
+          }
+        } }
     )
   end
 end

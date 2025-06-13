@@ -69,7 +69,7 @@ RSpec.describe Mobilis::RealizedEnv do
     end
 
     it "returns nil if there is no matching realized node" do
-      nonexistent_system_node = double("nonexistent_node")
+      nonexistent_system_node = double("nonexistent_node", name: "nonexistant")
       expect(realized_env.realized_node_for_config_node(nonexistent_system_node)).to be_nil
     end
   end

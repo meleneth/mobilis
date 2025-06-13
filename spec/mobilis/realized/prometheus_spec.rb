@@ -24,7 +24,13 @@ RSpec.describe Mobilis::Realized::Prometheus do
         ],
         volumes: [
           "./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml"
-        ] }
+        ],
+        depends_on: {
+          "otel-collector": {
+            condition: "service_started",
+            restart: true
+          }
+        } }
     )
   end
 end

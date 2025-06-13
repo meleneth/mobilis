@@ -2,53 +2,35 @@
 
 require "mobilis"
 
-system = Mobilis::System.new("generate")
+Mobilis::DSL.generate("generate") do
+  rails("user-service", primary_database: postgres("user-db"), api: true) do |svc|
+    svc.add_rails_model("user") do |m|
+      m.string "name"
+      m.string "title"
+      m.integer "account_id"
+    end
+  end
 
-user = Mobilis::Node::Rails.new("user-service")
-user_db = Mobilis::Node::PostgreSQL.new("user-db")
+  rails("account-service", primary_database: postgres("account-db"), api: true) do |svc|
+    svc.add_rails_model("account") { |m| m.string "name" }
+    svc.add_rails_model("group")   { |m| m.string "name" }
+    svc.add_rails_model("account_group") do |m|
+      m.references "account"
+      m.references "group"
+    end
+  end
 
-account = Mobilis::Node::Rails.new("account-service")
-account_db = Mobilis::Node::PostgreSQL.new("account-db")
+  rails("article-service", primary_database: postgres("article-db"), api: true) do |svc|
+    svc.add_rails_model("article") do |m|
+      m.string "title"
+      m.text "body"
+      m.integer "user_id"
+    end
+  end
 
-article = Mobilis::Node::Rails.new("article-service")
-article_db = Mobilis::Node::PostgreSQL.new("article-db")
+  connect from: "article-service", to: "user-service"
+  connect from: "article-service", to: "account-service"
 
-user.primary_database = user_db
-account.primary_database = account_db
-article.primary_database = article_db
-
-account.add_rails_model("account") do
-  string "name"
+  # head off circular health check issue
+  connect from: "user-service", to: "account-service", force_skip_health_checks: true
 end
-
-account.add_rails_model("group") do
-  string "name"
-end
-
-account.add_rails_model("account_group") do
-  references "account"
-  references "group"
-end
-
-user.add_rails_model("user") do
-  string "name"
-  string "title"
-  integer "account_id"
-end
-
-article.add_rails_model("article") do
-  string "title"
-  text "body"
-  integer "user_id"
-end
-
-system << user
-system << user_db
-system << account
-system << account_db
-system << article
-system << article_db
-
-manifest = Mobilis::Manifest.new(system)
-
-manifest.materialize

@@ -32,6 +32,10 @@ module Mobilis
     def resolve!
       config_nodes.each_value do |node|
         node.resolve_references_using(config_nodes) if node.respond_to?(:resolve_references_using)
+        node.extra_depends_on.each do |depends_on|
+          depends_on[:target] = config_nodes.find { |n| n.name == depends_on[:name] }
+          depends_on.delete(:name)
+        end
       end
     end
 

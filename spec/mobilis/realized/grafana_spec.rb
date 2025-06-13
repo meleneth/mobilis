@@ -28,7 +28,13 @@ RSpec.describe Mobilis::Realized::Grafana do
           "./data/test/grafana:/var/lib/grafana",
           "./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources"
         ],
-        user: "${HOST_UID}:${HOST_GID}" }
+        user: "${HOST_UID}:${HOST_GID}",
+        depends_on: {
+          prometheus: {
+            condition: "service_started",
+            restart: true
+          }
+        } }
     )
   end
 end

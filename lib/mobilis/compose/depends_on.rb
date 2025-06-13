@@ -10,9 +10,12 @@ module Mobilis
         @base = base
       end
 
-      def register(realized_node)
+      def register(realized_node, force_skip_health_checks: false)
+        condition = realized_node.has_healthcheck? ? "service_healthy" : "service_started"
+        condition = "service_started" if force_skip_health_checks
+
         @data[realized_node.name.to_sym] = {
-          condition: realized_node.has_healthcheck? ? "service_healthy" : "service_started",
+          condition: condition,
           restart: realized_node.dependant_services_require_restart? || nil
         }.compact
       end

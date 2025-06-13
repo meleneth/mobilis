@@ -21,6 +21,16 @@ RSpec.describe Mobilis::Node::Rails do
     )
   end
 
+  describe "extra_depends_on" do
+    let(:account_rails_node) { build(:rails_node, name: "account") }
+    before :each do
+      rails_node.has_extra_depends_on(account_rails_node)
+    end
+    it "stores target" do
+      expect(rails_node.extra_depends_on[0][:target].name).to eq("account")
+    end
+  end
+
   describe "Supports Models" do
     before :each do
       rails_node.add_rails_model("user") do

@@ -2,34 +2,23 @@
 
 require "mobilis"
 
-system = Mobilis::System.new("otel-generate")
+Mobilis::DSL.generate("otel-generate") do
+  grafana("grafana")
+  jaeger("jaeger")
+  otel_collector("otel-collector")
+  prometheus("prometheus")
 
-flasker = Mobilis::Node::Flask.new("flasker")
-otel_collector = Mobilis::Node::OtelCollector.new("otel-collector")
-grafana = Mobilis::Node::Grafana.new("grafana")
-jaeger = Mobilis::Node::Jaeger.new("jaeger")
-prometheus = Mobilis::Node::Prometheus.new("prometheus")
+  flask("flasker") do |svc|
+    svc.add_script("some_script.sh", <<~SHELL)
+      #!/bin/bash
+      set -exuo pipefail
+      echo hi
+    SHELL
 
-# extra_depends_on = services you need to be able to open connections to
+    connect from: "flasker", to: "otel-collector"
+  end
 
-flasker.extra_depends_on << otel_collector
-
-flasker.add_script("some_script.sh", <<~SHELL)
-  #!/bin/bash
-  set -exuo pipefail
-  echo hi
-SHELL
-
-grafana.extra_depends_on << prometheus
-otel_collector.extra_depends_on << jaeger
-prometheus.extra_depends_on << otel_collector
-
-system << flasker
-system << otel_collector
-system << grafana
-system << jaeger
-system << prometheus
-
-manifest = Mobilis::Manifest.new(system)
-
-manifest.materialize
+  connect from: "grafana",        to: "prometheus"
+  connect from: "otel-collector", to: "jaeger"
+  connect from: "prometheus",     to: "otel-collector"
+end

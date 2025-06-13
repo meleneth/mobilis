@@ -5,11 +5,11 @@ module Mobilis
     module RealizedNode
       # Mixin to add add depends_on support to RealizedNode
       module HasDependsOn
-        def register_depends_on(realized_node, override: false)
+        def register_depends_on(realized_node, force_skip_health_checks: false, override: false)
           if override
-            compose_depends_on_overrides.register(realized_node)
+            compose_depends_on_overrides.register(realized_node, force_skip_health_checks: force_skip_health_checks)
           else
-            compose_depends_on.register(realized_node)
+            compose_depends_on.register(realized_node, force_skip_health_checks: force_skip_health_checks)
           end
         end
 

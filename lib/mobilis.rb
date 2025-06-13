@@ -20,6 +20,7 @@ require "mobilis/compose/depends_on"
 require "mobilis/compose/volume"
 require "mobilis/file_lines"
 
+require "mobilis/mixins/node/has_extra_depends_on"
 require "mobilis/mixins/node/has_models"
 require "mobilis/mixins/node/has_scripts"
 
@@ -84,3 +85,4 @@ require "mobilis/realized/grafana"
 require "mobilis/services/directory"
 require "mobilis/system"
 require "mobilis/util/run_command"
+require "mobilis/dsl"

@@ -51,9 +51,10 @@ FactoryBot.define do
         prometheus_node = build(:prometheus_node, name: "prometheus")
         jaeger_node = build(:jaeger_node, name: "jaeger")
         grafana_node = build(:grafana_node, name: "grafana")
-        grafana_node.extra_depends_on << prometheus_node
-        collector_node.extra_depends_on << jaeger_node
-        prometheus_node.extra_depends_on << collector_node
+
+        grafana_node.has_extra_depends_on(prometheus_node)
+        collector_node.has_extra_depends_on(jaeger_node)
+        prometheus_node.has_extra_depends_on(collector_node)
 
         system << collector_node
         system << prometheus_node
@@ -77,7 +78,7 @@ FactoryBot.define do
         pg_two = build(:postgres_node, name: evaluator.db_two_name)
         rails_two = build(:rails_node, name: evaluator.rails_two_name, primary_database: pg_two)
 
-        rails_two.extra_depends_on << rails_one
+        rails_two.has_extra_depends_on(rails_one)
 
         system << pg_one
         system << rails_one
