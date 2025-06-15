@@ -37,12 +37,20 @@ module Mobilis
           self
         end
 
-        def string(name, **options)
-          add_field(name, "string", **options)
+        def boolean(name, **options)
+          add_field(name, "boolean", **options)
+        end
+
+        def datetime(name, **options)
+          add_field(name, "datetime", **options)
         end
 
         def integer(name, **options)
           add_field(name, "integer", **options)
+        end
+
+        def string(name, **options)
+          add_field(name, "string", **options)
         end
 
         def text(name, **options)
