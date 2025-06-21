@@ -22,6 +22,9 @@ module Mobilis
 
         def hook_create_rails_models
         end
+
+        def hook_after_rails_models_created
+        end
       end
     end
   end

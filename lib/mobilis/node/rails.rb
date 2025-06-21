@@ -16,6 +16,11 @@ module Mobilis
         new_model
       end
 
+      def install_graphql!
+        graphql_model = Mobilis::Model::Rails::GraphQL.new
+        models << graphql_model
+      end
+
       def to_h
         super.merge({ api_mode: api_mode })
       end

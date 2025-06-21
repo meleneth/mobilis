@@ -2,13 +2,16 @@
 
 module Mobilis
   module Model
-    module GraphQL
-      class Model
-        attr_reader :name, :fields
+    module Rails
+      class GraphQL
+        def self.from_h(hash)
+          new
+        end
 
-        def initialize(name)
-          @name = name
-          @fields = []
+        def to_h
+          {
+            type: self.class.name
+          }
         end
       end
     end

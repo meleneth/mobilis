@@ -46,7 +46,8 @@ module Mobilis
           Mobilis::Plugin::RailsCreateModels,
           Mobilis::Plugin::RailsDBFanout,
           Mobilis::Plugin::RailsDBLibSupport,
-          Mobilis::Plugin::RailsTestMountSourceVolume
+          Mobilis::Plugin::RailsTestMountSourceVolume,
+          Mobilis::Plugin::GraphQLPlugerator
         ]
       end
 

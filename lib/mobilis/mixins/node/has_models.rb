@@ -11,6 +11,12 @@ module Mobilis
           @models
         end
 
+        def has_model_class?(klass)
+          each_model_of_type(klass) do |model|
+            return true
+          end
+        end
+
         def each_model_of_type(klass)
           return enum_for(:each_model_of_type, klass) unless block_given?
 

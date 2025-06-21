@@ -63,6 +63,7 @@ module Mobilis
       Mobilis::Util.run_command(["./dc_test build"])
       run_plugin_hooks :hook_after_dc_helpers
       run_plugin_hooks :hook_create_rails_models
+      run_plugin_hooks :hook_after_rails_models_created
     end
 
     def write_mobilis_system

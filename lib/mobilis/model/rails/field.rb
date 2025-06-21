@@ -10,9 +10,10 @@ module Mobilis
           new(name: hash[:name], type: hash[:type])
         end
 
-        def initialize(name:, type:)
+        def initialize(name:, type:, cardinality: false)
           @name = name
           @type = type
+          @cardinality = cardinality
         end
 
         def to_h
