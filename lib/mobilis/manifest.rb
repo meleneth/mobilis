@@ -20,10 +20,12 @@ module Mobilis
       return if suppress_plugins
 
       setup_plugins
-      run_plugin_hooks :generate_per_node_plugins do |plugin|
-        @plugins << plugin
-      end
+      run_plugin_hooks :generate_per_node_plugins
       run_plugin_hooks :create_additional_services
+    end
+
+    def add_plugin(plugin)
+      @plugins << plugin
     end
 
     def realized_production_env
@@ -132,16 +134,13 @@ module Mobilis
                  .map { |klass| klass.new(self) }
       @plugins << Mobilis::Plugin::WriteFiles.new(self)
       @plugins << Mobilis::Plugin::WriteScripts.new(self)
+      @plugins << Mobilis::Plugin::Plugerator.new(self)
       @plugins
     end
 
-    def run_plugin_hooks(hook, &block)
+    def run_plugin_hooks(hook)
       @plugins.dup.each do |plugin|
-        if block_given?
-          plugin.send(hook, &block)
-        else
-          plugin.send(hook)
-        end
+        plugin.send(hook)
       end
     end
 

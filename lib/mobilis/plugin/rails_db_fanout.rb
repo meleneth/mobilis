@@ -12,7 +12,7 @@ module Mobilis
           next unless realized_env.is_production?
 
           new_plugin = Mobilis::Plugin::RailsDBFanoutRealizedNode.new(@manifest, realized_node)
-          yield new_plugin if block_given?
+          @manifest.add_plugin(new_plugin)
         end
       end
 

@@ -34,12 +34,6 @@ module Mobilis
         Mobilis::ServiceWriter::OtelCollector
       end
 
-      def required_plugins
-        [
-          Mobilis::Plugin::OTELPlugerator
-        ]
-      end
-
       def ppx_fields(dsl)
         dsl.instance_value "name", name
         dsl.instance_value "environment", environment
