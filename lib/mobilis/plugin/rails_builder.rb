@@ -81,7 +81,7 @@ module Mobilis
           RUN bundle config set --global bin /tmp/bundle/bin
           RUN gem update bundle
           RUN gem update --system
-          RUN gem install rails pg mysql2 minitest rspec-rails puma jbuilder sqlite3 redis kredis bcrypt image_processing
+          RUN gem install rails pg mysql2 minitest rspec-rails puma jbuilder sqlite3 redis kredis bcrypt image_processing graphql
         EOF
         # it makes no sense that these values were hardcoded at 200 when I was passing
         # in the id's, why did that happen?

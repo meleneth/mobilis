@@ -5,18 +5,19 @@ require "mobilis"
 Mobilis::DSL.generate("generate") do
   rails("iam-service", primary_database: postgres("iam-db")) do |svc|
     svc.install_graphql!
+    svc.run_command("bundle exec rails db:migrate", "apply schema changes")
 
     svc.add_rails_model("account") do |m|
       m.string "name"
     end
 
-    # svc.run_command("rails g graphql:model Account name:string", "create Account GraphQL model")
+    svc.run_command("bundle exec rails g graphql:object Account name:string", "create Account GraphQL model")
 
     svc.add_rails_model("group") do |m|
       m.string "name"
     end
 
-    # svc.run_command("rails g graphql:model Group name:string", "create Group GraphQL model")
+    svc.run_command("bundle exec rails g graphql:object Group name:string", "create Group GraphQL model")
 
     svc.add_rails_model("account_group") do |m|
       m.references "account", cardinality: :has_one
@@ -29,7 +30,7 @@ Mobilis::DSL.generate("generate") do
       m.references "account", cardinality: :has_one
     end
 
-    # svc.run_command("rails g graphql:model User name:string account:Account", "create User GraphQL model")
+    svc.run_command("bundle exec rails g graphql:object User name:string account:Account", "create User GraphQL model")
 
     svc.add_rails_model("account_membership") do |m|
       m.references "account", cardinality: :has_many

@@ -25,6 +25,11 @@ module Mobilis
         end
       end
 
+      def run_command(command, commit_message)
+        model = Mobilis::Model::RunCommand.new(command, commit_message)
+        add_model(model)
+      end
+
       def to_h
         h = {
           id: id,

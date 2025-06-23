@@ -17,6 +17,10 @@ module Mobilis
           end
         end
 
+        def add_model(model)
+          @models << model
+        end
+
         def each_model_of_type(klass)
           return enum_for(:each_model_of_type, klass) unless block_given?
 

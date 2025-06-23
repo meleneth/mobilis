@@ -25,6 +25,9 @@ module Mobilis
 
         def hook_after_rails_models_created
         end
+
+        def hook_run_commands
+        end
       end
     end
   end

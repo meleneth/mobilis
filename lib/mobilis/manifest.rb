@@ -62,10 +62,11 @@ module Mobilis
       commit_all("Mobilis system config")
       write_dc_helpers
       commit_all("docker compose helper scripts")
-      Mobilis::Util.run_command(["./dc_test build"])
+      Mobilis::Util.run_command(["./dc_test", "build"])
       run_plugin_hooks :hook_after_dc_helpers
       run_plugin_hooks :hook_create_rails_models
       run_plugin_hooks :hook_after_rails_models_created
+      run_plugin_hooks :hook_run_commands
     end
 
     def write_mobilis_system
@@ -135,6 +136,7 @@ module Mobilis
       @plugins << Mobilis::Plugin::WriteFiles.new(self)
       @plugins << Mobilis::Plugin::WriteScripts.new(self)
       @plugins << Mobilis::Plugin::Plugerator.new(self)
+      @plugins << Mobilis::Plugin::RunCommands.new(self)
       @plugins
     end
 

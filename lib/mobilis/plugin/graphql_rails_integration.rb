@@ -10,20 +10,24 @@ module Mobilis
 
       def hook_after_services_written
         directory_service.chdir_project(realized_node)
-        rails_builder.container_run("bundle add graphql")
+        File.write("tmp_install_graphql.sh", <<~HERE)
+          #!/bin/sh
+          set -exuo pipefail
+          bundle add graphql
+          bundle exec rails generate graphql:install
+          bundle install
+          rm tmp_install_graphql.sh
+        HERE
+
+        rails_builder.container_run("/bin/bash tmp_install_graphql.sh")
+
         directory_service.chdir_generate
-        commit_all("#{realized_node.name} - add GraphQL gem")
+        commit_all("#{realized_node.name} - add and install GraphQL gem")
       end
 
       def hook_after_rails_models_created
         realized_node.each_model_of_type(Mobilis::Model::Rails::GraphQL) do |model|
           Mobilis::Util.run_command(["./dc_test", "build"])
-          Mobilis::Util.run_command([
-                                      "./dc_test",
-                                      "run", "--rm", "--entrypoint", "", realized_node.name,
-                                      "bundle", "exec", "rails", "generate", "graphql:install"
-                                    ])
-          commit_all("#{realized_node.name} - install GraphQL gem")
         end
       end
 
