@@ -39,7 +39,7 @@ module Mobilis
       end
 
       def data_volume_env_var
-        # this var will not be in the environment for the comtainer
+        # this var will not be in the environment for the container
         # but it will be in the .env file
         @data_volume_env_var ||= add_env_only_var("#{name}_postgres_data", "./data/#{environment}/#{config_node.name}")
       end
@@ -62,7 +62,7 @@ module Mobilis
           dsl.child_object "port_map", port_map
         end
         dsl.child_object "config_node", config_node
-        dsl.env_vars envfile_vars
+        # dsl.env_vars envfile_vars
       end
     end
   end

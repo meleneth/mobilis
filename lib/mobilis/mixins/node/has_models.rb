@@ -18,7 +18,7 @@ module Mobilis
         end
 
         def add_model(model)
-          @models << model
+          models << model
         end
 
         def each_model_of_type(klass)

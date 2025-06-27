@@ -137,6 +137,7 @@ module Mobilis
       @plugins << Mobilis::Plugin::WriteScripts.new(self)
       @plugins << Mobilis::Plugin::Plugerator.new(self)
       @plugins << Mobilis::Plugin::RunCommands.new(self)
+      @plugins << Mobilis::Plugin::EnvVars.new(self)
       @plugins
     end
 

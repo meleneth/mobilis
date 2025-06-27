@@ -59,12 +59,12 @@ module Mobilis
         dsl.instance_value "environment", environment
         dsl.instance_value "has_service_dir", has_service_dir
         dsl.instance_value "has_data_volume", has_data_volume
-        dsl.child_object "env_db_url", env_db_url
+        # dsl.child_object "env_db_url", env_db_url
         dsl.child_object "primary_database", primary_database
         dsl.child_object "config_node", config_node
-        extra_depends_on.each do |realized_node|
-          dsl.child_object "Extra depends_on #{realized_node.name}", realized_node
-        end
+        #        extra_depends_on.each do |realized_node|
+        #          dsl.child_object "Extra depends_on #{realized_node.name}", realized_node
+        #        end
         dsl.env_vars env_vars
       end
     end

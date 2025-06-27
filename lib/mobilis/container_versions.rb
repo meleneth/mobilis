@@ -19,7 +19,7 @@ module Mobilis
     MONGODB     = "mongo:7.0.5"
     MYSQL       = "mysql:9.3.0"
     POSTGRES    = "postgres:17.5-bookworm"
-    REDIS       = "redis:7.4.2-bookworm"
+    REDIS       = "redis:8.0.2-bookworm"
     SQLITE      = "nouchka/sqlite3:latest"
     VALKEY      = "valkey/valkey:7.2"
 

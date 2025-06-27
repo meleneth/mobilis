@@ -30,6 +30,11 @@ module Mobilis
         add_model(model)
       end
 
+      def env_var_alias(local_name, service_name)
+        model = Mobilis::Model::EnvVarAlias.new(local_name, service_name)
+        add_model(model)
+      end
+
       def to_h
         h = {
           id: id,

@@ -121,6 +121,8 @@ module Mobilis
         Mobilis::Realized::Flask.new(self, config_node)
       when Mobilis::Node::Rails
         Mobilis::Realized::Rails.new(self, config_node)
+      when Mobilis::Node::Redis
+        Mobilis::Realized::Redis.new(self, config_node)
       end
     end
   end

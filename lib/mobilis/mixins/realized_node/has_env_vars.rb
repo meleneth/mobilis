@@ -37,7 +37,7 @@ module Mobilis
           return enum_for(:env_vars_for_env_file) unless block_given?
 
           envfile_vars.envfile_vars do |emit_var|
-          yield emit_var unless emit_var.is_alias_only
+            yield emit_var unless emit_var.is_alias_only
           end
         end
 
