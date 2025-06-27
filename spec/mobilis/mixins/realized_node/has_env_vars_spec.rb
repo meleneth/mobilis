@@ -21,12 +21,12 @@ RSpec.describe Mobilis::Mixins::RealizedNode::HasEnvVars do
     env_vars = subject.compose_environment.as_json
     expect(env_vars).to eq(["RAILS_MAX_THREADS=5"])
   end
-  it "all 3 but only two come out in all_envfile_vars" do
+  it "all 3 but only one comes out in all_envfile_vars" do
     subject.add_compose_raw_var("RAILS_MAX_THREADS", 5)
-    subject.add_compose_aliased_var("SOME_VALUE", "USER_SOME_VALUE", 3)
+    subject.add_compose_aliased_var("SOME_VALUE", "USER_SOME_VALUE", 3, is_alias_only: true)
     subject.add_env_only_var("SOME_VALUE", 4)
     seen = {}
     subject.env_vars_for_env_file { |emit_var| seen[emit_var.envfile_name] = emit_var.value }
-    expect(seen).to eq({ "SOME_VALUE" => 4, "USER_SOME_VALUE" => 3 })
+    expect(seen).to eq({ "SOME_VALUE" => 4 })
   end
 end

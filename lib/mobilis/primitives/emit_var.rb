@@ -13,20 +13,23 @@ module Mobilis
     # Compose emits:   container_name=${envfile_name}
     # .env file emits: envfile_name=value
     class EmitVar
-      attr_reader :container_name, :envfile_name, :value
+      attr_reader :container_name, :envfile_name, :value, :is_alias_only
 
-      def self.for(service, type, value, do_not_resolve: false, aliased: false)
+      def self.for(service, type, value, do_not_resolve: false, aliased: false, is_alias_only: false)
         container_name = type
         envfile_name = "#{service}_#{type}"
-        new(container_name, envfile_name, value, do_not_resolve: do_not_resolve, aliased: aliased)
+        new(container_name, envfile_name, value, do_not_resolve: do_not_resolve, aliased: aliased,
+                                                 is_alias_only: is_alias_only)
       end
 
-      def initialize(container_name, envfile_name = nil, value = nil, do_not_resolve: false, aliased: false)
+      def initialize(container_name, envfile_name = nil, value = nil, do_not_resolve: false, aliased: false,
+                     is_alias_only: false)
         @container_name = normalize_name(container_name)
         @envfile_name = envfile_name ? normalize_name(envfile_name) : nil
         @value = value
         @do_not_resolve = do_not_resolve
         @aliased = aliased
+        @is_alias_only = is_alias_only
       end
 
       def has_envfile_name?

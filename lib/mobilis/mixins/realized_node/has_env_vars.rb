@@ -10,8 +10,9 @@ module Mobilis
           myvar
         end
 
-        def add_compose_aliased_var(container_name, envfile_name, value, override: false)
-          myvar = Mobilis::Primitives::EmitVar.new(container_name, envfile_name, value, aliased: true)
+        def add_compose_aliased_var(container_name, envfile_name, value, override: false, is_alias_only: false)
+          myvar = Mobilis::Primitives::EmitVar.new(container_name, envfile_name, value, aliased: true,
+                                                                                        is_alias_only: is_alias_only)
           envfile_vars.add(myvar)
           if override
             compose_environment_override.add(myvar)
@@ -21,8 +22,8 @@ module Mobilis
           myvar
         end
 
-        def add_compose_raw_var(container_name, value, override: false)
-          myvar = Mobilis::Primitives::EmitVar.new(container_name, nil, value)
+        def add_compose_raw_var(container_name, value, override: false, is_alias_only: false)
+          myvar = Mobilis::Primitives::EmitVar.new(container_name, nil, value, is_alias_only: is_alias_only)
           if override
             compose_environment_override.add(myvar)
           else
@@ -36,7 +37,7 @@ module Mobilis
           return enum_for(:env_vars_for_env_file) unless block_given?
 
           envfile_vars.envfile_vars do |emit_var|
-            yield emit_var
+          yield emit_var unless emit_var.is_alias_only
           end
         end
 
