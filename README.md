@@ -1,4 +1,16 @@
 # Mobilis - Service Oriented Architecture scaffolding
+With Ruby installed,
+
+    git clone https://github.com/meleneth/mobilis
+    cd mobilis
+    bundle install
+    bundle exec scripts/07_flask_redis.rb
+    cd generate
+    ./dc_test build
+    ./dc_test up -d
+    sleep 5
+    curl http://localhost:11000
+
 
 Initial setup for a service oriented project can be a pain.
 Generating initial codebases, wiring them up via environment
