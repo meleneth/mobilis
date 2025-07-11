@@ -19,6 +19,7 @@ module Mobilis
       def install_graphql!
         graphql_model = Mobilis::Model::Rails::GraphQL.new
         models << graphql_model
+        graphql_model
       end
 
       def to_h

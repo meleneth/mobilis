@@ -106,24 +106,18 @@ module Mobilis
     end
 
     def build_realized_node(config_node)
-      case config_node
-      when Mobilis::Node::PostgreSQL
-        Mobilis::Realized::PostgreSQL.new(self, config_node)
-      when Mobilis::Node::OtelCollector
-        Mobilis::Realized::OtelCollector.new(self, config_node)
-      when Mobilis::Node::Jaeger
-        Mobilis::Realized::Jaeger.new(self, config_node)
-      when Mobilis::Node::Prometheus
-        Mobilis::Realized::Prometheus.new(self, config_node)
-      when Mobilis::Node::Grafana
-        Mobilis::Realized::Grafana.new(self, config_node)
-      when Mobilis::Node::Flask
-        Mobilis::Realized::Flask.new(self, config_node)
-      when Mobilis::Node::Rails
-        Mobilis::Realized::Rails.new(self, config_node)
-      when Mobilis::Node::Redis
-        Mobilis::Realized::Redis.new(self, config_node)
-      end
+      maps = {
+        Mobilis::Node::Localstack => Mobilis::Realized::Localstack,
+        Mobilis::Node::PostgreSQL => Mobilis::Realized::PostgreSQL,
+        Mobilis::Node::OtelCollector => Mobilis::Realized::OtelCollector,
+        Mobilis::Node::Jaeger => Mobilis::Realized::Jaeger,
+        Mobilis::Node::Prometheus => Mobilis::Realized::Prometheus,
+        Mobilis::Node::Grafana => Mobilis::Realized::Grafana,
+        Mobilis::Node::Flask => Mobilis::Realized::Flask,
+        Mobilis::Node::Rails => Mobilis::Realized::Rails,
+        Mobilis::Node::Redis => Mobilis::Realized::Redis
+      }
+      maps[config_node.class].new(self, config_node)
     end
   end
 end

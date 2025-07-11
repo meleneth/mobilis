@@ -40,6 +40,7 @@ module Mobilis
     KAFKA       = "bitnami/kafka:4.0.0"
     NATS        = "nats:2.10.10"
     RABBITMQ    = "rabbitmq:3.13-management"
+    LOCALSTACK  = "localstack/localstack:4.6.0"
 
     # ─── Search / Indexing ─────────────────────────────────────
     ELASTICSEARCH = "elasticsearch:8.18.0"

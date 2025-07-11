@@ -75,6 +75,14 @@ module Mobilis
         node
       end
 
+      def localstack(name, &block)
+        node = Mobilis::Node::Localstack.new(name)
+        system << node
+        @named[name] = node
+        block&.call(node)
+        node
+      end
+
       def prometheus(name, &block)
         node = Mobilis::Node::Prometheus.new(name)
         system << node
