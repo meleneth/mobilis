@@ -47,6 +47,7 @@ module Mobilis
       write_gitignore
       @git_repo = Git.init(".")
       commit_all("Basic .gitignore")
+      run_plugin_hooks :create_builder_images
       run_plugin_hooks :hook_before_services_written
       emit_all_services
       run_plugin_hooks :hook_after_services_written
