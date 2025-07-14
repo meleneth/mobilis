@@ -4,6 +4,7 @@ require "mobilis"
 
 Mobilis::DSL.generate("generate") do
   rails("user-service", primary_database: postgres("user-db")) do |svc|
+    svc.use_api!
     svc.add_rails_model("user") do |m|
       m.string "name"
       m.integer "score"

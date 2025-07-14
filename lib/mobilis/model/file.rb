@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "fileutils"
+
 module Mobilis
   module Model
     class File
@@ -19,6 +21,8 @@ module Mobilis
       end
 
       def write_file
+        dir = ::File.dirname(@path)
+        FileUtils.mkdir_p(dir)
         ::File.write(@path, @content)
       end
 

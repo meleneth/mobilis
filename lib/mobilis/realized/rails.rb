@@ -9,7 +9,7 @@ module Mobilis
       include Forwardable
       attr_reader :primary_database, :env_db_url
 
-      def_delegators :@config_node, :api_mode
+      def_delegators :@config_node, :api_mode, :rails_new_command
 
       def initialize(env, config_node)
         super(env, config_node)

@@ -2,8 +2,6 @@
 
 require "mobilis"
 
-# FIXME: TODO currently broken, uuid support doesn't exist
-
 Mobilis::DSL.generate("parent_account_id") do
   # Infra
   redis("authcache")
@@ -25,80 +23,134 @@ Mobilis::DSL.generate("parent_account_id") do
 
   # Services
 
-  rails("user", primary_database: postgres("user-db"), api: true) do |svc|
+  rails("user-service", primary_database: postgres("user-db"), api: true) do |svc|
     svc.install_graphql!
+    svc.use_rspec!
 
-    svc.add_rails_model("user") do |m|
-      m.uuid :id, primary_key: true
-      m.string :email
-      m.string :username
-      m.string :first_name
-      m.string :last_name
-      m.string :middle_name
-      m.string :phone_number
-      m.string :alt_phone
-      m.string :slack_id
-      m.string :avatar_url
-      m.string :linkedin
-      m.string :github
-      m.string :twitter
-      m.string :tshirt_size
-      m.string :pronouns
-      m.string :timezone
-      m.timestamps
-    end
+    svc.write_file("app/models/user.rb", <<~USERMODEL)
+      # frozen_string_literal: true
+
+      class User < ApplicationRecord
+      end
+    USERMODEL
+
+    svc.write_file("db/migrate/20250714003610_create_users.rb", <<~USERS)
+      # frozen_string_literal: true
+      class CreateUsers < ActiveRecord::Migration[8.0]
+        def change
+          create_table :users, id: :uuid do |t|
+            t.uuid :account_id, index: true
+            t.string :email
+            t.string :username
+            t.string :first_name
+            t.string :last_name
+            t.string :middle_name
+            t.string :phone_number
+            t.string :alt_phone
+            t.string :slack_id
+            t.string :avatar_url
+            t.string :linkedin
+            t.string :github
+            t.string :twitter
+            t.string :tshirt_size
+            t.string :pronouns
+            t.string :timezone
+            t.timestamps
+          end
+        end
+      end
+    USERS
   end
 
-  rails("account", primary_database: postgres("account-db"), api: true) do |svc|
+  rails("account-service", primary_database: postgres("account-db"), api: true) do |svc|
     svc.install_graphql!
+    svc.use_rspec!
 
-    svc.add_rails_model("account") do |m|
-      m.uuid :id, primary_key: true
-      m.string :name
-      m.uuid :parent_id
-      m.timestamps
-    end
+    svc.write_file("db/migrate/20250714003609_create_accounts.rb", <<~ACCOUNTS)
+      # frozen_string_literal: true
+      class CreateAccounts < ActiveRecord::Migration[8.0]
+        def change
+          create_table :accounts, id: :uuid do |t|
+            t.string :name
+            t.uuid :parent_account_id, index: true
+
+            t.timestamps
+          end
+
+          add_foreign_key :accounts, :accounts, column: :parent_account_id
+        end
+      end
+    ACCOUNTS
+
+    svc.write_file("app/models/account.rb", <<~ACCOUNTMODEL)
+      # frozen_string_literal: true
+      # app/models/account.rb
+
+      class Account < ApplicationRecord
+        belongs_to :parent_account, class_name: "Account", optional: true
+        has_many :child_accounts, class_name: "Account", foreign_key: :parent_account_id, dependent: :nullify
+        before_validation :assign_default_name, on: :create
+
+        private
+
+        def assign_default_name
+          if name.blank?
+            self.id ||= SecureRandom.uuid
+            self.name = "Account \#{id}".truncate(36)
+          end
+        end
+      end
+    ACCOUNTMODEL
   end
 
-  rails("authorization", primary_database: postgres("authz-db"), api: true) do |svc|
+  rails("authorization-service", primary_database: postgres("authz-db"), api: true) do |svc|
     svc.install_graphql!
+    svc.use_rspec!
 
-    svc.add_rails_model("capability") do |m|
-      m.uuid :id, primary_key: true
-      m.uuid :subject_id
-      m.uuid :account_id
-      m.string :capability
-      m.timestamps
-    end
+    svc.write_file("db/migrate/20250714003611_create_capabilities.rb", <<~CAPABILITIES)
+      # frozen_string_literal: true
+      class CreateCapabilities < ActiveRecord::Migration[8.0]
+        def change
+          create_table :capabilities, id: :uuid do |t|
+            t.uuid :subject_id, index: true
+            t.uuid :account_id, index: true
+            t.string :permission
+            t.timestamps
+          end
+        end
+      end
+    CAPABILITIES
   end
 
-  connect from: "authorization", to: "authcache"
+  connect from: "authorization-service", to: "authcache"
 
-  rails("organization", primary_database: postgres("organization-db"), api: true) do |svc|
+  rails("organization-service", primary_database: postgres("organization-db"), api: true) do |svc|
     svc.install_graphql!
-
-    svc.add_rails_model("organization") do |m|
-      m.uuid :id, primary_key: true
-      m.string :name
-      m.uuid :subject_id
-      m.uuid :account_id
-      m.string :capability
-      m.timestamps
-    end
-
-    svc.add_rails_model("organization_accounts") do |m|
-      m.uuid :id, primary_key: true
-      m.uuid :account_id
-    end
   end
 
-  rails("permissions") do |svc|
+  rails("user-management-service") do |svc|
     svc.install_graphql!
+    svc.use_tailwind!
+    svc.use_rspec!
+    svc.write_file("scripts/setup.sh", <<~SETUP)
+      #!/bin/bash
+      bundle add activeresource --require active_resource
+    SETUP
+    svc.write_file("scripts/create_user.rb", <<~CREATEUSER)
+      User.create(name: "bleh")
+    CREATEUSER
   end
 
   # OTEL wiring
-  connect from: "user", to: "otel-collector"
-  connect from: "account", to: "otel-collector"
-  connect from: "authorization", to: "otel-collector"
-  connect from: "permissions", to: "otel-collector"
+  connect from: "user-service", to: "otel-collector"
+  connect from: "account-service", to: "otel-collector"
+  connect from: "authorization-service", to: "otel-collector"
+  connect from: "user-management-service", to: "otel-collector"
+
+  # user-management wiring
+
+  connect from: "user-management-service", to: "user-service"
+  connect from: "user-management-service", to: "account-service"
+  connect from: "user-management-service", to: "authorization-service"
+  connect from: "user-management-service", to: "organization-service"
 end

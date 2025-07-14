@@ -17,7 +17,7 @@ module Mobilis
         @named = {}
       end
 
-      def rails(name, primary_database:, api: false, &block)
+      def rails(name, primary_database: nil, api: false, &block)
         node = Mobilis::Node::Rails.new(name)
         node.primary_database = primary_database
         node.api_mode = api

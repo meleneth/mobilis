@@ -15,6 +15,20 @@ module Mobilis
         wireup_variant(realized_env, realized_node, "queue")
       end
 
+      def hook_after_services_written
+        # TODO: FIXME kinda lazy to do rspec here
+        return unless realized_node.config_node.rspec_enabled?
+
+        directory_service.chdir_project(realized_node)
+        rails_builder.container_run("bundle add rspec-rails --group \"development,test\"")
+        rails_builder.container_run("bundle exec rails generate rspec:install")
+        commit_all("#{realized_node.name} - rpsec install")
+      end
+
+      def rails_builder
+        manifest.plugin_for Mobilis::Plugin::RailsBuilder
+      end
+
       def wireup_variant(realized_env, realized_node, name)
         db = primary_database
         db_name = "#{db.name}-#{name}"
