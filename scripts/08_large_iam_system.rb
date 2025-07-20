@@ -136,6 +136,25 @@ Mobilis::DSL.generate("parent_account_id") do
       #!/bin/bash
       bundle add activeresource --require active_resource
     SETUP
+
+    svc.write_file("scripts/create_user.rb", <<~USERMODEL)
+      # frozen_string_literal: true
+
+      # app/models/user.rb
+      class User < ActiveResource::Base
+        self.site = ENV.fetch("USER_API_BASE_URL") # e.g., http://user-service:3000/
+        self.format = :json
+
+        # Optional: if the resource uses UUIDs instead of integers
+        self.primary_key = "id"
+
+        # Optional: if user-service uses a different collection path
+        self.collection_name = "users"
+
+        # Optional: handle nested resources, errors, etc.
+      end
+    USERMODEL
+
     svc.write_file("scripts/create_user.rb", <<~CREATEUSER)
       User.create(name: "bleh")
     CREATEUSER
