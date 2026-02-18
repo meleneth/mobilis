@@ -4,11 +4,11 @@ module Mobilis
   module ContainerVersions
     # ─── Language Runtimes ─────────────────────────────────────
     CRYSTAL     = "crystallang/crystal:1.9.2-alpine"
-    GOLANG      = "golang:1.24.2-bookworm"
+    GOLANG      = "golang:1.25.3-trixie"
     JAVA        = "eclipse-temurin:21-jdk-jammy"
-    NODE        = "node:20.10-bookworm"
-    PYTHON      = "python:3.13.4-bookworm"
-    RUBY        = "ruby:3.4.4-bookworm"
+    NODE        = "node:22.20-trixie"
+    PYTHON      = "python:3.14.0-trixie"
+    RUBY        = "ruby:4.0.1-trixie"
     RUST        = "rust:1.86-bookworm"
 
     # ─── Databases ─────────────────────────────────────────────
@@ -18,8 +18,8 @@ module Mobilis
     MEMCACHED   = "memcached:1.6.21-alpine"
     MONGODB     = "mongo:7.0.5"
     MYSQL       = "mysql:9.3.0"
-    POSTGRES    = "postgres:17.5-bookworm"
-    REDIS       = "redis:8.0.2-bookworm"
+    POSTGRES    = "postgres:18.2-trixie"
+    REDIS       = "redis:8.6.0-trixie"
     SQLITE      = "nouchka/sqlite3:latest"
     VALKEY      = "valkey/valkey:7.2"
 
@@ -30,9 +30,9 @@ module Mobilis
     RAILS_BUILDER = "ghcr.io/your-org/rails-builder:latest"
 
     # ─── Observability / Telemetry ─────────────────────────────
-    GRAFANA     = "grafana/grafana:12.0.1"
-    JAEGER      = "jaegertracing/jaeger:2.6.0"
-    LOKI        = "grafana/loki:2.9.2"
+    GRAFANA     = "grafana/grafana:12.3.0"
+    JAEGER      = "jaegertracing/jaeger:2.11.0"
+    LOKI        = "grafana/loki:3.5.0"
     OTEL_COLLECTOR = "otel/opentelemetry-collector-contrib:0.127.0"
     PROMETHEUS  = "prom/prometheus:v3.4.1"
 
@@ -41,6 +41,7 @@ module Mobilis
     NATS        = "nats:2.10.10"
     RABBITMQ    = "rabbitmq:3.13-management"
     LOCALSTACK  = "localstack/localstack:4.6.0"
+    GOAWS       = "admiralpiett/goaws:v0.5.4"
 
     # ─── Search / Indexing ─────────────────────────────────────
     ELASTICSEARCH = "elasticsearch:8.18.0"

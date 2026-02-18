@@ -68,7 +68,7 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
 
   it "#compose" do
     expected = {
-      image: "postgres:17.5-bookworm",
+      image: "postgres:18.2-trixie",
       ports: [
         "${USERDB_POSTGRES_PORT}:5432"
       ],
@@ -78,7 +78,7 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
         "POSTGRES_USER=${USERDB_POSTGRES_USER}"
       ],
       volumes: [
-        "${USERDB_POSTGRES_DATA}:/var/lib/postgresql/data"
+        "${USERDB_POSTGRES_DATA}:/var/lib/postgresql"
       ],
       healthcheck: {
         test: [
