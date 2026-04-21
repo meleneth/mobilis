@@ -22,3 +22,5 @@ group :development do
 end
 
 gem "awesome_print", "~> 1.9"
+
+gem "foreman", "~> 0.90.0"

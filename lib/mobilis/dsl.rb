@@ -91,6 +91,14 @@ module Mobilis
         node
       end
 
+      def goaws(name, &block)
+        node = Mobilis::Node::GoAws.new(name)
+        system << node
+        @named[name] = node
+        block&.call(node) 
+        node
+      end
+
       def connect(from:, to:, force_skip_health_checks: false)
         from_node = from.is_a?(String) ? @named.fetch(from) : from
         to_node   = to.is_a?(String)   ? @named.fetch(to)   : to

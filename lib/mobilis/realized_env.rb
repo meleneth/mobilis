@@ -115,7 +115,8 @@ module Mobilis
         Mobilis::Node::Grafana => Mobilis::Realized::Grafana,
         Mobilis::Node::Flask => Mobilis::Realized::Flask,
         Mobilis::Node::Rails => Mobilis::Realized::Rails,
-        Mobilis::Node::Redis => Mobilis::Realized::Redis
+        Mobilis::Node::Redis => Mobilis::Realized::Redis,
+        Mobilis::Node::GoAws => Mobilis::Realized::GoAws
       }
       maps[config_node.class].new(self, config_node)
     end
