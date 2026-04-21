@@ -42,7 +42,8 @@ RSpec.describe Mobilis::Node::Rails do
         rspec_enabled: nil,
         factory_bot_enabled: nil,
         haml_enabled: nil,
-        tailwind_enabled: nil
+        tailwind_enabled: nil,
+        uuid_primary_keys: nil
       }
     )
   end
@@ -83,7 +84,8 @@ RSpec.describe Mobilis::Node::Rails do
           rspec_enabled: nil,
           factory_bot_enabled: nil,
           haml_enabled: nil,
-          tailwind_enabled: nil
+          tailwind_enabled: nil,
+          uuid_primary_keys: nil
         }
       )
     end

@@ -68,7 +68,7 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
 
   it "#compose" do
     expected = {
-      image: "postgres:18.2-trixie",
+      image: "postgres:18.3-trixie",
       ports: [
         "${USERDB_POSTGRES_PORT}:5432"
       ],

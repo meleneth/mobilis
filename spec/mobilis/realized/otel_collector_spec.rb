@@ -18,7 +18,7 @@ RSpec.describe Mobilis::Realized::OtelCollector do
 
   it "#compose" do
     expect(otel_collector_node.compose.clean_shrunk).to eq(
-      { image: "otel/opentelemetry-collector-contrib:0.127.0",
+      { image: "otel/opentelemetry-collector-contrib:latest",
         ports: [
           "${OTEL_COLLECTOR_COLLECTOR_PORT}:4318"
         ],

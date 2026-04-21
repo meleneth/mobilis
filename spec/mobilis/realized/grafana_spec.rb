@@ -18,7 +18,7 @@ RSpec.describe Mobilis::Realized::Grafana do
 
   it "#compose" do
     expect(grafana_node.compose.clean_shrunk).to eq(
-      { image: "grafana/grafana:12.0.1",
+      { image: "grafana/grafana:13.0.1-ubuntu",
         ports: ["${GRAFANA_WEB_PORT}:3000"],
         environment: [
           "GF_PATHS_PROVISIONING=/etc/grafana/provisioning",

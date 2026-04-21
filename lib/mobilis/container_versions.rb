@@ -6,9 +6,9 @@ module Mobilis
     CRYSTAL     = "crystallang/crystal:1.9.2-alpine"
     GOLANG      = "golang:1.25.3-trixie"
     JAVA        = "eclipse-temurin:21-jdk-jammy"
-    NODE        = "node:22.20-trixie"
-    PYTHON      = "python:3.14.0-trixie"
-    RUBY        = "ruby:4.0.1-trixie"
+    NODE        = "node:24.15-trixie"
+    PYTHON      = "python:3.14.4-trixie"
+    RUBY        = "ruby:4.0.2-trixie"
     RUST        = "rust:1.86-bookworm"
 
     # ─── Databases ─────────────────────────────────────────────
@@ -18,8 +18,8 @@ module Mobilis
     MEMCACHED   = "memcached:1.6.21-alpine"
     MONGODB     = "mongo:7.0.5"
     MYSQL       = "mysql:9.3.0"
-    POSTGRES    = "postgres:18.2-trixie"
-    REDIS       = "redis:8.6.0-trixie"
+    POSTGRES    = "postgres:18.3-trixie"
+    REDIS       = "redis:8.6.2-trixie"
     SQLITE      = "nouchka/sqlite3:latest"
     VALKEY      = "valkey/valkey:7.2"
 
@@ -30,11 +30,11 @@ module Mobilis
     RAILS_BUILDER = "ghcr.io/your-org/rails-builder:latest"
 
     # ─── Observability / Telemetry ─────────────────────────────
-    GRAFANA     = "grafana/grafana:12.3.0"
-    JAEGER      = "jaegertracing/jaeger:2.11.0"
-    LOKI        = "grafana/loki:3.5.0"
-    OTEL_COLLECTOR = "otel/opentelemetry-collector-contrib:0.127.0"
-    PROMETHEUS  = "prom/prometheus:v3.4.1"
+    GRAFANA     = "grafana/grafana:13.0.1-ubuntu"
+    JAEGER      = "jaegertracing/jaeger:2.17.0"
+    LOKI        = "grafana/loki:3.7.1"
+    OTEL_COLLECTOR = "otel/opentelemetry-collector-contrib:latest"
+    PROMETHEUS  = "prom/prometheus:latest"
 
     # ─── Messaging / Queues ────────────────────────────────────
     KAFKA       = "bitnami/kafka:4.0.0"
