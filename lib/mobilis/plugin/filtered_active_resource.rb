@@ -22,6 +22,9 @@ module Mobilis
       private
 
       def write_provider_files(realized_node)
+        @provider_files_written ||= {}
+        return if @provider_files_written[realized_node.name]
+
         resources = api_resources(realized_node)
         return if resources.empty?
 
@@ -33,9 +36,13 @@ module Mobilis
         end
         directory_service.chdir_generate
         commit_all("#{realized_node.name} filtered resource endpoints")
+        @provider_files_written[realized_node.name] = true
       end
 
       def write_consumer_files(realized_node)
+        @consumer_files_written ||= {}
+        return if @consumer_files_written[realized_node.name]
+
         providers = connected_rails_providers(realized_node)
         return if providers.empty?
 
@@ -47,11 +54,21 @@ module Mobilis
             wrote = true
           end
         end
+        install_active_resource_gem if wrote
         directory_service.chdir_generate
         commit_all("#{realized_node.name} filtered ActiveResource clients") if wrote
+        @consumer_files_written[realized_node.name] = true if wrote
+      end
+
+      def install_active_resource_gem
+        rails_builder = @manifest.plugin_for(Mobilis::Plugin::RailsBuilder)
+        rails_builder.container_run("bundle add activeresource --require active_resource")
       end
 
       def patch_provider_models(realized_node)
+        @provider_models_patched ||= {}
+        return if @provider_models_patched[realized_node.name]
+
         resources = api_resources(realized_node)
         return if resources.empty?
 
@@ -61,6 +78,7 @@ module Mobilis
         end
         directory_service.chdir_generate
         commit_all("#{realized_node.name} filtered resource model metadata")
+        @provider_models_patched[realized_node.name] = true
       end
 
       def api_resources(realized_node)
@@ -170,6 +188,7 @@ module Mobilis
         File.write("app/models/#{singular_name(resource)}.rb", <<~RUBY)
           # frozen_string_literal: true
 
+          require "active_resource"
           require "json"
 
           class #{model_class_name(resource)} < ActiveResource::Base

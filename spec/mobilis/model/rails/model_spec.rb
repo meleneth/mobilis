@@ -64,4 +64,16 @@ RSpec.describe Mobilis::Model::Rails::Model do
       expect(hydrated_model.filterable_fields).to eq(["id"])
     end
   end
+
+  describe "#existing!" do
+    it "marks a model as metadata-only for generators and round trips through JSON" do
+      model = described_class.new("user")
+      model.existing!
+
+      hydrated_model = described_class.from_h(JSON.parse(model.to_h.to_json, symbolize_names: true))
+
+      expect(model).not_to be_generate_model
+      expect(hydrated_model).not_to be_generate_model
+    end
+  end
 end

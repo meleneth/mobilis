@@ -27,7 +27,7 @@ Mobilis::DSL.generate("generate") do
   jaeger("jaeger")
   logs = loki("loki")
   prometheus("prometheus")
-  promtail("promtail", loki: logs)
+  alloy("alloy", loki: logs)
 
   connect from: "grafana",        to: "loki"
   connect from: "grafana",        to: "prometheus"

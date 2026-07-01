@@ -2,15 +2,18 @@
 
 module Mobilis
   module Realized
-    class Promtail < Mobilis::Base::ImageForm
+    class Alloy < Mobilis::Base::ImageForm
       attr_reader :loki
 
       def initialize(realized_env, config_node)
-        super(realized_env, config_node, Mobilis::ContainerVersions::PROMTAIL)
+        super(realized_env, config_node, Mobilis::ContainerVersions::ALLOY)
         @has_service_dir = true
-        add_volume("./#{name}/promtail-config.yaml", "/etc/promtail/promtail-config.yaml")
+        add_volume("./#{name}/config.alloy", "/etc/alloy/config.alloy")
         add_volume("/var/run/docker.sock", "/var/run/docker.sock:ro")
-        compose[:command] << "-config.file=/etc/promtail/promtail-config.yaml"
+        compose[:command] << "run"
+        compose[:command] << "/etc/alloy/config.alloy"
+        compose[:command] << "--server.http.listen-addr=0.0.0.0:12345"
+        compose[:command] << "--storage.path=/var/lib/alloy/data"
       end
 
       def after_all_nodes_realized
@@ -20,11 +23,11 @@ module Mobilis
       end
 
       def exposed_port_no
-        9080
+        12345
       end
 
       def service_writer
-        Mobilis::ServiceWriter::Promtail
+        Mobilis::ServiceWriter::Alloy
       end
     end
   end

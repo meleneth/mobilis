@@ -21,7 +21,7 @@ module Mobilis
 
         directory_service.chdir_project(realized_node)
         rails_builder.container_run("bundle add rspec-rails --group \"development,test\"")
-        rails_builder.container_run("bundle exec rails generate rspec:install")
+        rails_builder.container_run("/bin/bash -lc \"bundle install && bundle exec rails generate rspec:install\"")
         commit_all("#{realized_node.name} - rpsec install")
       end
 

@@ -17,7 +17,7 @@ Mobilis::DSL.generate("parent_account_id") do
   jaeger("jaeger")
   logs = loki("loki")
   prometheus("prometheus")
-  promtail("promtail", loki: logs)
+  alloy("alloy", loki: logs)
 
   connect from: "grafana", to: "loki"
   connect from: "grafana", to: "prometheus"
@@ -29,6 +29,10 @@ Mobilis::DSL.generate("parent_account_id") do
   rails("user-service", primary_database: postgres("user-db"), api: true) do |svc|
     svc.install_graphql!
     svc.use_rspec!
+    svc.add_rails_model("user") do |m|
+      m.existing!
+      m.filterable :id, :account_id, :email, :username
+    end
 
     svc.write_file("app/models/user.rb", <<~USERMODEL)
       # frozen_string_literal: true
@@ -68,6 +72,10 @@ Mobilis::DSL.generate("parent_account_id") do
   rails("account-service", primary_database: postgres("account-db"), api: true) do |svc|
     svc.install_graphql!
     svc.use_rspec!
+    svc.add_rails_model("account") do |m|
+      m.existing!
+      m.filterable :id, :parent_account_id, :name
+    end
 
     svc.write_file("db/migrate/20250714003609_create_accounts.rb", <<~ACCOUNTS)
       # frozen_string_literal: true
@@ -109,6 +117,10 @@ Mobilis::DSL.generate("parent_account_id") do
   rails("authorization-service", primary_database: postgres("authz-db"), api: true) do |svc|
     svc.install_graphql!
     svc.use_rspec!
+    svc.add_rails_model("capability") do |m|
+      m.existing!
+      m.filterable :id, :subject_id, :account_id, :permission
+    end
 
     svc.write_file("db/migrate/20250714003611_create_capabilities.rb", <<~CAPABILITIES)
       # frozen_string_literal: true
@@ -123,6 +135,13 @@ Mobilis::DSL.generate("parent_account_id") do
         end
       end
     CAPABILITIES
+
+    svc.write_file("app/models/capability.rb", <<~CAPABILITYMODEL)
+      # frozen_string_literal: true
+
+      class Capability < ApplicationRecord
+      end
+    CAPABILITYMODEL
   end
 
   connect from: "authorization-service", to: "authcache"

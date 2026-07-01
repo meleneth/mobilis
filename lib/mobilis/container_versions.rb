@@ -35,7 +35,7 @@ module Mobilis
     LOKI        = "grafana/loki:3.7.3"
     OTEL_COLLECTOR = "otel/opentelemetry-collector-contrib:0.155.0"
     PROMETHEUS  = "prom/prometheus:v3.5.4"
-    PROMTAIL    = "grafana/promtail:3.6.8"
+    ALLOY       = "grafana/alloy:latest"
 
     # ─── Messaging / Queues ────────────────────────────────────
     KAFKA       = "bitnami/kafka:4.0.0"

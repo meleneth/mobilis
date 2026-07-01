@@ -28,4 +28,25 @@ RSpec.describe Mobilis::ServiceWriter::Rails do
       end
     end
   end
+
+  it "writes docker-entrypoint with LF line endings" do
+    manifest = build(:manifest, system: build(:system, :with_rails_and_postgres), suppress_plugins: true)
+    realized_env = manifest.realized_env(:test)
+    realized_node = realized_env.find_realized_node_by_name("user")
+
+    Dir.mktmpdir do |dir|
+      FileUtils.mkdir_p(File.join(dir, "bin"))
+      Dir.chdir(dir) do
+        File.write("Gemfile", %(ruby "0.0.0"\n))
+        File.write("Dockerfile", <<~DOCKERFILE)
+          ARG RUBY_VERSION=0.0.0
+          FROM registry.docker.com/library/ruby:$RUBY_VERSION-slim as base
+          COPY Gemfile Gemfile.lock ./
+        DOCKERFILE
+
+        described_class.new(manifest, realized_env, realized_node).normalize_rails_runtime
+        expect(File.binread("bin/docker-entrypoint")).not_to include("\r\n")
+      end
+    end
+  end
 end

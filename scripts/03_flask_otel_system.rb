@@ -8,7 +8,7 @@ Mobilis::DSL.generate("otel-generate") do
   logs = loki("loki")
   otel_collector("otel-collector")
   prometheus("prometheus")
-  promtail("promtail", loki: logs)
+  alloy("alloy", loki: logs)
 
   flask("flasker") do |svc|
     svc.add_script("some_script.sh", <<~SHELL)

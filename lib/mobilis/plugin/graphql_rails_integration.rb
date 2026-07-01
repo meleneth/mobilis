@@ -14,6 +14,7 @@ module Mobilis
           #!/usr/bin/env bash
           set -exuo pipefail
           bundle add graphql
+          bundle install
           bundle exec rails generate graphql:install
           bundle install
           rm tmp_install_graphql.sh

@@ -2,7 +2,7 @@
 
 module Mobilis
   module Node
-    class Promtail < Mobilis::Base::Node
+    class Alloy < Mobilis::Base::Node
       include Mobilis::PrettyPrint::PrettyPrintable
 
       ref_attr :loki

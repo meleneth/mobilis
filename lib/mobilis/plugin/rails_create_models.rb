@@ -13,6 +13,8 @@ module Mobilis
 
           directory_service.chdir_generate
           realized_node.each_model_of_type(Mobilis::Model::Rails::Model) do |model|
+            next unless model.generate_model?
+
             Mobilis::Util.run_command(
               [
                 "./dc_test",

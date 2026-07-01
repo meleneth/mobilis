@@ -13,6 +13,7 @@ module Mobilis
         rails_builder.container_run("bundle add opentelemetry-sdk opentelemetry-instrumentation-all opentelemetry-exporter-otlp")
         write_instrumentation_rb
         write_opentelemetry_initializer
+        write_structured_logging_initializer
         commit_all("#{realized_node.name} - OTEL integration")
       end
 
@@ -45,6 +46,62 @@ module Mobilis
             )
           end
         HERE
+      end
+
+      def write_structured_logging_initializer
+        File.write("config/initializers/structured_logging.rb", <<~RUBY)
+          # frozen_string_literal: true
+
+          require "json"
+          require "logger"
+          require "active_support/logger"
+          require "active_support/tagged_logging"
+
+          class MobilisJsonLogFormatter < Logger::Formatter
+            def call(severity, time, progname, msg)
+              event = {
+                timestamp: time.utc.iso8601(6),
+                severity: severity,
+                service_name: "#{realized_node.name}",
+                progname: progname,
+                message: message_for(msg)
+              }
+              event.merge!(trace_context)
+              "\#{JSON.generate(event)}\\n"
+            end
+
+            private
+
+            def message_for(msg)
+              case msg
+              when String
+                msg
+              when Exception
+                "\#{msg.class}: \#{msg.message}"
+              else
+                msg.inspect
+              end
+            end
+
+            def trace_context
+              return {} unless defined?(OpenTelemetry::Trace)
+
+              span_context = OpenTelemetry::Trace.current_span.context
+              return {} unless span_context&.valid?
+
+              {
+                trace_id: span_context.hex_trace_id,
+                span_id: span_context.hex_span_id
+              }
+            end
+          end
+
+          logger = ActiveSupport::Logger.new($stdout)
+          logger.formatter = MobilisJsonLogFormatter.new
+          Rails.logger = ActiveSupport::TaggedLogging.new(logger)
+          Rails.application.config.logger = Rails.logger
+          Rails.application.config.log_tags = []
+        RUBY
       end
 
       def ppx_fields(dsl)

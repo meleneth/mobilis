@@ -115,7 +115,7 @@ module Mobilis
         Mobilis::Node::Prometheus => Mobilis::Realized::Prometheus,
         Mobilis::Node::Grafana => Mobilis::Realized::Grafana,
         Mobilis::Node::Loki => Mobilis::Realized::Loki,
-        Mobilis::Node::Promtail => Mobilis::Realized::Promtail,
+        Mobilis::Node::Alloy => Mobilis::Realized::Alloy,
         Mobilis::Node::Flask => Mobilis::Realized::Flask,
         Mobilis::Node::Rails => Mobilis::Realized::Rails,
         Mobilis::Node::Redis => Mobilis::Realized::Redis,

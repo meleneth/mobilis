@@ -52,7 +52,7 @@ FactoryBot.define do
         jaeger_node = build(:jaeger_node, name: "jaeger")
         grafana_node = build(:grafana_node, name: "grafana")
         loki_node = build(:loki_node, name: "loki")
-        promtail_node = build(:promtail_node, name: "promtail", loki: loki_node)
+        alloy_node = build(:alloy_node, name: "alloy", loki: loki_node)
 
         grafana_node.has_extra_depends_on(prometheus_node)
         grafana_node.has_extra_depends_on(loki_node)
@@ -64,7 +64,7 @@ FactoryBot.define do
         system << jaeger_node
         system << grafana_node
         system << loki_node
-        system << promtail_node
+        system << alloy_node
       end
     end
 

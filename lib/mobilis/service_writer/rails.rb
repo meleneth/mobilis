@@ -33,7 +33,7 @@ module Mobilis
                         "RUN mkdir -p \"${BUNDLE_PATH}\" && chmod -R 777 \"${BUNDLE_PATH}\"")
         end
 
-        File.write("bin/docker-entrypoint", <<~BASH)
+        File.binwrite("bin/docker-entrypoint", <<~BASH)
           #!/bin/bash -e
 
           # If running the rails server then create or migrate existing database.

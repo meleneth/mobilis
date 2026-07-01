@@ -1,6 +1,3 @@
-fix rspec:install
-verify filtered ActiveResource affordance in the large IAM demo
-smoke-test the large IAM demo with GoAWS queues
 decide whether DSL names should resolve by raw input name, normalized node name, or both
 add a non-materializing DSL entrypoint for tests and inspection
 verify/fix Compose::Volume base merging for overrides

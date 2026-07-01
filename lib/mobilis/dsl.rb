@@ -75,8 +75,8 @@ module Mobilis
         node
       end
 
-      def promtail(name, loki: nil, &block)
-        node = Mobilis::Node::Promtail.new(name)
+      def alloy(name, loki: nil, &block)
+        node = Mobilis::Node::Alloy.new(name)
         node.loki = loki
         system << node
         @named[name] = node
