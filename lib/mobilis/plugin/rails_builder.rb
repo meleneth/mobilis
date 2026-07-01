@@ -77,7 +77,7 @@ module Mobilis
             && truncate -s 0 /var/log/*log
 
           RUN gem update --system
-          RUN gem update bundler
+          RUN gem install bundler -v #{Mobilis::ContainerVersions::BUNDLER}
           RUN gem install rails pg mysql2 minitest rspec-rails puma jbuilder sqlite3 redis kredis bcrypt image_processing graphql
 
           ENV BUNDLE_PATH=/tmp/bundle \

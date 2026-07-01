@@ -9,6 +9,7 @@ module Mobilis
     NODE        = "node:24.15-trixie"
     PYTHON      = "python:3.14.4-trixie"
     RUBY        = "ruby:4.0.2-trixie"
+    BUNDLER     = "4.0.6"
     RUST        = "rust:1.86-trixie"
 
     # ─── Databases ─────────────────────────────────────────────
