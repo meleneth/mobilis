@@ -250,6 +250,8 @@ module Mobilis
     def commit_all(message)
       puts " -- git commit: #{message} --"
       @git_repo.add(all: true)
+      return if @git_repo.status.changed.empty? && @git_repo.status.added.empty? && @git_repo.status.deleted.empty?
+
       @git_repo.commit("[mobilis] #{message}")
     end
 

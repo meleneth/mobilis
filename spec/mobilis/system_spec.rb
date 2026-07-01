@@ -36,4 +36,18 @@ RSpec.describe Mobilis::System do
     expect(loaded[mysql.id]).to be_a(Mobilis::Node::MySQL)
     expect(loaded[rails.id].primary_database).to eq(loaded[mysql.id])
   end
+
+  it "can serialize and deserialize replicated PostgreSQL nodes" do
+    primary = build(:postgres_node, name: "primary-db")
+    replica = build(:postgres_node, name: "replica-db")
+    replica.replicate_from(primary)
+
+    system = described_class.new("generate")
+    system << primary
+    system << replica
+
+    loaded = described_class.from_json(system.to_json)
+
+    expect(loaded[replica.id].replicate_from).to eq(loaded[primary.id])
+  end
 end

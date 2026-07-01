@@ -13,4 +13,13 @@ RSpec.describe Mobilis::DSL::DSLContext do
     expect(context.named("user-db")).to eq(node)
     expect(system.config_nodes.values).to include(node)
   end
+
+  it "supports declaring PostgreSQL replication from a postgres block" do
+    primary = context.postgres("primary-db")
+    replica = context.postgres("replica-db") do |db|
+      db.replicate_from(primary)
+    end
+
+    expect(replica.replicate_from).to eq(primary)
+  end
 end

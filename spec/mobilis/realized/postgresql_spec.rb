@@ -93,4 +93,72 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
     }
     expect(realized_pg.compose.clean_shrunk).to eq(expected)
   end
+
+  context "with replication" do
+    let(:primary_node) { build(:postgres_node, name: "primary-db") }
+    let(:replica_node) do
+      node = build(:postgres_node, name: "replica-db")
+      node.replicate_from(primary_node)
+      node
+    end
+    let(:system) { build(:system, nodes: [primary_node, replica_node]) }
+    let(:env) { Mobilis::RealizedEnv.new(system, Mobilis::ExecutionEnvironment.new("test")) }
+    let(:primary) { env.find_realized_node_by_name("primary-db") }
+    let(:replica) { env.find_realized_node_by_name("replica-db") }
+
+    it "marks the primary and replica as service-dir backed" do
+      expect(primary.has_service_dir).to be true
+      expect(replica.has_service_dir).to be true
+    end
+
+    it "configures the primary for streaming replication" do
+      compose = primary.compose.clean_shrunk
+
+      expect(compose[:command]).to include(
+        "postgres",
+        "wal_level=replica",
+        "max_wal_senders=10",
+        "max_replication_slots=10"
+      )
+      expect(compose[:environment]).to include(
+        "POSTGRES_REPLICATION_USER=${PRIMARY_DB_POSTGRES_REPLICATION_USER}",
+        "POSTGRES_REPLICATION_PASSWORD=${PRIMARY_DB_POSTGRES_REPLICATION_PASSWORD}"
+      )
+      expect(compose[:volumes]).to include(
+        "./primary-db/init-replication-primary.sh:/docker-entrypoint-initdb.d/010-init-replication-primary.sh"
+      )
+    end
+
+    it "configures the replica to clone from the primary" do
+      compose = replica.compose.clean_shrunk
+
+      expect(replica.url).to eq("postgres://primary-db-test-user:primary-db-test-password@replica-db:5432/primary-db_test")
+      expect(compose[:entrypoint]).to eq(["mobilis-postgres-replica-entrypoint.sh"])
+      expect(compose[:command]).to eq(["postgres"])
+      expect(compose[:depends_on]).to eq(
+        :"primary-db" => {
+          condition: "service_healthy",
+          restart: true
+        }
+      )
+      expect(compose[:environment]).to include(
+        "POSTGRES_DB=${REPLICA_DB_POSTGRES_DB}",
+        "POSTGRES_PASSWORD=${REPLICA_DB_POSTGRES_PASSWORD}",
+        "POSTGRES_PRIMARY_HOST=${REPLICA_DB_POSTGRES_PRIMARY_HOST}",
+        "POSTGRES_PRIMARY_PORT=${REPLICA_DB_POSTGRES_PRIMARY_PORT}",
+        "POSTGRES_REPLICATION_USER=${REPLICA_DB_POSTGRES_REPLICATION_USER}",
+        "POSTGRES_REPLICATION_PASSWORD=${REPLICA_DB_POSTGRES_REPLICATION_PASSWORD}",
+        "POSTGRES_USER=${REPLICA_DB_POSTGRES_USER}"
+      )
+      expect(replica.envfile_vars.data.map(&:env_repr)).to include(
+        "REPLICA_DB_DATABASE_URL=postgres://primary-db-test-user:primary-db-test-password@replica-db:5432/primary-db_test",
+        "REPLICA_DB_POSTGRES_USER=primary-db-test-user",
+        "REPLICA_DB_POSTGRES_PASSWORD=primary-db-test-password",
+        "REPLICA_DB_POSTGRES_DB=primary-db_test"
+      )
+      expect(compose[:volumes]).to include(
+        "./replica-db/replica-entrypoint.sh:/usr/local/bin/mobilis-postgres-replica-entrypoint.sh"
+      )
+    end
+  end
 end
