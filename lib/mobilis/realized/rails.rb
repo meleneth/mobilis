@@ -37,7 +37,7 @@ module Mobilis
       end
 
       def exposed_port_no
-        3000
+        80
       end
 
       def required_plugins

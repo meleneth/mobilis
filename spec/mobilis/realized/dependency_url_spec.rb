@@ -18,13 +18,13 @@ RSpec.describe "realized dependency URL exports" do
 
   it "exports a namespaced envfile URL and provider-named container variable" do
     expect(consumer.compose_environment.as_json).to include("SERVICE_Y_URL=${SERVICE_X__SERVICE_Y_URL}")
-    expect(envfile_lines(consumer)).to include("SERVICE_X__SERVICE_Y_URL=http://service-y:3000")
+    expect(envfile_lines(consumer)).to include("SERVICE_X__SERVICE_Y_URL=http://service-y:80")
   end
 
   it "uses the provider scheme override" do
     provider.internal_url_scheme = "https"
 
-    expect(envfile_lines(consumer)).to include("SERVICE_X__SERVICE_Y_URL=https://service-y:3000")
+    expect(envfile_lines(consumer)).to include("SERVICE_X__SERVICE_Y_URL=https://service-y:80")
   end
 
   def envfile_lines(realized_node)

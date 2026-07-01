@@ -121,7 +121,7 @@ Mobilis::DSL.generate("generate") do
     CSS
 
     svc.write_file("app/controllers/retro_ui_demo_controller.rb", <<~RUBY)
-      class RetroUiDemoController < ApplicationController
+      class RetroUIDemoController < ApplicationController
         def index
         end
       end
@@ -130,6 +130,12 @@ Mobilis::DSL.generate("generate") do
     svc.write_file("config/routes.rb", <<~RUBY)
       Rails.application.routes.draw do
         root "retro_ui_demo#index"
+      end
+    RUBY
+
+    svc.write_file("config/initializers/inflections.rb", <<~RUBY)
+      ActiveSupport::Inflector.inflections(:en) do |inflect|
+        inflect.acronym "UI"
       end
     RUBY
 
