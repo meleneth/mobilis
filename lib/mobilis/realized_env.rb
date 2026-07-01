@@ -103,6 +103,7 @@ module Mobilis
           extra_dep[:target] = realized_node_for_config_node(extra_dep[:target])
         end
       end
+      realized_nodes.each(&:populate_compose_depends_on)
     end
 
     def build_realized_node(config_node)
@@ -113,6 +114,8 @@ module Mobilis
         Mobilis::Node::Jaeger => Mobilis::Realized::Jaeger,
         Mobilis::Node::Prometheus => Mobilis::Realized::Prometheus,
         Mobilis::Node::Grafana => Mobilis::Realized::Grafana,
+        Mobilis::Node::Loki => Mobilis::Realized::Loki,
+        Mobilis::Node::Promtail => Mobilis::Realized::Promtail,
         Mobilis::Node::Flask => Mobilis::Realized::Flask,
         Mobilis::Node::Rails => Mobilis::Realized::Rails,
         Mobilis::Node::Redis => Mobilis::Realized::Redis,

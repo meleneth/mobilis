@@ -63,6 +63,8 @@ module Mobilis
       commit_all("Mobilis system config")
       write_dc_helpers
       commit_all("docker compose helper scripts")
+      write_devcontainer
+      commit_all("devcontainer configuration")
       Mobilis::Util.run_command(["./dc_test", "build"])
       run_plugin_hooks :hook_after_dc_helpers
       run_plugin_hooks :hook_create_rails_models
@@ -93,6 +95,96 @@ module Mobilis
       write_dc_helper("dc_test", "test")
       write_dc_helper("dc_dev", "development")
       write_dc_helper("dc_prod", "production")
+    end
+
+    def write_devcontainer
+      directory_service.chdir_generate
+      rails_services = devcontainer_rails_services
+      return if rails_services.empty?
+
+      FileUtils.mkdir_p(".devcontainer")
+
+      first_service = rails_services.first
+      File.write(".devcontainer/devcontainer.json",
+                 "#{JSON.pretty_generate(devcontainer_config(first_service, "development"))}\n")
+      Mobilis::YAMLWriter.write_yaml(".devcontainer/devcontainer-overrides.yml",
+                                     devcontainer_overrides(rails_services))
+
+      rails_services.each do |service|
+        FileUtils.mkdir_p(".devcontainer/#{service.name}-test")
+        File.write(".devcontainer/#{service.name}-test/devcontainer.json",
+                   "#{JSON.pretty_generate(devcontainer_config(service, "test", nested: true))}\n")
+      end
+    end
+
+    def devcontainer_rails_services
+      realized_production_env.realized_nodes
+                             .select { |node| node.is_a?(Mobilis::Realized::Rails) }
+    end
+
+    def devcontainer_config(service, env, nested: false)
+      config = {
+        "name" => "#{service.name}-#{env}",
+        "initializeCommand" => devcontainer_initialize_command(env),
+        "dockerComposeFile" => devcontainer_compose_files(env, nested: nested),
+        "service" => service.name,
+        "workspaceFolder" => "/rails",
+        "shutdownAction" => "stopCompose"
+      }
+      config["customizations"] = devcontainer_customizations if env == "test"
+      config
+    end
+
+    def devcontainer_initialize_command(env)
+      env_file = env == "test" ? "test.env" : "development.env"
+      compose_file = env == "test" ? "test-compose.yml" : "development-compose.yml"
+      overrides_file = env == "test" ? "test-overrides.yml" : "development-overrides.yml"
+      resolved_file = env == "test" ? "dc_test.resolved.yml" : "dc_dev.resolved.yml"
+
+      "docker compose --env-file #{env_file} -f #{compose_file} -f #{overrides_file} config > .devcontainer/#{resolved_file}"
+    end
+
+    def devcontainer_compose_files(env, nested:)
+      resolved_file = env == "test" ? "dc_test.resolved.yml" : "dc_dev.resolved.yml"
+      prefix = nested ? "../" : ""
+      [
+        "#{prefix}#{resolved_file}",
+        "#{prefix}devcontainer-overrides.yml"
+      ]
+    end
+
+    def devcontainer_overrides(services)
+      {
+        "services" => services.to_h do |service|
+          [
+            service.name,
+            {
+            "volumes" => [
+              "../#{service.name}:/rails:cached"
+            ],
+            "tmpfs" => [
+              "/rails/tmp/pids"
+            ]
+            }
+          ]
+        end
+      }
+    end
+
+    def devcontainer_customizations
+      {
+        "vscode" => {
+          "extensions" => [
+            "Shopify.ruby-lsp"
+          ],
+          "settings" => {
+            "rubyLsp.formatter" => "auto",
+            "editor.formatOnSave" => true,
+            "files.trimTrailingWhitespace" => true,
+            "files.insertFinalNewline" => true
+          }
+        }
+      }
     end
 
     def write_dc_helper(filename, env_name)
@@ -139,6 +231,7 @@ module Mobilis
       @plugins << Mobilis::Plugin::Plugerator.new(self)
       @plugins << Mobilis::Plugin::RunCommands.new(self)
       @plugins << Mobilis::Plugin::EnvVars.new(self)
+      @plugins << Mobilis::Plugin::FilteredActiveResource.new(self)
       @plugins
     end
 
@@ -228,7 +321,7 @@ module Mobilis
       directory_service.chdir_generate
       @realized_envs.each do |realized_env|
         details = {}
-        details["name"] = "generate-#{realized_env}"
+        details["name"] = "#{system.meta_project_name}-#{realized_env}"
         includes = []
         realized_env.realized_nodes.each do |node|
           node_details = {}

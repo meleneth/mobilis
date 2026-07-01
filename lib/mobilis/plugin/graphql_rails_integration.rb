@@ -10,8 +10,8 @@ module Mobilis
 
       def hook_after_services_written
         directory_service.chdir_project(realized_node)
-        File.write("tmp_install_graphql.sh", <<~HERE)
-          #!/bin/sh
+        File.binwrite("tmp_install_graphql.sh", <<~HERE)
+          #!/usr/bin/env bash
           set -exuo pipefail
           bundle add graphql
           bundle exec rails generate graphql:install

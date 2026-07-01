@@ -21,7 +21,7 @@ module Mobilis
       attr_reader :config_node, :has_data_volume, :has_dockerfile, :has_service_dir, :realized_env
       attr_accessor :extra_depends_on
 
-      def_delegators :@config_node, :name, :each_model_of_type
+      def_delegators :@config_node, :name, :each_model_of_type, :internal_url_scheme
       def_delegators :@realized_env, :meta_project_name
 
       # @param env [Mobilis::RealizedEnv]
@@ -58,10 +58,41 @@ module Mobilis
         false
       end
 
+      def internal_url
+        return nil unless respond_to?(:exposed_port_no)
+
+        "#{internal_url_scheme}://#{name}:#{exposed_port_no}"
+      end
+
+      def dependency_url_envfile_name(provider)
+        "#{name}__#{provider.name}_url"
+      end
+
+      def dependency_url_container_name(provider)
+        "#{provider.name}_url"
+      end
+
+      def add_dependency_url(provider, container_name: nil)
+        url = provider.internal_url
+        return nil unless url
+        envfile_name = dependency_url_envfile_name(provider)
+        existing = compose_environment.data.find do |emit_var|
+          emit_var.envfile_name == envfile_name.to_s.upcase.tr("-", "_")
+        end
+        return existing if existing
+
+        add_compose_aliased_var(
+          container_name || dependency_url_container_name(provider),
+          envfile_name,
+          url
+        )
+      end
+
       def populate_compose_depends_on
         extra_depends_on.each do |extra_dep|
-          register_depends_on(realized_env.realized_node_for_config_node(extra_dep[:target]),
-                              force_skip_health_checks: extra_dep[:force_skip_health_checks])
+          provider = realized_env.realized_node_for_config_node(extra_dep[:target])
+          register_depends_on(provider, force_skip_health_checks: extra_dep[:force_skip_health_checks])
+          add_dependency_url(provider)
         end
       end
     end

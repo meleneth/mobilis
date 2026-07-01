@@ -6,7 +6,7 @@ Mobilis::DSL.generate("parent_account_id") do
   # Infra
   redis("authcache")
 
-  localstack("eventstream") do |svc|
+  goaws("eventstream") do |svc|
     svc.sns_sqs("capability-changes", ["capability-changes"])
     svc.sns_sqs("group-membership-changes", ["group-membership-changes"])
     svc.sns_sqs("account-structure-changes", ["account-structure-changes"])
@@ -15,8 +15,11 @@ Mobilis::DSL.generate("parent_account_id") do
   otel_collector("otel-collector")
   grafana("grafana")
   jaeger("jaeger")
+  logs = loki("loki")
   prometheus("prometheus")
+  promtail("promtail", loki: logs)
 
+  connect from: "grafana", to: "loki"
   connect from: "grafana", to: "prometheus"
   connect from: "otel-collector", to: "jaeger"
   connect from: "prometheus", to: "otel-collector"
@@ -123,6 +126,7 @@ Mobilis::DSL.generate("parent_account_id") do
   end
 
   connect from: "authorization-service", to: "authcache"
+  connect from: "authorization-service", to: "eventstream"
 
   rails("organization-service", primary_database: postgres("organization-db"), api: true) do |svc|
     svc.install_graphql!
@@ -172,4 +176,5 @@ Mobilis::DSL.generate("parent_account_id") do
   connect from: "user-management-service", to: "account-service"
   connect from: "user-management-service", to: "authorization-service"
   connect from: "user-management-service", to: "organization-service"
+  connect from: "user-management-service", to: "eventstream"
 end

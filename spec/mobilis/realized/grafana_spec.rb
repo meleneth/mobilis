@@ -18,11 +18,13 @@ RSpec.describe Mobilis::Realized::Grafana do
 
   it "#compose" do
     expect(grafana_node.compose.clean_shrunk).to eq(
-      { image: "grafana/grafana:13.0.1-ubuntu",
+      { image: "grafana/grafana:13.1.0",
         ports: ["${GRAFANA_WEB_PORT}:3000"],
         environment: [
           "GF_PATHS_PROVISIONING=/etc/grafana/provisioning",
-          "GF_SECURITY_ADMIN_PASSWORD=admin"
+          "GF_SECURITY_ADMIN_PASSWORD=admin",
+          "LOKI_URL=${GRAFANA__LOKI_URL}",
+          "PROMETHEUS_URL=${GRAFANA__PROMETHEUS_URL}"
         ],
         volumes: [
           "./data/test/grafana:/var/lib/grafana",
@@ -30,6 +32,9 @@ RSpec.describe Mobilis::Realized::Grafana do
         ],
         user: "${HOST_UID}:${HOST_GID}",
         depends_on: {
+          loki: {
+            condition: "service_started"
+          },
           prometheus: {
             condition: "service_started",
             restart: true

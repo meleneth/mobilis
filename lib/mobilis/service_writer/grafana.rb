@@ -15,8 +15,22 @@ module Mobilis
         datasource["isDefault"] = false
         datasource["jsonData"]["timeInterval"] = "30s"
         data["datasources"] << datasource
+        if loki?
+          loki = AutoVivify.new
+          loki["name"] = "Loki"
+          loki["type"] = "loki"
+          loki["uid"] = "loki_ds"
+          loki["access"] = "proxy"
+          loki["url"] = "http://loki:3100"
+          loki["isDefault"] = false
+          data["datasources"] << loki
+        end
 
         data
+      end
+
+      def loki?
+        !!realized_env.find_realized_node_by_name("loki")
       end
 
       def write

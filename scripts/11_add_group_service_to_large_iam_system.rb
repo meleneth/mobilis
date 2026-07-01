@@ -8,8 +8,11 @@ Mobilis::DSL.generate("parent_account_id") do
   otel_collector("otel-collector")
   grafana("grafana")
   jaeger("jaeger")
+  logs = loki("loki")
   prometheus("prometheus")
+  promtail("promtail", loki: logs)
 
+  connect from: "grafana", to: "loki"
   connect from: "grafana", to: "prometheus"
   connect from: "otel-collector", to: "jaeger"
   connect from: "prometheus", to: "otel-collector"

@@ -44,4 +44,24 @@ RSpec.describe Mobilis::Model::Rails::Model do
       end.to raise_error(ArgumentError, /Expected type/)
     end
   end
+
+  describe "#filterable" do
+    it "marks the model as API-exposed and serializes filter fields" do
+      model.filterable(:id, :account_id)
+
+      expect(model.to_h).to include(
+        api_exposed: true,
+        filterable_fields: ["id", "account_id"]
+      )
+    end
+
+    it "round trips exposed resource metadata" do
+      model.filterable(:id)
+
+      hydrated_model = described_class.from_h(model.to_h)
+
+      expect(hydrated_model).to be_api_exposed
+      expect(hydrated_model.filterable_fields).to eq(["id"])
+    end
+  end
 end

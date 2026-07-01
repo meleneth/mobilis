@@ -67,6 +67,23 @@ module Mobilis
         node
       end
 
+      def loki(name, &block)
+        node = Mobilis::Node::Loki.new(name)
+        system << node
+        @named[name] = node
+        block&.call(node)
+        node
+      end
+
+      def promtail(name, loki: nil, &block)
+        node = Mobilis::Node::Promtail.new(name)
+        node.loki = loki
+        system << node
+        @named[name] = node
+        block&.call(node)
+        node
+      end
+
       def jaeger(name, &block)
         node = Mobilis::Node::Jaeger.new(name)
         system << node

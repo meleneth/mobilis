@@ -6,11 +6,59 @@ module Mobilis
         rails_builder.container_run(@realized_node.rails_new_command)
         Dir.chdir(@realized_node.name)
         FileUtils.rm_rf(".git")
+        normalize_rails_runtime
         @manifest.commit_all("add Rails project #{@realized_node.name}")
       end
 
       def rails_builder
         @manifest.plugin_for Mobilis::Plugin::RailsBuilder
+      end
+
+      def normalize_rails_runtime
+        version = ruby_version
+        image = ruby_image
+
+        File.write(".ruby-version", "ruby-#{version}\n")
+
+        Mobilis::FileLines.edit("Gemfile") do
+          replace_line(/^ruby\s+["']/) { %(ruby "#{version}") }
+        end
+
+        Mobilis::FileLines.edit("Dockerfile") do
+          replace_line(/^ARG RUBY_VERSION=/) { "ARG RUBY_VERSION=#{version}" }
+          replace_line(%r{^FROM registry\.docker\.com/library/ruby:\$RUBY_VERSION-slim as base$}) do
+            "FROM #{image} as base"
+          end
+          insert_before(/^COPY Gemfile Gemfile\.lock \.\//,
+                        "RUN mkdir -p \"${BUNDLE_PATH}\" && chmod -R 777 \"${BUNDLE_PATH}\"")
+        end
+
+        File.write("bin/docker-entrypoint", <<~BASH)
+          #!/bin/bash -e
+
+          # If running the rails server then create or migrate existing database.
+          # Docker DNS and healthcheck state can lag briefly on Windows, so retry startup preparation.
+          if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
+            for attempt in 1 2 3 4 5; do
+              ./bin/rails db:prepare && break
+              status=$?
+              if [ "$attempt" = "5" ]; then
+                exit "$status"
+              fi
+              sleep 2
+            done
+          fi
+
+          exec "${@}"
+        BASH
+      end
+
+      def ruby_image
+        Mobilis::ContainerVersions::RUBY
+      end
+
+      def ruby_version
+        ruby_image.split(":", 2).fetch(1).split("-", 2).first
       end
 
       def write_compose_file

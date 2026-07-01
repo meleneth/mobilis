@@ -21,6 +21,11 @@ module Mobilis
         3000
       end
 
+      def after_all_nodes_realized
+        loki = realized_env.find_realized_node_by_name("loki")
+        register_depends_on(loki) if loki
+      end
+
       def dependant_services_require_restart?
         true
       end

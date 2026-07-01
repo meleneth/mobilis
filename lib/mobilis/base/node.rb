@@ -11,6 +11,7 @@ module Mobilis
       include Mobilis::Mixins::Node::HasExtraDependsOn
 
       attr_reader :id, :name, :extra_depends_on
+      attr_accessor :internal_url_scheme
 
       def initialize(name, id: nil, extra_depends_on: [], **refs)
         @name = name.tr("_", "-")
@@ -18,6 +19,7 @@ module Mobilis
         @id = id || SecureRandom.uuid
 
         @extra_depends_on = extra_depends_on
+        @internal_url_scheme = "http"
 
         # Store raw ref ids (like primary_database_id)
         refs.each do |k, v|
@@ -43,6 +45,7 @@ module Mobilis
           extra_depends_on: extra_depends_on.map { |dep| dep[:target].name },
           models: models.map(&:to_h)
         }
+        h[:internal_url_scheme] = internal_url_scheme unless internal_url_scheme == "http"
 
         each_ref_id do |ref, id|
           key = self.class.ref_list_registry.any? { |slot| slot.name == ref } ? :"#{ref}_ids" : :"#{ref}_id"

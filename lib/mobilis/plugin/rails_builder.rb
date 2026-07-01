@@ -17,10 +17,8 @@ module Mobilis
       end
 
       def oblivious_run_command(command)
-        # fixme
-        # Mobilis.logger.info "$ #{command.join " "}"
         puts "-> Running --> #{command}"
-        system command
+        system(command) || raise("Command failed (#{$?.exitstatus || 1}): #{command}")
       end
 
       def run_docker(cmd)
@@ -28,7 +26,7 @@ module Mobilis
       end
 
       def build_rails_builder
-        run_docker "build -t #{rails_builder_image} --build-arg USER_ID=#{Process.uid} --build-arg GROUP_ID=#{Process.gid} ."
+        run_docker "build -t #{rails_builder_image} --build-arg USER_ID=#{host_user_id} --build-arg GROUP_ID=#{host_group_id} ."
       end
 
       def container_run(command)
@@ -37,6 +35,20 @@ module Mobilis
 
       def getwd
         Dir.pwd
+      end
+
+      def host_user_id
+        return 1000 if Gem.win_platform?
+        return 1000 if Process.uid.zero?
+
+        Process.uid
+      end
+
+      def host_group_id
+        return 1000 if Gem.win_platform?
+        return 1000 if Process.gid.zero?
+
+        Process.gid
       end
 
       def set_file_contents(filename, contents)
@@ -64,6 +76,10 @@ module Mobilis
             && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \\
             && truncate -s 0 /var/log/*log
 
+          RUN gem update --system
+          RUN gem update bundler
+          RUN gem install rails pg mysql2 minitest rspec-rails puma jbuilder sqlite3 redis kredis bcrypt image_processing graphql
+
           ENV BUNDLE_PATH=/tmp/bundle \
           BUNDLE_USER_HOME=/tmp/bundle \
           BUNDLE_APP_CONFIG=/tmp/bundle/config
@@ -79,9 +95,6 @@ module Mobilis
           USER rubyuser
           RUN bundle config set --global path /tmp/bundle
           RUN bundle config set --global bin /tmp/bundle/bin
-          RUN gem update bundle
-          RUN gem update --system
-          RUN gem install rails pg mysql2 minitest rspec-rails puma jbuilder sqlite3 redis kredis bcrypt image_processing graphql
         EOF
         # it makes no sense that these values were hardcoded at 200 when I was passing
         # in the id's, why did that happen?

@@ -22,7 +22,7 @@ RSpec.describe Mobilis::Realized::Jaeger do
 
   it "#compose" do
     expect(jaeger_node.compose.clean_shrunk).to eq(
-      { image: "jaegertracing/jaeger:2.17.0", ports: [
+      { image: "jaegertracing/jaeger:2.19.0", ports: [
         "${JAEGER_WEB_PORT}:16686"
       ] }
     )

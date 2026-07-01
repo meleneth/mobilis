@@ -91,7 +91,7 @@ module Mobilis
       end
 
       def account_id
-        cfg_get("AccountId", "100010001000")
+        cfg_get("AccountId", cfg_get("account_id", "100010001000"))
       end
 
       def log_to_file
@@ -109,17 +109,37 @@ module Mobilis
       # or
       # Queues: ["foo","bar"]
       def queues
-        raw = cfg_get("Queues", [])
+        raw = cfg_get("Queues", cfg_get("queues", []))
         Array(raw).map { |e| e.is_a?(Hash) ? e.fetch("Name") : e.to_s }
       end
 
       # Accept either the full structure, or a simplified internal structure.
       def topics
-        raw = cfg_get("Topics", [])
+        raw = cfg_get("Topics", cfg_get("topics", []))
+        subscriptions = subscriptions_by_topic
         Array(raw).map do |e|
           next normalize_topic_hash(e) if e.is_a?(Hash)
-          { "Name" => e.to_s, "Subscriptions" => [] }
+
+          topic_name = e.to_s
+          { "Name" => topic_name, "Subscriptions" => subscriptions.fetch(topic_name, []) }
         end
+      end
+
+      def subscriptions_by_topic
+        Array(cfg_get("Subscriptions", cfg_get("subscriptions", []))).each_with_object({}) do |subscription, by_topic|
+          topic_name = fetch_subscription_value(subscription, "topic")
+          queue_name = fetch_subscription_value(subscription, "queue")
+          next if topic_name.nil? || queue_name.nil?
+
+          by_topic[topic_name.to_s] ||= []
+          by_topic[topic_name.to_s] << { "QueueName" => queue_name.to_s, "Raw" => false }
+        end
+      end
+
+      def fetch_subscription_value(subscription, key)
+        return subscription[key] || subscription[key.to_sym] if subscription.is_a?(Hash)
+
+        subscription.public_send(key) if subscription.respond_to?(key)
       end
 
       def normalize_topic_hash(h)

@@ -13,6 +13,7 @@ module Mobilis
     end
 
     def self.run_command(cmd, chdir: nil, env: {}, allow_failure: false, capture: false)
+      cmd = normalize_command(cmd)
       full_env = ENV.to_h.merge(env)
 
       result = nil
@@ -33,6 +34,17 @@ module Mobilis
       raise CommandFailed.new(cmd, status) unless allow_failure || status.success?
 
       capture ? result : true
+    end
+
+    def self.normalize_command(cmd)
+      return cmd unless windows?
+      return cmd unless cmd.first&.start_with?("./dc_")
+
+      ["bash", *cmd]
+    end
+
+    def self.windows?
+      Gem.win_platform?
     end
   end
 end

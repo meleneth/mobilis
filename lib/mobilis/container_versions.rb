@@ -9,7 +9,7 @@ module Mobilis
     NODE        = "node:24.15-trixie"
     PYTHON      = "python:3.14.4-trixie"
     RUBY        = "ruby:4.0.2-trixie"
-    RUST        = "rust:1.86-bookworm"
+    RUST        = "rust:1.86-trixie"
 
     # ─── Databases ─────────────────────────────────────────────
     CASSANDRA   = "cassandra:4.1"
@@ -30,11 +30,12 @@ module Mobilis
     RAILS_BUILDER = "ghcr.io/your-org/rails-builder:latest"
 
     # ─── Observability / Telemetry ─────────────────────────────
-    GRAFANA     = "grafana/grafana:13.0.1-ubuntu"
-    JAEGER      = "jaegertracing/jaeger:2.17.0"
-    LOKI        = "grafana/loki:3.7.1"
-    OTEL_COLLECTOR = "otel/opentelemetry-collector-contrib:latest"
-    PROMETHEUS  = "prom/prometheus:latest"
+    GRAFANA     = "grafana/grafana:13.1.0"
+    JAEGER      = "jaegertracing/jaeger:2.19.0"
+    LOKI        = "grafana/loki:3.7.3"
+    OTEL_COLLECTOR = "otel/opentelemetry-collector-contrib:0.155.0"
+    PROMETHEUS  = "prom/prometheus:v3.5.4"
+    PROMTAIL    = "grafana/promtail:3.6.8"
 
     # ─── Messaging / Queues ────────────────────────────────────
     KAFKA       = "bitnami/kafka:4.0.0"
@@ -49,7 +50,7 @@ module Mobilis
 
     # ─── Proxies / HTTP ────────────────────────────────────────
     CADDY       = "caddy:2.7.6"
-    NGINX       = "nginx:1.27.5-bookworm"
+    NGINX       = "nginx:1.27.5-trixie"
     TRAEFIK     = "traefik:v2.10"
 
     # ─── Dev / Infra Tools ─────────────────────────────────────

@@ -4,7 +4,8 @@ module Mobilis
   module Model
     module Rails
       class Model
-        attr_reader :name, :fields
+        attr_reader :name, :fields, :filterable_fields
+        attr_accessor :api_exposed
 
         def self.from_h(hash)
           model = new(hash[:name])
@@ -17,6 +18,9 @@ module Mobilis
           (hash[:fields] || []).each do |field_hash|
             model.fields << field_class.from_h(field_hash)
           end
+          model.api_exposed = hash[:api_exposed] || hash["api_exposed"]
+          fields = hash[:filterable_fields] || hash["filterable_fields"] || []
+          model.filterable(*fields) unless fields.empty?
 
           model
         end
@@ -24,6 +28,8 @@ module Mobilis
         def initialize(name)
           @name = name
           @fields = []
+          @filterable_fields = []
+          @api_exposed = false
         end
 
         def field_args
@@ -61,12 +67,29 @@ module Mobilis
           add_field(name, "references", **options)
         end
 
+        def expose_api!
+          @api_exposed = true
+          self
+        end
+
+        def filterable(*fields)
+          @filterable_fields.concat(fields.map(&:to_s))
+          expose_api!
+        end
+
+        def api_exposed?
+          !!api_exposed
+        end
+
         def to_h
-          {
+          h = {
             type: self.class.name,
             name: name,
             fields: fields.map(&:to_h)
           }
+          h[:api_exposed] = true if api_exposed?
+          h[:filterable_fields] = filterable_fields if filterable_fields.any?
+          h
         end
       end
     end

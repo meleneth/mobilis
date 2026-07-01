@@ -18,9 +18,12 @@ RSpec.describe Mobilis::Realized::OtelCollector do
 
   it "#compose" do
     expect(otel_collector_node.compose.clean_shrunk).to eq(
-      { image: "otel/opentelemetry-collector-contrib:latest",
+      { image: "otel/opentelemetry-collector-contrib:0.155.0",
         ports: [
           "${OTEL_COLLECTOR_COLLECTOR_PORT}:4318"
+        ],
+        environment: [
+          "JAEGER_URL=${OTEL_COLLECTOR__JAEGER_URL}"
         ],
         volumes: [
           "./otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml"
