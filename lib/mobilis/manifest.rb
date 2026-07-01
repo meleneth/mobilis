@@ -64,8 +64,7 @@ module Mobilis
       commit_all("Mobilis system config")
       write_dc_helpers
       commit_all("docker compose helper scripts")
-      write_devcontainer
-      commit_all("devcontainer configuration")
+      commit_all("devcontainer configuration") if write_devcontainer
       Mobilis::Util.run_command(["./dc_test", "build"])
       run_plugin_hooks :hook_after_dc_helpers
       run_plugin_hooks :hook_create_rails_models
@@ -101,7 +100,7 @@ module Mobilis
     def write_devcontainer
       directory_service.chdir_generate
       rails_services = devcontainer_rails_services
-      return if rails_services.empty?
+      return false if rails_services.empty?
 
       FileUtils.mkdir_p(".devcontainer")
 
@@ -116,6 +115,7 @@ module Mobilis
         File.write(".devcontainer/#{service.name}-test/devcontainer.json",
                    "#{JSON.pretty_generate(devcontainer_config(service, "test", nested: true))}\n")
       end
+      true
     end
 
     def devcontainer_rails_services
@@ -250,8 +250,6 @@ module Mobilis
     def commit_all(message)
       puts " -- git commit: #{message} --"
       @git_repo.add(all: true)
-      return if @git_repo.status.changed.empty? && @git_repo.status.added.empty? && @git_repo.status.deleted.empty?
-
       @git_repo.commit("[mobilis] #{message}")
     end
 

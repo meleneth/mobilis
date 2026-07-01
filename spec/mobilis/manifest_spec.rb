@@ -31,6 +31,33 @@ RSpec.describe Mobilis::Manifest do
     end
   end
 
+  describe "#write_devcontainer" do
+    it "does not report generated devcontainer files for non-Rails systems" do
+      Dir.mktmpdir do |dir|
+        Dir.chdir(dir) do
+          manifest = build(:manifest, :with_postgres, :suppress_plugins)
+          manifest.directory_service.mkdir_generate
+
+          expect(manifest.write_devcontainer).to be false
+          expect(File).not_to exist(".devcontainer")
+        end
+      end
+    end
+
+    it "reports generated devcontainer files for Rails systems" do
+      Dir.mktmpdir do |dir|
+        Dir.chdir(dir) do
+          manifest = build(:manifest, :with_rails_and_postgres, :suppress_plugins)
+          manifest.directory_service.mkdir_generate
+
+          expect(manifest.write_devcontainer).to be true
+          expect(File).to exist(".devcontainer/devcontainer.json")
+          expect(File).to exist(".devcontainer/devcontainer-overrides.yml")
+        end
+      end
+    end
+  end
+
   describe "#overrides_for" do
     subject(:manifest) { build(:manifest, :with_rails_and_postgres) }
     let(:production_realized_env) { manifest.realized_env(:production) }
