@@ -22,7 +22,8 @@ RSpec.describe Mobilis::Realized::Grafana do
         ports: ["${GRAFANA_WEB_PORT}:3000"],
         environment: [
           "GF_PATHS_PROVISIONING=/etc/grafana/provisioning",
-          "GF_SECURITY_ADMIN_PASSWORD=admin",
+          "GF_SECURITY_ADMIN_PASSWORD=mobilis-admin",
+          "GF_SECURITY_ADMIN_USER=admin",
           "LOKI_URL=${GRAFANA__LOKI_URL}",
           "PROMETHEUS_URL=${GRAFANA__PROMETHEUS_URL}"
         ],

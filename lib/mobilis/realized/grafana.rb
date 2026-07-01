@@ -3,6 +3,9 @@
 module Mobilis
   module Realized
     class Grafana < Mobilis::Base::ImageForm
+      ADMIN_USER = "admin"
+      ADMIN_PASSWORD = "mobilis-admin"
+
       def initialize(realized_env, config_node)
         super(realized_env, config_node, ContainerVersions::GRAFANA)
         @has_service_dir = true
@@ -11,7 +14,8 @@ module Mobilis
         add_volume("./data/#{environment}/#{name}", "/var/lib/grafana")
         add_volume("./#{name}/provisioning/datasources", "/etc/grafana/provisioning/datasources")
         add_compose_raw_var("GF_PATHS_PROVISIONING", "/etc/grafana/provisioning")
-        add_compose_raw_var("GF_SECURITY_ADMIN_PASSWORD", "admin")
+        add_compose_raw_var("GF_SECURITY_ADMIN_USER", ADMIN_USER)
+        add_compose_raw_var("GF_SECURITY_ADMIN_PASSWORD", ADMIN_PASSWORD)
         register_external_port(exposed_port_no, "#{name}_WEB_PORT",
                                "#{name} web interface port")
         compose[:user] = "${HOST_UID}:${HOST_GID}"

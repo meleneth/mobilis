@@ -13,6 +13,24 @@ RSpec.describe Mobilis::Manifest do
       rails_realized_node = realized_env.realized_node_by_name("user")
     end
   end
+
+  describe "#write_readme" do
+    subject(:manifest) { build(:manifest, system: build(:system, :with_otel), suppress_plugins: true) }
+
+    it "documents generated Grafana credentials and password-change behavior" do
+      Dir.mktmpdir do |dir|
+        Dir.chdir(dir) do
+          manifest.write_readme
+
+          readme = File.read("README.md")
+          expect(readme).to include("Grafana is generated with a non-default admin password")
+          expect(readme).to include("Username: `admin`")
+          expect(readme).to include("Password: `mobilis-admin`")
+        end
+      end
+    end
+  end
+
   describe "#overrides_for" do
     subject(:manifest) { build(:manifest, :with_rails_and_postgres) }
     let(:production_realized_env) { manifest.realized_env(:production) }
