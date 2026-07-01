@@ -35,6 +35,14 @@ module Mobilis
         node
       end
 
+      def mysql(name, &block)
+        node = Mobilis::Node::MySQL.new(name)
+        system << node
+        @named[name] = node
+        block&.call(node)
+        node
+      end
+
       def redis(name, &block)
         node = Mobilis::Node::Redis.new(name)
         system << node

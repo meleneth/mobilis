@@ -1,0 +1,16 @@
+# frozen_string_literal: true
+
+require "spec_helper"
+
+RSpec.describe Mobilis::DSL::DSLContext do
+  let(:system) { Mobilis::System.new("generate") }
+  subject(:context) { described_class.new(system) }
+
+  it "adds MySQL nodes by name" do
+    node = context.mysql("user-db")
+
+    expect(node).to be_a(Mobilis::Node::MySQL)
+    expect(context.named("user-db")).to eq(node)
+    expect(system.config_nodes.values).to include(node)
+  end
+end

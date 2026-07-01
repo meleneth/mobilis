@@ -110,6 +110,7 @@ module Mobilis
       maps = {
         Mobilis::Node::Localstack => Mobilis::Realized::Localstack,
         Mobilis::Node::PostgreSQL => Mobilis::Realized::PostgreSQL,
+        Mobilis::Node::MySQL => Mobilis::Realized::MySQL,
         Mobilis::Node::OtelCollector => Mobilis::Realized::OtelCollector,
         Mobilis::Node::Jaeger => Mobilis::Realized::Jaeger,
         Mobilis::Node::Prometheus => Mobilis::Realized::Prometheus,

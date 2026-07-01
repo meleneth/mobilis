@@ -37,6 +37,16 @@ RSpec.describe Mobilis::Model::Rails::Model do
       )
     end
   end
+
+  describe "#jsonb" do
+    it "adds a PostgreSQL jsonb field" do
+      model.jsonb("metadata")
+
+      expect(model.field_args).to eq(["metadata:jsonb"])
+      expect(model.to_h).to include(fields: [{ name: "metadata", type: "jsonb" }])
+    end
+  end
+
   describe ".from_h" do
     it "raises if type is incorrect" do
       expect do

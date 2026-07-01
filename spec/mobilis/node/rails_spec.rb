@@ -28,6 +28,13 @@ RSpec.describe Mobilis::Node::Rails do
     it "uses PostgreSQL when configured" do
       expect(rails_node.primary_database).to be_a(Mobilis::Node::PostgreSQL)
     end
+
+    it "uses MySQL when configured" do
+      rails_node = build(:rails_node, :with_mysql)
+
+      expect(rails_node.primary_database).to be_a(Mobilis::Node::MySQL)
+      expect(rails_node.rails_new_command).to eq("rails new rails . --database=mysql")
+    end
   end
 
   it "can to_json" do

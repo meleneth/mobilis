@@ -23,6 +23,13 @@ FactoryBot.define do
       end
     end
 
+    trait :with_mysql do
+      after(:build) do |system|
+        mysql_node = build(:mysql_node, name: "userdb")
+        system << mysql_node
+      end
+    end
+
     trait :with_rails do
       after(:build) do |system|
         rails_node = build(:rails_node, name: "user")
@@ -41,6 +48,21 @@ FactoryBot.define do
         rails = build(:rails_node, name: evaluator.rails_name, primary_database: pg)
 
         system << pg
+        system << rails
+      end
+    end
+
+    trait :with_rails_and_mysql do
+      transient do
+        rails_name { "user" }
+        db_name    { "userdb" }
+      end
+
+      after(:build) do |system, evaluator|
+        mysql = build(:mysql_node, name: evaluator.db_name)
+        rails = build(:rails_node, name: evaluator.rails_name, primary_database: mysql)
+
+        system << mysql
         system << rails
       end
     end

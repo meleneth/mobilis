@@ -34,9 +34,21 @@ FactoryBot.define do
       end
     end
 
+    trait :with_mysql do
+      transient do
+        system_traits { [:with_mysql] }
+      end
+    end
+
     trait :with_rails_and_postgres do
       transient do
         system_traits { [:with_rails_and_postgres] }
+      end
+    end
+
+    trait :with_rails_and_mysql do
+      transient do
+        system_traits { [:with_rails_and_mysql] }
       end
     end
 

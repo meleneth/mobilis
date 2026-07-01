@@ -20,7 +20,6 @@ module Mobilis
     MYSQL       = "mysql:9.3.0"
     POSTGRES    = "postgres:18.3-trixie"
     REDIS       = "redis:8.6.2-trixie"
-    SQLITE      = "nouchka/sqlite3:latest"
     VALKEY      = "valkey/valkey:7.2"
 
     # ─── Framework Stacks ──────────────────────────────────────

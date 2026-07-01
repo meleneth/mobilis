@@ -16,5 +16,15 @@ FactoryBot.define do
         rails_node.primary_database = evaluator.postgres_node
       end
     end
+
+    trait :with_mysql do
+      transient do
+        mysql_node { build(:mysql_node) }
+      end
+
+      after(:build) do |rails_node, evaluator|
+        rails_node.primary_database = evaluator.mysql_node
+      end
+    end
   end
 end

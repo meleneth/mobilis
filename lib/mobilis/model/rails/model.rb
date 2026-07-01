@@ -57,6 +57,10 @@ module Mobilis
           add_field(name, "integer", **options)
         end
 
+        def jsonb(name, **options)
+          add_field(name, "jsonb", **options)
+        end
+
         def string(name, **options)
           add_field(name, "string", **options)
         end

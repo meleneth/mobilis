@@ -73,4 +73,11 @@ RSpec.describe Mobilis::RealizedEnv do
       expect(realized_env.realized_node_for_config_node(nonexistent_system_node)).to be_nil
     end
   end
+
+  it "realizes MySQL config nodes" do
+    realized_env = build(:realized_env, :with_rails_and_mysql)
+
+    expect(realized_env.realized_nodes).to include(be_a(Mobilis::Realized::MySQL))
+    expect(realized_env.find_realized_node_by_name("user").primary_database).to be_a(Mobilis::Realized::MySQL)
+  end
 end
