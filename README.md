@@ -1,3 +1,5 @@
+Mobilis treats the local distributed system as the primary development artifact.
+
 # Mobilis - Service Oriented Architecture scaffolding
 
 With Ruby and Docker installed:
@@ -16,7 +18,6 @@ Each demo script writes a generated Docker Compose project into `generate/`.
 Most scripts also build the containers as part of materialization. From
 `generate/`, use `./dc_test`, `./dc_dev`, or `./dc_prod` to work with the
 generated environments.
-
 
 Initial setup for a service oriented project can be a pain.
 Generating initial codebases, wiring them up via environment
@@ -41,26 +42,26 @@ bundle exec ruby scripts/<demo>.rb
 
 Then inspect or run the generated project under `generate/`.
 
-| Script | Demonstrates |
-| --- | --- |
-| `01_mobilis_initial_system.rb` | Minimal Rails service with PostgreSQL. |
-| `02_mobilis_otel_system.rb` | Standalone observability stack: Grafana, Loki, Alloy, OpenTelemetry collector, Jaeger, and Prometheus. |
-| `03_flask_otel_system.rb` | Flask service with the observability stack. |
-| `04_big_multirails_system.rb` | Multiple Rails API services with separate PostgreSQL databases and service-to-service wiring. |
-| `05_rails_otel_system.rb` | Rails service with PostgreSQL and full observability wiring. |
-| `06_rails_graphql_otel.rb` | Rails API service with GraphQL, generated model affordances, PostgreSQL, and OpenTelemetry. |
-| `07_flask_redis.rb` | Flask service connected to Redis. |
-| `08_large_iam_system.rb` | Larger IAM-oriented system with Rails API services, filtered ActiveResource affordances, GoAWS SNS/SQS, Redis, and observability. |
-| `09_just_localstack.rb` | Legacy LocalStack-only smoke scenario. New queue demos should prefer GoAWS. |
-| `10_rails_tailwind_site.rb` | Rails site setup with Tailwind. |
-| `11_add_group_service_to_large_iam_system.rb` | Focused IAM slice adding a group service with GraphQL and observability. |
-| `12_chaos_management_system.rb` | Larger Rails application example with richer generated app code. |
-| `13_orinoco.rb` | Orinoco Rails service connected to PostgreSQL and GoAWS. |
-| `14_postgres_replication.rb` | PostgreSQL replication DSL: `replicate_from(primary)`. |
-| `15_pgadmin_postgres.rb` | pgAdmin wired to generated PostgreSQL. |
-| `16_s3_storage.rb` | S3-compatible object storage using SeaweedFS. |
-| `17_observable_s3_storage.rb` | SeaweedFS-backed S3 storage with conditional observability wiring, Prometheus scraping, and Grafana panels. |
-| `18_mnbme_otel_system.rb` | Rack microservice game demo extracted from MNBME: local gem support, Rack Docker image support, replicated service instances, Redis game state, and OpenTelemetry/Grafana/Loki wiring. |
+| Script                                        | Demonstrates                                                                                                                                                                           |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `01_mobilis_initial_system.rb`                | Minimal Rails service with PostgreSQL.                                                                                                                                                 |
+| `02_mobilis_otel_system.rb`                   | Standalone observability stack: Grafana, Loki, Alloy, OpenTelemetry collector, Jaeger, and Prometheus.                                                                                 |
+| `03_flask_otel_system.rb`                     | Flask service with the observability stack.                                                                                                                                            |
+| `04_big_multirails_system.rb`                 | Multiple Rails API services with separate PostgreSQL databases and service-to-service wiring.                                                                                          |
+| `05_rails_otel_system.rb`                     | Rails service with PostgreSQL and full observability wiring.                                                                                                                           |
+| `06_rails_graphql_otel.rb`                    | Rails API service with GraphQL, generated model affordances, PostgreSQL, and OpenTelemetry.                                                                                            |
+| `07_flask_redis.rb`                           | Flask service connected to Redis.                                                                                                                                                      |
+| `08_large_iam_system.rb`                      | Larger IAM-oriented system with Rails API services, filtered ActiveResource affordances, GoAWS SNS/SQS, Redis, and observability.                                                      |
+| `09_just_localstack.rb`                       | Legacy LocalStack-only smoke scenario. New queue demos should prefer GoAWS.                                                                                                            |
+| `10_rails_tailwind_site.rb`                   | Rails site setup with Tailwind.                                                                                                                                                        |
+| `11_add_group_service_to_large_iam_system.rb` | Focused IAM slice adding a group service with GraphQL and observability.                                                                                                               |
+| `12_chaos_management_system.rb`               | Larger Rails application example with richer generated app code.                                                                                                                       |
+| `13_orinoco.rb`                               | Orinoco Rails service connected to PostgreSQL and GoAWS.                                                                                                                               |
+| `14_postgres_replication.rb`                  | PostgreSQL replication DSL: `replicate_from(primary)`.                                                                                                                                 |
+| `15_pgadmin_postgres.rb`                      | pgAdmin wired to generated PostgreSQL.                                                                                                                                                 |
+| `16_s3_storage.rb`                            | S3-compatible object storage using SeaweedFS.                                                                                                                                          |
+| `17_observable_s3_storage.rb`                 | SeaweedFS-backed S3 storage with conditional observability wiring, Prometheus scraping, and Grafana panels.                                                                            |
+| `18_mnbme_otel_system.rb`                     | Rack microservice game demo extracted from MNBME: local gem support, Rack Docker image support, replicated service instances, Redis game state, and OpenTelemetry/Grafana/Loki wiring. |
 
 The most complete current smoke demos are `08_large_iam_system.rb` for Rails
 service composition and `18_mnbme_otel_system.rb` for Rack/local-gem/multi-
