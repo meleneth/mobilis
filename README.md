@@ -1,15 +1,21 @@
 # Mobilis - Service Oriented Architecture scaffolding
-With Ruby installed,
 
-    git clone https://github.com/meleneth/mobilis
-    cd mobilis
-    bundle install
-    bundle exec scripts/07_flask_redis.rb
-    cd generate
-    ./dc_test build
-    ./dc_test up -d
-    sleep 5
-    curl http://localhost:11000
+With Ruby and Docker installed:
+
+```sh
+git clone git@github.com:meleneth/mobilis.git
+cd mobilis
+bundle install
+bundle exec ruby scripts/01_mobilis_initial_system.rb
+cd generate
+./dc_test build
+./dc_test up -d
+```
+
+Each demo script writes a generated Docker Compose project into `generate/`.
+Most scripts also build the containers as part of materialization. From
+`generate/`, use `./dc_test`, `./dc_dev`, or `./dc_prod` to work with the
+generated environments.
 
 
 Initial setup for a service oriented project can be a pain.
@@ -24,32 +30,59 @@ The project dreams big - if it has a docker container, support
 integrating it into a new setup via Docker Compose with very
 little work.
 
-Currently, it only works with Ruby on Rails and Postgres.
-It used to work with more, but mainenance burden and dirty
-core implementation necessitated a full rewrite.
+## Demo Scripts
 
-look at scripts/mobilis_initial_system.rb
+The `scripts/` directory is the active executable documentation for the DSL.
+Run any demo with:
 
-bundle exec ruby scripts/mobilis_initial_system.rb
+```sh
+bundle exec ruby scripts/<demo>.rb
+```
 
-this will build a codebase in the 'generate' directory.
+Then inspect or run the generated project under `generate/`.
 
-There should be documentation for the project in the README.me
-in that directory, but let's look at some high level highlights:
+| Script | Demonstrates |
+| --- | --- |
+| `01_mobilis_initial_system.rb` | Minimal Rails service with PostgreSQL. |
+| `02_mobilis_otel_system.rb` | Standalone observability stack: Grafana, Loki, Alloy, OpenTelemetry collector, Jaeger, and Prometheus. |
+| `03_flask_otel_system.rb` | Flask service with the observability stack. |
+| `04_big_multirails_system.rb` | Multiple Rails API services with separate PostgreSQL databases and service-to-service wiring. |
+| `05_rails_otel_system.rb` | Rails service with PostgreSQL and full observability wiring. |
+| `06_rails_graphql_otel.rb` | Rails API service with GraphQL, generated model affordances, PostgreSQL, and OpenTelemetry. |
+| `07_flask_redis.rb` | Flask service connected to Redis. |
+| `08_large_iam_system.rb` | Larger IAM-oriented system with Rails API services, filtered ActiveResource affordances, GoAWS SNS/SQS, Redis, and observability. |
+| `09_just_localstack.rb` | Legacy LocalStack-only smoke scenario. New queue demos should prefer GoAWS. |
+| `10_rails_tailwind_site.rb` | Rails site setup with Tailwind. |
+| `11_add_group_service_to_large_iam_system.rb` | Focused IAM slice adding a group service with GraphQL and observability. |
+| `12_chaos_management_system.rb` | Larger Rails application example with richer generated app code. |
+| `13_orinoco.rb` | Orinoco Rails service connected to PostgreSQL and GoAWS. |
+| `14_postgres_replication.rb` | PostgreSQL replication DSL: `replicate_from(primary)`. |
+| `15_pgadmin_postgres.rb` | pgAdmin wired to generated PostgreSQL. |
+| `16_s3_storage.rb` | S3-compatible object storage using SeaweedFS. |
+| `17_observable_s3_storage.rb` | SeaweedFS-backed S3 storage with conditional observability wiring, Prometheus scraping, and Grafana panels. |
+| `18_mnbme_otel_system.rb` | Rack microservice game demo extracted from MNBME: local gem support, Rack Docker image support, replicated service instances, Redis game state, and OpenTelemetry/Grafana/Loki wiring. |
 
-In the test environment, the 'user' rails project has it's source
-files volume mounted in the docker container.
+The most complete current smoke demos are `08_large_iam_system.rb` for Rails
+service composition and `18_mnbme_otel_system.rb` for Rack/local-gem/multi-
+instance behavior.
 
-In the production environment, there are 4 databases wired up to
-the 'user' rails project. This is because rails needs the extra
-databases in production. These are all wired up, and should be
-ready to go.
+## Generated Project
 
-The databases are all stored in local files, not volumes -
-it is expected for Actual Production you will be using externally
-managed databases, use something like Vault for your env file
-juggling. But out of the box, you can build as if this stuff
-exists and it's a small step to get there.
+Each demo builds a codebase in the `generate/` directory.
+
+The generated project includes its own `README.md`, Compose files,
+environment files, helper scripts, and service source directories. In the test
+environment, generated application services usually have their source files
+mounted into the container for local iteration.
+
+Production-oriented Rails demos may include the additional database roles Rails
+expects for cache, cable, and queue storage. Mobilis wires those dependencies
+into Compose so the generated project can start locally while still leaving a
+clear path to externally managed infrastructure later.
+
+Generated database and storage state is kept in local files under `generate/`.
+For actual production deployments, use externally managed stateful services and
+real secret management rather than the generated local env files.
 
 ## Container Environment Variables
 
