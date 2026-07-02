@@ -29,12 +29,17 @@ RSpec.describe Mobilis::Realized::Grafana do
         ],
         volumes: [
           "./data/test/grafana:/var/lib/grafana",
+          "./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards",
           "./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources"
         ],
         user: "${HOST_UID}:${HOST_GID}",
         depends_on: {
           loki: {
             condition: "service_started"
+          },
+          jaeger: {
+            condition: "service_started",
+            restart: true
           },
           prometheus: {
             condition: "service_started",

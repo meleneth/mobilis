@@ -101,6 +101,39 @@ FactoryBot.define do
       end
     end
 
+    trait :with_observable_rails_and_databases do
+      after(:build) do |system|
+        collector_node = build(:otel_collector_node, name: "otel-collector")
+        prometheus_node = build(:prometheus_node, name: "prometheus")
+        jaeger_node = build(:jaeger_node, name: "jaeger")
+        grafana_node = build(:grafana_node, name: "grafana")
+        loki_node = build(:loki_node, name: "loki")
+        alloy_node = build(:alloy_node, name: "alloy", loki: loki_node)
+        postgres_node = build(:postgres_node, name: "userdb")
+        mysql_node = build(:mysql_node, name: "legacydb")
+        rails_node = build(:rails_node, name: "user-service", primary_database: postgres_node)
+
+        rails_node.add_rails_model("user") do |model|
+          model.filterable :id, :account_id, :email
+        end
+
+        grafana_node.has_extra_depends_on(prometheus_node)
+        grafana_node.has_extra_depends_on(loki_node)
+        collector_node.has_extra_depends_on(jaeger_node)
+        prometheus_node.has_extra_depends_on(collector_node)
+
+        system << collector_node
+        system << prometheus_node
+        system << jaeger_node
+        system << grafana_node
+        system << loki_node
+        system << alloy_node
+        system << postgres_node
+        system << mysql_node
+        system << rails_node
+      end
+    end
+
     trait :with_two_rails_and_postgres do
       transient do
         rails_one_name { "user" }

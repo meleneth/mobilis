@@ -64,7 +64,8 @@ module Mobilis
       end
 
       def generated_project_regex
-        "#{Regexp.escape(realized_env.meta_project_name)}-(test|development|production)"
+        escaped_name = Regexp.escape(realized_env.meta_project_name).gsub("\\-", "-")
+        "#{escaped_name.gsub("\\", "\\\\")}-(test|development|production)"
       end
 
       def loki_name

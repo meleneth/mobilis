@@ -13,6 +13,7 @@ module Mobilis
         @has_dockerfile = false
         add_volume("./data/#{environment}/#{name}", "/var/lib/grafana")
         add_volume("./#{name}/provisioning/datasources", "/etc/grafana/provisioning/datasources")
+        add_volume("./#{name}/provisioning/dashboards", "/etc/grafana/provisioning/dashboards")
         add_compose_raw_var("GF_PATHS_PROVISIONING", "/etc/grafana/provisioning")
         add_compose_raw_var("GF_SECURITY_ADMIN_USER", ADMIN_USER)
         add_compose_raw_var("GF_SECURITY_ADMIN_PASSWORD", ADMIN_PASSWORD)
@@ -26,8 +27,15 @@ module Mobilis
       end
 
       def after_all_nodes_realized
-        loki = realized_env.find_realized_node_by_name("loki")
-        register_depends_on(loki) if loki
+        realized_env.realized_nodes.each do |node|
+          next unless [
+            Mobilis::Realized::Loki,
+            Mobilis::Realized::Prometheus,
+            Mobilis::Realized::Jaeger
+          ].any? { |klass| node.is_a?(klass) }
+
+          register_depends_on(node)
+        end
       end
 
       def dependant_services_require_restart?
