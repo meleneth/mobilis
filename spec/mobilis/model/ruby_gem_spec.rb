@@ -28,6 +28,12 @@ RSpec.describe Mobilis::Model::RubyGem do
                                       ])
   end
 
+  it "builds Gemfile lines for a path sourced gem" do
+    gem = described_class.new("mel-mnbme", path: "../localgems/mel-mnbme")
+
+    expect(gem.gemfile_line).to eq('gem "mel-mnbme", path: "../localgems/mel-mnbme"')
+  end
+
   it "round trips through a hash" do
     gem = described_class.new("redis", group: "development,test")
 

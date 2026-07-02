@@ -27,6 +27,14 @@ module Mobilis
         node
       end
 
+      def rack(name, instances: 1, &block)
+        node = Mobilis::Node::Rack.new(name, instances: instances)
+        system << node
+        @named[name] = node
+        block&.call(node)
+        node
+      end
+
       def postgres(name, &block)
         node = Mobilis::Node::PostgreSQL.new(name)
         system << node

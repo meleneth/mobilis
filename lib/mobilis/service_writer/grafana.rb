@@ -283,7 +283,11 @@ module Mobilis
       end
 
       def loggable_nodes
-        rails_nodes + s3_storage_nodes
+        rails_nodes + rack_nodes + s3_storage_nodes
+      end
+
+      def rack_nodes
+        @rack_nodes ||= realized_env.realized_nodes.select { |node| node.is_a?(Mobilis::Realized::Rack) }
       end
 
       def prometheus_datasource?

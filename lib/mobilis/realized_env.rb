@@ -119,6 +119,7 @@ module Mobilis
         Mobilis::Node::Loki => Mobilis::Realized::Loki,
         Mobilis::Node::Alloy => Mobilis::Realized::Alloy,
         Mobilis::Node::Flask => Mobilis::Realized::Flask,
+        Mobilis::Node::Rack => Mobilis::Realized::Rack,
         Mobilis::Node::Rails => Mobilis::Realized::Rails,
         Mobilis::Node::Redis => Mobilis::Realized::Redis,
         Mobilis::Node::S3Storage => Mobilis::Realized::S3Storage,

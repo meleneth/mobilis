@@ -39,4 +39,12 @@ RSpec.describe Mobilis::DSL::DSLContext do
     expect(node.buckets).to eq(["uploads"])
     expect(context.named("assets")).to eq(node)
   end
+
+  it "adds Rack nodes with instance counts" do
+    node = context.rack("playerservice", instances: 3)
+
+    expect(node).to be_a(Mobilis::Node::Rack)
+    expect(node.instances).to eq(3)
+    expect(context.named("playerservice")).to eq(node)
+  end
 end

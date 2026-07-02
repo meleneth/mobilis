@@ -55,6 +55,13 @@ FactoryBot.define do
       end
     end
 
+    trait :with_rack do
+      after(:build) do |system|
+        rack_node = build(:rack_node, name: "rackapp")
+        system << rack_node
+      end
+    end
+
     trait :with_rails_and_postgres do
       transient do
         rails_name { "user" }

@@ -7,6 +7,8 @@ module Mobilis
     class WriteFiles < Mobilis::Base::Plugin
       def hook_after_dc_helpers
         @manifest.each_node_of_type(Mobilis::Base::RealizedNode) do |realized_env, realized_node|
+          next if realized_node.is_a?(Mobilis::Realized::Rack)
+
           realized_node.each_model_of_type(Mobilis::Model::File) do |model|
             next unless realized_env.is_test?
 
