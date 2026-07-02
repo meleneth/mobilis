@@ -22,4 +22,13 @@ RSpec.describe Mobilis::DSL::DSLContext do
 
     expect(replica.replicate_from).to eq(primary)
   end
+
+  it "adds pgAdmin nodes with PostgreSQL database connections" do
+    database = context.postgres("user-db")
+    node = context.pgadmin("pgadmin", databases: [database])
+
+    expect(node).to be_a(Mobilis::Node::Pgadmin)
+    expect(node.databases).to eq([database])
+    expect(context.named("pgadmin")).to eq(node)
+  end
 end

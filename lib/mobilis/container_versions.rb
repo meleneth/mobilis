@@ -60,7 +60,7 @@ module Mobilis
     DIND        = "docker:dind"
     DIND_ROOTLESS = "docker:24.0.7-dind-rootless"
     GITLAB_RUNNER = "gitlab/gitlab-runner:alpine-v16.11.0"
-    PGADMIN     = "dpage/pgadmin4:9.2.0"
+    PGADMIN     = "dpage/pgadmin4:9.16"
 
     # ─── Misc ──────────────────────────────────────────────────
     HUGO        = "klakegg/hugo:0.123.3-ext-alpine"

@@ -34,6 +34,12 @@ FactoryBot.define do
       end
     end
 
+    trait :with_pgadmin_and_postgres do
+      transient do
+        system_traits { [:with_pgadmin_and_postgres] }
+      end
+    end
+
     trait :with_mysql do
       transient do
         system_traits { [:with_mysql] }

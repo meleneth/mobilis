@@ -229,6 +229,7 @@ module Mobilis
         - `./dc_prod` runs the production environment.
 
         #{grafana_readme_section}
+        #{pgadmin_readme_section}
       MARKDOWN
     end
 
@@ -242,6 +243,21 @@ module Mobilis
 
         - Username: `#{Mobilis::Realized::Grafana::ADMIN_USER}`
         - Password: `#{Mobilis::Realized::Grafana::ADMIN_PASSWORD}`
+
+        The password is for generated local/demo environments only. Change it before using the generated project for anything sensitive.
+      MARKDOWN
+    end
+
+    def pgadmin_readme_section
+      return "" unless realized_production_env.realized_nodes.any? { |node| node.is_a?(Mobilis::Realized::Pgadmin) }
+
+      <<~MARKDOWN
+        ## pgAdmin
+
+        pgAdmin is generated with local/demo admin credentials and preloaded PostgreSQL server definitions.
+
+        - Username: `#{Mobilis::Realized::Pgadmin::ADMIN_EMAIL}`
+        - Password: `#{Mobilis::Realized::Pgadmin::ADMIN_PASSWORD}`
 
         The password is for generated local/demo environments only. Change it before using the generated project for anything sensitive.
       MARKDOWN

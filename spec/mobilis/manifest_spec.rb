@@ -29,6 +29,23 @@ RSpec.describe Mobilis::Manifest do
         end
       end
     end
+
+    context "with pgAdmin" do
+      subject(:manifest) { build(:manifest, :with_pgadmin_and_postgres, :suppress_plugins) }
+
+      it "documents generated pgAdmin credentials" do
+        Dir.mktmpdir do |dir|
+          Dir.chdir(dir) do
+            manifest.write_readme
+
+            readme = File.read("README.md")
+            expect(readme).to include("pgAdmin is generated with local/demo admin credentials")
+        expect(readme).to include("Username: `admin@example.com`")
+            expect(readme).to include("Password: `mobilis-admin`")
+          end
+        end
+      end
+    end
   end
 
   describe "#write_devcontainer" do

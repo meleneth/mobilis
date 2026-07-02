@@ -23,6 +23,17 @@ FactoryBot.define do
       end
     end
 
+    trait :with_pgadmin_and_postgres do
+      after(:build) do |system|
+        postgres_node = build(:postgres_node, name: "userdb")
+        pgadmin_node = build(:pgadmin_node, name: "pgadmin")
+        pgadmin_node.add_database(postgres_node)
+
+        system << postgres_node
+        system << pgadmin_node
+      end
+    end
+
     trait :with_mysql do
       after(:build) do |system|
         mysql_node = build(:mysql_node, name: "userdb")

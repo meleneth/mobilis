@@ -50,4 +50,18 @@ RSpec.describe Mobilis::System do
 
     expect(loaded[replica.id].replicate_from).to eq(loaded[primary.id])
   end
+
+  it "can serialize and deserialize pgAdmin PostgreSQL connections" do
+    database = build(:postgres_node, name: "user-db")
+    pgadmin = build(:pgadmin_node, name: "pgadmin")
+    pgadmin.add_database(database)
+
+    system = described_class.new("generate")
+    system << database
+    system << pgadmin
+
+    loaded = described_class.from_json(system.to_json)
+
+    expect(loaded[pgadmin.id].databases).to eq([loaded[database.id]])
+  end
 end
