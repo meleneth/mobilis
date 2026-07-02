@@ -94,38 +94,46 @@ def add_mnbme_gem(service)
             end
 
             def add_game_to_open_list
+              gameredis.lrem open_games_list_key, 0, game_uuid
               gameredis.lpush open_games_list_key, game_uuid
             end
 
             def game_exists?
-              gameredis.exists(game_number_key) != 0
+              exists = gameredis.exists(game_number_key)
+              exists == true || (exists.respond_to?(:positive?) && exists.positive?)
             end
 
             def make_new_game
               @game_uuid = SecureRandom.uuid
               set_new_game_counters
               add_new_game_to_lists
-              gameredis.expire game_number_key, 10
+              refresh_game_ttl
               game_log "#{player_name} has discovered #{monster_name}"
             end
 
             def add_new_game_to_lists
-              gameredis.lpush open_games_list_key, game_uuid
               gameredis.lpush running_games_list_key, game_uuid
-              gameredis.lpush game_players_key, player_uuid
+              add_player_to_game
+              add_game_to_open_list
             end
 
             def set_new_game_counters
               gameredis.set game_name_key, monster_name
-              gameredis.set game_number_key, 100
-              gameredis.set game_max_number_key, 100
-              gameredis.set game_entries_key, 5
+              gameredis.set game_number_key, 75
+              gameredis.set game_max_number_key, 75
+              gameredis.set game_entries_key, 4
             end
 
             def cleanup_dead_game
               gameredis.del game_name_key, game_number_key, game_max_number_key, game_entries_key, game_players_key
-              gameredis.lrem running_games_list_key, -1, game_uuid
-              gameredis.lrem open_games_list_key, -1, game_uuid
+              gameredis.lrem running_games_list_key, 0, game_uuid
+              gameredis.lrem open_games_list_key, 0, game_uuid
+            end
+
+            def refresh_game_ttl
+              [game_name_key, game_number_key, game_max_number_key, game_entries_key, game_players_key].each do |key|
+                gameredis.expire key, 120
+              end
             end
           end
         end
@@ -155,12 +163,12 @@ def add_mnbme_gem(service)
             def fetch_game_log = gameredis.lrange(game_log_key, 0, -1)
 
             def player_turn
-              unless running_games.include? game_uuid
+              unless running_games.include?(game_uuid) && game_exists?
                 @game_uuid = "closed"
                 return 0
               end
               health = gameredis.decr game_number_key
-              gameredis.expire game_number_key, 10
+              refresh_game_ttl
               check_health_conditions(health)
               health
             end
@@ -170,6 +178,7 @@ def add_mnbme_gem(service)
                 gameredis.incr player_medals_key
                 game_log "#{player_name} has vanquished #{monster_name} and now has #{player_medals} medals"
                 cleanup_dead_game
+                @game_uuid = "closed"
               elsif health.negative?
                 cleanup_dead_game
                 @game_uuid = "closed"
@@ -177,8 +186,15 @@ def add_mnbme_gem(service)
             end
 
             def join_existing_or_create_game
-              @game_uuid = gameredis.lpop(open_games_list_key) || "closed"
-              attempt_join if game_uuid != "closed"
+              cleanup_dead_games
+              @game_uuid = "closed"
+
+              while (candidate = gameredis.rpop(open_games_list_key))
+                @game_uuid = candidate
+                attempt_join
+                break unless game_uuid == "closed"
+              end
+
               make_new_game if game_uuid == "closed"
             end
 
@@ -190,12 +206,23 @@ def add_mnbme_gem(service)
             private
 
             def attempt_join
-              if gameredis.decr(game_entries_key).positive?
-                add_game_to_open_list
-                gameredis.lpush game_players_key, player_uuid
+              unless game_exists?
+                @game_uuid = "closed"
+                return
+              end
+
+              remaining_entries = gameredis.decr(game_entries_key)
+              if remaining_entries >= 0
+                add_player_to_game
+                add_game_to_open_list if remaining_entries.positive?
+                refresh_game_ttl
               else
                 @game_uuid = "closed"
               end
+            end
+
+            def add_player_to_game
+              gameredis.lpush game_players_key, player_uuid unless gameredis.lrange(game_players_key, 0, -1).include?(player_uuid)
             end
 
             def monster_name
@@ -242,8 +269,8 @@ Mobilis::DSL.generate("mnbme") do
         request = Rack::Request.new(env)
         uuid = SecureRandom.uuid
         name = request.params["name"]
-        gameredis.set("player:name#{uuid}", name)
-        gameredis.set("player:medals#{uuid}", 0)
+        gameredis.set("player:name##{uuid}", name)
+        gameredis.set("player:medals##{uuid}", 0)
         puts({ service: "accountservice", event: "player_registered", player_uuid: uuid, name: name }.to_json)
         [200, { "content-type" => "application/json" }, [{ name: name, player_uuid: uuid }.to_json]]
       end
@@ -295,7 +322,7 @@ Mobilis::DSL.generate("mnbme") do
           response
         end
 
-        def request = @request ||= Rack::Request.new(@env)
+        def request = Rack::Request.new(@env)
       end
 
       class MakeNumberBiggerGame < ConnectedBase
@@ -312,9 +339,9 @@ Mobilis::DSL.generate("mnbme") do
         def response
           gamestore.cleanup_dead_games
           result = {}
-          result[:games] = gamestore.running_games.to_h do |game_uuid|
+          result[:games] = gamestore.running_games.map do |game_uuid|
             gamestore.game_uuid = game_uuid
-            [game_uuid, {
+            game = {
               boss_name: gamestore.game_name,
               number: gamestore.game_number,
               maxnumber: gamestore.game_max_number,
@@ -322,8 +349,9 @@ Mobilis::DSL.generate("mnbme") do
                 gamestore.player_uuid = player_uuid
                 { name: gamestore.player_name, medals: gamestore.player_medals }
               end
-            }]
-          end
+            }
+            [game_uuid, game]
+          end.sort_by { |_game_uuid, game| game[:number].to_i }.to_h
           result[:logs] = gamestore.fetch_game_log
           [200, { "content-type" => "application/json" }, [result.to_json]]
         end
@@ -406,7 +434,8 @@ Mobilis::DSL.generate("mnbme") do
 
       def generate_name
         rng = RandomNameGenerator.new(RandomNameGenerator::ELVEN)
-        "#{rng.compose(3)} #{rng.compose(3)}"
+        suffix = ENV.fetch("HOSTNAME", "local")[0, 6]
+        "#{rng.compose(3)} #{rng.compose(3)} #{suffix}"
       rescue StandardError
         retry
       end
@@ -423,22 +452,29 @@ Mobilis::DSL.generate("mnbme") do
         end
       end
 
+      def post_form(client, path, params)
+        client.post(path) do |request|
+          request.headers["content-type"] = "application/x-www-form-urlencoded"
+          request.body = URI.encode_www_form(params)
+        end
+      end
+
       Thread.new do
         name = generate_name
         puts({ service: "playerservice", event: "registering", name: name }.to_json)
-        response = accountservice.post("/login", URI.encode_www_form({ name: name }))
+        response = post_form(accountservice, "/login", { name: name })
         player_uuid = response.body[:player_uuid]
         game_uuid = "closed"
 
         loop do
           if game_uuid == "closed"
-            response = gameservice.post("/game/join", URI.encode_www_form({ player_uuid: player_uuid }))
+            response = post_form(gameservice, "/game/join", { player_uuid: player_uuid })
             if response.success?
               game_uuid = response.body[:game_uuid]
               puts({ service: "playerservice", event: "joined_game", name: name, game_uuid: game_uuid }.to_json)
             end
           else
-            response = gameservice.post("/game/play", URI.encode_www_form({ player_uuid: player_uuid, game_uuid: game_uuid }))
+            response = post_form(gameservice, "/game/play", { player_uuid: player_uuid, game_uuid: game_uuid })
             game_uuid = response.body[:game_uuid]
           end
           sleep 1
