@@ -31,4 +31,12 @@ RSpec.describe Mobilis::DSL::DSLContext do
     expect(node.databases).to eq([database])
     expect(context.named("pgadmin")).to eq(node)
   end
+
+  it "adds S3 storage nodes with buckets" do
+    node = context.s3("assets", buckets: ["uploads"])
+
+    expect(node).to be_a(Mobilis::Node::S3Storage)
+    expect(node.buckets).to eq(["uploads"])
+    expect(context.named("assets")).to eq(node)
+  end
 end

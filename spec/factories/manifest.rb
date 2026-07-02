@@ -46,6 +46,12 @@ FactoryBot.define do
       end
     end
 
+    trait :with_s3_storage do
+      transient do
+        system_traits { [:with_s3_storage] }
+      end
+    end
+
     trait :with_rails_and_postgres do
       transient do
         system_traits { [:with_rails_and_postgres] }

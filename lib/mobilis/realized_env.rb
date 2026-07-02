@@ -121,6 +121,7 @@ module Mobilis
         Mobilis::Node::Flask => Mobilis::Realized::Flask,
         Mobilis::Node::Rails => Mobilis::Realized::Rails,
         Mobilis::Node::Redis => Mobilis::Realized::Redis,
+        Mobilis::Node::S3Storage => Mobilis::Realized::S3Storage,
         Mobilis::Node::GoAws => Mobilis::Realized::GoAws
       }
       maps[config_node.class].new(self, config_node)

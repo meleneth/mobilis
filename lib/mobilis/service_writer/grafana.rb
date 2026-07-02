@@ -169,6 +169,7 @@ module Mobilis
         panels << markdown_panel(1, "Generated services", service_inventory_markdown, 0, 0, 8, 8)
         panels.concat(service_log_panels)
         panels.concat(database_panels)
+        panels.concat(s3_storage_panels)
 
         dashboard("mobilis-overview", "Mobilis Overview", panels, ["mobilis", realized_env.environment.to_s])
       end
@@ -194,13 +195,27 @@ module Mobilis
       def service_log_panels
         return [] unless loki_datasource?
 
-        rails_nodes.map.with_index do |node, index|
+        loggable_nodes.map.with_index do |node, index|
           logs_panel(
             100 + index,
             "#{node.name} logs",
             "{container=~\".*#{node.name}.*\"}",
             (index % 2) * 12,
             8 + (index / 2) * 8
+          )
+        end
+      end
+
+      def s3_storage_panels
+        return [] unless prometheus_datasource?
+
+        s3_storage_nodes.map.with_index do |node, index|
+          timeseries_panel(
+            300 + index,
+            "#{node.name} SeaweedFS up",
+            "up{job=\"#{node.name}_seaweedfs\"}",
+            (index % 2) * 12,
+            24 + (index / 2) * 8
           )
         end
       end
@@ -259,6 +274,16 @@ module Mobilis
         @database_nodes ||= realized_env.realized_nodes.select do |node|
           node.is_a?(Mobilis::Realized::PostgreSQL) || node.is_a?(Mobilis::Realized::MySQL)
         end
+      end
+
+      def s3_storage_nodes
+        @s3_storage_nodes ||= realized_env.realized_nodes.select do |node|
+          node.is_a?(Mobilis::Realized::S3Storage) && node.observability_enabled?
+        end
+      end
+
+      def loggable_nodes
+        rails_nodes + s3_storage_nodes
       end
 
       def prometheus_datasource?

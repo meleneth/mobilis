@@ -64,7 +64,7 @@ module Mobilis
 
     # ─── Misc ──────────────────────────────────────────────────
     HUGO        = "klakegg/hugo:0.123.3-ext-alpine"
-    MINIO       = "minio/minio:RELEASE.2024-04-06T05-26-02Z"
+    SEAWEEDFS   = "chrislusf/seaweedfs:4.37"
     POSTGREST   = "postgrest/postgrest:v12.0.2"
   end
 end

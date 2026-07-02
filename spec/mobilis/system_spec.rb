@@ -64,4 +64,16 @@ RSpec.describe Mobilis::System do
 
     expect(loaded[pgadmin.id].databases).to eq([loaded[database.id]])
   end
+
+  it "can serialize and deserialize S3 storage buckets" do
+    storage = build(:s3_storage_node, name: "assets", buckets: ["uploads", "exports"])
+
+    system = described_class.new("generate")
+    system << storage
+
+    loaded = described_class.from_json(system.to_json)
+
+    expect(loaded[storage.id]).to be_a(Mobilis::Node::S3Storage)
+    expect(loaded[storage.id].buckets).to eq(["uploads", "exports"])
+  end
 end

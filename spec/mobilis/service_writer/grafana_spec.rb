@@ -68,4 +68,40 @@ RSpec.describe Mobilis::ServiceWriter::Grafana do
       end
     end
   end
+
+  context "with S3 storage" do
+    let(:manifest) { build(:manifest, system: build(:system, :with_observable_s3_storage), suppress_plugins: true) }
+
+    it "adds generated log and metric panels for SeaweedFS-backed S3 storage" do
+      overview = writer.dashboards.fetch("mobilis-overview.json")
+      panel_titles = overview[:panels].map { |panel| panel[:title] }
+
+      expect(panel_titles).to include("assets logs")
+      expect(panel_titles).to include("assets SeaweedFS up")
+      expect(overview[:panels]).to include(
+        hash_including(
+          title: "assets SeaweedFS up",
+          targets: [
+            hash_including(expr: 'up{job="assets_seaweedfs"}')
+          ]
+        )
+      )
+    end
+
+    it "does not add S3 panels when the storage node is not wired to observability" do
+      manifest = build(
+        :manifest,
+        system: build(:system, :with_otel, :with_s3_storage),
+        suppress_plugins: true
+      )
+      realized_env = manifest.realized_env(:test)
+      realized_node = realized_env.find_realized_node_by_name("grafana")
+      writer = described_class.new(manifest, realized_env, realized_node)
+      overview = writer.dashboards.fetch("mobilis-overview.json")
+      panel_titles = overview[:panels].map { |panel| panel[:title] }
+
+      expect(panel_titles).not_to include("assets logs")
+      expect(panel_titles).not_to include("assets SeaweedFS up")
+    end
+  end
 end

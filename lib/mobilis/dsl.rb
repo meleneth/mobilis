@@ -60,6 +60,19 @@ module Mobilis
         node
       end
 
+      def s3(name, buckets: [], &block)
+        node = Mobilis::Node::S3Storage.new(name)
+        Array(buckets).each { |bucket| node.bucket(bucket) }
+        system << node
+        @named[name] = node
+        block&.call(node)
+        node
+      end
+
+      def s3_storage(name, buckets: [], &block)
+        s3(name, buckets: buckets, &block)
+      end
+
       def otel_collector(name, &block)
         node = Mobilis::Node::OtelCollector.new(name)
         system << node

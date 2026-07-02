@@ -41,6 +41,13 @@ FactoryBot.define do
       end
     end
 
+    trait :with_s3_storage do
+      after(:build) do |system|
+        s3_node = build(:s3_storage_node, name: "assets", buckets: ["uploads", "exports"])
+        system << s3_node
+      end
+    end
+
     trait :with_rails do
       after(:build) do |system|
         rails_node = build(:rails_node, name: "user")
@@ -131,6 +138,27 @@ FactoryBot.define do
         system << postgres_node
         system << mysql_node
         system << rails_node
+      end
+    end
+
+    trait :with_observable_s3_storage do
+      after(:build) do |system|
+        prometheus_node = build(:prometheus_node, name: "prometheus")
+        grafana_node = build(:grafana_node, name: "grafana")
+        loki_node = build(:loki_node, name: "loki")
+        alloy_node = build(:alloy_node, name: "alloy", loki: loki_node)
+        s3_node = build(:s3_storage_node, name: "assets", buckets: ["uploads"])
+
+        grafana_node.has_extra_depends_on(prometheus_node)
+        grafana_node.has_extra_depends_on(loki_node)
+        s3_node.has_extra_depends_on(alloy_node)
+        s3_node.has_extra_depends_on(prometheus_node)
+
+        system << prometheus_node
+        system << grafana_node
+        system << loki_node
+        system << alloy_node
+        system << s3_node
       end
     end
 
