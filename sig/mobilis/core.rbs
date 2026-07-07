@@ -1,3 +1,7 @@
+module Git
+  def self.init: (String path) -> untyped
+end
+
 module Mobilis
   class System
     attr_reader config_nodes: Hash[String, Mobilis::Base::Node]
@@ -71,16 +75,42 @@ module Mobilis
 
     def initialize: (Mobilis::System system, ?suppress_plugins: bool) -> void
     def add_plugin: (Mobilis::Base::Plugin plugin) -> Array[Mobilis::Base::Plugin]
-    def realized_production_env: () -> Mobilis::RealizedEnv?
+    def realized_production_env: () -> Mobilis::RealizedEnv
     def realized_env: (Symbol | String | Mobilis::ExecutionEnvironment target_env) -> Mobilis::RealizedEnv
     def materialize: () -> untyped
+    def write_mobilis_system: () -> void
+    def write_commands_file: () -> void
+    def write_dc_helpers: () -> void
+    def write_devcontainer: () -> bool
+    def devcontainer_rails_services: () -> Array[Mobilis::Realized::Rails]
+    def devcontainer_config: (Mobilis::Realized::Rails service, String env, ?nested: bool) -> Hash[String, untyped]
+    def devcontainer_initialize_command: (String env) -> String
+    def devcontainer_compose_files: (String env, nested: bool) -> Array[String]
+    def devcontainer_overrides: (Array[Mobilis::Realized::Rails] services) -> Hash[String, untyped]
+    def devcontainer_customizations: () -> Hash[String, untyped]
+    def write_dc_helper: (String filename, String env_name) -> void
+    def write_gitignore: () -> void
+    def write_readme: () -> void
+    def grafana_readme_section: () -> String
+    def pgadmin_readme_section: () -> String
     def commit_all: (String message) -> untyped
     def setup_plugins: () -> Array[Mobilis::Base::Plugin]
     def run_plugin_hooks: (Symbol hook) -> Array[Mobilis::Base::Plugin]
+    def run_node_hooks: (Symbol hook) { (Mobilis::Base::RealizedNode node) -> untyped } -> untyped
+                      | (Symbol hook) -> untyped
     def plugin_for: (singleton(Object) klass) -> Mobilis::Base::Plugin?
     def each_node_of_type: (singleton(Object) klass) { (Mobilis::RealizedEnv env, Mobilis::Base::RealizedNode node) -> untyped } -> untyped
                          | (singleton(Object) klass) -> Enumerator[untyped, untyped]
+    def ppx_fields: (untyped dsl) -> untyped
     def username: () -> String
     def overrides_for: (Mobilis::RealizedEnv realized_env) -> untyped
+
+    private
+
+    def environments: () -> Array[Mobilis::ExecutionEnvironment]
+    def emit_env_files: () -> untyped
+    def emit_compose_wrappers: () -> untyped
+    def emit_all_services: () -> untyped
+    def write_overrides_for: (Symbol raw_env) -> untyped
   end
 end

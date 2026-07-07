@@ -29,7 +29,7 @@ module Mobilis
     end
 
     def realized_production_env
-      @realized_envs.find(&:is_production?)
+      @realized_envs.find(&:is_production?) || raise("No production environment for manifest")
     end
 
     def realized_env(target_env)
@@ -120,10 +120,13 @@ module Mobilis
 
     def devcontainer_rails_services
       realized_production_env.realized_nodes
-                             .select { |node| node.is_a?(Mobilis::Realized::Rails) }
+                             .filter_map do |node|
+        node if node.is_a?(Mobilis::Realized::Rails)
+      end
     end
 
     def devcontainer_config(service, env, nested: false)
+      # @type var config: Hash[String, untyped]
       config = {
         "name" => "#{service.name}-#{env}",
         "initializeCommand" => devcontainer_initialize_command(env),
@@ -289,10 +292,10 @@ module Mobilis
       end
     end
 
-    def run_node_hooks(hook)
+    def run_node_hooks(hook, &block)
       realized_envs.each do |realized_env|
         realized_env.dup.each_node do |realized_node|
-          if block_given?
+          if block
             realized_node.send(hook, &block)
           else
             realized_node.send(hook)
@@ -305,10 +308,11 @@ module Mobilis
       @plugins.each do |plugin|
         return plugin if plugin.is_a? klass
       end
+      nil
     end
 
     def each_node_of_type(klass, &block)
-      return enum_for(:each_node_of_type) unless block_given?
+      return enum_for(:each_node_of_type, klass) unless block
 
       @realized_envs.each do |realized_env|
         realized_env.each_node_of_type(klass, &block)
@@ -347,15 +351,19 @@ module Mobilis
       directory_service.chdir_generate
 
       @realized_envs.each do |realized_env|
+        # @type var vars_for_env: Hash[String, untyped]
         vars_for_env = {}
 
         realized_env.all_envfile_vars do |emit_var|
-          if vars_for_env.key? emit_var.key
-            unless emit_var.value == vars_for_env[emit_var.envfile_name]
-              raise "Different values for #{emit_var.envfile_name} - #{emit_var.value} vs #{vars_for_env[emit_var.envfile_name]}"
+          envfile_name = emit_var.envfile_name
+          next unless envfile_name
+
+          if vars_for_env.key? envfile_name
+            unless emit_var.value == vars_for_env[envfile_name]
+              raise "Different values for #{envfile_name} - #{emit_var.value} vs #{vars_for_env[envfile_name]}"
             end
           else
-            vars_for_env[emit_var.envfile_name] = emit_var.value
+            vars_for_env[envfile_name] = emit_var.value
           end
         end
         lines = vars_for_env.sort.map { |k, v| "#{k}=#{v}" }
@@ -368,10 +376,13 @@ module Mobilis
     def emit_compose_wrappers
       directory_service.chdir_generate
       @realized_envs.each do |realized_env|
+        # @type var details: Hash[String, untyped]
         details = {}
         details["name"] = "#{system.meta_project_name}-#{realized_env}"
+        # @type var includes: Array[Hash[String, String]]
         includes = []
         realized_env.realized_nodes.each do |node|
+          # @type var node_details: Hash[String, String]
           node_details = {}
           node_details["path"] = "./compose/#{node.name}.yml"
           node_details["project_directory"] = "./"
@@ -385,6 +396,7 @@ module Mobilis
     end
 
     def emit_all_services
+      # @type var service_dirs_written: Hash[String, bool]
       service_dirs_written = {}
       @realized_envs.each do |realized_env|
         realized_env.realized_nodes.each do |realized_node|
