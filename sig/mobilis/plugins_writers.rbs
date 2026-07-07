@@ -131,39 +131,39 @@ module Mobilis
       def goaws_yaml: () -> Mobilis::AutoVivify
       def cfg: () -> untyped
       def cfg_get: (String key, ?untyped default) -> untyped
-      def region: () -> untyped
-      def account_id: () -> untyped
-      def log_to_file: () -> untyped
-      def enable_duplicates: () -> untyped
-      def queues: () -> Array[untyped]
-      def topics: () -> Array[Hash[String, untyped]]
-      def subscriptions_by_topic: () -> Hash[String, Array[Hash[String, untyped]]]
+      def region: () -> String
+      def account_id: () -> String
+      def log_to_file: () -> bool
+      def enable_duplicates: () -> bool
+      def queues: () -> Array[String]
+      def topics: () -> Array[Mobilis::goaws_topic]
+      def subscriptions_by_topic: () -> Hash[String, Array[Mobilis::goaws_subscription]]
       def fetch_subscription_value: (untyped subscription, String key) -> untyped
-      def normalize_topic_hash: (Hash[untyped, untyped] h) -> Hash[String, untyped]
+      def normalize_topic_hash: (Hash[untyped, untyped] h) -> Mobilis::goaws_topic
     end
     class Grafana < Mobilis::Base::ServiceWriter
       def datasources: () -> Mobilis::AutoVivify
-      def dashboard_provider: () -> Hash[Symbol, untyped]
-      def dashboards: () -> Hash[String, Hash[Symbol, untyped]]
+      def dashboard_provider: () -> Mobilis::symbol_keyed_data
+      def dashboards: () -> Hash[String, Mobilis::grafana_dashboard]
       def write: () -> untyped
 
       private
 
       def datasource_nodes: () -> Array[Mobilis::Base::RealizedNode]
-      def datasource_for: (Mobilis::Base::RealizedNode node) -> Hash[Symbol, untyped]
-      def prometheus_datasource: (Mobilis::Realized::Prometheus node) -> Hash[Symbol, untyped]
-      def loki_datasource: (Mobilis::Realized::Loki node) -> Hash[Symbol, untyped]
-      def jaeger_datasource: (Mobilis::Realized::Jaeger node) -> Hash[Symbol, untyped]
-      def postgres_datasource: (Mobilis::Realized::PostgreSQL node) -> Hash[Symbol, untyped]
-      def mysql_datasource: (Mobilis::Realized::MySQL node) -> Hash[Symbol, untyped]
-      def overview_dashboard: () -> Hash[Symbol, untyped]
-      def filtered_active_resource_dashboard: () -> Hash[Symbol, untyped]
-      def service_log_panels: () -> Array[Hash[Symbol, untyped]]
-      def s3_storage_panels: () -> Array[Hash[Symbol, untyped]]
-      def database_panels: () -> Array[Hash[Symbol, untyped]]
+      def datasource_for: (Mobilis::Base::RealizedNode node) -> Mobilis::grafana_datasource
+      def prometheus_datasource: (Mobilis::Realized::Prometheus node) -> Mobilis::grafana_datasource
+      def loki_datasource: (Mobilis::Realized::Loki node) -> Mobilis::grafana_datasource
+      def jaeger_datasource: (Mobilis::Realized::Jaeger node) -> Mobilis::grafana_datasource
+      def postgres_datasource: (Mobilis::Realized::PostgreSQL node) -> Mobilis::grafana_datasource
+      def mysql_datasource: (Mobilis::Realized::MySQL node) -> Mobilis::grafana_datasource
+      def overview_dashboard: () -> Mobilis::grafana_dashboard
+      def filtered_active_resource_dashboard: () -> Mobilis::grafana_dashboard
+      def service_log_panels: () -> Array[Mobilis::grafana_panel]
+      def s3_storage_panels: () -> Array[Mobilis::grafana_panel]
+      def database_panels: () -> Array[Mobilis::grafana_panel]
       def service_inventory_markdown: () -> String
-      def filtered_resource_markdown: (Hash[Symbol, untyped] resource) -> String
-      def filtered_resources: () -> Array[Hash[Symbol, untyped]]
+      def filtered_resource_markdown: (Mobilis::grafana_filtered_resource resource) -> String
+      def filtered_resources: () -> Array[Mobilis::grafana_filtered_resource]
       def rails_nodes: () -> Array[Mobilis::Realized::Rails]
       def database_nodes: () -> Array[Mobilis::Realized::PostgreSQL | Mobilis::Realized::MySQL]
       def s3_storage_nodes: () -> Array[Mobilis::Realized::S3Storage]
@@ -172,10 +172,10 @@ module Mobilis
       def prometheus_datasource?: () -> bool
       def loki_datasource?: () -> bool
       def datasource_uid: (Mobilis::Base::RealizedNode node, String suffix) -> String
-      def dashboard: (String uid, String title, Array[Hash[Symbol, untyped]] panels, Array[String] tags) -> Hash[Symbol, untyped]
-      def markdown_panel: (Integer id, String title, String markdown, Integer x, Integer y, Integer w, Integer h) -> Hash[Symbol, untyped]
-      def logs_panel: (Integer id, String title, String expr, Integer x, Integer y) -> Hash[Symbol, untyped]
-      def timeseries_panel: (Integer id, String title, String expr, Integer x, Integer y) -> Hash[Symbol, untyped]
+      def dashboard: (String uid, String title, Array[Mobilis::grafana_panel] panels, Array[String] tags) -> Mobilis::grafana_dashboard
+      def markdown_panel: (Integer id, String title, String markdown, Integer x, Integer y, Integer w, Integer h) -> Mobilis::grafana_panel
+      def logs_panel: (Integer id, String title, String expr, Integer x, Integer y) -> Mobilis::grafana_panel
+      def timeseries_panel: (Integer id, String title, String expr, Integer x, Integer y) -> Mobilis::grafana_panel
     end
     class Localstack < Mobilis::Base::ServiceWriter
       def write: () -> untyped
@@ -183,7 +183,7 @@ module Mobilis
     end
     class Loki < Mobilis::Base::ServiceWriter
       def write: () -> untyped
-      def config: () -> Hash[String, untyped]
+      def config: () -> Mobilis::string_keyed_data
     end
     class OtelCollector < Mobilis::Base::ServiceWriter
       def otel_collector: () -> Mobilis::AutoVivify
@@ -195,8 +195,8 @@ module Mobilis
 
       private
 
-      def servers_json: () -> Hash[String, untyped]
-      def server_definition: (Mobilis::Realized::SQLDatabase database) -> Hash[String, untyped]
+      def servers_json: () -> Mobilis::pgadmin_servers_json
+      def server_definition: (Mobilis::Realized::SQLDatabase database) -> Mobilis::pgadmin_server_definition
     end
     class PostgreSQL < Mobilis::Base::ServiceWriter
       def realized_node: () -> Mobilis::Realized::PostgreSQL

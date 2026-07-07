@@ -26,6 +26,27 @@ module Mobilis
   type auto_key = String | Symbol
   type auto_serial_value = nil | bool | Integer | Float | String | Array[auto_serial_value] | Hash[auto_key, auto_serial_value]
   type auto_backing_value = auto_serial_value | Mobilis::AutoVivify | Mobilis::AutoNode
+  type data_key = String | Symbol
+  type data_value = nil | bool | Integer | Float | String | Array[data_value] | Hash[data_key, data_value]
+  type string_keyed_data = Hash[String, data_value]
+  type symbol_keyed_data = Hash[Symbol, data_value]
+  type grafana_datasource = Hash[Symbol, data_value]
+  type grafana_panel = Hash[Symbol, data_value]
+  type grafana_dashboard = {
+    uid: String,
+    title: String,
+    tags: Array[String],
+    timezone: String,
+    schemaVersion: Integer,
+    version: Integer,
+    refresh: String,
+    panels: Array[grafana_panel]
+  }
+  type grafana_filtered_resource = { service: String, model: String, filterable_fields: Array[String], database: String? }
+  type pgadmin_server_definition = Hash[String, data_value]
+  type pgadmin_servers_json = { "Servers" => Hash[String, pgadmin_server_definition] }
+  type goaws_topic = Hash[String, data_value]
+  type goaws_subscription = Hash[String, data_value]
 
   interface _ModelRecord
     def is_a?: (singleton(Object) klass) -> bool

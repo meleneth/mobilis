@@ -1,5 +1,5 @@
 module Mobilis
   module YAML
-    def self.deep_stringify_keys: (untyped obj) -> untyped
+    def self.deep_stringify_keys: (Mobilis::data_value obj) -> Mobilis::data_value
   end
 end
