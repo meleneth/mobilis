@@ -9,7 +9,6 @@ target :lib do
   ignore "lib/jobes_war/**/*"
   ignore "lib/mobilis/manifest.rb"
   ignore "lib/mobilis/mixins/realized_node/has_data_volume.rb"
-  ignore "lib/mobilis/base/plugin.rb"
   ignore "lib/mobilis/base/realized_node_plugin.rb"
   ignore "lib/mobilis/base/service_writer.rb"
   ignore "lib/mobilis/plugin/**/*"
