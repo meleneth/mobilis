@@ -17,11 +17,7 @@ RSpec.describe JobesWar::Node::TicTac do
   it "#render" do
     tic_tac << [war, peace]
     tic_tac << [love, passion]
-    lines = tic_tac.each_line
-    expect(lines.to_a).to eq(
-      ["war  | peace  ",
-       "love | passion"]
-    )
+    expect(tic_tac.render).to eq("war  | peace  \nlove | passion")
   end
 
   it "#column_max_widths" do

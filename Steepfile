@@ -6,7 +6,6 @@ target :lib do
 
   # Generated-output layers are still covered by specs, but their plugin hooks,
   # delegated helpers, and compose mutation DSL need a more deliberate typing pass.
-  ignore "lib/jobes_war/**/*"
   ignore "lib/mobilis/manifest.rb"
   ignore "lib/mobilis/plugin/**/*"
   ignore "lib/mobilis/realized/**/*"

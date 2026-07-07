@@ -44,8 +44,7 @@ module JobesWar
       end
 
       def render
-        content = " " * padding + text + " " * padding
-        apply_styles(content)
+        each_line.to_a.join("\n")
       end
 
       def each_line

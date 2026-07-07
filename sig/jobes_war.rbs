@@ -1,6 +1,6 @@
 module JobesWar
-  def self.draw: () { () -> untyped } -> untyped
-               | () { (JobesWar::Diagram diagram) -> untyped } -> untyped
+  def self.draw: () { () [self: JobesWar::DSL] -> untyped } -> JobesWar::Diagram
+               | () { (JobesWar::Diagram diagram) -> untyped } -> JobesWar::Diagram
 
   module Base
     class Node
@@ -10,6 +10,9 @@ module JobesWar
       def pastel: () -> untyped
       def available_width: () -> Integer
       def calculated_width: () -> Integer
+
+      private
+
       def default_terminal_width: () -> Integer
     end
   end
@@ -25,15 +28,33 @@ module JobesWar
 
   class DSL
     def initialize: (untyped parent) -> void
-    def box: (?String? label, ?styles: Array[untyped], ?label_styles: Array[untyped]) { () -> untyped } -> untyped
+    def box: (?String? label, ?styles: Array[untyped], ?label_styles: Array[untyped]) { () [self: JobesWar::DSL] -> untyped } -> untyped
            | (?String? label, ?styles: Array[untyped], ?label_styles: Array[untyped]) -> untyped
     def value: (String text, ?styles: Array[untyped]) -> untyped
-    def tic_tac: () { () -> untyped } -> untyped
-    def row: () { () -> untyped } -> untyped
+    def tic_tac: () { () [self: JobesWar::DSL] -> untyped } -> untyped
+    def row: () { () [self: JobesWar::DSL] -> untyped } -> untyped
   end
 
   module Node
     class Box < JobesWar::Base::Node
+      UL_CORNER: String
+      BL_CORNER: String
+      UR_CORNER: String
+      BR_CORNER: String
+      DASH: String
+      BAR: String
+      T_LEFT: String
+      T_RIGHT: String
+      T_TOP: String
+      T_BOTTOM: String
+      PADDING_NORMAL: Symbol
+      PADDING_NONE: Symbol
+      JUSTIFY_CENTER: Symbol
+      JUSTIFY_LEFT: Symbol
+      JUSTIFY_RIGHT: Symbol
+      LABEL_LEFT: Symbol
+      LABEL_RIGHT: Symbol
+
       attr_reader text: String?
       attr_reader styles: Array[untyped]
       attr_reader padding: Integer
@@ -42,17 +63,42 @@ module JobesWar
       def initialize: (?styles: Array[untyped], ?label: String?, ?label_styles: Array[untyped], ?padding: Integer, **untyped kwargs) -> void
       def render: () -> String
       def each_line: () { (String line) -> untyped } -> untyped
+                   | () -> Enumerator[String, untyped]
       def <<: (untyped child) -> untyped
+
+      private
+
+      def label_bigger?: () -> bool
+      def ul_corner: () -> String
+      def ur_corner: () -> String
+      def bl_corner: () -> String
+      def br_corner: () -> String
+      def bar: () -> String
+      def bottom_bar: () -> String
+      def label_bar: () -> String
+      def rendered_label: () -> String
       def apply_styles: (String str) -> String
+      def label_width: () -> Integer
+      def non_label_border_width: () -> Integer
     end
 
     class TicTac < JobesWar::Base::Node
+      DASH: String
+      BAR: String
+      CROSSING: String
+
       attr_reader styles: Array[untyped]
       attr_reader children: Array[Array[untyped]]
       def initialize: (?styles: Array[untyped], ?children: Array[Array[untyped]], **untyped kwargs) -> void
       def <<: (Array[untyped] row) -> untyped
+      def column_max_widths: () -> Array[Integer]
       def render: () -> String
       def each_line: () { (String line) -> untyped } -> untyped
+                   | () -> Enumerator[String, untyped]
+
+      private
+
+      def apply_styles: (String str) -> String
     end
 
     class Value < JobesWar::Base::Node
@@ -62,6 +108,10 @@ module JobesWar
       def initialize: (String text, ?styles: Array[untyped], ?padding: Integer, **untyped kwargs) -> void
       def render: () -> String
       def each_line: () { (String line) -> untyped } -> untyped
+                   | () -> Enumerator[String, untyped]
+
+      private
+
       def apply_styles: (String str) -> String
     end
   end

@@ -24,7 +24,7 @@
 module JobesWar
   def self.draw(&block)
     diagram = Diagram.new
-    result = block.arity.zero? ? DSL.new(diagram).instance_eval(&block) : block.call(diagram)
+    result = block.arity.zero? ? DSL.new(diagram).instance_exec(&block) : block.call(diagram)
     diagram
   end
 
@@ -36,7 +36,7 @@ module JobesWar
     def box(label = nil, styles: [], label_styles: [], &block)
       node = Node::Box.new(label: label, styles: styles, label_styles: label_styles)
       @parent << node
-      DSL.new(node).instance_eval(&block) if block_given?
+      DSL.new(node).instance_exec(&block) if block
     end
 
     def value(text, styles: [])
@@ -46,12 +46,12 @@ module JobesWar
     def tic_tac(&block)
       grid = Node::TicTac.new
       @parent << grid
-      DSL.new(grid).instance_eval(&block)
+      DSL.new(grid).instance_exec(&block)
     end
 
     def row(&block)
-      row_node = []
-      DSL.new(row_node).instance_eval(&block)
+      row_node = [] #: Array[untyped]
+      DSL.new(row_node).instance_exec(&block)
       @parent << row_node
     end
   end
