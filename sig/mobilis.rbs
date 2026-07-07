@@ -1,4 +1,104 @@
 module Mobilis
-  module Nodes
+  def self.logger: () -> Logger
+
+  module Base
+  end
+
+  module Compose
+  end
+
+  module ContainerVersions
+    CRYSTAL: String
+    GOLANG: String
+    JAVA: String
+    NODE: String
+    PYTHON: String
+    RUBY: String
+    BUNDLER: String
+    RUST: String
+    CASSANDRA: String
+    COUCHDB: String
+    MARIADB: String
+    MEMCACHED: String
+    MONGODB: String
+    RAILS_BUILDER: String
+    POSTGRES: String
+    MYSQL: String
+    PGADMIN: String
+    REDIS: String
+    VALKEY: String
+    AIRFLOW: String
+    FASTAPI: String
+    JEKYLL: String
+    GRAFANA: String
+    PROMETHEUS: String
+    LOKI: String
+    JAEGER: String
+    ALLOY: String
+    OTEL_COLLECTOR: String
+    LOCALSTACK: String
+    GOAWS: String
+    KAFKA: String
+    NATS: String
+    RABBITMQ: String
+    ELASTICSEARCH: String
+    OPENSEARCH: String
+    CADDY: String
+    NGINX: String
+    TRAEFIK: String
+    ALPINE: String
+    BUSYBOX: String
+    CURL: String
+    DIND: String
+    DIND_ROOTLESS: String
+    GITLAB_RUNNER: String
+    HUGO: String
+    SEAWEEDFS: String
+    POSTGREST: String
+  end
+
+  module DSL
+    def self.generate: (String name) { () [self: Mobilis::DSL::DSLContext] -> untyped } -> untyped
+
+    class DSLContext
+      attr_reader system: Mobilis::System
+      def initialize: (Mobilis::System system) -> void
+      def rails: (String name, ?primary_database: Mobilis::Node::SQLDatabase?, ?api: bool) { (Mobilis::Node::Rails node) -> untyped } -> Mobilis::Node::Rails
+               | (String name, ?primary_database: Mobilis::Node::SQLDatabase?, ?api: bool) -> Mobilis::Node::Rails
+      def rack: (String name, ?instances: Integer) { (Mobilis::Node::Rack node) -> untyped } -> Mobilis::Node::Rack
+              | (String name, ?instances: Integer) -> Mobilis::Node::Rack
+      def postgres: (String name) { (Mobilis::Node::PostgreSQL node) -> untyped } -> Mobilis::Node::PostgreSQL
+                  | (String name) -> Mobilis::Node::PostgreSQL
+      def pgadmin: (String name, ?databases: Array[Mobilis::Node::PostgreSQL]) { (Mobilis::Node::Pgadmin node) -> untyped } -> Mobilis::Node::Pgadmin
+                 | (String name, ?databases: Array[Mobilis::Node::PostgreSQL]) -> Mobilis::Node::Pgadmin
+      def mysql: (String name) { (Mobilis::Node::MySQL node) -> untyped } -> Mobilis::Node::MySQL
+               | (String name) -> Mobilis::Node::MySQL
+      def redis: (String name) { (Mobilis::Node::Redis node) -> untyped } -> Mobilis::Node::Redis
+               | (String name) -> Mobilis::Node::Redis
+      def s3: (String name, ?buckets: Array[String]) { (Mobilis::Node::S3Storage node) -> untyped } -> Mobilis::Node::S3Storage
+            | (String name, ?buckets: Array[String]) -> Mobilis::Node::S3Storage
+      def s3_storage: (String name, ?buckets: Array[String]) { (*untyped) -> untyped } -> Mobilis::Node::S3Storage
+                    | (String name, ?buckets: Array[String]) -> Mobilis::Node::S3Storage
+      def otel_collector: (String name) { (Mobilis::Node::OtelCollector node) -> untyped } -> Mobilis::Node::OtelCollector
+                         | (String name) -> Mobilis::Node::OtelCollector
+      def flask: (String name) { (Mobilis::Node::Flask node) -> untyped } -> Mobilis::Node::Flask
+               | (String name) -> Mobilis::Node::Flask
+      def grafana: (String name) { (Mobilis::Node::Grafana node) -> untyped } -> Mobilis::Node::Grafana
+                 | (String name) -> Mobilis::Node::Grafana
+      def loki: (String name) { (Mobilis::Node::Loki node) -> untyped } -> Mobilis::Node::Loki
+              | (String name) -> Mobilis::Node::Loki
+      def alloy: (String name, ?loki: Mobilis::Node::Loki?) { (Mobilis::Node::Alloy node) -> untyped } -> Mobilis::Node::Alloy
+               | (String name, ?loki: Mobilis::Node::Loki?) -> Mobilis::Node::Alloy
+      def jaeger: (String name) { (Mobilis::Node::Jaeger node) -> untyped } -> Mobilis::Node::Jaeger
+                | (String name) -> Mobilis::Node::Jaeger
+      def localstack: (String name) { (Mobilis::Node::Localstack node) -> untyped } -> Mobilis::Node::Localstack
+                    | (String name) -> Mobilis::Node::Localstack
+      def prometheus: (String name) { (Mobilis::Node::Prometheus node) -> untyped } -> Mobilis::Node::Prometheus
+                    | (String name) -> Mobilis::Node::Prometheus
+      def goaws: (String name) { (Mobilis::Node::GoAws node) -> untyped } -> Mobilis::Node::GoAws
+                | (String name) -> Mobilis::Node::GoAws
+      def connect: (from: String | Mobilis::Base::Node, to: String | Mobilis::Base::Node, ?force_skip_health_checks: bool) -> untyped
+      def named: (String name) -> Mobilis::Base::Node
+    end
   end
 end

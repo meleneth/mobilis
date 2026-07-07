@@ -14,7 +14,7 @@ module Mobilis
 
       def initialize(system)
         @system = system
-        @named = {}
+        @named = Hash.new
       end
 
       def rails(name, primary_database: nil, api: false, &block)
@@ -78,7 +78,11 @@ module Mobilis
       end
 
       def s3_storage(name, buckets: [], &block)
-        s3(name, buckets: buckets, &block)
+        if block
+          s3(name, buckets: buckets, &block)
+        else
+          s3(name, buckets: buckets)
+        end
       end
 
       def otel_collector(name, &block)

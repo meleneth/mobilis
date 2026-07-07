@@ -1,0 +1,121 @@
+module Mobilis
+  module Model
+    class RubyGem
+      attr_reader name: String
+      attr_reader git: String?
+      attr_reader branch: String?
+      attr_reader group: String?
+      attr_reader path: String?
+      attr_reader require_name: String?
+
+      def initialize: (String name, ?git: String?, ?branch: String?, ?group: String?, ?path: String?, ?require_name: String?) -> void
+      def bundle_add_args: () -> Array[String]
+      def gemfile_line: () -> String
+      def to_h: () -> Hash[Symbol, untyped]
+      def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::RubyGem
+    end
+
+    class LocalGem
+      attr_reader name: String
+      attr_reader path: String
+      attr_reader require_name: String?
+      attr_reader files: Array[Mobilis::Model::File]
+
+      def initialize: (String name, ?path: String?, ?require_name: String?, ?files: Array[Mobilis::Model::File]) -> void
+      def write_file: (String path, String content) -> self
+      def gem_dependency: () -> Mobilis::Model::RubyGem
+      def root_path: () -> String
+      def write_files: () -> Array[Mobilis::Model::File]
+      def to_h: () -> Hash[Symbol, untyped]
+      def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::LocalGem
+    end
+
+    class File
+      attr_reader path: String
+      attr_reader content: String
+      def initialize: (String path, String content) -> void
+      def to_h: () -> Hash[Symbol, untyped]
+      def write_file: () -> Integer
+      def ppx_fields: (untyped dsl) -> untyped
+      def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::File
+    end
+
+    class Script
+      attr_accessor filename: String
+      attr_accessor content: String
+      def initialize: (String filename, String contents) -> void
+      def to_h: () -> Hash[Symbol, untyped]
+      def write_file: () -> Integer
+      def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::Script
+    end
+
+    class RunCommand
+      attr_reader command: String
+      attr_reader commit_message: String
+      def initialize: (String command, String commit_message) -> void
+      def to_h: () -> Hash[Symbol, untyped]
+      def ppx_fields: (untyped dsl) -> untyped
+      def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::RunCommand
+    end
+
+    class EnvVarAlias
+      attr_reader local_name: String
+      attr_reader service_name: String
+      def initialize: (String local_name, String service_name) -> void
+      def to_h: () -> Hash[Symbol, untyped]
+      def ppx_fields: (untyped dsl) -> untyped
+      def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::EnvVarAlias
+    end
+
+    class LocalstackSNSSQS
+      attr_reader sns: String
+      attr_reader sqs: String
+      def initialize: (String sns, String sqs) -> void
+      def to_h: () -> Hash[Symbol, untyped]
+      def ppx_fields: (untyped dsl) -> untyped
+      def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::LocalstackSNSSQS
+    end
+
+    module Rails
+      class Field
+        attr_reader name: String
+        attr_reader type: String
+        def initialize: (name: String, type: String, ?cardinality: bool) -> void
+        def to_h: () -> Hash[Symbol, String]
+        def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::Rails::Field
+      end
+
+      class Model
+        attr_reader name: String
+        attr_reader fields: Array[Mobilis::Model::Rails::Field]
+        attr_reader filterable_fields: Array[String]
+        attr_accessor api_exposed: bool
+        attr_accessor generate_model: bool
+
+        def initialize: (String name) -> void
+        def self.from_h: (Hash[Symbol | String, untyped] hash) -> Mobilis::Model::Rails::Model
+        def field_args: () -> Array[String]
+        def add_field: (String field_name, String type, **untyped options) -> self
+        def boolean: (String name, **untyped options) -> self
+        def datetime: (String name, **untyped options) -> self
+        def integer: (String name, **untyped options) -> self
+        def jsonb: (String name, **untyped options) -> self
+        def string: (String name, **untyped options) -> self
+        def text: (String name, **untyped options) -> self
+        def references: (String name, **untyped options) -> self
+        def expose_api!: () -> self
+        def existing!: () -> self
+        def generate_model?: () -> bool
+        def filterable: (*String fields) -> self
+        def api_exposed?: () -> bool
+        def to_h: () -> Hash[Symbol, untyped]
+      end
+
+      class GraphQL
+        def initialize: () -> void
+        def to_h: () -> Hash[Symbol, untyped]
+        def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::Rails::GraphQL
+      end
+    end
+  end
+end

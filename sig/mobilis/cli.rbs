@@ -1,0 +1,9 @@
+module Mobilis
+  class CLI
+    def self.run: (Array[String] argv) -> untyped
+    def initialize: (Array[String] argv) -> void
+    def run: () -> untyped
+    def generate: () -> untyped
+    def usage: () -> String
+  end
+end

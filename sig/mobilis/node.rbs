@@ -1,29 +1,119 @@
 module Mobilis
-  class Node
-    attr_reader id: String
-    attr_reader raw_data: Hash[String, untyped]
+  module Node
+    class SQLDatabase < Mobilis::Base::Node
+    end
 
-    def initialize: (id?: String, **untyped) -> void
+    class Ruby < Mobilis::Base::Node
+      def add_gem: (String name, **untyped options) -> Mobilis::Model::RubyGem
+      def local_gem: (String name, ?path: String?, ?require_name: String?) { (Mobilis::Model::LocalGem gem) -> untyped } -> Mobilis::Model::LocalGem
+                   | (String name, ?path: String?, ?require_name: String?) -> Mobilis::Model::LocalGem
+    end
 
-    def self.instance_variable_get: (Symbol) -> untyped
-    def instance_variable_get: (Symbol) -> untyped
+    class Rails < Mobilis::Node::Ruby
+      attr_accessor api_mode: bool?
+      attr_accessor rspec_enabled: bool?
+      attr_accessor factory_bot_enabled: bool?
+      attr_accessor haml_enabled: bool?
+      attr_accessor tailwind_enabled: bool?
+      attr_accessor uuid_primary_keys: bool?
+      attr_accessor primary_database: Mobilis::Node::SQLDatabase?
 
-    # @SteepIgnore
-    def self._make_id_getter: (Symbol) -> untyped
-    # @SteepIgnore
-    def self._make_ids_getter: (Symbol) -> untyped
+      def primary_database_id: () -> String?
+      def rails_new_command: () -> String
+      def use_rspec!: () -> bool?
+      def use_uuid_primary_keys!: () -> untyped
+      def install_factory_bot!: () -> bool?
+      def use_haml!: () -> bool?
+      def use_tailwind!: () -> bool?
+      def use_api!: () -> bool?
+      def rspec_enabled?: () -> bool
+      def factory_bot_enabled?: () -> bool
+      def haml_enabled?: () -> bool
+      def api_mode?: () -> bool
+      def tailwind_enabled?: () -> bool
+      def add_rails_model: (String name) { (Mobilis::Model::Rails::Model) [self: Mobilis::Model::Rails::Model] -> untyped } -> Mobilis::Model::Rails::Model
+                         | (String name) -> Mobilis::Model::Rails::Model
+      def install_graphql!: () -> Mobilis::Model::Rails::GraphQL
+      def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Node::Rails
+    end
 
-    def self.ref_attr: (*Symbol) -> void
-    def self.ref_list: (*Symbol) -> void
+    class Rack < Mobilis::Node::Ruby
+      attr_accessor instances: Integer
+      def initialize: (String name, ?instances: Integer, **untyped kwargs) -> void
+      def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Node::Rack
+    end
 
-    def self.ref_attrs: () -> Array[Symbol]
-    def self.ref_lists: () -> Array[Symbol]
+    class PostgreSQL < Mobilis::Node::SQLDatabase
+      NO_REPLICATION_TARGET: untyped
+      def replicate_from: (?Mobilis::Node::PostgreSQL | untyped target) -> Mobilis::Node::PostgreSQL?
+      def replicate_from=: (Mobilis::Node::PostgreSQL? target) -> Mobilis::Node::PostgreSQL?
+      def replicate_from_id: () -> String?
+      def replica?: () -> bool
+    end
 
-    def to_h: () -> Hash[Symbol, untyped]
+    class MySQL < Mobilis::Node::SQLDatabase
+    end
 
-    def raw_data=: (Hash[String, untyped]) -> void
+    class Pgadmin < Mobilis::Base::Node
+      attr_reader databases: Array[Mobilis::Node::SQLDatabase]
+      def initialize: (*untyped args, **untyped kwargs) -> void
+      def add_database: (Mobilis::Node::SQLDatabase database) -> Array[Mobilis::Node::SQLDatabase]?
+    end
 
-    def resolve_references_using: (Hash[String, Mobilis::Node]) -> void
+    class Redis < Mobilis::Base::Node
+    end
+
+    class S3Storage < Mobilis::Base::Node
+      attr_reader buckets: Array[String]
+      def initialize: (String name, ?buckets: Array[String], **untyped kwargs) -> void
+      def bucket: (untyped name) -> self
+      def default_bucket: () -> String?
+    end
+
+    class OtelCollector < Mobilis::Base::Node
+    end
+
+    class Flask < Mobilis::Base::Node
+    end
+
+    class Grafana < Mobilis::Base::Node
+    end
+
+    class Loki < Mobilis::Base::Node
+    end
+
+    class Alloy < Mobilis::Base::Node
+      attr_accessor loki: Mobilis::Node::Loki?
+      def loki_id: () -> String?
+    end
+
+    class Jaeger < Mobilis::Base::Node
+    end
+
+    class Localstack < Mobilis::Base::Node
+      def sns_sqs: (String sns, String sqs) -> untyped
+    end
+
+    class Prometheus < Mobilis::Base::Node
+    end
+
+    class GoAws < Mobilis::Base::Node
+      DEFAULT_PORT: Integer
+      attr_reader port: Integer
+      attr_reader region: String
+      attr_reader account_id: String
+      attr_reader topics: Array[String]
+      attr_reader queues: Array[String]
+      attr_reader subscriptions: Array[Hash[Symbol, String]]
+
+      def initialize: (String name, ?port: Integer, ?region: String, ?account_id: String, ?topics: Array[String], ?queues: Array[String], ?subscriptions: Array[Hash[Symbol, String]], **untyped args) -> void
+      def topic: (String name) -> Array[String]?
+      def queue: (String name) -> Array[String]?
+      def sns_sqs: (String topic_name, untyped queue_names) -> untyped
+      def subscribe: (topic: String, queue: String) -> Array[Hash[Symbol, String]]?
+      def service_name: () -> String
+      def endpoint_url: () -> String
+      def env_exports: () -> Hash[String, String]
+    end
   end
 end
-

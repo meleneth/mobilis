@@ -1,0 +1,38 @@
+module Mobilis
+  module Services
+    class Directory
+      def initialize: () -> void
+      def chdir_start: () -> Integer
+      def chdir_project: (untyped project) -> Integer
+      def chdir_rails_builder: () -> Integer
+      def mkdir_project: (untyped project) -> Integer?
+      def mkdir_environment: (untyped environment) -> untyped
+      def chdir_environment: (untyped environment) -> Integer
+      def mkdir_environment_datadir_forproject: (untyped environment, untyped project) -> untyped
+      def chdir_environment_datadir_forproject: (untyped environment, untyped project) -> Integer
+      def environment_datadir_forproject: (untyped environment, untyped project) -> String
+      def mkdir_generate: () -> Integer?
+      def rm_localgems_project_gitdir: (untyped project) -> untyped
+      def mkdir_localgems: () -> Integer?
+      def mkdir_rails_builder: () -> Integer
+      def mkdir_compose: () -> Integer
+      def chdir_compose: () -> Integer
+      def mkdir_datadir: () -> Integer
+      def mkdir_env_datadir: (untyped environment) -> Integer
+      def chdir_generate: () -> Integer
+      def chdir_localgems: () -> Integer
+      def project_dir: (untyped project) -> String
+      def git_commit_all: (String message) -> untyped
+      def git_untracked_files: () -> Array[untyped]
+      def ppx_fields: (untyped dsl) -> untyped
+
+      private
+
+      def git: () -> untyped
+      def generate_dir: () -> String
+      def environment_dir: (untyped environment) -> String
+      def rails_builder_dir: () -> String
+      def localgems_dir: () -> String
+    end
+  end
+end

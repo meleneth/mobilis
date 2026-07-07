@@ -1,0 +1,32 @@
+module Mobilis
+  module RefSlot
+    class Slot
+      attr_reader name: Symbol
+      def initialize: (Symbol | String name) -> void
+      def object_var: () -> Symbol
+      def id_var: () -> Symbol
+      def getter_method: () -> Symbol
+      def define_id_getter!: (singleton(Object) target_class) -> untyped
+      def hydrate: (untyped instance, untyped value) -> untyped
+      def resolve!: (untyped instance, Hash[String, Mobilis::Base::Node] index) -> untyped
+    end
+
+    class ListSlot
+      attr_reader name: Symbol
+      def initialize: (Symbol | String name) -> void
+      def object_var: () -> Symbol
+      def id_var: () -> Symbol
+      def getter_method: () -> Symbol
+      def define_id_getter!: (singleton(Object) target_class) -> untyped
+      def hydrate: (untyped instance, untyped value) -> untyped
+      def resolve!: (untyped instance, Hash[String, Mobilis::Base::Node] index) -> untyped
+    end
+
+    module ClassMethods
+      def ref_attr_registry: () -> Array[Mobilis::RefSlot::Slot]
+      def ref_list_registry: () -> Array[Mobilis::RefSlot::ListSlot]
+      def ref_attr: (*Symbol names) -> void
+      def ref_list: (*Symbol names) -> void
+    end
+  end
+end

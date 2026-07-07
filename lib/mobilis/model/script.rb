@@ -17,7 +17,7 @@ module Mobilis
       end
 
       def write_file
-        File.write(@filename, @content)
+        ::File.write(@filename, @content)
       end
 
       def self.from_h(hash)

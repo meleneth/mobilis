@@ -1,0 +1,16 @@
+module Mobilis
+  module PrettyPrint
+    module PrettyPrintable
+      def pp: () -> untyped
+      def ppx_fields: (untyped instance) -> untyped
+      def ppx_box: (untyped parent) -> untyped
+    end
+
+    class DSL
+      def initialize: (untyped parent) -> void
+      def instance_value: (String label, untyped value) -> untyped
+      def child_object: (String label, untyped value) -> untyped
+      def env_vars: (untyped value) -> untyped
+    end
+  end
+end

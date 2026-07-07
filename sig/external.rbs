@@ -1,0 +1,21 @@
+class Pastel
+  def initialize: () -> void
+end
+
+class Module
+  def def_delegators: (untyped accessor, *Symbol methods) -> untyped
+end
+
+module TTY
+  module Screen
+    def self.width: () -> Integer
+  end
+end
+
+module Git
+  def self.open: (String path) -> untyped
+end
+
+module Optimist
+  def self.options: (Array[String] argv) { () -> untyped } -> untyped
+end

@@ -1,0 +1,80 @@
+module Mobilis
+  class System
+    attr_reader config_nodes: Hash[String, Mobilis::Base::Node]
+    attr_reader meta_project_name: String
+
+    def initialize: (String meta_project_name) -> void
+    def <<: (Mobilis::Base::Node config_node) -> Mobilis::Base::Node
+    def []: (String id) -> Mobilis::Base::Node?
+    def each_config_node: () { (Mobilis::Base::Node config_node) -> untyped } -> untyped
+                        | () -> Enumerator[Mobilis::Base::Node, untyped]
+    def resolve!: () -> Hash[String, Mobilis::Base::Node]
+    def to_h: () -> Hash[Symbol, untyped]
+    def to_json: (*untyped args) -> String
+    def node_count: () -> Integer
+    def ppx_fields: (untyped dsl) -> untyped
+
+    def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::System
+    def self.from_json: (String json) -> Mobilis::System
+  end
+
+  class ExecutionEnvironment
+    attr_reader value: Symbol
+    def initialize: (Symbol | String value) -> void
+    def is_dev?: () -> bool
+    def is_test?: () -> bool
+    def is_production?: () -> bool
+    def is_staging?: () -> bool
+    def to_s: () -> String
+    def ppx_fields: (untyped dsl) -> untyped
+  end
+
+  class NoSuchNode < StandardError
+  end
+
+  class RealizedEnv
+    attr_reader system: Mobilis::System
+    attr_reader environment: Mobilis::ExecutionEnvironment
+    attr_reader realized_nodes: Array[Mobilis::Base::RealizedNode]
+
+    def initialize: (Mobilis::System system, Mobilis::ExecutionEnvironment environment) -> void
+    def to_s: () -> String
+    def <<: (Mobilis::Base::RealizedNode realized_node) -> Array[Mobilis::Base::RealizedNode]
+    def realized_node_for_config_node: (Mobilis::Base::Node system_node) -> Mobilis::Base::RealizedNode?
+    def realized_node_by_name: (String name) -> Mobilis::Base::RealizedNode
+    def find_realized_node_by_name: (String name) -> Mobilis::Base::RealizedNode?
+    def required_plugins: () -> Array[singleton(Mobilis::Base::Plugin)]
+    def each_node_of_type: (singleton(Object) klass) { (Mobilis::RealizedEnv env, Mobilis::Base::RealizedNode node) -> untyped } -> untyped
+                         | (singleton(Object) klass) -> Enumerator[untyped, untyped]
+    def each_node: () { (Mobilis::Base::RealizedNode node) -> untyped } -> untyped
+                 | () -> Enumerator[Mobilis::Base::RealizedNode, untyped]
+    def all_envfile_vars: () { (Mobilis::Primitives::EmitVar emit_var) -> untyped } -> untyped
+                        | () -> Enumerator[Mobilis::Primitives::EmitVar, untyped]
+    def meta_project_name: () -> String
+    def is_production?: () -> bool
+    def is_development?: () -> bool
+    def is_test?: () -> bool
+  end
+
+  class Manifest
+    attr_reader system: Mobilis::System
+    attr_reader realized_envs: Array[Mobilis::RealizedEnv]
+    attr_reader directory_service: Mobilis::Services::Directory
+    attr_reader git_repo: untyped
+    attr_reader plugins: Array[Mobilis::Base::Plugin]
+
+    def initialize: (Mobilis::System system, ?suppress_plugins: bool) -> void
+    def add_plugin: (Mobilis::Base::Plugin plugin) -> Array[Mobilis::Base::Plugin]
+    def realized_production_env: () -> Mobilis::RealizedEnv?
+    def realized_env: (Symbol | String | Mobilis::ExecutionEnvironment target_env) -> Mobilis::RealizedEnv
+    def materialize: () -> untyped
+    def commit_all: (String message) -> untyped
+    def setup_plugins: () -> Array[Mobilis::Base::Plugin]
+    def run_plugin_hooks: (Symbol hook) -> Array[Mobilis::Base::Plugin]
+    def plugin_for: (singleton(Object) klass) -> Mobilis::Base::Plugin?
+    def each_node_of_type: (singleton(Object) klass) { (Mobilis::RealizedEnv env, Mobilis::Base::RealizedNode node) -> untyped } -> untyped
+                         | (singleton(Object) klass) -> Enumerator[untyped, untyped]
+    def username: () -> String
+    def overrides_for: (Mobilis::RealizedEnv realized_env) -> untyped
+  end
+end

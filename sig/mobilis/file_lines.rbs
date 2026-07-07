@@ -1,0 +1,26 @@
+module Mobilis
+  class FileLines
+    attr_reader filename: String
+    attr_reader lines: Array[String]
+
+    def self.from: (String filename) -> Mobilis::FileLines
+    def self.edit: (String filename) { () -> untyped } -> Mobilis::FileLines
+    def self.create: (String filename) { () -> untyped } -> Mobilis::FileLines
+
+    def initialize: (String filename) -> void
+    def load: () -> self
+    def replace_line: (Regexp pattern) { (String line) -> String } -> self
+    def insert_before: (Regexp pattern, *String new_lines) -> self
+    def insert_after: (Regexp pattern, *String new_lines) -> self
+    def delete_if: () { (String line) -> bool } -> self
+    def gsub_lines: (Regexp | String pattern, String replacement) -> self
+    def save: (?String? path_override) -> self
+    def set_comment_char: (String char) -> String
+    def comment_char: () -> String
+    def block_comment: (Integer | Regexp position, Array[String] comment_lines) -> self
+
+    private
+
+    def detect_comment_char_from_filename: () -> String
+  end
+end

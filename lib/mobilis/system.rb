@@ -33,7 +33,7 @@ module Mobilis
       config_nodes.each_value do |node|
         node.resolve_references_using(config_nodes) if node.respond_to?(:resolve_references_using)
         node.extra_depends_on.each do |depends_on|
-          depends_on[:target] = config_nodes.find { |n| n.name == depends_on[:name] }
+          depends_on[:target] = config_nodes.values.find { |n| n.name == depends_on[:name] }
           depends_on.delete(:name)
         end
       end
@@ -87,8 +87,8 @@ module Mobilis
     end
 
     def ppx_fields(dsl)
-      config_nodes.sort_by(&:name).each do |config_node|
-        dsl.child_object config_node.name, node
+      config_nodes.values.sort_by(&:name).each do |config_node|
+        dsl.child_object config_node.name, config_node
       end
     end
   end

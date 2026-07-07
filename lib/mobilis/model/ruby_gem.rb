@@ -25,7 +25,7 @@ module Mobilis
       end
 
       def gemfile_line
-        options = []
+        options = Array.new
         options << %(git: #{git.inspect}) if git
         options << %(branch: #{branch.inspect}) if branch
         options << %(group: #{group.inspect}) if group

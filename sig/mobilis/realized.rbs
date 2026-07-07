@@ -1,0 +1,88 @@
+module Mobilis
+  module Realized
+    class SQLDatabase < Mobilis::Base::ImageForm
+      attr_reader db_port_map: untyped
+      def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Base::Node config_node, String image) -> void
+      def user: () -> String
+      def password: () -> String
+      def db_name: () -> String
+      def url: () -> String
+      def dependant_services_require_restart?: () -> bool
+      def scheme: () -> String
+    end
+
+    class PostgreSQL < Mobilis::Realized::SQLDatabase
+      INTERNAL_PORT_NO: Integer
+      attr_reader env_db_url: Mobilis::Primitives::EmitVar
+      def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::PostgreSQL config_node) -> void
+      def service_writer: () -> singleton(Mobilis::ServiceWriter::PostgreSQL)
+      def build_packages: () -> Array[String]
+      def runtime_packages: () -> Array[String]
+      def additional_gems: () -> Array[String]
+      def data_volume_env_var: () -> Mobilis::Primitives::EmitVar
+      def internal_port_no: () -> Integer
+      def replica?: () -> bool
+      def primary_with_replicas?: () -> bool
+      def replication_enabled?: () -> bool
+      def replication_user: () -> String
+      def replication_password: () -> String
+    end
+
+    class MySQL < Mobilis::Realized::SQLDatabase
+    end
+
+    class Redis < Mobilis::Realized::SQLDatabase
+    end
+
+    class Rails < Mobilis::Base::BuildForm
+      attr_reader primary_database: Mobilis::Base::RealizedNode?
+      attr_reader env_db_url: Mobilis::Primitives::EmitVar?
+      def api_mode: () -> bool?
+      def rails_new_command: () -> String
+      def exposed_port_no: () -> Integer
+      def service_writer: () -> singleton(Mobilis::ServiceWriter::Rails)
+    end
+
+    class Rack < Mobilis::Base::BuildForm
+    end
+
+    class Flask < Mobilis::Base::BuildForm
+    end
+
+    class Alloy < Mobilis::Base::ImageForm
+      attr_reader loki: Mobilis::Base::RealizedNode?
+    end
+
+    class Grafana < Mobilis::Base::ImageForm
+      ADMIN_USER: String
+      ADMIN_PASSWORD: String
+    end
+
+    class Loki < Mobilis::Base::ImageForm
+    end
+
+    class Localstack < Mobilis::Base::ImageForm
+    end
+
+    class Jaeger < Mobilis::Base::ImageForm
+    end
+
+    class Prometheus < Mobilis::Base::ImageForm
+    end
+
+    class GoAws < Mobilis::Base::ImageForm
+      def exposed_port_no: () -> Integer
+    end
+
+    class Pgadmin < Mobilis::Base::ImageForm
+      ADMIN_EMAIL: String
+      ADMIN_PASSWORD: String
+    end
+
+    class S3Storage < Mobilis::Base::ImageForm
+    end
+
+    class OtelCollector < Mobilis::Base::ImageForm
+    end
+  end
+end

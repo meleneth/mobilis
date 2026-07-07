@@ -16,7 +16,7 @@ module Mobilis
       end
 
       def as_json(*_args)
-        merged = {}
+        merged = Hash.new
         vars_for_compose do |item|
           merged[item.key] = item.compose_value
         end

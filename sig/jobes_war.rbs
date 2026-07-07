@@ -1,0 +1,68 @@
+module JobesWar
+  def self.draw: () { () -> untyped } -> untyped
+               | () { (JobesWar::Diagram diagram) -> untyped } -> untyped
+
+  module Base
+    class Node
+      attr_accessor parent: untyped
+      def initialize: (?parent: untyped) -> void
+      def root: () -> untyped
+      def pastel: () -> untyped
+      def available_width: () -> Integer
+      def calculated_width: () -> Integer
+      def default_terminal_width: () -> Integer
+    end
+  end
+
+  class Diagram < JobesWar::Base::Node
+    attr_reader children: Array[untyped]
+    attr_reader screen_width: Integer
+    def initialize: (?screen_width: Integer?) -> void
+    def add: (untyped node) -> untyped
+    def render: () -> String
+    def <<: (untyped child) -> untyped
+  end
+
+  class DSL
+    def initialize: (untyped parent) -> void
+    def box: (?String? label, ?styles: Array[untyped], ?label_styles: Array[untyped]) { () -> untyped } -> untyped
+           | (?String? label, ?styles: Array[untyped], ?label_styles: Array[untyped]) -> untyped
+    def value: (String text, ?styles: Array[untyped]) -> untyped
+    def tic_tac: () { () -> untyped } -> untyped
+    def row: () { () -> untyped } -> untyped
+  end
+
+  module Node
+    class Box < JobesWar::Base::Node
+      attr_reader text: String?
+      attr_reader styles: Array[untyped]
+      attr_reader padding: Integer
+      attr_reader children: Array[untyped]
+      attr_reader label_styles: Array[untyped]
+      def initialize: (?styles: Array[untyped], ?label: String?, ?label_styles: Array[untyped], ?padding: Integer, **untyped kwargs) -> void
+      def render: () -> String
+      def each_line: () { (String line) -> untyped } -> untyped
+      def <<: (untyped child) -> untyped
+      def apply_styles: (String str) -> String
+    end
+
+    class TicTac < JobesWar::Base::Node
+      attr_reader styles: Array[untyped]
+      attr_reader children: Array[Array[untyped]]
+      def initialize: (?styles: Array[untyped], ?children: Array[Array[untyped]], **untyped kwargs) -> void
+      def <<: (Array[untyped] row) -> untyped
+      def render: () -> String
+      def each_line: () { (String line) -> untyped } -> untyped
+    end
+
+    class Value < JobesWar::Base::Node
+      attr_reader text: String
+      attr_reader styles: Array[untyped]
+      attr_reader padding: Integer
+      def initialize: (String text, ?styles: Array[untyped], ?padding: Integer, **untyped kwargs) -> void
+      def render: () -> String
+      def each_line: () { (String line) -> untyped } -> untyped
+      def apply_styles: (String str) -> String
+    end
+  end
+end

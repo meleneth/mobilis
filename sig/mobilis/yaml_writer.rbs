@@ -1,0 +1,6 @@
+module Mobilis
+  module YAMLWriter
+    def self.write_yaml: (String path, untyped data) -> Integer
+    def self.clean_structure: (untyped data) -> untyped
+  end
+end

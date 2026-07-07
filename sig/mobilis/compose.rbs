@@ -1,0 +1,39 @@
+module Mobilis
+  module Compose
+    class Environment
+      attr_reader data: Array[Mobilis::Primitives::EmitVar]
+      def initialize: (?envfile: bool, ?base: Mobilis::Compose::Environment?) -> void
+      def add: (Mobilis::Primitives::EmitVar env_var) -> Array[Mobilis::Primitives::EmitVar]
+      def as_json: (*untyped args) -> Array[String]
+      def to_json: (*untyped args) -> String
+      def envfile_vars: () { (Mobilis::Primitives::EmitVar item) -> untyped } -> untyped
+                      | () -> Enumerator[Mobilis::Primitives::EmitVar, untyped]
+      def vars_for_compose: () { (Mobilis::Primitives::EmitVar item) -> untyped } -> untyped
+                           | () -> Enumerator[Mobilis::Primitives::EmitVar, untyped]
+    end
+
+    class Ports
+      attr_reader data: Array[Mobilis::Primitives::PortMap]
+      def initialize: (?base: Mobilis::Compose::Ports?) -> void
+      def add: (Mobilis::Primitives::PortMap port) -> Array[Mobilis::Primitives::PortMap]
+      def as_json: (*untyped args) -> Array[String]
+      def to_json: (*untyped args) -> String
+    end
+
+    class Volume
+      attr_reader data: Hash[String, String]
+      def initialize: (?base: Mobilis::Compose::Volume?) -> void
+      def add: (String local_path, String container_path) -> String
+      def as_json: (*untyped args) -> Array[String]
+      def to_json: (*untyped args) -> String
+    end
+
+    class DependsOn
+      attr_reader data: Hash[Symbol, untyped]
+      def initialize: (?base: Mobilis::Compose::DependsOn?) -> void
+      def register: (Mobilis::Base::RealizedNode realized_node, ?force_skip_health_checks: bool) -> untyped
+      def as_json: (*untyped args) -> untyped
+      def to_json: (*untyped args) -> String
+    end
+  end
+end

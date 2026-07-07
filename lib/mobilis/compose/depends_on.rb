@@ -6,7 +6,7 @@ module Mobilis
       attr_reader :data
 
       def initialize(base: nil)
-        @data = {}
+        @data = Hash.new
         @base = base
       end
 
@@ -21,7 +21,7 @@ module Mobilis
       end
 
       def as_json(*_args)
-        output = {}
+        output = Hash.new
         @base.data.each { |key, value| output[key] = value } if @base
         @data.each { |key, value| output[key] = value }
         output

@@ -6,7 +6,7 @@ module Mobilis
       attr_reader :data
 
       def initialize(base: nil)
-        @data = {}
+        @data = Hash.new
         @base = base
       end
 
@@ -15,7 +15,7 @@ module Mobilis
       end
 
       def as_json(*_args)
-        merged = {}
+        merged = Hash.new
         @data.each do |key, value|
           merged[key] = value
         end

@@ -1,6 +1,0 @@
-module Mobilis
-  module Nodes
-    class PostgreSQL < Mobilis::Nodes::SQLDatabase
-    end
-  end
-end

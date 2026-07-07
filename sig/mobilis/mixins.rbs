@@ -1,0 +1,94 @@
+module Mobilis
+  module Mixins
+    module Node
+      module HasModels
+        def models: () -> Array[untyped]
+        def has_model_class?: (singleton(Object) klass) -> bool
+        def add_model: (untyped model) -> untyped
+        def each_model_of_type: (singleton(Object) klass) { (untyped model) -> untyped } -> untyped
+                              | (singleton(Object) klass) -> Enumerator[untyped, untyped]
+      end
+
+      module HasScripts
+        def add_script: (String filename, String contents) -> untyped
+        def write_file: (String path, String contents) -> untyped
+        def add_gem: (String name, ?git: String?, ?branch: String?, ?group: String?, ?require_name: String?) -> untyped
+      end
+
+      module HasExtraDependsOn
+        def has_extra_depends_on: (Mobilis::Base::Node target_node, ?force_skip_health_checks: bool) -> untyped
+        def add_script: (String filename, String contents) -> untyped
+        def has_connected_depends_on_class?: (singleton(Object) klass) -> untyped
+      end
+    end
+
+    module Plugin
+      module HasPluginEvents
+        def create_builder_images: () -> untyped
+        def generate_per_node_plugins: () -> untyped
+        def create_additional_services: () -> untyped
+        def hook_before_services_written: () -> untyped
+        def hook_after_services_written: () -> untyped
+        def hook_after_dc_helpers: () -> untyped
+        def hook_create_rails_models: () -> untyped
+        def hook_after_rails_models_created: () -> untyped
+        def hook_run_commands: () -> untyped
+      end
+    end
+
+    module RealizedNode
+      module HasCommand
+        def compose_command: () -> Mobilis::AutoVivify
+        def set_command: (Array[String] command) -> Mobilis::AutoVivify
+      end
+
+      module HasCompose
+        def compose: () -> Mobilis::AutoVivify
+        def set_compose_image: (String image) -> String
+        def set_compose_build_context: (?String build_context) -> String
+        def compose_build_context: () -> String?
+        def compose_image: () -> String
+        def compose_depends_on: () -> Mobilis::AutoVivify
+        def service_wrapped_compose: () -> Hash[Symbol, untyped]
+      end
+
+      module HasDependsOn
+        def register_depends_on: (Mobilis::Base::RealizedNode realized_node, ?force_skip_health_checks: bool, ?override: bool) -> untyped
+        def compose_depends_on_overrides: () -> Mobilis::Compose::DependsOn
+      end
+
+      module HasEnvVars
+        def add_env_only_var: (String envfile_name, untyped value) -> Mobilis::Primitives::EmitVar
+        def add_compose_aliased_var: (String container_name, String envfile_name, untyped value, ?override: bool, ?is_alias_only: bool) -> Mobilis::Primitives::EmitVar
+        def add_compose_raw_var: (String container_name, untyped value, ?override: bool, ?is_alias_only: bool) -> Mobilis::Primitives::EmitVar
+        def compose_vars: () -> Enumerator[Mobilis::Primitives::EmitVar, untyped]
+        def compose_environment_override: () -> Mobilis::Compose::Environment
+        def compose_environment: () -> Mobilis::Compose::Environment
+        def envfile_vars: () -> Mobilis::Compose::Environment
+      end
+
+      module HasHealthCheck
+        def set_healthcheck_command: (String command, ?interval: String, ?timeout: String, ?retries: Integer, ?start_period: String) -> untyped
+        def compose_healthcheck: () -> Mobilis::AutoVivify
+        def has_healthcheck?: () -> bool
+      end
+
+      module HasOverrides
+        def compose_overrides: () -> untyped
+      end
+
+      module HasPorts
+        def port_maps: () -> Array[Mobilis::Primitives::PortMap]
+        def register_external_port: (untyped internal_port_no, String env_var, String memo) -> Mobilis::Primitives::PortMap
+        def compose_ports: () -> Mobilis::Compose::Ports
+        def compose_ports_override: () -> Mobilis::Compose::Ports
+      end
+
+      module HasVolumes
+        def compose_volumes: () -> Mobilis::Compose::Volume
+        def compose_volumes_override: () -> Mobilis::Compose::Volume
+        def add_volume: (String local_path, String container_path) -> untyped
+      end
+    end
+  end
+end

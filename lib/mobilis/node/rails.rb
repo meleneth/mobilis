@@ -85,7 +85,7 @@ module Mobilis
 
       def add_rails_model(name, &block)
         new_model = Mobilis::Model::Rails::Model.new(name)
-        new_model.instance_eval(&block) if block_given?
+        new_model.instance_eval(&block) if block
 
         models << new_model
         new_model

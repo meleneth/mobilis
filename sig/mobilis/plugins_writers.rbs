@@ -1,0 +1,65 @@
+module Mobilis
+  module Plugin
+    class EnvVars < Mobilis::Base::Plugin
+    end
+    class FilteredActiveResource < Mobilis::Base::Plugin
+    end
+    class Plugerator < Mobilis::Base::Plugin
+    end
+    class RailsBuilder < Mobilis::Base::Plugin
+    end
+    class RailsCreateModels < Mobilis::Base::Plugin
+    end
+    class RailsDBFanout < Mobilis::Base::Plugin
+    end
+    class RailsDBLibSupport < Mobilis::Base::Plugin
+    end
+    class RailsTestMountSourceVolume < Mobilis::Base::Plugin
+    end
+    class RubyGems < Mobilis::Base::Plugin
+    end
+    class RunCommands < Mobilis::Base::Plugin
+    end
+    class WriteFiles < Mobilis::Base::Plugin
+    end
+    class WriteScripts < Mobilis::Base::Plugin
+    end
+
+    class GraphQLRailsIntegration < Mobilis::Base::RealizedNodePlugin
+    end
+    class OTELRailsIntegration < Mobilis::Base::RealizedNodePlugin
+    end
+    class RailsDBFanoutRealizedNode < Mobilis::Base::RealizedNodePlugin
+      attr_reader extra_env_db_urls: Array[untyped]
+    end
+  end
+
+  module ServiceWriter
+    class Alloy < Mobilis::Base::ServiceWriter
+    end
+    class Flask < Mobilis::Base::ServiceWriter
+    end
+    class GoAws < Mobilis::Base::ServiceWriter
+    end
+    class Grafana < Mobilis::Base::ServiceWriter
+    end
+    class Localstack < Mobilis::Base::ServiceWriter
+    end
+    class Loki < Mobilis::Base::ServiceWriter
+    end
+    class OtelCollector < Mobilis::Base::ServiceWriter
+    end
+    class Pgadmin < Mobilis::Base::ServiceWriter
+    end
+    class PostgreSQL < Mobilis::Base::ServiceWriter
+    end
+    class Prometheus < Mobilis::Base::ServiceWriter
+    end
+    class Rack < Mobilis::Base::ServiceWriter
+    end
+    class Rails < Mobilis::Base::ServiceWriter
+    end
+    class S3Storage < Mobilis::Base::ServiceWriter
+    end
+  end
+end

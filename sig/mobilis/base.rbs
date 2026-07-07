@@ -1,0 +1,143 @@
+module Mobilis
+  module Base
+    class Node
+      attr_reader id: String
+      attr_reader name: String
+      attr_reader extra_depends_on: Array[Hash[Symbol, untyped]]
+      attr_accessor internal_url_scheme: String
+
+      def initialize: (String name, ?id: String?, ?extra_depends_on: Array[Hash[Symbol, untyped]], **untyped refs) -> void
+
+      def run_command: (String command, String commit_message) -> untyped
+      def env_var_alias: (String local_name, String service_name) -> untyped
+      def to_h: () -> Hash[Symbol, untyped]
+      def ppx_fields: (untyped dsl) -> untyped
+
+      def models: () -> Array[untyped]
+      def add_model: (untyped model) -> untyped
+      def has_model_class?: (singleton(Object) klass) -> bool
+      def each_model_of_type: (singleton(Object) klass) { (untyped model) -> untyped } -> untyped
+                            | (singleton(Object) klass) -> Enumerator[untyped, untyped]
+      def add_script: (String filename, String contents) -> untyped
+      def write_file: (String path, String contents) -> untyped
+      def add_gem: (String name, ?git: String?, ?branch: String?, ?group: String?, ?require_name: String?) -> untyped
+      def has_extra_depends_on: (Mobilis::Base::Node target_node, ?force_skip_health_checks: bool) -> untyped
+      def has_connected_depends_on_class?: (singleton(Object) klass) -> untyped
+
+      def resolve_references_using: (Hash[String, Mobilis::Base::Node] index) -> void
+      def hydrate_refs!: (Hash[String, untyped] data) -> void
+      def each_ref_id: () { (Symbol ref, String id) -> untyped } -> untyped
+                     | () -> Enumerator[untyped, untyped]
+
+      def self.ref_attr: (*Symbol names) -> void
+      def self.ref_list: (*Symbol names) -> void
+      def self.ref_attr_registry: () -> Array[Mobilis::RefSlot::Slot]
+      def self.ref_list_registry: () -> Array[Mobilis::RefSlot::ListSlot]
+    end
+
+    class RealizedNode
+      attr_reader config_node: Mobilis::Base::Node
+      attr_reader has_data_volume: bool
+      attr_reader has_dockerfile: bool
+      attr_reader has_service_dir: bool
+      attr_reader realized_env: Mobilis::RealizedEnv
+      attr_accessor extra_depends_on: Array[Hash[Symbol, untyped]]
+
+      def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Base::Node config_node) -> void
+
+      def name: () -> String
+      def internal_url_scheme: () -> String
+      def meta_project_name: () -> String
+      def each_model_of_type: (singleton(Object) klass) { (untyped model) -> untyped } -> untyped
+                            | (singleton(Object) klass) -> Enumerator[untyped, untyped]
+
+      def environment: () -> String
+      def after_all_nodes_realized: () -> untyped
+      def required_plugins: () -> Array[singleton(Mobilis::Base::Plugin)]
+      def service_writer: () -> singleton(Mobilis::Base::ServiceWriter)
+      def username: () -> String
+      def dependant_services_require_restart?: () -> bool
+      def has_healthcheck?: () -> bool
+      def exposed_port_no: () -> untyped
+      def internal_url: () -> String?
+      def dependency_url_envfile_name: (Mobilis::Base::RealizedNode provider) -> String
+      def dependency_url_container_name: (Mobilis::Base::RealizedNode provider) -> String
+      def add_dependency_url: (Mobilis::Base::RealizedNode provider, ?container_name: String?) -> Mobilis::Primitives::EmitVar?
+      def populate_compose_depends_on: () -> untyped
+
+      def compose: () -> Mobilis::AutoVivify
+      def set_compose_image: (String image) -> String
+      def set_compose_build_context: (?String build_context) -> String
+      def compose_build_context: () -> String?
+      def compose_image: () -> String
+      def compose_depends_on: () -> Mobilis::AutoVivify
+      def service_wrapped_compose: () -> Hash[Symbol, untyped]
+
+      def add_env_only_var: (String envfile_name, untyped value) -> Mobilis::Primitives::EmitVar
+      def add_compose_aliased_var: (String container_name, String envfile_name, untyped value, ?override: bool, ?is_alias_only: bool) -> Mobilis::Primitives::EmitVar
+      def add_compose_raw_var: (String container_name, untyped value, ?override: bool, ?is_alias_only: bool) -> Mobilis::Primitives::EmitVar
+      def env_vars_for_env_file: () { (Mobilis::Primitives::EmitVar emit_var) -> untyped } -> untyped
+                               | () -> Enumerator[Mobilis::Primitives::EmitVar, untyped]
+      def env_vars_for_compose_environment: () { (Mobilis::Primitives::EmitVar emit_var) -> untyped } -> untyped
+                                           | () -> Enumerator[Mobilis::Primitives::EmitVar, untyped]
+      def all_emit_vars: () { (Mobilis::Primitives::EmitVar emit_var) -> untyped } -> untyped
+                        | () -> Enumerator[Mobilis::Primitives::EmitVar, untyped]
+      def compose_environment_override: () -> Mobilis::Compose::Environment
+      def compose_environment: () -> Mobilis::Compose::Environment
+      def envfile_vars: () -> Mobilis::Compose::Environment
+
+      def port_maps: () -> Array[Mobilis::Primitives::PortMap]
+      def register_external_port: (untyped internal_port_no, String env_var, String memo) -> Mobilis::Primitives::PortMap
+      def compose_ports: () -> Mobilis::Compose::Ports
+      def compose_ports_override: () -> Mobilis::Compose::Ports
+      def compose_volumes: () -> Mobilis::Compose::Volume
+      def compose_volumes_override: () -> Mobilis::Compose::Volume
+      def add_volume: (String local_path, String container_path) -> untyped
+      def compose_overrides: () -> untyped
+      def compose_command: () -> untyped
+      def set_healthcheck_command: (String command) -> untyped
+      def compose_healthcheck: () -> untyped
+      def register_depends_on: (Mobilis::Base::RealizedNode realized_node, ?force_skip_health_checks: bool) -> untyped
+    end
+
+    class BuildForm < Mobilis::Base::RealizedNode
+      def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Base::Node config_node) -> void
+    end
+
+    class ImageForm < Mobilis::Base::RealizedNode
+      def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Base::Node config_node, String image) -> void
+    end
+
+    class Plugin
+      attr_reader manifest: Mobilis::Manifest
+      def initialize: (Mobilis::Manifest manifest) -> void
+      def directory_service: () -> Mobilis::Services::Directory
+      def username: () -> String
+      def commit_all: (String message) -> untyped
+      def method_missing: (Symbol name, *untyped args, **untyped kwargs) ?{ (*untyped) -> untyped } -> untyped
+    end
+
+    class RealizedNodePlugin
+      attr_reader manifest: Mobilis::Manifest
+      attr_reader realized_node: Mobilis::Base::RealizedNode
+      def initialize: (Mobilis::Manifest manifest, Mobilis::Base::RealizedNode realized_node) -> void
+      def directory_service: () -> Mobilis::Services::Directory
+      def username: () -> String
+      def commit_all: (String message) -> untyped
+      def realized_env: () -> Mobilis::RealizedEnv
+      def config_node: () -> Mobilis::Base::Node
+      def method_missing: (Symbol name, *untyped args, **untyped kwargs) ?{ (*untyped) -> untyped } -> untyped
+    end
+
+    class ServiceWriter
+      attr_reader manifest: Mobilis::Manifest
+      attr_reader realized_env: Mobilis::RealizedEnv
+      attr_reader realized_node: Mobilis::Base::RealizedNode
+      def initialize: (Mobilis::Manifest manifest, Mobilis::RealizedEnv realized_env, Mobilis::Base::RealizedNode realized_node) -> void
+      def write: () -> untyped
+      def directory_service: () -> Mobilis::Services::Directory
+      def username: () -> String
+      def commit_all: (String message) -> untyped
+    end
+  end
+end

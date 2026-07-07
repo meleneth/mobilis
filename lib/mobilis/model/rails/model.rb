@@ -97,11 +97,10 @@ module Mobilis
         end
 
         def to_h
-          h = {
-            type: self.class.name,
-            name: name,
-            fields: fields.map(&:to_h)
-          }
+          h = Hash.new
+          h[:type] = self.class.name
+          h[:name] = name
+          h[:fields] = fields.map(&:to_h)
           h[:api_exposed] = true if api_exposed?
           h[:generate_model] = false unless generate_model?
           h[:filterable_fields] = filterable_fields if filterable_fields.any?

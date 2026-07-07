@@ -15,7 +15,7 @@ module Mobilis
       end
 
       def as_json(*_args)
-        merged = {}
+        merged = Hash.new
         @base&.data&.each { |item| merged[item.key] = item.value }
         @data.each { |item| merged[item.key] = item.value }
         merged.sort.map { |name, value| "#{name}:#{value}" }

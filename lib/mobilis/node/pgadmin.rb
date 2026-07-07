@@ -8,7 +8,7 @@ module Mobilis
 
       def initialize(...)
         super
-        @databases ||= []
+        @databases ||= Array.new
       end
 
       def add_database(database)

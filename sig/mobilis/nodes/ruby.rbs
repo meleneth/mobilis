@@ -1,6 +1,0 @@
-module Mobilis
-  module Nodes
-    class Ruby < Mobilis::Node
-    end
-  end
-end
