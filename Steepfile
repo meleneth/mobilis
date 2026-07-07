@@ -12,7 +12,6 @@ target :lib do
   ignore "lib/mobilis/plugin/**/*"
   ignore "lib/mobilis/pretty_print/**/*"
   ignore "lib/mobilis/realized/**/*"
-  ignore "lib/mobilis/realized_env.rb"
   ignore "lib/mobilis/service_writer/**/*"
 
 

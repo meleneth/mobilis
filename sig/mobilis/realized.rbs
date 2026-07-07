@@ -29,9 +29,11 @@ module Mobilis
     end
 
     class MySQL < Mobilis::Realized::SQLDatabase
+      def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::MySQL config_node) -> void
     end
 
     class Redis < Mobilis::Realized::SQLDatabase
+      def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::Redis config_node) -> void
     end
 
     class Rails < Mobilis::Base::BuildForm
@@ -51,38 +53,48 @@ module Mobilis
 
     class Alloy < Mobilis::Base::ImageForm
       attr_reader loki: Mobilis::Base::RealizedNode?
+      def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::Alloy config_node) -> void
     end
 
     class Grafana < Mobilis::Base::ImageForm
       ADMIN_USER: String
       ADMIN_PASSWORD: String
+      def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::Grafana config_node) -> void
     end
 
     class Loki < Mobilis::Base::ImageForm
+      def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::Loki config_node) -> void
     end
 
     class Localstack < Mobilis::Base::ImageForm
+      def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::Localstack config_node) -> void
     end
 
     class Jaeger < Mobilis::Base::ImageForm
+      def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::Jaeger config_node) -> void
     end
 
     class Prometheus < Mobilis::Base::ImageForm
+      def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::Prometheus config_node) -> void
     end
 
     class GoAws < Mobilis::Base::ImageForm
+      def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::GoAws config_node) -> void
       def exposed_port_no: () -> Integer
     end
 
     class Pgadmin < Mobilis::Base::ImageForm
       ADMIN_EMAIL: String
       ADMIN_PASSWORD: String
+      def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::Pgadmin config_node) -> void
     end
 
     class S3Storage < Mobilis::Base::ImageForm
+      def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::S3Storage config_node) -> void
     end
 
     class OtelCollector < Mobilis::Base::ImageForm
+      def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::OtelCollector config_node) -> void
     end
   end
 end

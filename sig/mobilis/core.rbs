@@ -43,6 +43,7 @@ module Mobilis
     def realized_node_for_config_node: (Mobilis::Base::Node system_node) -> Mobilis::Base::RealizedNode?
     def realized_node_by_name: (String name) -> Mobilis::Base::RealizedNode
     def find_realized_node_by_name: (String name) -> Mobilis::Base::RealizedNode?
+    def ppx_fields: (untyped dsl) -> untyped
     def required_plugins: () -> Array[singleton(Mobilis::Base::Plugin)]
     def each_node_of_type: (singleton(Object) klass) { (Mobilis::RealizedEnv env, Mobilis::Base::RealizedNode node) -> untyped } -> untyped
                          | (singleton(Object) klass) -> Enumerator[untyped, untyped]
@@ -54,6 +55,11 @@ module Mobilis
     def is_production?: () -> bool
     def is_development?: () -> bool
     def is_test?: () -> bool
+
+    private
+
+    def build_all_nodes!: () -> Array[Mobilis::Base::RealizedNode]
+    def build_realized_node: (Mobilis::Base::Node config_node) -> Mobilis::Base::RealizedNode?
   end
 
   class Manifest

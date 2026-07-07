@@ -72,10 +72,12 @@ module Mobilis
       end
     end
 
-    def each_node(&block)
+    def each_node
       return enum_for(:each_node) unless block_given?
 
-      realized_nodes.each(&block)
+      realized_nodes.each do |node|
+        yield node
+      end
     end
 
     # rubocop:disable all
@@ -100,32 +102,37 @@ module Mobilis
       realized_nodes.each do |realized_node|
         realized_node.after_all_nodes_realized
         realized_node.extra_depends_on.each do |extra_dep|
-          extra_dep[:target] = realized_node_for_config_node(extra_dep[:target])
+          target = extra_dep[:target]
+          next unless target.is_a?(Mobilis::Base::Node)
+
+          realized_dependency = realized_node_for_config_node(target)
+          raise Mobilis::NoSuchNode.new("Could not find node for name #{target.name} on #{environment}") unless realized_dependency
+
+          extra_dep[:target] = realized_dependency
         end
       end
       realized_nodes.each(&:populate_compose_depends_on)
     end
 
     def build_realized_node(config_node)
-      maps = {
-        Mobilis::Node::Localstack => Mobilis::Realized::Localstack,
-        Mobilis::Node::PostgreSQL => Mobilis::Realized::PostgreSQL,
-        Mobilis::Node::Pgadmin => Mobilis::Realized::Pgadmin,
-        Mobilis::Node::MySQL => Mobilis::Realized::MySQL,
-        Mobilis::Node::OtelCollector => Mobilis::Realized::OtelCollector,
-        Mobilis::Node::Jaeger => Mobilis::Realized::Jaeger,
-        Mobilis::Node::Prometheus => Mobilis::Realized::Prometheus,
-        Mobilis::Node::Grafana => Mobilis::Realized::Grafana,
-        Mobilis::Node::Loki => Mobilis::Realized::Loki,
-        Mobilis::Node::Alloy => Mobilis::Realized::Alloy,
-        Mobilis::Node::Flask => Mobilis::Realized::Flask,
-        Mobilis::Node::Rack => Mobilis::Realized::Rack,
-        Mobilis::Node::Rails => Mobilis::Realized::Rails,
-        Mobilis::Node::Redis => Mobilis::Realized::Redis,
-        Mobilis::Node::S3Storage => Mobilis::Realized::S3Storage,
-        Mobilis::Node::GoAws => Mobilis::Realized::GoAws
-      }
-      maps[config_node.class].new(self, config_node)
+      case config_node
+      when Mobilis::Node::Localstack then Mobilis::Realized::Localstack.new(self, config_node)
+      when Mobilis::Node::PostgreSQL then Mobilis::Realized::PostgreSQL.new(self, config_node)
+      when Mobilis::Node::Pgadmin then Mobilis::Realized::Pgadmin.new(self, config_node)
+      when Mobilis::Node::MySQL then Mobilis::Realized::MySQL.new(self, config_node)
+      when Mobilis::Node::OtelCollector then Mobilis::Realized::OtelCollector.new(self, config_node)
+      when Mobilis::Node::Jaeger then Mobilis::Realized::Jaeger.new(self, config_node)
+      when Mobilis::Node::Prometheus then Mobilis::Realized::Prometheus.new(self, config_node)
+      when Mobilis::Node::Grafana then Mobilis::Realized::Grafana.new(self, config_node)
+      when Mobilis::Node::Loki then Mobilis::Realized::Loki.new(self, config_node)
+      when Mobilis::Node::Alloy then Mobilis::Realized::Alloy.new(self, config_node)
+      when Mobilis::Node::Flask then Mobilis::Realized::Flask.new(self, config_node)
+      when Mobilis::Node::Rack then Mobilis::Realized::Rack.new(self, config_node)
+      when Mobilis::Node::Rails then Mobilis::Realized::Rails.new(self, config_node)
+      when Mobilis::Node::Redis then Mobilis::Realized::Redis.new(self, config_node)
+      when Mobilis::Node::S3Storage then Mobilis::Realized::S3Storage.new(self, config_node)
+      when Mobilis::Node::GoAws then Mobilis::Realized::GoAws.new(self, config_node)
+      end
     end
   end
 end
