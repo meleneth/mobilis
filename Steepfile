@@ -8,7 +8,6 @@ target :lib do
   # delegated helpers, and compose mutation DSL need a more deliberate typing pass.
   ignore "lib/jobes_war/**/*"
   ignore "lib/mobilis/cli.rb"
-  ignore "lib/mobilis/file_lines.rb"
   ignore "lib/mobilis/manifest.rb"
   ignore "lib/mobilis/mixins/**/*"
   ignore "lib/mobilis/base/plugin.rb"

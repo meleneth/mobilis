@@ -4,8 +4,8 @@ module Mobilis
     attr_reader lines: Array[String]
 
     def self.from: (String filename) -> Mobilis::FileLines
-    def self.edit: (String filename) { () -> untyped } -> Mobilis::FileLines
-    def self.create: (String filename) { () -> untyped } -> Mobilis::FileLines
+    def self.edit: (String filename) { (Mobilis::FileLines) [self: Mobilis::FileLines] -> untyped } -> Mobilis::FileLines
+    def self.create: (String filename) { (Mobilis::FileLines) [self: Mobilis::FileLines] -> untyped } -> Mobilis::FileLines
 
     def initialize: (String filename) -> void
     def load: () -> self
