@@ -29,7 +29,12 @@ module Mobilis
 
       def databases
         config_node.databases.map do |database|
-          realized_env.realized_node_for_config_node(database)
+          realized_database = realized_env.realized_node_for_config_node(database)
+          unless realized_database.is_a?(Mobilis::Realized::SQLDatabase)
+            raise Mobilis::NoSuchNode, "No realized database for #{database.name}"
+          end
+
+          realized_database
         end
       end
 

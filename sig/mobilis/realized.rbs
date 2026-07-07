@@ -79,6 +79,7 @@ module Mobilis
     class Alloy < Mobilis::Base::ImageForm
       attr_reader loki: Mobilis::Base::RealizedNode?
       def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::Alloy config_node) -> void
+      def config_node: () -> Mobilis::Node::Alloy
       def exposed_port_no: () -> Integer
     end
 
@@ -113,6 +114,7 @@ module Mobilis
       ADMIN_EMAIL: String
       ADMIN_PASSWORD: String
       def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::Pgadmin config_node) -> void
+      def config_node: () -> Mobilis::Node::Pgadmin
       def databases: () -> Array[Mobilis::Realized::SQLDatabase]
     end
 
@@ -129,6 +131,7 @@ module Mobilis
       attr_reader region_env_var: Mobilis::Primitives::EmitVar
       attr_reader bucket_env_var: Mobilis::Primitives::EmitVar?
       def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::S3Storage config_node) -> void
+      def config_node: () -> Mobilis::Node::S3Storage
       def exposed_port_no: () -> Integer
       def endpoint_url: () -> String
       def buckets: () -> Array[String]

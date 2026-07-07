@@ -8,15 +8,12 @@ target :lib do
   # delegated helpers, and compose mutation DSL need a more deliberate typing pass.
   ignore "lib/mobilis/manifest.rb"
   ignore "lib/mobilis/plugin/**/*"
-  ignore "lib/mobilis/realized/alloy.rb"
   ignore "lib/mobilis/realized/flask.rb"
   ignore "lib/mobilis/realized/localstack.rb"
   ignore "lib/mobilis/realized/otel_collector.rb"
-  ignore "lib/mobilis/realized/pgadmin.rb"
   ignore "lib/mobilis/realized/postgresql.rb"
   ignore "lib/mobilis/realized/rack.rb"
   ignore "lib/mobilis/realized/rails.rb"
-  ignore "lib/mobilis/realized/s3_storage.rb"
   ignore "lib/mobilis/realized/sql_database.rb"
 
 

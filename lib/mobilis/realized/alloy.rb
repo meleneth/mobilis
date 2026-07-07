@@ -17,9 +17,11 @@ module Mobilis
       end
 
       def after_all_nodes_realized
-        @loki = realized_env.realized_node_for_config_node(config_node.loki) if config_node.loki
+        loki_config = config_node.loki
+        @loki = realized_env.realized_node_for_config_node(loki_config) if loki_config
         @loki ||= realized_env.find_realized_node_by_name("loki")
-        register_depends_on(@loki) if @loki
+        loki = @loki
+        register_depends_on(loki) if loki
       end
 
       def exposed_port_no

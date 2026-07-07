@@ -55,9 +55,9 @@ module Mobilis
     end
 
     class Pgadmin < Mobilis::Base::Node
-      attr_reader databases: Array[Mobilis::Node::SQLDatabase]
+      attr_reader databases: Array[Mobilis::Node::PostgreSQL]
       def initialize: (*untyped args, **untyped kwargs) -> void
-      def add_database: (Mobilis::Node::SQLDatabase database) -> Array[Mobilis::Node::SQLDatabase]?
+      def add_database: (Mobilis::Node::PostgreSQL database) -> Array[Mobilis::Node::PostgreSQL]?
     end
 
     class Redis < Mobilis::Base::Node
