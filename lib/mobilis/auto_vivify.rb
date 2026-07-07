@@ -31,12 +31,12 @@ module Mobilis
     def deep_compact(data)
       case data
       when Hash
-        data.each_with_object({}) do |(k, v), h|
+        data.each_with_object(Hash.new) do |(k, v), h|
           compacted = deep_compact(v)
-          h[k] = compacted unless compacted.nil? || compacted == {} || compacted == []
+          h[k] = compacted unless compacted.nil? || compacted == Hash.new || compacted == Array.new
         end
       when Array
-        compacted = data.map { |v| deep_compact(v) }.reject { |v| v.nil? || v == {} || v == [] }
+        compacted = data.map { |v| deep_compact(v) }.reject { |v| v.nil? || v == Hash.new || v == Array.new }
         compacted unless compacted.empty?
       else
         data
@@ -44,7 +44,7 @@ module Mobilis
     end
 
     def to_h
-      each_with_object({}) do |(k, v), result|
+      each_with_object(Hash.new) do |(k, v), result|
         result[k] = v.respond_to?(:to_serial) ? v.to_serial : v
       end
     end
@@ -126,7 +126,7 @@ module Mobilis
     end
 
     def to_json(*args)
-      to_h.to_json(*args)
+      JSON.dump(to_h)
     end
 
     private
