@@ -11,7 +11,7 @@ module Mobilis
       def initialize: (String name, ?git: String?, ?branch: String?, ?group: String?, ?path: String?, ?require_name: String?) -> void
       def bundle_add_args: () -> Array[String]
       def gemfile_line: () -> String
-      def to_h: () -> Hash[Symbol, untyped]
+      def to_h: () -> Mobilis::serialized_record
       def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::RubyGem
     end
 
@@ -26,7 +26,7 @@ module Mobilis
       def gem_dependency: () -> Mobilis::Model::RubyGem
       def root_path: () -> String
       def write_files: () -> Array[Mobilis::Model::File]
-      def to_h: () -> Hash[Symbol, untyped]
+      def to_h: () -> Mobilis::serialized_record
       def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::LocalGem
     end
 
@@ -34,7 +34,7 @@ module Mobilis
       attr_reader path: String
       attr_reader content: String
       def initialize: (String path, String content) -> void
-      def to_h: () -> Hash[Symbol, untyped]
+      def to_h: () -> Mobilis::serialized_record
       def write_file: () -> Integer
       def ppx_fields: (untyped dsl) -> untyped
       def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::File
@@ -44,7 +44,7 @@ module Mobilis
       attr_accessor filename: String
       attr_accessor content: String
       def initialize: (String filename, String contents) -> void
-      def to_h: () -> Hash[Symbol, untyped]
+      def to_h: () -> Mobilis::serialized_record
       def write_file: () -> Integer
       def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::Script
     end
@@ -53,7 +53,7 @@ module Mobilis
       attr_reader command: String
       attr_reader commit_message: String
       def initialize: (String command, String commit_message) -> void
-      def to_h: () -> Hash[Symbol, untyped]
+      def to_h: () -> Mobilis::serialized_record
       def ppx_fields: (untyped dsl) -> untyped
       def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::RunCommand
     end
@@ -62,7 +62,7 @@ module Mobilis
       attr_reader local_name: String
       attr_reader service_name: String
       def initialize: (String local_name, String service_name) -> void
-      def to_h: () -> Hash[Symbol, untyped]
+      def to_h: () -> Mobilis::serialized_record
       def ppx_fields: (untyped dsl) -> untyped
       def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::EnvVarAlias
     end
@@ -71,7 +71,7 @@ module Mobilis
       attr_reader sns: String
       attr_reader sqs: String
       def initialize: (String sns, String sqs) -> void
-      def to_h: () -> Hash[Symbol, untyped]
+      def to_h: () -> Mobilis::serialized_record
       def ppx_fields: (untyped dsl) -> untyped
       def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::LocalstackSNSSQS
     end
@@ -81,7 +81,7 @@ module Mobilis
         attr_reader name: String
         attr_reader type: String
         def initialize: (name: String, type: String, ?cardinality: bool) -> void
-        def to_h: () -> Hash[Symbol, String]
+        def to_h: () -> Mobilis::serialized_record
         def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::Rails::Field
       end
 
@@ -108,12 +108,12 @@ module Mobilis
         def generate_model?: () -> bool
         def filterable: (*String fields) -> self
         def api_exposed?: () -> bool
-        def to_h: () -> Hash[Symbol, untyped]
+        def to_h: () -> Mobilis::serialized_record
       end
 
       class GraphQL
         def initialize: () -> void
-        def to_h: () -> Hash[Symbol, untyped]
+        def to_h: () -> Mobilis::serialized_record
         def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::Rails::GraphQL
       end
     end

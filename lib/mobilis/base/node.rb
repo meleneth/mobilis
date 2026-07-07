@@ -38,11 +38,21 @@ module Mobilis
       end
 
       def to_h
+        # @type var h: Hash[Symbol, untyped]
         h = {
           id: id,
           name: name,
           type: self.class.name,
-          extra_depends_on: extra_depends_on.map { |dep| dep[:target].name },
+          extra_depends_on: extra_depends_on.filter_map do |dep|
+            target = dep[:target]
+            name = dep[:name]
+
+            if target.is_a?(Mobilis::Base::Node)
+              target.name
+            elsif name.is_a?(String)
+              name
+            end
+          end,
           models: models.map(&:to_h)
         }
         h[:internal_url_scheme] = internal_url_scheme unless internal_url_scheme == "http"

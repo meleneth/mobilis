@@ -2,11 +2,11 @@ module Mobilis
   module Mixins
     module Node
       module HasModels
-        def models: () -> Array[untyped]
+        def models: () -> Array[Mobilis::_ModelRecord]
         def has_model_class?: (singleton(Object) klass) -> bool
-        def add_model: (untyped model) -> untyped
-        def each_model_of_type: (singleton(Object) klass) { (untyped model) -> untyped } -> untyped
-                              | (singleton(Object) klass) -> Enumerator[untyped, untyped]
+        def add_model: (Mobilis::_ModelRecord model) -> Mobilis::_ModelRecord
+        def each_model_of_type: (singleton(Object) klass) { (Mobilis::_ModelRecord model) -> untyped } -> untyped
+                              | (singleton(Object) klass) -> Enumerator[Mobilis::_ModelRecord, untyped]
       end
 
       module HasScripts

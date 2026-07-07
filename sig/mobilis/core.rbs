@@ -6,15 +6,15 @@ module Mobilis
     def initialize: (String meta_project_name) -> void
     def <<: (Mobilis::Base::Node config_node) -> Mobilis::Base::Node
     def []: (String id) -> Mobilis::Base::Node?
-    def each_config_node: () { (Mobilis::Base::Node config_node) -> untyped } -> untyped
-                        | () -> Enumerator[Mobilis::Base::Node, untyped]
+    def each_config_node: () { (Mobilis::Base::Node config_node) -> void } -> Array[Mobilis::Base::Node]
+                        | () -> Enumerator[Mobilis::Base::Node, void]
     def resolve!: () -> Hash[String, Mobilis::Base::Node]
-    def to_h: () -> Hash[Symbol, untyped]
-    def to_json: (*untyped args) -> String
+    def to_h: () -> Mobilis::system_record
+    def to_json: (*Object args) -> String
     def node_count: () -> Integer
     def ppx_fields: (untyped dsl) -> untyped
 
-    def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::System
+    def self.from_h: (Mobilis::system_record hash) -> Mobilis::System
     def self.from_json: (String json) -> Mobilis::System
   end
 

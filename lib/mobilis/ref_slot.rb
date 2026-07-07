@@ -124,11 +124,11 @@ module Mobilis
 
     def hydrate_refs!(data)
       self.class.ref_attr_registry.each do |slot|
-        slot.hydrate(self, data["\#{slot.name}_id"])
+        slot.hydrate(self, data["#{slot.name}_id"])
       end
 
       self.class.ref_list_registry.each do |slot|
-        slot.hydrate(self, data["\#{slot.name}_ids"])
+        slot.hydrate(self, data["#{slot.name}_ids"])
       end
     end
 

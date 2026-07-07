@@ -24,16 +24,18 @@ module Mobilis
     end
 
     def each_config_node(&block)
-      return enum_for(:each_config_node) unless block_given?
+      return enum_for(:each_config_node) unless block
 
-      config_nodes.values.each(&block)
+      config_nodes.values.each { |config_node| block.call(config_node) }
     end
 
     def resolve!
       config_nodes.each_value do |node|
         node.resolve_references_using(config_nodes) if node.respond_to?(:resolve_references_using)
         node.extra_depends_on.each do |depends_on|
-          depends_on[:target] = config_nodes.values.find { |n| n.name == depends_on[:name] }
+          target_name = depends_on[:name]
+          target = config_nodes.values.find { |n| n.name == target_name } if target_name.is_a?(String)
+          depends_on[:target] = target if target
           depends_on.delete(:name)
         end
       end
@@ -57,12 +59,12 @@ module Mobilis
 
     def self.from_h(hash)
       sys = new(hash[:meta_project_name])
-      raw_nodes = hash[:nodes] || []
+      raw_nodes = Array(hash[:nodes])
 
       raw_nodes.each do |node_data|
+        # @type var node_data: Hash[Symbol, untyped]
         node_data = JSON.parse(node_data.to_json, symbolize_names: true)
         klass = Object.const_get(node_data[:type])
-        config_node = false
         models = node_data.delete(:models) || []
 
         node_data.delete(:type)
