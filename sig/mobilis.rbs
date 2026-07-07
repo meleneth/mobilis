@@ -23,6 +23,9 @@ module Mobilis
   type run_command_record = { type?: String, command: String, commit_message: String }
   type env_var_alias_record = { type?: String, local_name: String, service_name: String }
   type localstack_sns_sqs_record = { type?: String, sns: String, sqs: String }
+  type auto_key = String | Symbol
+  type auto_serial_value = nil | bool | Integer | Float | String | Array[auto_serial_value] | Hash[auto_key, auto_serial_value]
+  type auto_backing_value = auto_serial_value | Mobilis::AutoVivify | Mobilis::AutoNode
 
   interface _ModelRecord
     def is_a?: (singleton(Object) klass) -> bool

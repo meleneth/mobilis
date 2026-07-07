@@ -31,10 +31,13 @@ module Mobilis
     def deep_compact(data)
       case data
       when Hash
-        data.each_with_object(Hash.new) do |(k, v), h|
+        # @type var h: Hash[Mobilis::auto_key, Mobilis::auto_serial_value]
+        h = {}
+        data.each do |k, v|
           compacted = deep_compact(v)
           h[k] = compacted unless compacted.nil? || compacted == Hash.new || compacted == Array.new
         end
+        h
       when Array
         compacted = data.map { |v| deep_compact(v) }.reject { |v| v.nil? || v == Hash.new || v == Array.new }
         compacted unless compacted.empty?
@@ -44,9 +47,18 @@ module Mobilis
     end
 
     def to_h
-      each_with_object(Hash.new) do |(k, v), result|
-        result[k] = v.respond_to?(:to_serial) ? v.to_serial : v
+      # @type var result: Hash[Mobilis::auto_key, Mobilis::auto_serial_value]
+      result = {}
+      each do |k, v|
+        result[k] =
+          case v
+          when AutoNode, AutoVivify
+            v.to_serial
+          else
+            v
+          end
       end
+      result
     end
 
     def to_serial
@@ -159,13 +171,27 @@ module Mobilis
     def serialize_hash
       return {} unless @backing.is_a?(Hash)
 
-      @backing.transform_values { |v| v.respond_to?(:to_serial) ? v.to_serial : v }
+      @backing.transform_values do |v|
+        case v
+        when AutoNode, AutoVivify
+          v.to_serial
+        else
+          v
+        end
+      end
     end
 
     def serialize_array
       return [] unless @backing.is_a?(Array)
 
-      @backing.map { |v| v.respond_to?(:to_serial) ? v.to_serial : v }
+      @backing.map do |v|
+        case v
+        when AutoNode, AutoVivify
+          v.to_serial
+        else
+          v
+        end
+      end
     end
   end
 end

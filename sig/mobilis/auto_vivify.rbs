@@ -1,34 +1,36 @@
 module Mobilis
-  class AutoVivify < Hash[untyped, untyped]
+  class AutoVivify < Hash[Mobilis::auto_key, Mobilis::auto_backing_value]
     def initialize: () -> void
-    def clean_shrunk: () -> untyped
-    def deep_compact: (untyped data) -> untyped
-    def to_h: () -> Hash[untyped, untyped]
-    def to_serial: () -> Hash[untyped, untyped]
-    def symbolize_keys_deep: () -> untyped
-    def materialized?: (*untyped keys) -> bool
+    def []: (Mobilis::auto_key key) -> Mobilis::AutoNode
+    def []=: (Mobilis::auto_key key, Mobilis::auto_serial_value value) -> Mobilis::auto_serial_value
+    def clean_shrunk: () -> Hash[Symbol, Mobilis::auto_serial_value]
+    def deep_compact: (Mobilis::auto_serial_value data) -> Mobilis::auto_serial_value
+    def to_h: () -> Hash[Mobilis::auto_key, Mobilis::auto_serial_value]
+    def to_serial: () -> Hash[Mobilis::auto_key, Mobilis::auto_serial_value]
+    def symbolize_keys_deep: () -> Hash[Symbol, Mobilis::auto_serial_value]
+    def materialized?: (*Mobilis::auto_key keys) -> bool
   end
 
   class AutoNode
-    def initialize: (untyped key) -> void
-    def <<: (untyped value) -> untyped
-    def merge!: (Hash[untyped, untyped] other) -> Hash[untyped, untyped]
-    def []=: (untyped key, untyped value) -> untyped
-    def []: (untyped key) -> untyped
-    def to_h: () -> Hash[untyped, untyped]
-    def to_a: () -> Array[untyped]
-    def to_serial: () -> untyped
+    def initialize: (Mobilis::auto_key key) -> void
+    def <<: (Mobilis::auto_backing_value value) -> Array[Mobilis::auto_backing_value]
+    def merge!: (Hash[Mobilis::auto_key, Mobilis::auto_serial_value] other) -> Hash[Mobilis::auto_key, Mobilis::auto_backing_value]
+    def []=: (Mobilis::auto_key key, Mobilis::auto_serial_value value) -> Mobilis::auto_serial_value
+    def []: (Mobilis::auto_key key) -> Mobilis::AutoNode
+    def to_h: () -> Hash[Mobilis::auto_key, Mobilis::auto_serial_value]
+    def to_a: () -> Array[Mobilis::auto_serial_value]
+    def to_serial: () -> Mobilis::auto_serial_value
     def inspect: () -> String
-    def as_json: (*untyped args) -> Hash[untyped, untyped]
+    def as_json: (*untyped args) -> Hash[Mobilis::auto_key, Mobilis::auto_serial_value]
     def to_json: (*untyped args) -> String
 
     private
 
-    def ensure_array!: () -> Array[untyped]
-    def ensure_hash!: () -> Hash[untyped, untyped]
+    def ensure_array!: () -> Array[Mobilis::auto_backing_value]
+    def ensure_hash!: () -> Hash[Mobilis::auto_key, Mobilis::auto_backing_value]
     def raise_type_conflict: (Symbol existing) -> bot
-    def wrap: (untyped value) -> untyped
-    def serialize_hash: () -> Hash[untyped, untyped]
-    def serialize_array: () -> Array[untyped]
+    def wrap: (Mobilis::auto_serial_value value) -> Mobilis::auto_serial_value
+    def serialize_hash: () -> Hash[Mobilis::auto_key, Mobilis::auto_serial_value]
+    def serialize_array: () -> Array[Mobilis::auto_serial_value]
   end
 end
