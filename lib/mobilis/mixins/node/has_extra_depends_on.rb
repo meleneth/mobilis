@@ -7,7 +7,9 @@ module Mobilis
       module HasExtraDependsOn
         # rubocop:disable Naming/PredicateName
         def has_extra_depends_on(target_node, force_skip_health_checks: false)
-          extra_depends_on << { target: target_node, force_skip_health_checks: force_skip_health_checks }
+          # @type var dependency: Mobilis::node_ref_dependency
+          dependency = { target: target_node, force_skip_health_checks: force_skip_health_checks }
+          extra_depends_on << dependency
         end
         # rubocop:enable Naming/PredicateName
 

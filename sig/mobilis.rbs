@@ -6,6 +6,7 @@ module Mobilis
   type node_ref_dependency = { name?: String, target?: Mobilis::Base::Node | Mobilis::Base::RealizedNode, force_skip_health_checks?: bool }
 
   interface _ModelRecord
+    def is_a?: (singleton(Object) klass) -> bool
     def to_h: () -> serialized_record
   end
 

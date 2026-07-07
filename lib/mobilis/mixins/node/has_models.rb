@@ -7,7 +7,7 @@ module Mobilis
         def models
           return @models if defined?(@models)
 
-          @models = []
+          @models = Array.new
           @models
         end
 

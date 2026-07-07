@@ -5,17 +5,20 @@ module Mobilis
         def models: () -> Array[Mobilis::_ModelRecord]
         def has_model_class?: (singleton(Object) klass) -> bool
         def add_model: (Mobilis::_ModelRecord model) -> Mobilis::_ModelRecord
-        def each_model_of_type: (singleton(Object) klass) { (Mobilis::_ModelRecord model) -> untyped } -> untyped
-                              | (singleton(Object) klass) -> Enumerator[Mobilis::_ModelRecord, untyped]
+        def each_model_of_type: (singleton(Object) klass) { (untyped model) -> untyped } -> untyped
+                              | (singleton(Object) klass) -> Enumerator[untyped, untyped]
       end
 
       module HasScripts
+        def models: () -> Array[Mobilis::_ModelRecord]
         def add_script: (String filename, String contents) -> untyped
         def write_file: (String path, String contents) -> untyped
         def add_gem: (String name, ?git: String?, ?branch: String?, ?group: String?, ?require_name: String?) -> untyped
       end
 
       module HasExtraDependsOn
+        def extra_depends_on: () -> Array[Mobilis::node_ref_dependency]
+        def models: () -> Array[Mobilis::_ModelRecord]
         def has_extra_depends_on: (Mobilis::Base::Node target_node, ?force_skip_health_checks: bool) -> untyped
         def add_script: (String filename, String contents) -> untyped
         def has_connected_depends_on_class?: (singleton(Object) klass) -> untyped

@@ -16,8 +16,8 @@ module Mobilis
       def models: () -> Array[Mobilis::_ModelRecord]
       def add_model: (Mobilis::_ModelRecord model) -> Mobilis::_ModelRecord
       def has_model_class?: (singleton(Object) klass) -> bool
-      def each_model_of_type: (singleton(Object) klass) { (Mobilis::_ModelRecord model) -> untyped } -> untyped
-                            | (singleton(Object) klass) -> Enumerator[Mobilis::_ModelRecord, untyped]
+      def each_model_of_type: (singleton(Object) klass) { (untyped model) -> untyped } -> untyped
+                            | (singleton(Object) klass) -> Enumerator[untyped, untyped]
       def add_script: (String filename, String contents) -> untyped
       def write_file: (String path, String contents) -> untyped
       def add_gem: (String name, ?git: String?, ?branch: String?, ?group: String?, ?require_name: String?) -> untyped
@@ -48,8 +48,8 @@ module Mobilis
       def name: () -> String
       def internal_url_scheme: () -> String
       def meta_project_name: () -> String
-      def each_model_of_type: (singleton(Object) klass) { (Mobilis::_ModelRecord model) -> untyped } -> untyped
-                            | (singleton(Object) klass) -> Enumerator[Mobilis::_ModelRecord, untyped]
+      def each_model_of_type: (singleton(Object) klass) { (untyped model) -> untyped } -> untyped
+                            | (singleton(Object) klass) -> Enumerator[untyped, untyped]
 
       def environment: () -> String
       def after_all_nodes_realized: () -> untyped
