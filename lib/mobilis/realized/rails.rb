@@ -19,16 +19,22 @@ module Mobilis
       end
 
       def after_all_nodes_realized
-        return unless config_node.primary_database
+        primary_database_config = config_node.primary_database
+        return unless primary_database_config
 
-        @primary_database = @realized_env.realized_node_for_config_node(config_node.primary_database)
-        register_depends_on(@primary_database)
-        db_env_db_url = @primary_database&.env_db_url
-        if db_env_db_url
-          @env_db_url = add_compose_aliased_var("DATABASE_URL",
-                                                db_env_db_url.envfile_name,
-                                                db_env_db_url.value)
+        primary_database = @realized_env.realized_node_for_config_node(primary_database_config)
+        unless primary_database.is_a?(Mobilis::Realized::PostgreSQL) || primary_database.is_a?(Mobilis::Realized::MySQL)
+          raise Mobilis::NoSuchNode, "No realized primary database for #{name}"
         end
+
+        @primary_database = primary_database
+        register_depends_on(primary_database)
+        envfile_name = primary_database.env_db_url.envfile_name
+        raise Mobilis::NoSuchNode, "No database URL env var for #{name}" unless envfile_name
+
+        @env_db_url = add_compose_aliased_var("DATABASE_URL",
+                                              envfile_name,
+                                              primary_database.env_db_url.value)
         add_compose_raw_var("RAILS_ENV", environment.to_s)
         add_compose_raw_var("RAILS_MIN_THREADS", 5)
         add_compose_raw_var("RAILS_MAX_THREADS", 5)
@@ -66,7 +72,7 @@ module Mobilis
         #        extra_depends_on.each do |realized_node|
         #          dsl.child_object "Extra depends_on #{realized_node.name}", realized_node
         #        end
-        dsl.env_vars env_vars
+        dsl.env_vars all_emit_vars
       end
     end
   end

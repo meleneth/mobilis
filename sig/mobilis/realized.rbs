@@ -61,12 +61,17 @@ module Mobilis
     end
 
     class Rails < Mobilis::Base::BuildForm
-      attr_reader primary_database: Mobilis::Base::RealizedNode?
+      attr_reader primary_database: (Mobilis::Realized::PostgreSQL | Mobilis::Realized::MySQL)?
       attr_reader env_db_url: Mobilis::Primitives::EmitVar?
+      def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::Rails config_node) -> void
+      def config_node: () -> Mobilis::Node::Rails
+      def after_all_nodes_realized: () -> untyped
       def api_mode: () -> bool?
       def rails_new_command: () -> String
       def exposed_port_no: () -> Integer
+      def required_plugins: () -> Array[singleton(Mobilis::Base::Plugin)]
       def service_writer: () -> singleton(Mobilis::ServiceWriter::Rails)
+      def ppx_fields: (untyped dsl) -> untyped
     end
 
     class Rack < Mobilis::Base::BuildForm
