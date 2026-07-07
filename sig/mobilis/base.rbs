@@ -135,6 +135,7 @@ module Mobilis
       attr_reader realized_node: Mobilis::Base::RealizedNode
       def initialize: (Mobilis::Manifest manifest, Mobilis::RealizedEnv realized_env, Mobilis::Base::RealizedNode realized_node) -> void
       def write: () -> untyped
+      def ppx_fields: (untyped dsl) -> untyped
       def directory_service: () -> Mobilis::Services::Directory
       def username: () -> String
       def commit_all: (String message) -> untyped
