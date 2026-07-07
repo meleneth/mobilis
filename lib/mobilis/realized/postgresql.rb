@@ -134,7 +134,14 @@ module Mobilis
 
       def configure_replica
         @has_service_dir = true
-        primary = realized_env.realized_node_for_config_node(config_node.replicate_from)
+        replication_source = config_node.replicate_from
+        raise Mobilis::NoSuchNode, "No replication source configured for #{name}" unless replication_source
+
+        primary = realized_env.realized_node_for_config_node(replication_source)
+        unless primary.is_a?(Mobilis::Realized::PostgreSQL)
+          raise Mobilis::NoSuchNode, "No realized PostgreSQL primary for #{name}"
+        end
+
         register_depends_on(primary)
         add_compose_aliased_var("POSTGRES_PRIMARY_HOST", "#{name}_postgres_primary_host", primary.name)
         add_compose_aliased_var("POSTGRES_PRIMARY_PORT", "#{name}_postgres_primary_port", primary.internal_port_no)
