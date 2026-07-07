@@ -23,7 +23,6 @@ target :lib do
   ignore "lib/mobilis/service_writer/**/*"
   ignore "lib/mobilis/util/**/*"
   ignore "lib/mobilis/yaml.rb"
-  ignore "lib/mobilis/ref_slot.rb"
 
 
   library "fileutils"

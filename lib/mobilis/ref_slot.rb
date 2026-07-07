@@ -24,7 +24,7 @@ module Mobilis
       def define_id_getter!(target_class)
         ivar = object_var
         target_class.define_method(getter_method) do
-          instance_variable_get(ivar)&.id
+          send(:instance_variable_get, ivar)&.id
         end
       end
 
@@ -63,7 +63,9 @@ module Mobilis
       def define_id_getter!(target_class)
         ivar = object_var
         target_class.define_method(getter_method) do
-          Array(instance_variable_get(ivar)).map(&:id)
+          # @type var refs: Array[untyped]
+          refs = Kernel.Array(send(:instance_variable_get, ivar))
+          refs.map { |ref| ref.id }
         end
       end
 
@@ -95,7 +97,7 @@ module Mobilis
           slot = Slot.new(name)
           ref_attr_registry << slot
 
-          attr_accessor name
+          send(:attr_accessor, name)
 
           slot.define_id_getter!(self)
         end
@@ -106,7 +108,7 @@ module Mobilis
           slot = ListSlot.new(name)
           ref_list_registry << slot
 
-          attr_accessor name
+          send(:attr_accessor, name)
 
           slot.define_id_getter!(self)
         end
@@ -118,16 +120,20 @@ module Mobilis
     end
 
     def resolve_references_using(index)
-      self.class.ref_attr_registry.each { |slot| slot.resolve!(self, index) }
-      self.class.ref_list_registry.each { |slot| slot.resolve!(self, index) }
+      # @type var ref_class: untyped
+      ref_class = self.class
+      ref_class.ref_attr_registry.each { |slot| slot.resolve!(self, index) }
+      ref_class.ref_list_registry.each { |slot| slot.resolve!(self, index) }
     end
 
     def hydrate_refs!(data)
-      self.class.ref_attr_registry.each do |slot|
+      # @type var ref_class: untyped
+      ref_class = self.class
+      ref_class.ref_attr_registry.each do |slot|
         slot.hydrate(self, data["#{slot.name}_id"])
       end
 
-      self.class.ref_list_registry.each do |slot|
+      ref_class.ref_list_registry.each do |slot|
         slot.hydrate(self, data["#{slot.name}_ids"])
       end
     end
@@ -135,14 +141,16 @@ module Mobilis
     def each_ref_id
       return enum_for(:each_ref_id) unless block_given?
 
-      self.class.ref_attr_registry.each do |slot|
+      # @type var ref_class: untyped
+      ref_class = self.class
+      ref_class.ref_attr_registry.each do |slot|
         id = send(slot.getter_method)
         yield slot.name, id if id
       end
 
-      self.class.ref_list_registry.each do |slot|
+      ref_class.ref_list_registry.each do |slot|
         ids = send(slot.getter_method)
-        Array(ids).each { |id| yield slot.name, id }
+        Kernel.Array(ids).each { |id| yield slot.name, id }
       end
     end
   end

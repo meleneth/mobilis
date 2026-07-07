@@ -6,7 +6,7 @@ module Mobilis
       def object_var: () -> Symbol
       def id_var: () -> Symbol
       def getter_method: () -> Symbol
-      def define_id_getter!: (singleton(Object) target_class) -> untyped
+      def define_id_getter!: (untyped target_class) -> untyped
       def hydrate: (untyped instance, untyped value) -> untyped
       def resolve!: (untyped instance, Hash[String, Mobilis::Base::Node] index) -> untyped
     end
@@ -17,7 +17,7 @@ module Mobilis
       def object_var: () -> Symbol
       def id_var: () -> Symbol
       def getter_method: () -> Symbol
-      def define_id_getter!: (singleton(Object) target_class) -> untyped
+      def define_id_getter!: (untyped target_class) -> untyped
       def hydrate: (untyped instance, untyped value) -> untyped
       def resolve!: (untyped instance, Hash[String, Mobilis::Base::Node] index) -> untyped
     end
@@ -28,5 +28,10 @@ module Mobilis
       def ref_attr: (*Symbol names) -> void
       def ref_list: (*Symbol names) -> void
     end
+
+    def resolve_references_using: (Hash[String, Mobilis::Base::Node] index) -> void
+    def hydrate_refs!: (Hash[String, untyped] data) -> void
+    def each_ref_id: () { (Symbol ref, String id) -> untyped } -> untyped
+                   | () -> Enumerator[untyped, untyped]
   end
 end
