@@ -11,7 +11,10 @@ module Mobilis
       end
 
       def rails_builder
-        @manifest.plugin_for Mobilis::Plugin::RailsBuilder
+        builder = @manifest.plugin_for Mobilis::Plugin::RailsBuilder
+        raise "RailsBuilder plugin is required to generate Rails services" unless builder.is_a?(Mobilis::Plugin::RailsBuilder)
+
+        builder
       end
 
       def normalize_rails_runtime

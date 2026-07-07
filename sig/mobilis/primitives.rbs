@@ -3,14 +3,14 @@ module Mobilis
     class EmitVar
       attr_reader container_name: String
       attr_reader envfile_name: String?
-      attr_reader value: untyped
+      attr_reader value: String | Integer | bool
       attr_reader is_alias_only: bool
 
-      def self.for: (String service, String type, untyped value, ?do_not_resolve: bool, ?aliased: bool, ?is_alias_only: bool) -> Mobilis::Primitives::EmitVar
-      def initialize: (String? container_name, ?String? envfile_name, ?untyped value, ?do_not_resolve: bool, ?aliased: bool, ?is_alias_only: bool) -> void
+      def self.for: (String service, String type, String | Integer | bool value, ?do_not_resolve: bool, ?aliased: bool, ?is_alias_only: bool) -> Mobilis::Primitives::EmitVar
+      def initialize: (String? container_name, ?String? envfile_name, ?String | Integer | bool value, ?do_not_resolve: bool, ?aliased: bool, ?is_alias_only: bool) -> void
       def has_envfile_name?: () -> bool
       def compose_repr: () -> String
-      def compose_value: () -> untyped
+      def compose_value: () -> (String | Integer | bool)
       def container_var_ref: () -> String
       def env_var_ref: () -> String
       def env_repr: () -> String?
@@ -20,17 +20,17 @@ module Mobilis
 
       private
 
-      def normalize_name: (untyped name) -> String
+      def normalize_name: (String? name) -> String
     end
 
     class PortMap
-      attr_reader internal_port_no: untyped
-      attr_reader external_port_no: untyped
+      attr_reader internal_port_no: Integer
+      attr_reader external_port_no: Integer | String
       attr_reader memo: String
-      def initialize: (untyped external_port_no, untyped internal_port_no, ?String memo) -> void
+      def initialize: (Integer | String external_port_no, Integer internal_port_no, ?String memo) -> void
       def as_key: () -> String
-      def key: () -> untyped
-      def value: () -> untyped
+      def key: () -> (Integer | String)
+      def value: () -> Integer
       def to_compose: () -> String
       def name: () -> String
       def ppx_fields: (untyped dsl) -> untyped

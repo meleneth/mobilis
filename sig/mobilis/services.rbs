@@ -1,27 +1,31 @@
 module Mobilis
   module Services
+    interface _NamedProject
+      def name: () -> String
+    end
+
     class Directory
       def initialize: () -> void
       def chdir_start: () -> Integer
-      def chdir_project: (untyped project) -> Integer
+      def chdir_project: (Mobilis::Services::_NamedProject project) -> Integer
       def chdir_rails_builder: () -> Integer
-      def mkdir_project: (untyped project) -> Integer?
-      def mkdir_environment: (untyped environment) -> untyped
-      def chdir_environment: (untyped environment) -> Integer
-      def mkdir_environment_datadir_forproject: (untyped environment, untyped project) -> untyped
-      def chdir_environment_datadir_forproject: (untyped environment, untyped project) -> Integer
-      def environment_datadir_forproject: (untyped environment, untyped project) -> String
+      def mkdir_project: (Mobilis::Services::_NamedProject project) -> Integer?
+      def mkdir_environment: (Mobilis::ExecutionEnvironment | String | Symbol environment) -> void
+      def chdir_environment: (Mobilis::ExecutionEnvironment | String | Symbol environment) -> Integer
+      def mkdir_environment_datadir_forproject: (Mobilis::ExecutionEnvironment | String | Symbol environment, Mobilis::Services::_NamedProject project) -> void
+      def chdir_environment_datadir_forproject: (Mobilis::ExecutionEnvironment | String | Symbol environment, Mobilis::Services::_NamedProject project) -> Integer
+      def environment_datadir_forproject: (Mobilis::ExecutionEnvironment | String | Symbol environment, Mobilis::Services::_NamedProject project) -> String
       def mkdir_generate: () -> Integer?
-      def rm_localgems_project_gitdir: (untyped project) -> untyped
+      def rm_localgems_project_gitdir: (Mobilis::Services::_NamedProject project) -> void
       def mkdir_localgems: () -> Integer?
       def mkdir_rails_builder: () -> Integer
       def mkdir_compose: () -> Integer
       def chdir_compose: () -> Integer
       def mkdir_datadir: () -> Integer
-      def mkdir_env_datadir: (untyped environment) -> Integer
+      def mkdir_env_datadir: (String environment) -> Integer
       def chdir_generate: () -> Integer
       def chdir_localgems: () -> Integer
-      def project_dir: (untyped project) -> String
+      def project_dir: (Mobilis::Services::_NamedProject project) -> String
       def git_commit_all: (String message) -> untyped
       def git_untracked_files: () -> Array[untyped]
       def ppx_fields: (untyped dsl) -> untyped
@@ -30,7 +34,7 @@ module Mobilis
 
       def git: () -> untyped
       def generate_dir: () -> String
-      def environment_dir: (untyped environment) -> String
+      def environment_dir: (Mobilis::ExecutionEnvironment | String | Symbol environment) -> String
       def rails_builder_dir: () -> String
       def localgems_dir: () -> String
     end

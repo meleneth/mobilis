@@ -118,11 +118,15 @@ module Mobilis
       end
 
       def gem_models
-        realized_node.config_node.models.select { |model| model.is_a?(Mobilis::Model::RubyGem) }
+        realized_node.config_node.models.filter_map do |model|
+          model if model.is_a?(Mobilis::Model::RubyGem)
+        end
       end
 
       def local_gems
-        realized_node.config_node.models.select { |model| model.is_a?(Mobilis::Model::LocalGem) }
+        realized_node.config_node.models.filter_map do |model|
+          model if model.is_a?(Mobilis::Model::LocalGem)
+        end
       end
 
       def ruby_image

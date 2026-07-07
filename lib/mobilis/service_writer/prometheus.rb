@@ -29,8 +29,8 @@ module Mobilis
       private
 
       def s3_storage_nodes
-        realized_env.realized_nodes.select do |node|
-          node.is_a?(Mobilis::Realized::S3Storage) && node.observability_enabled?
+        realized_env.realized_nodes.filter_map do |node|
+          node if node.is_a?(Mobilis::Realized::S3Storage) && node.observability_enabled?
         end
       end
     end

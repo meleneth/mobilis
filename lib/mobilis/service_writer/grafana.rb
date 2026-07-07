@@ -63,14 +63,15 @@ module Mobilis
       private
 
       def datasource_nodes
-        realized_env.realized_nodes.select do |node|
-          [
-            Mobilis::Realized::Prometheus,
-            Mobilis::Realized::Loki,
-            Mobilis::Realized::Jaeger,
-            Mobilis::Realized::PostgreSQL,
-            Mobilis::Realized::MySQL
-          ].any? { |klass| node.is_a?(klass) }
+        realized_env.realized_nodes.filter_map do |node|
+          case node
+          when Mobilis::Realized::Prometheus,
+               Mobilis::Realized::Loki,
+               Mobilis::Realized::Jaeger,
+               Mobilis::Realized::PostgreSQL,
+               Mobilis::Realized::MySQL
+            node
+          end
         end
       end
 
@@ -255,8 +256,11 @@ module Mobilis
 
       def filtered_resources
         rails_nodes.flat_map do |node|
-          models = node.config_node.models.select do |model|
-            model.is_a?(Mobilis::Model::Rails::Model) && model.api_exposed?
+          models = node.config_node.models.filter_map do |model|
+            next unless model.is_a?(Mobilis::Model::Rails::Model)
+            next unless model.api_exposed?
+
+            model
           end
           models.map do |model|
             {
@@ -270,18 +274,20 @@ module Mobilis
       end
 
       def rails_nodes
-        @rails_nodes ||= realized_env.realized_nodes.select { |node| node.is_a?(Mobilis::Realized::Rails) }
+        @rails_nodes ||= realized_env.realized_nodes.filter_map do |node|
+          node if node.is_a?(Mobilis::Realized::Rails)
+        end
       end
 
       def database_nodes
-        @database_nodes ||= realized_env.realized_nodes.select do |node|
-          node.is_a?(Mobilis::Realized::PostgreSQL) || node.is_a?(Mobilis::Realized::MySQL)
+        @database_nodes ||= realized_env.realized_nodes.filter_map do |node|
+          node if node.is_a?(Mobilis::Realized::PostgreSQL) || node.is_a?(Mobilis::Realized::MySQL)
         end
       end
 
       def s3_storage_nodes
-        @s3_storage_nodes ||= realized_env.realized_nodes.select do |node|
-          node.is_a?(Mobilis::Realized::S3Storage) && node.observability_enabled?
+        @s3_storage_nodes ||= realized_env.realized_nodes.filter_map do |node|
+          node if node.is_a?(Mobilis::Realized::S3Storage) && node.observability_enabled?
         end
       end
 
@@ -290,7 +296,9 @@ module Mobilis
       end
 
       def rack_nodes
-        @rack_nodes ||= realized_env.realized_nodes.select { |node| node.is_a?(Mobilis::Realized::Rack) }
+        @rack_nodes ||= realized_env.realized_nodes.filter_map do |node|
+          node if node.is_a?(Mobilis::Realized::Rack)
+        end
       end
 
       def prometheus_datasource?
