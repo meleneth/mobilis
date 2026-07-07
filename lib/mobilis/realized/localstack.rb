@@ -27,10 +27,13 @@ module Mobilis
         dsl.instance_value "has_service_dir", has_service_dir
         dsl.instance_value "has_data_volume", has_data_volume
         dsl.child_object "config_node", config_node
-        extra_depends_on.each do |realized_node|
-          dsl.child_object "Extra depends_on #{realized_node.name}", realized_node
+        extra_depends_on.each do |dependency|
+          target = dependency[:target]
+          next unless target.is_a?(Mobilis::Base::Node) || target.is_a?(Mobilis::Base::RealizedNode)
+
+          dsl.child_object "Extra depends_on #{target.name}", target
         end
-        dsl.env_vars env_vars
+        dsl.env_vars all_emit_vars
       end
     end
   end
