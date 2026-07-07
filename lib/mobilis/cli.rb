@@ -24,23 +24,12 @@ module Mobilis
     end
 
     def generate
-      opts = Optimist.options(@argv) do
-        banner "Usage: mobilis generate <system.json>\n\n"
-        stop_on_unknown
-      end
-
       filename = @argv.shift
       Optimist.die("You must provide a valid path to a system.json file") unless filename && File.exist?(filename)
 
       system = Mobilis::System.from_json(File.read(filename))
-      # Replace with actual emit logic as it comes online
       puts "[mobilis] loaded system from #{filename} with #{system.node_count} nodes"
-      env = Mobilis::RealizedEnv.new
-      env.generate_nasty_postgres_compose!
-      env.run_nasty_compose!
-
-      # Later...
-      env.destroy_nasty_compose!
+      Mobilis::Manifest.new(system).materialize
     end
 
     def usage

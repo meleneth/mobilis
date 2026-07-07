@@ -17,7 +17,8 @@ module Git
 end
 
 module Optimist
-  def self.options: (Array[String] argv) { () -> untyped } -> untyped
+  def self.options: (Array[String] argv) { () [self: untyped] -> untyped } -> untyped
+  def self.die: (String message) -> bot
 end
 
 module Open3
