@@ -26,19 +26,35 @@ module Mobilis
       end
 
       def rails_builder
-        manifest.plugin_for Mobilis::Plugin::RailsBuilder
+        builder = manifest.plugin_for Mobilis::Plugin::RailsBuilder
+        raise "RailsBuilder plugin is required to install Rails database fanout support" unless builder.is_a?(Mobilis::Plugin::RailsBuilder)
+
+        builder
       end
 
       def wireup_variant(realized_env, realized_node, name)
-        db = primary_database
+        db = realized_node.primary_database
+        raise "Rails database fanout requires a primary database" unless db
+
         db_name = "#{db.name}-#{name}"
 
-        new_db_node = db.config_node.class.new(db_name)
-        new_db = db.class.new(realized_node.environment, new_db_node)
+        new_db = case db
+                 when Mobilis::Realized::PostgreSQL
+                   new_db_node = Mobilis::Node::PostgreSQL.new(db_name)
+                   Mobilis::Realized::PostgreSQL.new(realized_env, new_db_node)
+                 when Mobilis::Realized::MySQL
+                   new_db_node = Mobilis::Node::MySQL.new(db_name)
+                   Mobilis::Realized::MySQL.new(realized_env, new_db_node)
+                 else
+                   raise "Unsupported Rails database fanout source #{db.class}"
+        end
         realized_env << new_db
         db_env_db_url = new_db.env_db_url
+        envfile_name = db_env_db_url.envfile_name
+        raise "Rails database fanout URL for #{new_db.name} is missing an env file name" unless envfile_name
+
         realized_node.add_compose_aliased_var("#{name}_DATABASE_URL",
-                                              db_env_db_url.envfile_name,
+                                              envfile_name,
                                               db_env_db_url.value,
                                               override: true)
         realized_node.register_depends_on(new_db, override: true)

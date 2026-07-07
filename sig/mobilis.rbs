@@ -1,3 +1,14 @@
+module Shellwords
+  def self.join: (Array[String] array) -> String
+  def self.split: (String line) -> Array[String]
+end
+
+class String
+  def underscore: () -> String
+  def pluralize: () -> String
+  def camelize: () -> String
+end
+
 module Mobilis
   type serialized_scalar = nil | bool | Integer | Float | String
   type serialized_value = serialized_scalar | Array[serialized_value] | Hash[Symbol, serialized_value]

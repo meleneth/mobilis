@@ -18,7 +18,10 @@ module Mobilis
 
       def oblivious_run_command(command)
         puts "-> Running --> #{command}"
-        system(command) || raise("Command failed (#{$?.exitstatus || 1}): #{command}")
+        return if system(command)
+
+        status = $?
+        raise("Command failed (#{status&.exitstatus || 1}): #{command}")
       end
 
       def run_docker(cmd)

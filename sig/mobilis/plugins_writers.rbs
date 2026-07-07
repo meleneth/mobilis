@@ -1,36 +1,107 @@
 module Mobilis
   module Plugin
     class EnvVars < Mobilis::Base::Plugin
+      def hook_before_services_written: () -> untyped
+
+      private
+
+      def suppress_matching_dependency_url: (Mobilis::Base::RealizedNode realized_node, String envfile_name) -> untyped
     end
     class FilteredActiveResource < Mobilis::Base::Plugin
+      def hook_after_services_written: () -> untyped
+      def hook_after_rails_models_created: () -> untyped
+
+      private
+
+      def write_provider_files: (Mobilis::Realized::Rails realized_node) -> untyped
+      def write_consumer_files: (Mobilis::Realized::Rails realized_node) -> untyped
+      def install_active_resource_gem: () -> untyped
+      def patch_provider_models: (Mobilis::Realized::Rails realized_node) -> untyped
+      def api_resources: (Mobilis::Realized::Rails realized_node) -> Array[Mobilis::Model::Rails::Model]
+      def connected_rails_providers: (Mobilis::Realized::Rails realized_node) -> Array[Mobilis::Realized::Rails]
+      def write_filterable_concern: () -> untyped
+      def write_provider_controller: (Mobilis::Model::Rails::Model resource) -> untyped
+      def add_provider_route: (Mobilis::Model::Rails::Model resource) -> untyped
+      def patch_provider_model: (Mobilis::Model::Rails::Model resource) -> untyped
+      def write_active_resource_client: (Mobilis::Realized::Rails provider, Mobilis::Model::Rails::Model resource) -> untyped
+      def dependency_url_container_name: (Mobilis::Realized::Rails provider) -> String
+      def permit_filter_args: (Mobilis::Model::Rails::Model resource) -> String
+      def singular_name: (Mobilis::Model::Rails::Model resource) -> String
+      def resources_name: (Mobilis::Model::Rails::Model resource) -> String
+      def model_class_name: (Mobilis::Model::Rails::Model resource) -> String
+      def controller_class_name: (Mobilis::Model::Rails::Model resource) -> String
     end
     class Plugerator < Mobilis::Base::Plugin
+      def generate_per_node_plugins: () -> untyped
+      def generate_plugins_for: (singleton(Mobilis::Base::RealizedNode) target_realized_node_class, singleton(Mobilis::Base::RealizedNodePlugin) target_plugin_class, untyped node_matcher) -> untyped
     end
     class RailsBuilder < Mobilis::Base::Plugin
+      def create_builder_images: () -> untyped
+      def rails_builder_image: () -> String
+      def oblivious_run_command: (String command) -> untyped
+      def run_docker: (String cmd) -> untyped
+      def build_rails_builder: () -> untyped
+      def container_run: (String command) -> untyped
+      def getwd: () -> String
+      def host_user_id: () -> Integer
+      def host_group_id: () -> Integer
+      def set_file_contents: (String filename, String contents) -> untyped
+      def create_rails_builder_dockerfile: () -> untyped
     end
     class RailsCreateModels < Mobilis::Base::Plugin
+      def hook_create_rails_models: () -> untyped
+      def ppx_fields: (untyped dsl) -> untyped
     end
     class RailsDBFanout < Mobilis::Base::Plugin
+      def generate_per_node_plugins: () -> untyped
+      def ppx_fields: (untyped dsl) -> untyped
     end
     class RailsDBLibSupport < Mobilis::Base::Plugin
+      def hook_after_services_written: () -> untyped
+      def ppx_fields: (untyped dsl) -> untyped
     end
     class RailsTestMountSourceVolume < Mobilis::Base::Plugin
+      def hook_before_services_written: () -> untyped
+      def ppx_fields: (untyped dsl) -> untyped
     end
     class RubyGems < Mobilis::Base::Plugin
+      def hook_after_services_written: () -> untyped
+      def rails_builder: () -> Mobilis::Plugin::RailsBuilder
     end
     class RunCommands < Mobilis::Base::Plugin
+      def hook_run_commands: () -> untyped
     end
     class WriteFiles < Mobilis::Base::Plugin
+      def hook_after_dc_helpers: () -> untyped
     end
     class WriteScripts < Mobilis::Base::Plugin
+      def hook_after_dc_helpers: () -> untyped
     end
 
     class GraphQLRailsIntegration < Mobilis::Base::RealizedNodePlugin
+      def realized_node: () -> Mobilis::Realized::Rails
+      def rails_builder: () -> Mobilis::Plugin::RailsBuilder
+      def hook_after_services_written: () -> untyped
+      def hook_after_rails_models_created: () -> untyped
+      def ppx_fields: (untyped dsl) -> untyped
     end
     class OTELRailsIntegration < Mobilis::Base::RealizedNodePlugin
+      def realized_node: () -> Mobilis::Realized::Rails
+      def rails_builder: () -> Mobilis::Plugin::RailsBuilder
+      def hook_after_services_written: () -> untyped
+      def write_instrumentation_rb: () -> untyped
+      def write_opentelemetry_initializer: () -> untyped
+      def write_structured_logging_initializer: () -> untyped
+      def ppx_fields: (untyped dsl) -> untyped
     end
     class RailsDBFanoutRealizedNode < Mobilis::Base::RealizedNodePlugin
       attr_reader extra_env_db_urls: Array[untyped]
+      def realized_node: () -> Mobilis::Realized::Rails
+      def create_additional_services: () -> untyped
+      def hook_after_services_written: () -> untyped
+      def rails_builder: () -> Mobilis::Plugin::RailsBuilder
+      def wireup_variant: (Mobilis::RealizedEnv realized_env, Mobilis::Realized::Rails realized_node, String name) -> untyped
+      def ppx_fields: (untyped dsl) -> untyped
     end
   end
 

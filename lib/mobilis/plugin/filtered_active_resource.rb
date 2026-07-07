@@ -22,8 +22,10 @@ module Mobilis
       private
 
       def write_provider_files(realized_node)
-        @provider_files_written ||= {}
-        return if @provider_files_written[realized_node.name]
+        # @type var provider_files_written: Hash[String, bool]
+        provider_files_written = @provider_files_written || {}
+        @provider_files_written = provider_files_written
+        return if provider_files_written[realized_node.name]
 
         resources = api_resources(realized_node)
         return if resources.empty?
@@ -36,12 +38,14 @@ module Mobilis
         end
         directory_service.chdir_generate
         commit_all("#{realized_node.name} filtered resource endpoints")
-        @provider_files_written[realized_node.name] = true
+        provider_files_written[realized_node.name] = true
       end
 
       def write_consumer_files(realized_node)
-        @consumer_files_written ||= {}
-        return if @consumer_files_written[realized_node.name]
+        # @type var consumer_files_written: Hash[String, bool]
+        consumer_files_written = @consumer_files_written || {}
+        @consumer_files_written = consumer_files_written
+        return if consumer_files_written[realized_node.name]
 
         providers = connected_rails_providers(realized_node)
         return if providers.empty?
@@ -57,17 +61,21 @@ module Mobilis
         install_active_resource_gem if wrote
         directory_service.chdir_generate
         commit_all("#{realized_node.name} filtered ActiveResource clients") if wrote
-        @consumer_files_written[realized_node.name] = true if wrote
+        consumer_files_written[realized_node.name] = true if wrote
       end
 
       def install_active_resource_gem
         rails_builder = @manifest.plugin_for(Mobilis::Plugin::RailsBuilder)
+        raise "RailsBuilder plugin is required to install ActiveResource" unless rails_builder.is_a?(Mobilis::Plugin::RailsBuilder)
+
         rails_builder.container_run("bundle add activeresource --require active_resource")
       end
 
       def patch_provider_models(realized_node)
-        @provider_models_patched ||= {}
-        return if @provider_models_patched[realized_node.name]
+        # @type var provider_models_patched: Hash[String, bool]
+        provider_models_patched = @provider_models_patched || {}
+        @provider_models_patched = provider_models_patched
+        return if provider_models_patched[realized_node.name]
 
         resources = api_resources(realized_node)
         return if resources.empty?
@@ -78,12 +86,15 @@ module Mobilis
         end
         directory_service.chdir_generate
         commit_all("#{realized_node.name} filtered resource model metadata")
-        @provider_models_patched[realized_node.name] = true
+        provider_models_patched[realized_node.name] = true
       end
 
       def api_resources(realized_node)
-        realized_node.config_node.models.select do |model|
-          model.respond_to?(:api_exposed?) && model.api_exposed?
+        realized_node.config_node.models.filter_map do |model|
+          next unless model.is_a?(Mobilis::Model::Rails::Model)
+          next unless model.api_exposed?
+
+          model
         end
       end
 

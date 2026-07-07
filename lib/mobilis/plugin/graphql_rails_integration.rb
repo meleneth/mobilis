@@ -5,7 +5,10 @@ module Mobilis
     # This plugin creates rails models defined on rails services
     class GraphQLRailsIntegration < Mobilis::Base::RealizedNodePlugin
       def rails_builder
-        manifest.plugin_for Mobilis::Plugin::RailsBuilder
+        builder = manifest.plugin_for Mobilis::Plugin::RailsBuilder
+        raise "RailsBuilder plugin is required to install GraphQL" unless builder.is_a?(Mobilis::Plugin::RailsBuilder)
+
+        builder
       end
 
       def hook_after_services_written

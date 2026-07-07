@@ -18,7 +18,10 @@ module Mobilis
       end
 
       def rails_builder
-        @manifest.plugin_for Mobilis::Plugin::RailsBuilder
+        builder = @manifest.plugin_for Mobilis::Plugin::RailsBuilder
+        raise "RailsBuilder plugin is required to add Ruby gems" unless builder.is_a?(Mobilis::Plugin::RailsBuilder)
+
+        builder
       end
     end
   end
