@@ -3,7 +3,7 @@ module Mobilis
     def self.deep_stringify_keys(obj)
       case obj
       when Hash
-        obj.each_with_object({}) do |(k, v), h|
+        obj.each_with_object(Hash.new) do |(k, v), h|
           h[k.to_s] = deep_stringify_keys(v)
         end
       when Array

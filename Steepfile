@@ -19,14 +19,13 @@ target :lib do
   ignore "lib/mobilis/realized/**/*"
   ignore "lib/mobilis/realized_env.rb"
   ignore "lib/mobilis/service_writer/**/*"
-  ignore "lib/mobilis/util/**/*"
-  ignore "lib/mobilis/yaml.rb"
 
 
   library "fileutils"
   library "singleton"
   library "forwardable"
   library "logger"
+  library "open3"
   library 'yaml'
   library "json"
   library "socket"

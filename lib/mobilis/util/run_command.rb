@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "open3"
+
 module Mobilis
   module Util
     class CommandFailed < StandardError
@@ -16,14 +18,11 @@ module Mobilis
       cmd = normalize_command(cmd)
       full_env = ENV.to_h.merge(env)
 
-      result = nil
-      status = false
+      result = ""
+      status = nil
       Dir.chdir(chdir || Dir.pwd) do
         if capture
-          output = IO.popen(full_env, cmd, err: %i[child out]) do |io|
-            result = io.read
-          end
-          status = $?
+          result, status = Open3.capture2e(full_env, *cmd)
         else
           puts " 𝕸 > Running Command: #{cmd.join(" ")}"
           system(full_env, *cmd)
@@ -31,7 +30,8 @@ module Mobilis
         end
       end
 
-      raise CommandFailed.new(cmd, status) unless allow_failure || status.success?
+      process_status = ensure_status(status, cmd)
+      raise CommandFailed.new(cmd, process_status) unless allow_failure || process_status.success?
 
       capture ? result : true
     end
@@ -45,6 +45,10 @@ module Mobilis
 
     def self.windows?
       Gem.win_platform?
+    end
+
+    def self.ensure_status(status, cmd)
+      status or raise "No process status returned for #{cmd.join(" ")}"
     end
   end
 end

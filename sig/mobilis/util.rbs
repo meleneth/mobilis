@@ -1,0 +1,15 @@
+module Mobilis
+  module Util
+    class CommandFailed < StandardError
+      attr_reader cmd: Array[String]
+      attr_reader status: Process::Status
+
+      def initialize: (Array[String] cmd, Process::Status status) -> void
+    end
+
+    def self.run_command: (Array[String] cmd, ?chdir: String?, ?env: Hash[String, String], ?allow_failure: bool, ?capture: bool) -> (String | true)
+    def self.normalize_command: (Array[String] cmd) -> Array[String]
+    def self.windows?: () -> bool
+    def self.ensure_status: (Process::Status? status, Array[String] cmd) -> Process::Status
+  end
+end

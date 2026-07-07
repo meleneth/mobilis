@@ -19,3 +19,7 @@ end
 module Optimist
   def self.options: (Array[String] argv) { () -> untyped } -> untyped
 end
+
+module Open3
+  def self.capture2e: (Hash[String, String] env, String cmd, *String args) -> [String, Process::Status]
+end
