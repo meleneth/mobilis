@@ -9,7 +9,7 @@ module Mobilis
         @@next_port_increment = 10
 
         def port_maps
-          @port_maps = [] unless defined?(@port_maps) && @port_maps
+          @port_maps = Array.new unless defined?(@port_maps) && @port_maps
           @port_maps
         end
 

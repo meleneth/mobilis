@@ -70,7 +70,7 @@ module Mobilis
       def set_compose_build_context: (?String build_context) -> String
       def compose_build_context: () -> String?
       def compose_image: () -> String
-      def compose_depends_on: () -> Mobilis::AutoVivify
+      def compose_depends_on: () -> Mobilis::Compose::DependsOn
       def service_wrapped_compose: () -> Hash[Symbol, untyped]
 
       def add_env_only_var: (String envfile_name, untyped value) -> Mobilis::Primitives::EmitVar
@@ -91,8 +91,8 @@ module Mobilis
       def compose_ports: () -> Mobilis::Compose::Ports
       def compose_ports_override: () -> Mobilis::Compose::Ports
       def compose_volumes: () -> Mobilis::Compose::Volume
-      def compose_volumes_override: () -> Mobilis::Compose::Volume
-      def add_volume: (String local_path, String container_path) -> untyped
+      def compose_volumes_overrides: () -> Mobilis::Compose::Volume
+      def add_volume: (String local_path, String container_path, ?override: bool) -> untyped
       def compose_overrides: () -> untyped
       def compose_command: () -> untyped
       def set_healthcheck_command: (String command) -> untyped

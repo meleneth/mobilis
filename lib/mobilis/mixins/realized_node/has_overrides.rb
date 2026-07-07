@@ -17,11 +17,11 @@ module Mobilis
         end
 
         def add_override(key, value)
-          overrides[key] = value
+          compose_overrides[key] = value
         end
 
         def merge_overrides(hash)
-          overrides.merge!(hash)
+          compose_overrides.merge!(hash)
         end
       end
     end

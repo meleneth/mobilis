@@ -3,7 +3,7 @@ module Mobilis
   type serialized_value = serialized_scalar | Array[serialized_value] | Hash[Symbol, serialized_value]
   type serialized_record = Hash[Symbol, serialized_value]
   type system_record = { name: String, meta_project_name: String, nodes: Array[serialized_record] }
-  type node_ref_dependency = { name?: String, target?: Mobilis::Base::Node, force_skip_health_checks?: bool }
+  type node_ref_dependency = { name?: String, target?: Mobilis::Base::Node | Mobilis::Base::RealizedNode, force_skip_health_checks?: bool }
 
   interface _ModelRecord
     def to_h: () -> serialized_record

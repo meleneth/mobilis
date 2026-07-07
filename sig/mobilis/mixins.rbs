@@ -38,11 +38,19 @@ module Mobilis
 
     module RealizedNode
       module HasCommand
+        def compose: () -> Mobilis::AutoVivify
+        def command_override: () -> untyped
         def compose_command: () -> Mobilis::AutoVivify
-        def set_command: (Array[String] command) -> Mobilis::AutoVivify
+        def set_command: (String command) -> Array[String]
       end
 
       module HasCompose
+        def name: () -> String
+        def meta_project_name: () -> String
+        def compose_ports: () -> Mobilis::Compose::Ports
+        def compose_environment: () -> Mobilis::Compose::Environment
+        def compose_volumes: () -> Mobilis::Compose::Volume
+        def compose_healthcheck: () -> Mobilis::AutoVivify
         def compose: () -> Mobilis::AutoVivify
         def set_compose_image: (String image) -> String
         def set_compose_build_context: (?String build_context) -> String
@@ -54,6 +62,7 @@ module Mobilis
 
       module HasDependsOn
         def register_depends_on: (Mobilis::Base::RealizedNode realized_node, ?force_skip_health_checks: bool, ?override: bool) -> untyped
+        def compose_depends_on: () -> Mobilis::Compose::DependsOn
         def compose_depends_on_overrides: () -> Mobilis::Compose::DependsOn
       end
 
@@ -62,6 +71,12 @@ module Mobilis
         def add_compose_aliased_var: (String container_name, String envfile_name, untyped value, ?override: bool, ?is_alias_only: bool) -> Mobilis::Primitives::EmitVar
         def add_compose_raw_var: (String container_name, untyped value, ?override: bool, ?is_alias_only: bool) -> Mobilis::Primitives::EmitVar
         def compose_vars: () -> Enumerator[Mobilis::Primitives::EmitVar, untyped]
+        def env_vars_for_env_file: () { (Mobilis::Primitives::EmitVar emit_var) -> untyped } -> untyped
+                                  | () -> Enumerator[Mobilis::Primitives::EmitVar, untyped]
+        def env_vars_for_compose_environment: () { (Mobilis::Primitives::EmitVar emit_var) -> untyped } -> untyped
+                                              | () -> Enumerator[Mobilis::Primitives::EmitVar, untyped]
+        def all_emit_vars: () { (Mobilis::Primitives::EmitVar emit_var) -> untyped } -> untyped
+                          | () -> Enumerator[Mobilis::Primitives::EmitVar, untyped]
         def compose_environment_override: () -> Mobilis::Compose::Environment
         def compose_environment: () -> Mobilis::Compose::Environment
         def envfile_vars: () -> Mobilis::Compose::Environment
@@ -74,10 +89,17 @@ module Mobilis
       end
 
       module HasOverrides
+        def compose_environment_override: () -> Mobilis::Compose::Environment
+        def compose_ports_override: () -> Mobilis::Compose::Ports
+        def compose_depends_on_overrides: () -> Mobilis::Compose::DependsOn
+        def compose_volumes_overrides: () -> Mobilis::Compose::Volume
         def compose_overrides: () -> untyped
+        def add_override: (untyped key, untyped value) -> untyped
+        def merge_overrides: (Hash[untyped, untyped] hash) -> untyped
       end
 
       module HasPorts
+        def add_env_only_var: (String envfile_name, untyped value) -> Mobilis::Primitives::EmitVar
         def port_maps: () -> Array[Mobilis::Primitives::PortMap]
         def register_external_port: (untyped internal_port_no, String env_var, String memo) -> Mobilis::Primitives::PortMap
         def compose_ports: () -> Mobilis::Compose::Ports
@@ -86,8 +108,8 @@ module Mobilis
 
       module HasVolumes
         def compose_volumes: () -> Mobilis::Compose::Volume
-        def compose_volumes_override: () -> Mobilis::Compose::Volume
-        def add_volume: (String local_path, String container_path) -> untyped
+        def compose_volumes_overrides: () -> Mobilis::Compose::Volume
+        def add_volume: (String local_path, String container_path, ?override: bool) -> untyped
       end
     end
   end

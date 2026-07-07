@@ -54,8 +54,8 @@ module Mobilis
         def all_emit_vars
           return enum_for(:all_emit_vars) unless block_given?
 
-          seen = {}
-          envfile_vars.each do |var|
+          seen = Hash.new
+          envfile_vars.data.each do |var|
             next if seen[var]
 
             seen[var] = true
@@ -67,6 +67,10 @@ module Mobilis
             seen[var] = true
             yield var
           end
+        end
+
+        def compose_vars
+          compose_environment.vars_for_compose
         end
 
         def compose_environment_override

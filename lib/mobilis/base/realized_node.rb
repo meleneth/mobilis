@@ -90,8 +90,17 @@ module Mobilis
 
       def populate_compose_depends_on
         extra_depends_on.each do |extra_dep|
-          provider = realized_env.realized_node_for_config_node(extra_dep[:target])
-          register_depends_on(provider, force_skip_health_checks: extra_dep[:force_skip_health_checks])
+          target = extra_dep[:target]
+          provider =
+            if target.is_a?(Mobilis::Base::RealizedNode)
+              target
+            elsif target.is_a?(Mobilis::Base::Node)
+              realized_env.realized_node_for_config_node(target)
+            end
+
+          raise Mobilis::NoSuchNode.new("Could not find realized dependency for #{name}") unless provider
+
+          register_depends_on(provider, force_skip_health_checks: extra_dep[:force_skip_health_checks] == true)
           add_dependency_url(provider)
         end
       end
