@@ -11,7 +11,9 @@ module Mobilis
     class DSL
       def self.render(object, parent, &block)
         Thread.current[:ppx_depth] ||= 0
-        new(object, parent).instance_eval(&block)
+        dsl = new(object, parent)
+        block&.call(dsl)
+        dsl
       ensure
         Thread.current[:ppx_depth] = nil if Thread.current[:ppx_depth] == 0
       end
@@ -26,9 +28,9 @@ module Mobilis
         box = JobesWar::Node::Box.new(label: label, styles: styles)
         @parent << box
 
-        with_depth(box, object) do
-          @object.ppx_fields(self) if @object.respond_to?(:ppx_fields)
-          block&.call(self)
+        with_depth(box, object) do |dsl|
+          dsl.ppx_fields
+          block&.call(dsl)
         end
       end
 
@@ -43,7 +45,7 @@ module Mobilis
         table = JobesWar::Node::TicTac.new
 
         vars.each do |var|
-          row = []
+          row = [] #: Array[JobesWar::Node::Value]
           row << JobesWar::Node::Value.new(var.compose_name, styles: [:green])
           row << JobesWar::Node::Value.new(var.envfile_name, styles: [:blue])
           row << JobesWar::Node::Value.new(truncate_with_ellipsis(var.value), styles: [:yellow])
@@ -73,11 +75,15 @@ module Mobilis
         end
       end
 
+      def ppx_fields
+        @object.ppx_fields(self) if @object.respond_to?(:ppx_fields)
+      end
+
       private
 
       def with_depth(parent_box, object, &block)
         Thread.current[:ppx_depth] += 1
-        self.class.new(object, parent_box).instance_eval(&block)
+        block&.call(self.class.new(object, parent_box))
       ensure
         Thread.current[:ppx_depth] -= 1
       end

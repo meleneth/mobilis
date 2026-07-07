@@ -10,8 +10,8 @@ module Mobilis
     module PrettyPrintable
       def pp
         JobesWar.draw do |diagram|
-          DSL.render(self, diagram) do
-            ruby_class # default to class box + fields
+          DSL.render(self, diagram) do |dsl|
+            dsl.ruby_class # default to class box + fields
           end
         end.render
       end
@@ -23,8 +23,8 @@ module Mobilis
       end
 
       def ppx_box(parent)
-        DSL.render(self, parent) do
-          ruby_class
+        DSL.render(self, parent) do |dsl|
+          dsl.ruby_class
         end
       end
     end
