@@ -46,7 +46,8 @@ module Mobilis
           topic = Mobilis::AutoVivify.new
           topic["Name"] = t.fetch("Name")
 
-          Array(t["Subscriptions"]).each do |sub|
+          subscriptions = Array(t["Subscriptions"]) #: Array[untyped]
+          subscriptions.each do |sub|
             topic["Subscriptions"] << {
               "QueueName" => sub.fetch("QueueName"),
               "Raw" => sub.fetch("Raw", false),
@@ -110,14 +111,16 @@ module Mobilis
       # Queues: ["foo","bar"]
       def queues
         raw = cfg_get("Queues", cfg_get("queues", []))
-        Array(raw).map { |e| e.is_a?(Hash) ? e.fetch("Name") : e.to_s }
+        raw_items = Array(raw) #: Array[untyped]
+        raw_items.map { |e| e.is_a?(Hash) ? e.fetch("Name") : e.to_s }
       end
 
       # Accept either the full structure, or a simplified internal structure.
       def topics
         raw = cfg_get("Topics", cfg_get("topics", []))
+        raw_items = Array(raw) #: Array[untyped]
         subscriptions = subscriptions_by_topic
-        Array(raw).map do |e|
+        raw_items.map do |e|
           next normalize_topic_hash(e) if e.is_a?(Hash)
 
           topic_name = e.to_s
@@ -126,7 +129,9 @@ module Mobilis
       end
 
       def subscriptions_by_topic
-        Array(cfg_get("Subscriptions", cfg_get("subscriptions", []))).each_with_object({}) do |subscription, by_topic|
+        raw_subscriptions = Array(cfg_get("Subscriptions", cfg_get("subscriptions", []))) #: Array[untyped]
+        by_topic = {} #: Hash[String, Array[Hash[String, untyped]]]
+        raw_subscriptions.each_with_object(by_topic) do |subscription, by_topic|
           topic_name = fetch_subscription_value(subscription, "topic")
           queue_name = fetch_subscription_value(subscription, "queue")
           next if topic_name.nil? || queue_name.nil?
@@ -143,9 +148,10 @@ module Mobilis
       end
 
       def normalize_topic_hash(h)
+        subscriptions = Array(h["Subscriptions"]) #: Array[untyped]
         {
           "Name" => h.fetch("Name"),
-          "Subscriptions" => Array(h["Subscriptions"]).map do |s|
+          "Subscriptions" => subscriptions.map do |s|
             if s.is_a?(Hash)
               { "QueueName" => s.fetch("QueueName"), "Raw" => s.fetch("Raw", false) }
             else

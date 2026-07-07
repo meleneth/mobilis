@@ -165,7 +165,7 @@ module Mobilis
       end
 
       def overview_dashboard
-        panels = []
+        panels = [] #: Array[Hash[Symbol, untyped]]
         panels << markdown_panel(1, "Generated services", service_inventory_markdown, 0, 0, 8, 8)
         panels.concat(service_log_panels)
         panels.concat(database_panels)
@@ -255,7 +255,10 @@ module Mobilis
 
       def filtered_resources
         rails_nodes.flat_map do |node|
-          node.config_node.models.select { |model| model.respond_to?(:api_exposed?) && model.api_exposed? }.map do |model|
+          models = node.config_node.models.select do |model|
+            model.is_a?(Mobilis::Model::Rails::Model) && model.api_exposed?
+          end
+          models.map do |model|
             {
               service: node.name,
               model: model.name,

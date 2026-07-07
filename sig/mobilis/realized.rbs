@@ -3,6 +3,7 @@ module Mobilis
     class SQLDatabase < Mobilis::Base::ImageForm
       attr_reader db_port_map: untyped
       def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Base::Node config_node, String image) -> void
+      def internal_port_no: () -> Integer
       def user: () -> String
       def password: () -> String
       def db_name: () -> String
@@ -46,6 +47,15 @@ module Mobilis
     end
 
     class Rack < Mobilis::Base::BuildForm
+      INTERNAL_PORT: Integer
+      def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::Rack config_node) -> void
+      def after_all_nodes_realized: () -> untyped
+      def exposed_port_no: () -> Integer
+      def instance_count: () -> Integer
+      def instance_names: () -> Array[String]
+      def otel_enabled?: () -> bool
+      def service_writer: () -> singleton(Mobilis::ServiceWriter::Rack)
+      def service_wrapped_compose: () -> Hash[Symbol, untyped]
     end
 
     class Flask < Mobilis::Base::BuildForm
@@ -54,6 +64,7 @@ module Mobilis
     class Alloy < Mobilis::Base::ImageForm
       attr_reader loki: Mobilis::Base::RealizedNode?
       def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::Alloy config_node) -> void
+      def exposed_port_no: () -> Integer
     end
 
     class Grafana < Mobilis::Base::ImageForm
@@ -87,10 +98,32 @@ module Mobilis
       ADMIN_EMAIL: String
       ADMIN_PASSWORD: String
       def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::Pgadmin config_node) -> void
+      def databases: () -> Array[Mobilis::Realized::SQLDatabase]
     end
 
     class S3Storage < Mobilis::Base::ImageForm
+      S3_PORT: Integer
+      FILER_PORT: Integer
+      MASTER_PORT: Integer
+      METRICS_PORT: Integer
+      VOLUME_PORT: Integer
+      REGION: String
+      attr_reader endpoint_url_env_var: Mobilis::Primitives::EmitVar
+      attr_reader access_key_env_var: Mobilis::Primitives::EmitVar
+      attr_reader secret_key_env_var: Mobilis::Primitives::EmitVar
+      attr_reader region_env_var: Mobilis::Primitives::EmitVar
+      attr_reader bucket_env_var: Mobilis::Primitives::EmitVar?
       def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::S3Storage config_node) -> void
+      def exposed_port_no: () -> Integer
+      def endpoint_url: () -> String
+      def buckets: () -> Array[String]
+      def default_bucket: () -> String?
+      def access_key_id: () -> String
+      def observability_enabled?: () -> bool
+      def secret_access_key: () -> String
+      def data_volume_env_var: () -> Mobilis::Primitives::EmitVar
+      def dependant_services_require_restart?: () -> bool
+      def service_writer: () -> singleton(Mobilis::ServiceWriter::S3Storage)
     end
 
     class OtelCollector < Mobilis::Base::ImageForm

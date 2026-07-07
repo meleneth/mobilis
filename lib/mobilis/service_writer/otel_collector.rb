@@ -9,7 +9,8 @@ module Mobilis
         protocols["grpc"]["endpoint"] = "0.0.0.0:4317"
         protocols["http"]["endpoint"] = "0.0.0.0:4318"
 
-        @otel_collector["processors"]["batch"] = {}
+        batch_processor = {} #: Hash[untyped, untyped]
+        @otel_collector["processors"]["batch"] = batch_processor
         memory_limiter = @otel_collector["processors"]["memory_limiter"]
         memory_limiter["limit_mib"] = 500
         memory_limiter["spike_limit_mib"] = 100

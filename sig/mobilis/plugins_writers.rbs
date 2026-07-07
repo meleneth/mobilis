@@ -36,30 +36,151 @@ module Mobilis
 
   module ServiceWriter
     class Alloy < Mobilis::Base::ServiceWriter
+      def realized_node: () -> Mobilis::Realized::Alloy
+      def write: () -> untyped
+      def config: () -> String
+      def generated_project_regex: () -> String
+      def loki_name: () -> String
     end
     class Flask < Mobilis::Base::ServiceWriter
+      def realized_node: () -> Mobilis::Realized::Flask
+      def write: () -> untyped
+      def write_Dockerfile: () -> untyped
+      def write_requirements_txt: () -> untyped
+      def write_app_py: () -> untyped
+      def write_compose_file: () -> untyped
     end
     class GoAws < Mobilis::Base::ServiceWriter
+      def realized_node: () -> Mobilis::Realized::GoAws
+      def write: () -> untyped
+
+      private
+
+      def service_dir: () -> String
+      def goaws_yaml: () -> Mobilis::AutoVivify
+      def cfg: () -> untyped
+      def cfg_get: (String key, ?untyped default) -> untyped
+      def region: () -> untyped
+      def account_id: () -> untyped
+      def log_to_file: () -> untyped
+      def enable_duplicates: () -> untyped
+      def queues: () -> Array[untyped]
+      def topics: () -> Array[Hash[String, untyped]]
+      def subscriptions_by_topic: () -> Hash[String, Array[Hash[String, untyped]]]
+      def fetch_subscription_value: (untyped subscription, String key) -> untyped
+      def normalize_topic_hash: (Hash[untyped, untyped] h) -> Hash[String, untyped]
     end
     class Grafana < Mobilis::Base::ServiceWriter
+      def datasources: () -> Mobilis::AutoVivify
+      def dashboard_provider: () -> Hash[Symbol, untyped]
+      def dashboards: () -> Hash[String, Hash[Symbol, untyped]]
+      def write: () -> untyped
+
+      private
+
+      def datasource_nodes: () -> Array[Mobilis::Base::RealizedNode]
+      def datasource_for: (Mobilis::Base::RealizedNode node) -> Hash[Symbol, untyped]
+      def prometheus_datasource: (Mobilis::Realized::Prometheus node) -> Hash[Symbol, untyped]
+      def loki_datasource: (Mobilis::Realized::Loki node) -> Hash[Symbol, untyped]
+      def jaeger_datasource: (Mobilis::Realized::Jaeger node) -> Hash[Symbol, untyped]
+      def postgres_datasource: (Mobilis::Realized::PostgreSQL node) -> Hash[Symbol, untyped]
+      def mysql_datasource: (Mobilis::Realized::MySQL node) -> Hash[Symbol, untyped]
+      def overview_dashboard: () -> Hash[Symbol, untyped]
+      def filtered_active_resource_dashboard: () -> Hash[Symbol, untyped]
+      def service_log_panels: () -> Array[Hash[Symbol, untyped]]
+      def s3_storage_panels: () -> Array[Hash[Symbol, untyped]]
+      def database_panels: () -> Array[Hash[Symbol, untyped]]
+      def service_inventory_markdown: () -> String
+      def filtered_resource_markdown: (Hash[Symbol, untyped] resource) -> String
+      def filtered_resources: () -> Array[Hash[Symbol, untyped]]
+      def rails_nodes: () -> Array[untyped]
+      def database_nodes: () -> Array[untyped]
+      def s3_storage_nodes: () -> Array[untyped]
+      def loggable_nodes: () -> Array[Mobilis::Base::RealizedNode]
+      def rack_nodes: () -> Array[untyped]
+      def prometheus_datasource?: () -> bool
+      def loki_datasource?: () -> bool
+      def datasource_uid: (Mobilis::Base::RealizedNode node, String suffix) -> String
+      def dashboard: (String uid, String title, Array[Hash[Symbol, untyped]] panels, Array[String] tags) -> Hash[Symbol, untyped]
+      def markdown_panel: (Integer id, String title, String markdown, Integer x, Integer y, Integer w, Integer h) -> Hash[Symbol, untyped]
+      def logs_panel: (Integer id, String title, String expr, Integer x, Integer y) -> Hash[Symbol, untyped]
+      def timeseries_panel: (Integer id, String title, String expr, Integer x, Integer y) -> Hash[Symbol, untyped]
     end
     class Localstack < Mobilis::Base::ServiceWriter
+      def write: () -> untyped
+      def write_main_tf: () -> untyped
     end
     class Loki < Mobilis::Base::ServiceWriter
+      def write: () -> untyped
+      def config: () -> Hash[String, untyped]
     end
     class OtelCollector < Mobilis::Base::ServiceWriter
+      def otel_collector: () -> Mobilis::AutoVivify
+      def write: () -> untyped
     end
     class Pgadmin < Mobilis::Base::ServiceWriter
+      def realized_node: () -> Mobilis::Realized::Pgadmin
+      def write: () -> untyped
+
+      private
+
+      def servers_json: () -> Hash[String, untyped]
+      def server_definition: (Mobilis::Realized::SQLDatabase database) -> Hash[String, untyped]
     end
     class PostgreSQL < Mobilis::Base::ServiceWriter
+      def realized_node: () -> Mobilis::Realized::PostgreSQL
+      def write: () -> untyped
+
+      private
+
+      def write_primary_script: () -> untyped
+      def write_replica_entrypoint: () -> untyped
+      def write_executable: (String path, String content) -> untyped
     end
     class Prometheus < Mobilis::Base::ServiceWriter
+      def datasources: () -> Mobilis::AutoVivify
+      def write: () -> untyped
+
+      private
+
+      def s3_storage_nodes: () -> Array[untyped]
     end
     class Rack < Mobilis::Base::ServiceWriter
+      def realized_node: () -> Mobilis::Realized::Rack
+      def write: () -> untyped
+
+      private
+
+      def write_project_localgems_dir: () -> untyped
+      def write_local_gems: () -> untyped
+      def write_model_files: () -> untyped
+      def write_otel_config: () -> untyped
+      def write_default_config_ru: () -> untyped
+      def write_gemfile: () -> untyped
+      def write_dockerfile: () -> untyped
+      def gem_models: () -> Array[untyped]
+      def local_gems: () -> Array[untyped]
+      def ruby_image: () -> String
+      def ruby_version: () -> String
     end
     class Rails < Mobilis::Base::ServiceWriter
+      def realized_node: () -> Mobilis::Realized::Rails
+      def write: () -> untyped
+      def rails_builder: () -> untyped
+      def normalize_rails_runtime: () -> untyped
+      def ruby_image: () -> String
+      def ruby_version: () -> String
+      def write_compose_file: () -> untyped
     end
     class S3Storage < Mobilis::Base::ServiceWriter
+      def realized_node: () -> Mobilis::Realized::S3Storage
+      def write: () -> untyped
+      def entrypoint: () -> String
+
+      private
+
+      def write_executable: (String path, String content) -> untyped
+      def shell_quote: (String value) -> String
     end
   end
 end

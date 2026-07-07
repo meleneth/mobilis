@@ -9,7 +9,6 @@ target :lib do
   ignore "lib/mobilis/manifest.rb"
   ignore "lib/mobilis/plugin/**/*"
   ignore "lib/mobilis/realized/**/*"
-  ignore "lib/mobilis/service_writer/**/*"
 
 
   library "fileutils"

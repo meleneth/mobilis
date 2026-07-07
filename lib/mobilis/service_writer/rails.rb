@@ -3,7 +3,7 @@ module Mobilis
     class Rails < Mobilis::Base::ServiceWriter
       def write
         Dir.chdir("..")
-        rails_builder.container_run(@realized_node.rails_new_command)
+        rails_builder.container_run(realized_node.rails_new_command)
         Dir.chdir(@realized_node.name)
         FileUtils.rm_rf(".git")
         normalize_rails_runtime
@@ -62,16 +62,16 @@ module Mobilis
       end
 
       def write_compose_file
-        service_details = {}
+        service_details = {} #: Hash[Symbol, untyped]
         service_details[:image] = "#{username}/#{@realized_node.name}"
         service_details[:build] = { context: "./#{realized_node.name}" }
-        service_details[:environment] = @realized_node.env_vars.map(&:docker_repr)
-        service = {}
+        service_details[:environment] = @realized_node.env_vars_for_compose_environment.map(&:compose_repr)
+        service = {} #: Hash[String, Hash[Symbol, untyped]]
         service[@realized_node.name] = service_details
         services = { services: service }
 
         directory_service.chdir_compose
-        File.write("#{realized_node.name}.yml", YAML.dump(Mobilis::YAML.deep_stringify_keys(services)))
+        File.write("#{realized_node.name}.yml", ::YAML.dump(Mobilis::YAML.deep_stringify_keys(services)))
         commit_all("Compose for #{realized_node.name}")
 
         #---
