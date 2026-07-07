@@ -6,9 +6,9 @@ module Mobilis
       def add: (Mobilis::Primitives::EmitVar env_var) -> Array[Mobilis::Primitives::EmitVar]
       def as_json: (*untyped args) -> Array[String]
       def to_json: (*untyped args) -> String
-      def envfile_vars: () { (Mobilis::Primitives::EmitVar item) -> untyped } -> untyped
+      def envfile_vars: () { (Mobilis::Primitives::EmitVar item) -> untyped } -> Array[Mobilis::Primitives::EmitVar]
                       | () -> Enumerator[Mobilis::Primitives::EmitVar, untyped]
-      def vars_for_compose: () { (Mobilis::Primitives::EmitVar item) -> untyped } -> untyped
+      def vars_for_compose: () { (Mobilis::Primitives::EmitVar item) -> untyped } -> Array[Mobilis::Primitives::EmitVar]
                            | () -> Enumerator[Mobilis::Primitives::EmitVar, untyped]
     end
 
@@ -29,10 +29,10 @@ module Mobilis
     end
 
     class DependsOn
-      attr_reader data: Hash[Symbol, untyped]
+      attr_reader data: Hash[Symbol, Mobilis::compose_depends_on_entry]
       def initialize: (?base: Mobilis::Compose::DependsOn?) -> void
-      def register: (Mobilis::Base::RealizedNode realized_node, ?force_skip_health_checks: bool) -> untyped
-      def as_json: (*untyped args) -> untyped
+      def register: (Mobilis::Base::RealizedNode realized_node, ?force_skip_health_checks: bool) -> Mobilis::compose_depends_on_entry
+      def as_json: (*untyped args) -> Hash[Symbol, Mobilis::compose_depends_on_entry]
       def to_json: (*untyped args) -> String
     end
   end

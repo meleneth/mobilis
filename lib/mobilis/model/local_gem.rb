@@ -47,11 +47,18 @@ module Mobilis
       end
 
       def self.from_h(hash)
+        # @type var path: String?
+        path = hash[:path]
+        # @type var require_name: String?
+        require_name = hash[:require_name]
+        # @type var files: Array[Mobilis::file_model_record]
+        files = hash[:files] || []
+
         new(
           hash[:name],
-          path: hash[:path],
-          require_name: hash[:require_name],
-          files: (hash[:files] || []).map { |file| Mobilis::Model::File.from_h(file) }
+          path: path,
+          require_name: require_name,
+          files: files.map { |file| Mobilis::Model::File.from_h(file) }
         )
       end
     end

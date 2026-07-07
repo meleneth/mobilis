@@ -12,7 +12,7 @@ module Mobilis
       def bundle_add_args: () -> Array[String]
       def gemfile_line: () -> String
       def to_h: () -> Mobilis::serialized_record
-      def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::RubyGem
+      def self.from_h: (Mobilis::ruby_gem_record hash) -> Mobilis::Model::RubyGem
     end
 
     class LocalGem
@@ -27,7 +27,7 @@ module Mobilis
       def root_path: () -> String
       def write_files: () -> Array[Mobilis::Model::File]
       def to_h: () -> Mobilis::serialized_record
-      def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::LocalGem
+      def self.from_h: (Mobilis::local_gem_record hash) -> Mobilis::Model::LocalGem
     end
 
     class File
@@ -37,7 +37,7 @@ module Mobilis
       def to_h: () -> Mobilis::serialized_record
       def write_file: () -> Integer
       def ppx_fields: (untyped dsl) -> untyped
-      def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::File
+      def self.from_h: (Mobilis::file_model_record hash) -> Mobilis::Model::File
     end
 
     class Script
@@ -46,7 +46,7 @@ module Mobilis
       def initialize: (String filename, String contents) -> void
       def to_h: () -> Mobilis::serialized_record
       def write_file: () -> Integer
-      def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::Script
+      def self.from_h: (Mobilis::script_record hash) -> Mobilis::Model::Script
     end
 
     class RunCommand
@@ -55,7 +55,7 @@ module Mobilis
       def initialize: (String command, String commit_message) -> void
       def to_h: () -> Mobilis::serialized_record
       def ppx_fields: (untyped dsl) -> untyped
-      def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::RunCommand
+      def self.from_h: (Mobilis::run_command_record hash) -> Mobilis::Model::RunCommand
     end
 
     class EnvVarAlias
@@ -64,7 +64,7 @@ module Mobilis
       def initialize: (String local_name, String service_name) -> void
       def to_h: () -> Mobilis::serialized_record
       def ppx_fields: (untyped dsl) -> untyped
-      def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::EnvVarAlias
+      def self.from_h: (Mobilis::env_var_alias_record hash) -> Mobilis::Model::EnvVarAlias
     end
 
     class LocalstackSNSSQS
@@ -73,7 +73,7 @@ module Mobilis
       def initialize: (String sns, String sqs) -> void
       def to_h: () -> Mobilis::serialized_record
       def ppx_fields: (untyped dsl) -> untyped
-      def self.from_h: (Hash[Symbol, untyped] hash) -> Mobilis::Model::LocalstackSNSSQS
+      def self.from_h: (Mobilis::localstack_sns_sqs_record hash) -> Mobilis::Model::LocalstackSNSSQS
     end
 
     module Rails

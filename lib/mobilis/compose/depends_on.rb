@@ -14,10 +14,12 @@ module Mobilis
         condition = realized_node.has_healthcheck? ? "service_healthy" : "service_started"
         condition = "service_started" if force_skip_health_checks
 
-        @data[realized_node.name.to_sym] = {
+        # @type var entry: Mobilis::compose_depends_on_entry
+        entry = {
           condition: condition,
           restart: realized_node.dependant_services_require_restart? || nil
         }.compact
+        @data[realized_node.name.to_sym] = entry
       end
 
       def as_json(*_args)

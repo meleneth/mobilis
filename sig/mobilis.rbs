@@ -15,6 +15,14 @@ module Mobilis
   type serialized_record = Hash[Symbol, serialized_value]
   type system_record = { name: String, meta_project_name: String, nodes: Array[serialized_record] }
   type node_ref_dependency = { name?: String, target?: Mobilis::Base::Node | Mobilis::Base::RealizedNode, force_skip_health_checks?: bool }
+  type compose_depends_on_entry = { condition: String, restart?: bool }
+  type ruby_gem_record = { type?: String, name: String, git?: String?, branch?: String?, group?: String?, path?: String?, require_name?: String? }
+  type local_gem_record = { type?: String, name: String, path?: String?, require_name?: String?, files?: Array[file_model_record] }
+  type file_model_record = { type?: String, path: String, content: String }
+  type script_record = { type?: String, filename: String, content: String }
+  type run_command_record = { type?: String, command: String, commit_message: String }
+  type env_var_alias_record = { type?: String, local_name: String, service_name: String }
+  type localstack_sns_sqs_record = { type?: String, sns: String, sqs: String }
 
   interface _ModelRecord
     def is_a?: (singleton(Object) klass) -> bool

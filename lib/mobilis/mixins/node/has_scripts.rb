@@ -6,21 +6,27 @@ module Mobilis
       # Mixin to add script support to Node
       module HasScripts
         def add_script(filename, contents)
-          models << Mobilis::Model::Script.new(filename, contents)
+          model = Mobilis::Model::Script.new(filename, contents)
+          models << model
+          model
         end
 
         def write_file(path, contents)
-          models << Mobilis::Model::File.new(path, contents)
+          model = Mobilis::Model::File.new(path, contents)
+          models << model
+          model
         end
 
         def add_gem(name, git: nil, branch: nil, group: nil, require_name: nil)
-          models << Mobilis::Model::RubyGem.new(
+          model = Mobilis::Model::RubyGem.new(
             name,
             git: git,
             branch: branch,
             group: group,
             require_name: require_name
           )
+          models << model
+          model
         end
       end
     end

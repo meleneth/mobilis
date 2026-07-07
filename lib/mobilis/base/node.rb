@@ -30,11 +30,13 @@ module Mobilis
       def run_command(command, commit_message)
         model = Mobilis::Model::RunCommand.new(command, commit_message)
         add_model(model)
+        model
       end
 
       def env_var_alias(local_name, service_name)
         model = Mobilis::Model::EnvVarAlias.new(local_name, service_name)
         add_model(model)
+        model
       end
 
       def to_h

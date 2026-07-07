@@ -10,18 +10,24 @@ module Mobilis
           # @type var dependency: Mobilis::node_ref_dependency
           dependency = { target: target_node, force_skip_health_checks: force_skip_health_checks }
           extra_depends_on << dependency
+          dependency
         end
         # rubocop:enable Naming/PredicateName
 
         def add_script(filename, contents)
-          models << Mobilis::Model::Script.new(filename, contents)
+          model = Mobilis::Model::Script.new(filename, contents)
+          models << model
+          model
         end
 
         # rubocop:disable Naming/PredicateName
         def has_connected_depends_on_class?(klass)
           extra_depends_on.each do |dep|
-            return dep[:target] if dep[:target].instance_of? klass
+            target = dep[:target]
+            return target if target.is_a?(Mobilis::Base::Node) && target.instance_of?(klass)
+            return target if target.is_a?(Mobilis::Base::RealizedNode) && target.instance_of?(klass)
           end
+          nil
         end
         # rubocop:enable Naming/PredicateName
       end

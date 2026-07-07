@@ -11,17 +11,17 @@ module Mobilis
 
       module HasScripts
         def models: () -> Array[Mobilis::_ModelRecord]
-        def add_script: (String filename, String contents) -> untyped
-        def write_file: (String path, String contents) -> untyped
-        def add_gem: (String name, ?git: String?, ?branch: String?, ?group: String?, ?require_name: String?) -> untyped
+        def add_script: (String filename, String contents) -> Mobilis::Model::Script
+        def write_file: (String path, String contents) -> Mobilis::Model::File
+        def add_gem: (String name, ?git: String?, ?branch: String?, ?group: String?, ?require_name: String?) -> Mobilis::Model::RubyGem
       end
 
       module HasExtraDependsOn
         def extra_depends_on: () -> Array[Mobilis::node_ref_dependency]
         def models: () -> Array[Mobilis::_ModelRecord]
-        def has_extra_depends_on: (Mobilis::Base::Node target_node, ?force_skip_health_checks: bool) -> untyped
-        def add_script: (String filename, String contents) -> untyped
-        def has_connected_depends_on_class?: (singleton(Object) klass) -> untyped
+        def has_extra_depends_on: (Mobilis::Base::Node target_node, ?force_skip_health_checks: bool) -> Mobilis::node_ref_dependency
+        def add_script: (String filename, String contents) -> Mobilis::Model::Script
+        def has_connected_depends_on_class?: (singleton(Object) klass) -> (Mobilis::Base::Node | Mobilis::Base::RealizedNode)?
       end
     end
 
@@ -64,7 +64,7 @@ module Mobilis
       end
 
       module HasDependsOn
-        def register_depends_on: (Mobilis::Base::RealizedNode realized_node, ?force_skip_health_checks: bool, ?override: bool) -> untyped
+        def register_depends_on: (Mobilis::Base::RealizedNode realized_node, ?force_skip_health_checks: bool, ?override: bool) -> Mobilis::compose_depends_on_entry
         def compose_depends_on: () -> Mobilis::Compose::DependsOn
         def compose_depends_on_overrides: () -> Mobilis::Compose::DependsOn
       end
@@ -104,7 +104,7 @@ module Mobilis
       module HasPorts
         def add_env_only_var: (String envfile_name, untyped value) -> Mobilis::Primitives::EmitVar
         def port_maps: () -> Array[Mobilis::Primitives::PortMap]
-        def register_external_port: (untyped internal_port_no, String env_var, String memo) -> Mobilis::Primitives::PortMap
+        def register_external_port: (Integer internal_port_no, String env_var, String memo) -> Mobilis::Primitives::PortMap
         def compose_ports: () -> Mobilis::Compose::Ports
         def compose_ports_override: () -> Mobilis::Compose::Ports
       end
