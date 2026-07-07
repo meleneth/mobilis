@@ -30,11 +30,26 @@ module Mobilis
     end
 
     class MySQL < Mobilis::Realized::SQLDatabase
+      INTERNAL_PORT_NO: Integer
+      attr_reader env_db_url: Mobilis::Primitives::EmitVar
       def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::MySQL config_node) -> void
+      def root_password: () -> String
+      def build_packages: () -> Array[String]
+      def runtime_packages: () -> Array[String]
+      def additional_gems: () -> Array[String]
+      def data_volume_env_var: () -> Mobilis::Primitives::EmitVar
+      def scheme: () -> String
+      def internal_port_no: () -> Integer
     end
 
     class Redis < Mobilis::Realized::SQLDatabase
+      INTERNAL_PORT_NO: Integer
+      attr_reader redis_url: Mobilis::Primitives::EmitVar
       def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::Redis config_node) -> void
+      def url: () -> String
+      def additional_gems: () -> Array[String]
+      def internal_port_no: () -> Integer
+      def ppx_fields: (untyped dsl) -> untyped
     end
 
     class Rails < Mobilis::Base::BuildForm
