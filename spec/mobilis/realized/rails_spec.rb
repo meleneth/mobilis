@@ -40,4 +40,22 @@ RSpec.describe Mobilis::Realized::Rails do
         } }
     )
   end
+
+  it "uses the project root build context only when it consumes a local gem" do
+    plain_rails = build(:rails_node, name: "plain")
+    local_gem_rails = build(:rails_node, name: "with-gem")
+    local_gem_rails.local_gem("shared-library")
+    system = build(:system, nodes: [plain_rails, local_gem_rails])
+    env = Mobilis::RealizedEnv.new(system, Mobilis::ExecutionEnvironment.new("test"))
+
+    expect(env.find_realized_node_by_name("plain").compose.clean_shrunk).to include(
+      build: { context: "./plain" }
+    )
+    expect(env.find_realized_node_by_name("with-gem").compose.clean_shrunk).to include(
+      build: {
+        context: "./",
+        dockerfile: "./with-gem/Dockerfile"
+      }
+    )
+  end
 end

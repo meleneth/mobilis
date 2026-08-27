@@ -16,6 +16,7 @@ module Mobilis
 
         @has_service_dir = true
         @has_data_volume = false
+        use_project_root_build_context if local_gems.any?
       end
 
       def after_all_nodes_realized
@@ -61,6 +62,10 @@ module Mobilis
         Mobilis::ServiceWriter::Rails
       end
 
+      def local_gems
+        config_node.local_gems
+      end
+
       def ppx_fields(dsl)
         dsl.instance_value "name", name
         dsl.instance_value "environment", environment
@@ -73,6 +78,13 @@ module Mobilis
         #          dsl.child_object "Extra depends_on #{realized_node.name}", realized_node
         #        end
         dsl.env_vars all_emit_vars
+      end
+
+      private
+
+      def use_project_root_build_context
+        set_compose_build_context("./")
+        compose[:build][:dockerfile] = "./#{name}/Dockerfile"
       end
     end
   end

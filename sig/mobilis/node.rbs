@@ -7,6 +7,8 @@ module Mobilis
       def add_gem: (String name, **untyped options) -> Mobilis::Model::RubyGem
       def local_gem: (String name, ?path: String?, ?require_name: String?) { (Mobilis::Model::LocalGem gem) -> untyped } -> Mobilis::Model::LocalGem
                    | (String name, ?path: String?, ?require_name: String?) -> Mobilis::Model::LocalGem
+      def local_gems: () -> Array[Mobilis::Model::LocalGem]
+      def use_local_gem: (Mobilis::Model::LocalGem gem) -> Mobilis::Model::LocalGem
     end
 
     class Rails < Mobilis::Node::Ruby

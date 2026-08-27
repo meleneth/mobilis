@@ -41,7 +41,7 @@ module Mobilis
       def oblivious_run_command: (String command) -> untyped
       def run_docker: (String cmd) -> untyped
       def build_rails_builder: () -> untyped
-      def container_run: (String command) -> untyped
+      def container_run: (String command, ?workdir: String?) -> untyped
       def getwd: () -> String
       def host_user_id: () -> Integer
       def host_group_id: () -> Integer
@@ -67,6 +67,7 @@ module Mobilis
     class RubyGems < Mobilis::Base::Plugin
       def hook_after_services_written: () -> untyped
       def rails_builder: () -> Mobilis::Plugin::RailsBuilder
+      def gem_dependencies: (Mobilis::Realized::Rails realized_node) -> Array[Mobilis::Model::RubyGem]
     end
     class RunCommands < Mobilis::Base::Plugin
       def hook_run_commands: () -> untyped
@@ -241,6 +242,8 @@ module Mobilis
       def normalize_rails_runtime: () -> untyped
       def ruby_image: () -> String
       def ruby_version: () -> String
+      def write_local_gems: () -> untyped
+      def local_gems?: () -> bool
       def write_compose_file: () -> untyped
     end
     class S3Storage < Mobilis::Base::ServiceWriter

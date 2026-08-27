@@ -6,6 +6,7 @@ module Mobilis
         rails_builder.container_run(realized_node.rails_new_command)
         Dir.chdir(@realized_node.name)
         FileUtils.rm_rf(".git")
+        write_local_gems
         normalize_rails_runtime
         @manifest.commit_all("add Rails project #{@realized_node.name}")
       end
@@ -20,6 +21,8 @@ module Mobilis
       def normalize_rails_runtime
         version = ruby_version
         image = ruby_image
+        has_local_gems = local_gems?
+        service_name = has_local_gems ? realized_node.name : ""
 
         File.write(".ruby-version", "ruby-#{version}\n")
 
@@ -34,6 +37,13 @@ module Mobilis
           end
           insert_before(/^COPY Gemfile Gemfile\.lock \.\//,
                         "RUN mkdir -p \"${BUNDLE_PATH}\" && chmod -R 777 \"${BUNDLE_PATH}\"")
+          next unless has_local_gems
+
+          replace_line(/^COPY Gemfile Gemfile\.lock \.\//) do
+            "COPY #{service_name}/Gemfile #{service_name}/Gemfile.lock ./"
+          end
+          insert_before(/^COPY #{Regexp.escape(service_name)}\/Gemfile /, "COPY localgems /localgems")
+          replace_line(/^COPY \. \.$/) { "COPY #{service_name}/ ." }
         end
 
         File.binwrite("bin/docker-entrypoint", <<~BASH)
@@ -62,6 +72,22 @@ module Mobilis
 
       def ruby_version
         ruby_image.split(":", 2).fetch(1).split("-", 2).first
+      end
+
+      def write_local_gems
+        return unless local_gems?
+
+        Dir.chdir("..") do
+          FileUtils.mkdir_p("localgems")
+          realized_node.local_gems.each(&:write_files)
+        end
+      end
+
+      def local_gems?
+        node = @realized_node
+        return false unless node.is_a?(Mobilis::Realized::Rails)
+
+        node.local_gems.any?
       end
 
       def write_compose_file

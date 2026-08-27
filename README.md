@@ -62,6 +62,7 @@ Then inspect or run the generated project under `generate/`.
 | `16_s3_storage.rb`                            | S3-compatible object storage using SeaweedFS.                                                                                                                                          |
 | `17_observable_s3_storage.rb`                 | SeaweedFS-backed S3 storage with conditional observability wiring, Prometheus scraping, and Grafana panels.                                                                            |
 | `18_mnbme_otel_system.rb`                     | Rack microservice game demo extracted from MNBME: local gem support, Rack Docker image support, replicated service instances, Redis game state, and OpenTelemetry/Grafana/Loki wiring. |
+| `19_two_rails_local_gem.rb`                   | Two Rails services consuming one generated local gem, including per-service Docker build-context handling.                                                                            |
 
 The most complete current smoke demos are `08_large_iam_system.rb` for Rails
 service composition and `18_mnbme_otel_system.rb` for Rack/local-gem/multi-

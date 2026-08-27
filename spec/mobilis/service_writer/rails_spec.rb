@@ -49,4 +49,60 @@ RSpec.describe Mobilis::ServiceWriter::Rails do
       end
     end
   end
+
+  it "writes a shared local gem and adapts the Dockerfile for the project-root context" do
+    first = build(:rails_node, name: "accounts")
+    shared_gem = first.local_gem("shared-library", require_name: "shared/library") do |gem|
+      gem.write_file("shared-library.gemspec", <<~RUBY)
+        Gem::Specification.new do |spec|
+          spec.name = "shared-library"
+          spec.version = "0.1.0"
+          spec.summary = "Shared application code"
+          spec.authors = ["Mobilis"]
+          spec.files = Dir["lib/**/*"]
+          spec.require_paths = ["lib"]
+        end
+      RUBY
+      gem.write_file("lib/shared/library.rb", "module Shared::Library; end\n")
+    end
+    second = build(:rails_node, name: "billing")
+    second.use_local_gem(shared_gem)
+    system = build(:system, nodes: [first, second])
+    manifest = build(:manifest, system: system, suppress_plugins: true)
+    realized_env = manifest.realized_env(:test)
+
+    Dir.mktmpdir do |dir|
+      %w[accounts billing].each do |service_name|
+        FileUtils.mkdir_p(File.join(dir, service_name, "bin"))
+        Dir.chdir(File.join(dir, service_name)) do
+          File.write("Gemfile", %(source "https://rubygems.org"\nruby "3.2.2"\n))
+          File.write("Gemfile.lock", "")
+          File.write("Dockerfile", <<~DOCKERFILE)
+            ARG RUBY_VERSION=3.2.2
+            FROM registry.docker.com/library/ruby:$RUBY_VERSION-slim as base
+            ENV BUNDLE_PATH="/usr/local/bundle"
+            COPY Gemfile Gemfile.lock ./
+            COPY . .
+          DOCKERFILE
+
+          realized_node = realized_env.find_realized_node_by_name(service_name)
+          writer = described_class.new(manifest, realized_env, realized_node)
+          writer.write_local_gems
+          writer.normalize_rails_runtime
+        end
+      end
+
+      expect(File.read(File.join(dir, "localgems/shared-library/lib/shared/library.rb"))).to eq(
+        "module Shared::Library; end\n"
+      )
+      %w[accounts billing].each do |service_name|
+        dockerfile = File.read(File.join(dir, service_name, "Dockerfile"))
+        expect(dockerfile).to include("COPY localgems /localgems")
+        expect(dockerfile).to include(
+          "COPY #{service_name}/Gemfile #{service_name}/Gemfile.lock ./"
+        )
+        expect(dockerfile).to include("COPY #{service_name}/ .")
+      end
+    end
+  end
 end

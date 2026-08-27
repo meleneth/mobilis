@@ -32,8 +32,9 @@ module Mobilis
         run_docker "build -t #{rails_builder_image} --build-arg USER_ID=#{host_user_id} --build-arg GROUP_ID=#{host_group_id} ."
       end
 
-      def container_run(command)
-        run_docker "run --rm -v #{getwd}:/usr/src/app -w /usr/src/app #{rails_builder_image} #{command}"
+      def container_run(command, workdir: nil)
+        container_workdir = ["/usr/src/app", workdir].compact.join("/")
+        run_docker "run --rm -v #{getwd}:/usr/src/app -w #{container_workdir} #{rails_builder_image} #{command}"
       end
 
       def getwd

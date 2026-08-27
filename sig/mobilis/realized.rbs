@@ -71,7 +71,12 @@ module Mobilis
       def exposed_port_no: () -> Integer
       def required_plugins: () -> Array[singleton(Mobilis::Base::Plugin)]
       def service_writer: () -> singleton(Mobilis::ServiceWriter::Rails)
+      def local_gems: () -> Array[Mobilis::Model::LocalGem]
       def ppx_fields: (untyped dsl) -> untyped
+
+      private
+
+      def use_project_root_build_context: () -> untyped
     end
 
     class Rack < Mobilis::Base::BuildForm
