@@ -20,8 +20,11 @@ module Mobilis
         return unless realized_node.config_node.rspec_enabled?
 
         directory_service.chdir_project(realized_node)
-        rails_builder.container_run("bundle add rspec-rails --group \"development,test\"")
-        rails_builder.container_run("/bin/bash -lc \"bundle install && bundle exec rails generate rspec:install\"")
+        rails_builder.container_run_for(realized_node, "bundle add rspec-rails --group \"development,test\"")
+        rails_builder.container_run_for(
+          realized_node,
+          "/bin/bash -lc \"bundle install && bundle exec rails generate rspec:install\""
+        )
         commit_all("#{realized_node.name} - rpsec install")
       end
 

@@ -15,6 +15,7 @@ module Mobilis
           each_model_of_type(klass) do |model|
             return true
           end
+          false
         end
 
         def add_model(model)

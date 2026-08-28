@@ -1,4 +1,12 @@
 RSpec.describe Mobilis::Node::Rails do
+  it "reports model presence accurately" do
+    node = build(:rails_node)
+
+    expect(node.has_model_class?(Mobilis::Model::Rails::GraphQL)).to be false
+    node.install_graphql!
+    expect(node.has_model_class?(Mobilis::Model::Rails::GraphQL)).to be true
+  end
+
   let(:rails_node) { build(:rails_node, id: "27b11f5e-0df1-49b9-8892-230d167233de") }
 
   describe "#use_api!" do

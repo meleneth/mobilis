@@ -14,15 +14,13 @@ RSpec.describe Mobilis::Plugin::RubyGems do
 
     allow(plugin).to receive(:rails_builder).and_return(builder)
     allow(plugin).to receive(:commit_all)
-    allow(plugin.directory_service).to receive(:chdir_generate)
-
-    expect(builder).to receive(:container_run).with(
-      "bundle add shared-library --path ../localgems/shared-library --require shared/library",
-      workdir: "accounts"
+    expect(builder).to receive(:container_run_for).with(
+      kind_of(Mobilis::Realized::Rails),
+      "bundle add shared-library --path ../localgems/shared-library --require shared/library"
     )
-    expect(builder).to receive(:container_run).with(
-      "bundle add shared-library --path ../localgems/shared-library --require shared/library",
-      workdir: "billing"
+    expect(builder).to receive(:container_run_for).with(
+      kind_of(Mobilis::Realized::Rails),
+      "bundle add shared-library --path ../localgems/shared-library --require shared/library"
     )
 
     plugin.hook_after_services_written

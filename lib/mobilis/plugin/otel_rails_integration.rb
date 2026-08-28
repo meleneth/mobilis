@@ -13,7 +13,10 @@ module Mobilis
 
       def hook_after_services_written
         directory_service.chdir_project(realized_node)
-        rails_builder.container_run("bundle add opentelemetry-sdk opentelemetry-instrumentation-all opentelemetry-exporter-otlp")
+        rails_builder.container_run_for(
+          realized_node,
+          "bundle add opentelemetry-sdk opentelemetry-instrumentation-all opentelemetry-exporter-otlp"
+        )
         write_instrumentation_rb
         write_opentelemetry_initializer
         write_structured_logging_initializer

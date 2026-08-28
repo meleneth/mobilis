@@ -23,7 +23,7 @@ module Mobilis
           rm tmp_install_graphql.sh
         HERE
 
-        rails_builder.container_run("/bin/bash tmp_install_graphql.sh")
+        rails_builder.container_run_for(realized_node, "/bin/bash tmp_install_graphql.sh")
 
         directory_service.chdir_generate
         commit_all("#{realized_node.name} - add and install GraphQL gem")

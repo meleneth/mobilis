@@ -37,6 +37,13 @@ module Mobilis
         run_docker "run --rm -v #{getwd}:/usr/src/app -w #{container_workdir} #{rails_builder_image} #{command}"
       end
 
+      def container_run_for(realized_node, command)
+        project_dir = directory_service.project_dir(realized_node)
+        Dir.chdir(File.dirname(project_dir)) do
+          container_run(command, workdir: realized_node.name)
+        end
+      end
+
       def getwd
         Dir.pwd
       end

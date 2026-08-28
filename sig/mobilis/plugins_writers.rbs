@@ -15,7 +15,7 @@ module Mobilis
 
       def write_provider_files: (Mobilis::Realized::Rails realized_node) -> untyped
       def write_consumer_files: (Mobilis::Realized::Rails realized_node) -> untyped
-      def install_active_resource_gem: () -> untyped
+      def install_active_resource_gem: (Mobilis::Realized::Rails realized_node) -> untyped
       def patch_provider_models: (Mobilis::Realized::Rails realized_node) -> untyped
       def api_resources: (Mobilis::Realized::Rails realized_node) -> Array[Mobilis::Model::Rails::Model]
       def connected_rails_providers: (Mobilis::Realized::Rails realized_node) -> Array[Mobilis::Realized::Rails]
@@ -42,6 +42,7 @@ module Mobilis
       def run_docker: (String cmd) -> untyped
       def build_rails_builder: () -> untyped
       def container_run: (String command, ?workdir: String?) -> untyped
+      def container_run_for: (Mobilis::Realized::Rails realized_node, String command) -> untyped
       def getwd: () -> String
       def host_user_id: () -> Integer
       def host_group_id: () -> Integer
@@ -243,6 +244,7 @@ module Mobilis
       def ruby_image: () -> String
       def ruby_version: () -> String
       def write_local_gems: () -> untyped
+      def write_root_context_dockerignore: (String service_name) -> untyped
       def local_gems?: () -> bool
       def write_compose_file: () -> untyped
     end

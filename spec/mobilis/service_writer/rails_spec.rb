@@ -22,7 +22,7 @@ RSpec.describe Mobilis::ServiceWriter::Rails do
         expect(File.read(".ruby-version")).to eq("ruby-4.0.2\n")
         expect(File.read("Gemfile")).to include(%(ruby "4.0.2"))
         dockerfile = File.read("Dockerfile")
-        expect(dockerfile).to include("FROM ruby:4.0.2-trixie as base")
+        expect(dockerfile).to include("FROM ruby:4.0.2-trixie AS base")
         expect(dockerfile).to include('RUN mkdir -p "${BUNDLE_PATH}" && chmod -R 777 "${BUNDLE_PATH}"')
         expect(File.read("bin/docker-entrypoint")).to include("for attempt in 1 2 3 4 5")
       end
@@ -79,10 +79,13 @@ RSpec.describe Mobilis::ServiceWriter::Rails do
           File.write("Gemfile.lock", "")
           File.write("Dockerfile", <<~DOCKERFILE)
             ARG RUBY_VERSION=3.2.2
-            FROM registry.docker.com/library/ruby:$RUBY_VERSION-slim as base
+            FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
             ENV BUNDLE_PATH="/usr/local/bundle"
+            COPY vendor/* ./vendor/
             COPY Gemfile Gemfile.lock ./
             COPY . .
+            FROM base
+            COPY --chown=rails:rails --from=build /rails /rails
           DOCKERFILE
 
           realized_node = realized_env.find_realized_node_by_name(service_name)
@@ -98,10 +101,20 @@ RSpec.describe Mobilis::ServiceWriter::Rails do
       %w[accounts billing].each do |service_name|
         dockerfile = File.read(File.join(dir, service_name, "Dockerfile"))
         expect(dockerfile).to include("COPY localgems /localgems")
+        expect(dockerfile).to include("COPY --from=build /localgems /localgems")
         expect(dockerfile).to include(
           "COPY #{service_name}/Gemfile #{service_name}/Gemfile.lock ./"
         )
         expect(dockerfile).to include("COPY #{service_name}/ .")
+        expect(dockerfile).to include("COPY #{service_name}/vendor/* ./vendor/")
+        expect(dockerfile).to include("FROM ruby:4.0.2-trixie AS base")
+        expect(File.read(File.join(dir, service_name, "Dockerfile.dockerignore"))).to eq(<<~IGNORE)
+          **
+          !#{service_name}/
+          !#{service_name}/**
+          !localgems/
+          !localgems/**
+        IGNORE
       end
     end
   end

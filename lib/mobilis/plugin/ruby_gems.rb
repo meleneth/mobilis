@@ -10,10 +10,9 @@ module Mobilis
           next unless realized_env.is_test?
 
           gem_dependencies(realized_node).each do |model|
-            directory_service.chdir_generate
-            rails_builder.container_run(
-              Shellwords.join(["bundle", "add", *model.bundle_add_args]),
-              workdir: realized_node.name
+            rails_builder.container_run_for(
+              realized_node,
+              Shellwords.join(["bundle", "add", *model.bundle_add_args])
             )
             commit_all "#{realized_node.name} add gem #{model.name}"
           end

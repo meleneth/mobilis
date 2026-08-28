@@ -32,19 +32,27 @@ module Mobilis
 
         Mobilis::FileLines.edit("Dockerfile") do
           replace_line(/^ARG RUBY_VERSION=/) { "ARG RUBY_VERSION=#{version}" }
-          replace_line(%r{^FROM registry\.docker\.com/library/ruby:\$RUBY_VERSION-slim as base$}) do
-            "FROM #{image} as base"
+          replace_line(%r{^FROM (?:registry\.docker\.com/|docker\.io/)?library/ruby:\$RUBY_VERSION-slim AS base$}i) do
+            "FROM #{image} AS base"
           end
-          insert_before(/^COPY Gemfile Gemfile\.lock \.\//,
-                        "RUN mkdir -p \"${BUNDLE_PATH}\" && chmod -R 777 \"${BUNDLE_PATH}\"")
+          insert_before(
+            /^COPY Gemfile Gemfile\.lock \.\//,
+            "RUN mkdir -p \"${BUNDLE_PATH}\" && chmod -R 777 \"${BUNDLE_PATH}\""
+          )
           next unless has_local_gems
 
           replace_line(/^COPY Gemfile Gemfile\.lock \.\//) do
             "COPY #{service_name}/Gemfile #{service_name}/Gemfile.lock ./"
           end
           insert_before(/^COPY #{Regexp.escape(service_name)}\/Gemfile /, "COPY localgems /localgems")
+          insert_before(/^COPY .*--from=build /, "COPY --from=build /localgems /localgems")
+          replace_line(/^COPY vendor\/\* \.\/vendor\/$/) do
+            "COPY #{service_name}/vendor/* ./vendor/"
+          end
           replace_line(/^COPY \. \.$/) { "COPY #{service_name}/ ." }
         end
+
+        write_root_context_dockerignore(service_name) if has_local_gems
 
         File.binwrite("bin/docker-entrypoint", <<~BASH)
           #!/bin/bash -e
@@ -81,6 +89,16 @@ module Mobilis
           FileUtils.mkdir_p("localgems")
           realized_node.local_gems.each(&:write_files)
         end
+      end
+
+      def write_root_context_dockerignore(service_name)
+        File.write("Dockerfile.dockerignore", <<~IGNORE)
+          **
+          !#{service_name}/
+          !#{service_name}/**
+          !localgems/
+          !localgems/**
+        IGNORE
       end
 
       def local_gems?

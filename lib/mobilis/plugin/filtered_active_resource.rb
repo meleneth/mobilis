@@ -58,17 +58,17 @@ module Mobilis
             wrote = true
           end
         end
-        install_active_resource_gem if wrote
+        install_active_resource_gem(realized_node) if wrote
         directory_service.chdir_generate
         commit_all("#{realized_node.name} filtered ActiveResource clients") if wrote
         consumer_files_written[realized_node.name] = true if wrote
       end
 
-      def install_active_resource_gem
+      def install_active_resource_gem(realized_node)
         rails_builder = @manifest.plugin_for(Mobilis::Plugin::RailsBuilder)
         raise "RailsBuilder plugin is required to install ActiveResource" unless rails_builder.is_a?(Mobilis::Plugin::RailsBuilder)
 
-        rails_builder.container_run("bundle add activeresource --require active_resource")
+        rails_builder.container_run_for(realized_node, "bundle add activeresource --require active_resource")
       end
 
       def patch_provider_models(realized_node)
