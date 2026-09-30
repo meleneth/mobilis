@@ -100,8 +100,8 @@ RSpec.describe Mobilis::ServiceWriter::Rails do
       )
       %w[accounts billing].each do |service_name|
         dockerfile = File.read(File.join(dir, service_name, "Dockerfile"))
-        expect(dockerfile).to include("COPY localgems /localgems")
-        expect(dockerfile).to include("COPY --from=build /localgems /localgems")
+        expect(dockerfile).to include("COPY localgems/shared-library /localgems/shared-library")
+        expect(dockerfile).to include("COPY --from=build /localgems/shared-library /localgems/shared-library")
         expect(dockerfile).to include(
           "COPY #{service_name}/Gemfile #{service_name}/Gemfile.lock ./"
         )
@@ -113,8 +113,49 @@ RSpec.describe Mobilis::ServiceWriter::Rails do
           !#{service_name}/
           !#{service_name}/**
           !localgems/
-          !localgems/**
+          !localgems/shared-library/
+          !localgems/shared-library/**
         IGNORE
+      end
+    end
+  end
+
+  it "copies only consumed gems at their declared paths into both Docker stages" do
+    node = build(:rails_node, name: "accounts")
+    node.local_gem("authorization-context", path: "../gems/authorization-context")
+    node.local_gem("shared", path: "../vendor/gems/shared")
+    manifest = build(:manifest, system: build(:system, nodes: [node]), suppress_plugins: true)
+    env = manifest.realized_env(:test)
+    writer = described_class.new(manifest, env, env.find_realized_node_by_name("accounts"))
+
+    Dir.mktmpdir do |dir|
+      FileUtils.mkdir_p("#{dir}/accounts/bin")
+      Dir.chdir("#{dir}/accounts") do
+        File.write("Gemfile", "")
+        File.write("Dockerfile", <<~DOCKERFILE)
+          FROM ruby AS base
+          FROM base AS build
+          COPY Gemfile Gemfile.lock ./
+          RUN bundle install
+          COPY . .
+          FROM base
+          COPY --from=build /rails /rails
+        DOCKERFILE
+        writer.write_local_gems
+        writer.normalize_rails_runtime
+
+        dockerfile = File.read("Dockerfile")
+        ignore = File.read("Dockerfile.dockerignore")
+        %w[gems/authorization-context vendor/gems/shared].each do |path|
+          expect(File).to exist("../#{path}/Gemfile")
+          expect(dockerfile).to include("COPY #{path} /#{path}")
+          expect(dockerfile).to include("COPY --from=build /#{path} /#{path}")
+          expect(dockerfile.index("COPY #{path}")).to be < dockerfile.index("RUN bundle install")
+          expect(ignore).to include("!#{path}/\n!#{path}/**\n")
+        end
+        expect(ignore).to include("!vendor/\n!vendor/gems/\n")
+        expect(ignore).not_to include("!gems/**", "!vendor/**")
+        expect(dockerfile).not_to include("localgems")
       end
     end
   end

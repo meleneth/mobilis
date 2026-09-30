@@ -25,7 +25,8 @@ module Mobilis
       def write_file: (String path, String content) -> self
       def gem_dependency: () -> Mobilis::Model::RubyGem
       def root_path: () -> String
-      def write_files: () -> Array[Mobilis::Model::File]
+      def write_files: () -> Hash[String, String]
+      def scaffold_files: () -> Hash[String, String]
       def to_h: () -> Mobilis::serialized_record
       def self.from_h: (Mobilis::local_gem_record hash) -> Mobilis::Model::LocalGem
     end

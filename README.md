@@ -70,6 +70,62 @@ instance behavior.
 
 ## Generated Project
 
+### Shared local gems
+
+Rails and Rack services can declare a buildable local gem without supplying any
+files, then share it with other services:
+
+```ruby
+shared = nil
+rails("accounts") do |service|
+  shared = service.local_gem("shared-library", path: "../gems/shared-library")
+end
+rails("billing") { |service| service.use_local_gem(shared) }
+```
+
+The default path is `../localgems/<name>`. Custom paths must start with `../`
+and point inside the generated project, such as `../gems/shared-library` or
+`../vendor/gems/shared-library`. Both service writers copy the consumed gem
+directories into the image at the matching paths. Rails includes them in both
+build and runtime stages and in its Docker build context allowlist.
+
+Each gem gets a gemspec (version `0.1.0`), a Ruby entrypoint containing a module
+and `VERSION`, a Gemfile with RSpec, and a passing load test. The entrypoint is
+`lib/<name>.rb`, or `lib/<require_name>.rb` when `require_name:` is supplied.
+From the generated gem directory, run `bundle install`, `bundle exec rspec`,
+or `gem build <name>.gemspec`.
+
+Supply implementation and tests during generation with `write_file`; supplied
+files replace the corresponding defaults. Omitted files keep their defaults:
+
+```ruby
+service.local_gem("shared-library", path: "../gems/shared-library",
+                  require_name: "shared/library") do |gem|
+  gem.write_file("lib/shared/library.rb", <<~RUBY)
+    module Shared
+      module Library
+        def self.greeting = "Hello"
+      end
+    end
+  RUBY
+  gem.write_file("spec/local_gem_spec.rb", <<~RUBY)
+    require "spec_helper"
+    require "shared/library"
+
+    RSpec.describe Shared::Library do
+      it("greets") { expect(described_class.greeting).to eq("Hello") }
+    end
+  RUBY
+end
+```
+
+To declare runtime dependencies or different metadata, supply
+`<name>.gemspec` too. `write_file` also accepts `File.read(...)` to include existing
+source files at generation time. Gem contents are serialized with the system configuration.
+Local gem source is baked into service images; rebuild the image after editing it.
+
+### Project layout
+
 Each demo builds a codebase in the `generate/` directory.
 
 The generated project includes its own `README.md`, Compose files,

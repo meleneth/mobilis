@@ -6,7 +6,6 @@ module Mobilis
   module ServiceWriter
     class Rack < Mobilis::Base::ServiceWriter
       def write
-        write_project_localgems_dir
         write_local_gems
         write_model_files
         write_otel_config if realized_node.otel_enabled?
@@ -16,10 +15,6 @@ module Mobilis
       end
 
       private
-
-      def write_project_localgems_dir
-        FileUtils.mkdir_p("../localgems")
-      end
 
       def write_local_gems
         Dir.chdir("..") do
@@ -96,11 +91,12 @@ module Mobilis
       end
 
       def write_dockerfile
+        gem_copies = local_gems.map(&:root_path).uniq.map { |path| "COPY #{path} /#{path}" }
         File.write("Dockerfile", <<~DOCKERFILE)
           FROM #{Mobilis::ContainerVersions::RUBY}
 
           WORKDIR /app
-          COPY localgems /localgems
+          #{gem_copies.join("\n")}
           COPY #{realized_node.name}/Gemfile /app/Gemfile
           RUN bundle install
           COPY #{realized_node.name}/ /app

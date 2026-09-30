@@ -224,7 +224,6 @@ module Mobilis
 
       private
 
-      def write_project_localgems_dir: () -> untyped
       def write_local_gems: () -> untyped
       def write_model_files: () -> untyped
       def write_otel_config: () -> untyped

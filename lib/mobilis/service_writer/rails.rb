@@ -23,6 +23,8 @@ module Mobilis
         image = ruby_image
         has_local_gems = local_gems?
         service_name = has_local_gems ? realized_node.name : ""
+        gem_paths = [] #: Array[String]
+        gem_paths = realized_node.local_gems.map(&:root_path).uniq if has_local_gems
 
         File.write(".ruby-version", "ruby-#{version}\n")
 
@@ -44,8 +46,10 @@ module Mobilis
           replace_line(/^COPY Gemfile Gemfile\.lock \.\//) do
             "COPY #{service_name}/Gemfile #{service_name}/Gemfile.lock ./"
           end
-          insert_before(/^COPY #{Regexp.escape(service_name)}\/Gemfile /, "COPY localgems /localgems")
-          insert_before(/^COPY .*--from=build /, "COPY --from=build /localgems /localgems")
+          insert_before(/^COPY #{Regexp.escape(service_name)}\/Gemfile /,
+                        *gem_paths.map { |path| "COPY #{path} /#{path}" })
+          insert_before(/^COPY .*--from=build /,
+                        *gem_paths.map { |path| "COPY --from=build /#{path} /#{path}" })
           replace_line(/^COPY vendor\/\* \.\/vendor\/$/) do
             "COPY #{service_name}/vendor/* ./vendor/"
           end
@@ -86,19 +90,18 @@ module Mobilis
         return unless local_gems?
 
         Dir.chdir("..") do
-          FileUtils.mkdir_p("localgems")
           realized_node.local_gems.each(&:write_files)
         end
       end
 
       def write_root_context_dockerignore(service_name)
-        File.write("Dockerfile.dockerignore", <<~IGNORE)
-          **
-          !#{service_name}/
-          !#{service_name}/**
-          !localgems/
-          !localgems/**
-        IGNORE
+        lines = ["**", "!#{service_name}/", "!#{service_name}/**"]
+        realized_node.local_gems.each do |gem|
+          parts = gem.root_path.split("/")
+          parts.length.times { |index| lines << "!#{parts.first(index + 1).join("/")}/" }
+          lines << "!#{gem.root_path}/**"
+        end
+        File.write("Dockerfile.dockerignore", "#{lines.uniq.join("\n")}\n")
       end
 
       def local_gems?

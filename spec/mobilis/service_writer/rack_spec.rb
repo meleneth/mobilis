@@ -50,4 +50,30 @@ RSpec.describe Mobilis::ServiceWriter::Rack do
       expect(File.read("#{dir}/gameservice/Dockerfile")).to include("-r./config/otel")
     end
   end
+
+  it "copies gems from custom paths before installing the service bundle" do
+    rack_node.local_gem("shared", path: "../gems/shared")
+    Dir.mktmpdir do |dir|
+      FileUtils.mkdir_p("#{dir}/gameservice")
+      Dir.chdir("#{dir}/gameservice") { writer.write }
+
+      dockerfile = File.read("#{dir}/gameservice/Dockerfile")
+      expect(dockerfile).to include("COPY gems/shared /gems/shared")
+      expect(dockerfile).to include("COPY localgems/mel-mnbme /localgems/mel-mnbme")
+      expect(dockerfile.index("COPY gems/shared")).to be < dockerfile.index("RUN bundle install")
+      expect(File.read("#{dir}/gameservice/Gemfile")).to include('gem "shared", path: "../gems/shared"')
+      expect(File).to exist("#{dir}/gems/shared/shared.gemspec")
+    end
+  end
+
+  it "does not require a localgems directory when no local gems are declared" do
+    rack_node.models.clear
+    Dir.mktmpdir do |dir|
+      FileUtils.mkdir_p("#{dir}/gameservice")
+      Dir.chdir("#{dir}/gameservice") { writer.write }
+
+      expect(File.read("#{dir}/gameservice/Dockerfile")).not_to include("COPY localgems")
+      expect(File).not_to exist("#{dir}/localgems")
+    end
+  end
 end
