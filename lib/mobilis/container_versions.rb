@@ -49,6 +49,7 @@ module Mobilis
     OPENSEARCH    = "opensearchproject/opensearch:2.12.0"
 
     # ─── Proxies / HTTP ────────────────────────────────────────
+    ENVOY       = "envoyproxy/envoy:v1.35.3"
     CADDY       = "caddy:2.7.6"
     NGINX       = "nginx:1.27.5-trixie"
     TRAEFIK     = "traefik:v2.10"

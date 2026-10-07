@@ -1,5 +1,6 @@
 module Mobilis
   module ContainerVersions
+    ENVOY: String
   end
 
   module Node
@@ -15,6 +16,10 @@ module Mobilis
       def initialize: (String name, ?port: Integer, **untyped args) -> void
     end
 
+    class Envoy < Mobilis::Base::Node
+      attr_reader port: Integer
+      def initialize: (String name, ?port: Integer, **untyped args) -> void
+    end
   end
 
   module Model
@@ -35,6 +40,8 @@ module Mobilis
     class DSLContext
       def fastapi: (String name, ?port: Integer) ?{ (Mobilis::Node::FastAPI) -> untyped } -> Mobilis::Node::FastAPI
       def go_http: (String name, ?port: Integer) ?{ (Mobilis::Node::GoHTTP) -> untyped } -> Mobilis::Node::GoHTTP
+      def envoy: (String name, ?port: Integer) ?{ (Mobilis::Node::Envoy) -> untyped } -> Mobilis::Node::Envoy
+      def route: (from: String | Mobilis::Base::Node, to: String | Mobilis::Base::Node, ?candidate: String | Mobilis::Base::Node | nil, ?mirror_percent: Integer, ?candidate_percent: Integer) -> Mobilis::Base::Node
       private
       def add_http_service: (untyped klass, String name, Integer port) ?{ (untyped) -> untyped } -> untyped
     end
@@ -59,6 +66,14 @@ module Mobilis
       def config_node: () -> Mobilis::Node::GoHTTP
       def service_writer: () -> singleton(Mobilis::ServiceWriter::GoHTTP)
     end
+    class Envoy < Mobilis::Base::ImageForm
+      attr_reader collector: Mobilis::Realized::OtelCollector?
+      attr_reader routes: Array[Hash[Symbol, untyped]]
+      def initialize: (Mobilis::RealizedEnv env, Mobilis::Node::Envoy node) -> void
+      def exposed_port_no: () -> Integer
+      def after_all_nodes_realized: () -> untyped
+      def service_writer: () -> singleton(Mobilis::ServiceWriter::Envoy)
+    end
   end
 
   module ServiceWriter
@@ -80,6 +95,14 @@ module Mobilis
       def write_main: () -> untyped
       def write_app: () -> untyped
       def write_telemetry: () -> untyped
+    end
+    class Envoy < Mobilis::Base::ServiceWriter
+      def realized_node: () -> Mobilis::Realized::Envoy
+      def write: () -> untyped
+      def configuration: () -> Hash[Symbol, untyped]
+      private
+      def address: (String host, Integer port) -> Hash[Symbol, untyped]
+      def cluster: (String name, String host, Integer port, ?http2: bool) -> Hash[Symbol, untyped]
     end
   end
 end

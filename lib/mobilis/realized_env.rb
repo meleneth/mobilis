@@ -118,6 +118,7 @@ module Mobilis
       case config_node
       when Mobilis::Node::FastAPI then Mobilis::Realized::FastAPI.new(self, config_node)
       when Mobilis::Node::GoHTTP then Mobilis::Realized::GoHTTP.new(self, config_node)
+      when Mobilis::Node::Envoy then Mobilis::Realized::Envoy.new(self, config_node)
       when Mobilis::Node::Localstack then Mobilis::Realized::Localstack.new(self, config_node)
       when Mobilis::Node::PostgreSQL then Mobilis::Realized::PostgreSQL.new(self, config_node)
       when Mobilis::Node::Pgadmin then Mobilis::Realized::Pgadmin.new(self, config_node)

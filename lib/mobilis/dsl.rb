@@ -166,6 +166,35 @@ module Mobilis
         add_http_service(Mobilis::Node::GoHTTP, name, port, &block)
       end
 
+      def envoy(name, port: 8080, &block)
+        add_http_service(Mobilis::Node::Envoy, name, port, &block)
+      end
+
+      # One default HTTP route. Both values are independent percentages.
+      def route(from:, to:, candidate: nil, mirror_percent: 0, candidate_percent: 0)
+        [mirror_percent, candidate_percent].each do |percent|
+          unless percent.is_a?(Integer) && (0..100).cover?(percent)
+            raise ArgumentError, "Routing percentages must be integers from 0 to 100"
+          end
+        end
+        if !candidate && (mirror_percent != 0 || candidate_percent != 0)
+          raise ArgumentError, "A candidate is required for mirroring or splitting"
+        end
+        source = from.is_a?(String) ? named(from) : from
+        targets = [to, candidate].compact.map { |target| target.is_a?(String) ? named(target) : target }
+        raise ArgumentError, "Route backends must be distinct" if targets.uniq.length != targets.length
+        raise ArgumentError, "Only one default route is supported" if source.extra_depends_on.any? { |dep| dep[:http_route] }
+
+        targets.each_with_index do |target, index|
+          edge = source.has_extra_depends_on(target)
+          edge[:http_route] = {
+            weight: index.zero? ? 100 - candidate_percent : candidate_percent,
+            mirror_percent: index.zero? ? 0 : mirror_percent
+          }
+        end
+        source
+      end
+
       def add_http_service(klass, name, port, &block)
         node = klass.new(name, port: port)
         system << node
