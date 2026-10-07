@@ -162,6 +162,10 @@ module Mobilis
         add_http_service(Mobilis::Node::FastAPI, name, port, &block)
       end
 
+      def go_http(name, port: 8080, &block)
+        add_http_service(Mobilis::Node::GoHTTP, name, port, &block)
+      end
+
       def add_http_service(klass, name, port, &block)
         node = klass.new(name, port: port)
         system << node
