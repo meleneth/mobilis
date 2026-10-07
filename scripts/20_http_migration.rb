@@ -14,7 +14,8 @@
 #   - seed/exercise/verify/migration operations
 #   - trace, effect, and bounded SQL-semantic verification
 #
-# Run this script once; the generated project operates independently of Mobilis.
+# Run this script once to generate the project; the resulting system
+# builds, runs, tests, and operates independently of Mobilis.
 
 # or just go look at https://github.com/meleneth/strangler-fig-demo
 
