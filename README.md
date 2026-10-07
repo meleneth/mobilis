@@ -65,7 +65,7 @@ Then inspect or run the generated project under `generate/`.
 | `19_two_rails_local_gem.rb`                   | Two Rails services consuming one generated local gem, including per-service Docker build-context handling.                                                                            |
 | `20_http_migration.rb` | FastAPI/SQLAlchemy and Go/pgx behind Envoy, connection-derived tracing, mirroring and progressive traffic splitting. |
 
-See the [HTTP migration demo](examples/http_migration/README.md) for the new DSL, package layout, safe artifact rendering and runtime verification.
+See the [HTTP migration demo](scripts/http_migration/README.md) for the new DSL, package layout, running the demo and runtime verification.
 
 The most complete current smoke demos are `08_large_iam_system.rb` for Rails
 service composition and `18_mnbme_otel_system.rb` for Rack/local-gem/multi-

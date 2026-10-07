@@ -10,7 +10,7 @@ Config nodes hold intent, realized nodes hold Compose/env state, and writers emi
 Add three archetypes, SQLAlchemy models in the existing model collection, and default HTTP routing metadata on dependency edges. Keep weights and mirroring independent. Resolve database and telemetry providers from edges; render bootstrap with no topology constants. Preserve legacy serialized name-only dependencies while emitting metadata-bearing edges. Use HTTPX and net/http for outgoing instrumentation, SQLAlchemy and otelpgx for one database instrumentation layer.
 
 ## Test strategy
-Test graph round trips, invalid/ambiguous topology, structural files and Compose, then build/import generated Python and compile Go. Validate Envoy with its own config validator. Run all RSpec tests. Render the demo into a temporary directory without invoking materialize.
+Test graph round trips, invalid/ambiguous topology, structural files and Compose, then build/import generated Python and compile Go. Validate Envoy with its own config validator. Run all RSpec tests. Load the demo with materialization stubbed in tests, then exercise its normal service writers in temporary directories.
 
 ## Limits and future decisions
 One default proxy route; integer percentages; one Postgres and collector per application; synchronous SQLAlchemy. No schema migration generator, generic ORM, service mesh, TLS policy or Kubernetes work. Before another deployment renderer, review whether HTTP route grouping and listener exposure need explicit generic concepts.

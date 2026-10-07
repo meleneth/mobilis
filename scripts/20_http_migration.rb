@@ -1,39 +1,85 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require_relative "../examples/http_migration/system"
+require "mobilis"
 
-system = HTTPMigrationDemo.system(
-  mirror_percent: Integer(ENV.fetch("MIRROR_PERCENT", "100")),
-  candidate_percent: Integer(ENV.fetch("CANDIDATE_PERCENT", "0"))
-)
+mirror_percent = Integer(ENV.fetch("MIRROR_PERCENT", "100"))
+candidate_percent = Integer(ENV.fetch("CANDIDATE_PERCENT", "0"))
 
-if ARGV.first == "--render"
-  # Safe artifact-only demo: uses normal writers/Compose emitters; no materialize,
-  # deletion, git initialization, image build or running containers.
-  require "fileutils"
-  root = File.expand_path(ARGV.fetch(1))
-  FileUtils.mkdir_p(root)
-  manifest = Mobilis::Manifest.new(system)
-  env = manifest.realized_env(:test)
-  Dir.chdir(root) do
-    env.each_node do |node|
-      if node.has_service_dir
-        FileUtils.mkdir_p(node.name)
-        Dir.chdir(node.name) { node.service_writer.new(manifest, env, node).write }
-      end
-    end
-    manifest.realized_envs.each do |realized_env|
-      services = realized_env.realized_nodes.each_with_object({}) do |node, result|
-        result.merge!(node.service_wrapped_compose[:services])
-      end
-      Mobilis::YAMLWriter.write_yaml("#{realized_env}-compose.yml", {name: "mobilis-http-migration-#{realized_env}", services: services})
-      vars = realized_env.all_envfile_vars.to_h { |var| [var.envfile_name, var.value] }
-      File.write("#{realized_env}.env", vars.sort.map { |key, value| "#{key}=#{value}" }.join("\n") + "\n")
-    end
-    File.write("mobilis-system.json", system.to_json)
+Mobilis::DSL.generate("http-migration") do
+  db = postgres("store")
+  traces = otel_collector("telemetry")
+  jaeger = jaeger("trace-viewer")
+  connect(from: traces, to: jaeger)
+
+  legacy = fastapi("legacy")
+  legacy.add_sqlalchemy_model("Item", table: "items") do |model|
+    model.column("id", "Integer", python_type: "int", primary_key: true)
+    model.column("name", "String(80)", python_type: "str", unique: true)
   end
-  puts root
-else
-  Mobilis::Manifest.new(system).materialize
+  legacy.add_model(Mobilis::Model::File.new("src/service_legacy/routes.py", <<~PYTHON))
+    from sqlalchemy import select
+    from .database import Session
+    from .models import Item
+
+
+    def register(app):
+        @app.get("/items")
+        def items():
+            with Session() as session:
+                return [{"id": item.id, "name": item.name}
+                        for item in session.scalars(select(Item).order_by(Item.id))]
+  PYTHON
+
+  candidate = go_http("candidate")
+  candidate.add_model(Mobilis::Model::File.new("internal/app/routes.go", <<~GO))
+    package app
+
+    import (
+        "encoding/json"
+        "log"
+        "net/http"
+    )
+
+    func register(mux *http.ServeMux, deps Dependencies) {
+        mux.HandleFunc("GET /items", func(w http.ResponseWriter, r *http.Request) {
+            rows, err := deps.DB.Query(r.Context(), "SELECT id, name FROM items ORDER BY id")
+            if err != nil {
+                log.Printf("query items: %v", err)
+                http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+                return
+            }
+            defer rows.Close()
+            type item struct {
+                ID int `json:"id"`
+                Name string `json:"name"`
+            }
+            items := make([]item, 0)
+            for rows.Next() {
+                var value item
+                if err := rows.Scan(&value.ID, &value.Name); err != nil {
+                    log.Printf("scan item: %v", err)
+                    http.Error(w, "database error", http.StatusInternalServerError)
+                    return
+                }
+                items = append(items, value)
+            }
+            if err := rows.Err(); err != nil {
+                log.Printf("read items: %v", err)
+                http.Error(w, "database error", http.StatusInternalServerError)
+                return
+            }
+            w.Header().Set("Content-Type", "application/json")
+            if err := json.NewEncoder(w).Encode(items); err != nil { log.Printf("write response: %v", err) }
+        })
+    }
+  GO
+  gateway = envoy("gateway")
+  [legacy, candidate].each do |service|
+    connect(from: service, to: db)
+    connect(from: service, to: traces)
+  end
+  connect(from: gateway, to: traces)
+  route(from: gateway, to: legacy, candidate: candidate,
+    mirror_percent: mirror_percent, candidate_percent: candidate_percent)
 end
