@@ -1,22 +1,69 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"regexp"
 
-	"errors"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type item struct {
 	ID   int32  `json:"id"`
 	Name string `json:"name"`
+}
+
+// One semantic effect is computed before the commit decision, and supplies both
+// the database values and telemetry. No separate shadow business logic exists.
+type itemEffect struct {
+	Operation string `json:"operation"`
+	Table     string `json:"table"`
+	Values    item   `json:"values"`
+}
+
+func determineEffect(value item) itemEffect {
+	return itemEffect{Operation: "insert", Table: "items", Values: value}
+}
+
+// The reserved header is trusted only behind the generated gateway: backend
+// HTTP ports are unpublished, and ingress strips caller copies before routing.
+func isShadowRequest(r *http.Request) bool {
+	values := r.Header.Values("X-Mobilis-Shadow")
+	return len(values) == 1 && values[0] == "true"
+}
+
+func recordRequestContext(r *http.Request) bool {
+	shadow := isShadowRequest(r)
+	trace.SpanFromContext(r.Context()).SetAttributes(attribute.Bool("demo.request.shadow", shadow))
+	return shadow
+}
+
+// This is the only divergence: a shadow request skips the effect-commit boundary.
+func commitItem(ctx context.Context, db *pgxpool.Pool, effect itemEffect, shadow bool) (bool, error) {
+	if shadow {
+		return false, nil
+	}
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	_, err = tx.Exec(ctx, "SET LOCAL application_name = 'candidate'")
+	if err == nil {
+		_, err = tx.Exec(ctx, "INSERT INTO items (id, name) VALUES ($1, $2)", effect.Values.ID, effect.Values.Name)
+	}
+	if err == nil {
+		err = tx.Commit(ctx)
+	}
+	return err == nil, err
 }
 
 func reply(w http.ResponseWriter, status int, value any) {
@@ -30,6 +77,7 @@ func reply(w http.ResponseWriter, status int, value any) {
 
 func register(mux *http.ServeMux, deps Dependencies) {
 	mux.HandleFunc("GET /items", func(w http.ResponseWriter, r *http.Request) {
+		recordRequestContext(r)
 		rows, err := deps.DB.Query(r.Context(), "SELECT id, name FROM items ORDER BY id")
 		if err != nil {
 			reply(w, 503, map[string]string{"error": "database unavailable"})
@@ -52,6 +100,7 @@ func register(mux *http.ServeMux, deps Dependencies) {
 		reply(w, 200, items)
 	})
 	mux.HandleFunc("POST /items", func(w http.ResponseWriter, r *http.Request) {
+		shadow := recordRequestContext(r)
 		// Decode the exact field set and types, without coercion or unknown fields.
 		var fields map[string]json.RawMessage
 		decoder := json.NewDecoder(r.Body)
@@ -66,39 +115,27 @@ func register(mux *http.ServeMux, deps Dependencies) {
 			reply(w, 400, map[string]string{"error": "invalid item"})
 			return
 		}
-		effect, _ := json.Marshal(map[string]any{"operation": "insert", "table": "items", "values": value})
+		effect := determineEffect(value)
+		encodedEffect, _ := json.Marshal(effect)
 		ctx, span := otel.Tracer("items").Start(r.Context(), "items.write")
 		defer span.End()
-		mode := "shadow"
-		if os.Getenv("SHADOW_WRITES") != "true" {
-			mode = "actual"
-			tx, err := deps.DB.Begin(ctx)
-			if err != nil {
-				reply(w, 503, map[string]string{"error": "database unavailable"})
+		committed, err := commitItem(ctx, deps.DB, effect, shadow)
+		if err != nil {
+			var pgerr *pgconn.PgError
+			if errors.As(err, &pgerr) && pgerr.Code == "23505" {
+				reply(w, 409, map[string]string{"error": "item exists"})
 				return
 			}
-			defer func() { _ = tx.Rollback(ctx) }()
-			_, err = tx.Exec(ctx, "SET LOCAL application_name = 'candidate'")
-			if err == nil {
-				_, err = tx.Exec(ctx, "INSERT INTO items (id, name) VALUES ($1, $2)", value.ID, value.Name)
-			}
-			if err == nil {
-				err = tx.Commit(ctx)
-			}
-			if err != nil {
-				var pgerr *pgconn.PgError
-				if errors.As(err, &pgerr) && pgerr.Code == "23505" {
-					reply(w, 409, map[string]string{"error": "item exists"})
-					return
-				}
-				reply(w, 503, map[string]string{"error": "database unavailable"})
-				return
-			}
+			reply(w, 503, map[string]string{"error": "database unavailable"})
+			return
 		}
-		// The shadow branch performs no database operation, including no uniqueness check:
-		// shared state may already contain the authoritative insert when its mirror arrives.
-		span.SetAttributes(attribute.String("demo.write.mode", mode), attribute.String("db.operation.name", "INSERT"),
-			attribute.String("db.collection.name", "items"), attribute.String("demo.write.effect", string(effect)))
+		mode := "actual"
+		if shadow {
+			mode = "shadow"
+		}
+		span.SetAttributes(attribute.String("demo.write.mode", mode), attribute.Bool("demo.request.shadow", shadow),
+			attribute.Bool("demo.write.committed", committed), attribute.String("db.operation.name", "INSERT"),
+			attribute.String("db.collection.name", "items"), attribute.String("demo.write.effect", string(encodedEffect)))
 		reply(w, 201, value)
 	})
 }

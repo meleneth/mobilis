@@ -20,6 +20,7 @@ def validate(value):
 def register(app):
     @app.middleware("http")
     async def identify(request, call_next):
+        trace.get_current_span().set_attribute("demo.request.shadow", request.headers.get("x-mobilis-shadow") == "true")
         response = await call_next(request)
         response.headers["X-Served-By"] = "legacy"
         return response
@@ -55,6 +56,7 @@ def register(app):
                     session.rollback()
                     return JSONResponse({"error": "database unavailable"}, status_code=503)
             # Emit actual only after the transaction commits.
-            span.set_attributes({"demo.write.mode": "actual", "db.operation.name": "INSERT",
+            span.set_attributes({"demo.write.mode": "actual", "demo.request.shadow": request.headers.get("x-mobilis-shadow") == "true",
+                                 "demo.write.committed": True, "db.operation.name": "INSERT",
                                  "db.collection.name": "items", "demo.write.effect": json.dumps(effect, sort_keys=True)})
         return JSONResponse(value, status_code=201)
