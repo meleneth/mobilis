@@ -158,6 +158,19 @@ module Mobilis
         node
       end
 
+      def fastapi(name, port: 8000, &block)
+        add_http_service(Mobilis::Node::FastAPI, name, port, &block)
+      end
+
+      def add_http_service(klass, name, port, &block)
+        node = klass.new(name, port: port)
+        system << node
+        @named[name] = node
+        block&.call(node)
+        node
+      end
+      private :add_http_service
+
       def connect(from:, to:, force_skip_health_checks: false)
         from_node = from.is_a?(String) ? @named.fetch(from) : from
         to_node   = to.is_a?(String)   ? @named.fetch(to)   : to

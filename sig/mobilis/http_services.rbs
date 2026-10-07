@@ -1,0 +1,67 @@
+module Mobilis
+  module ContainerVersions
+  end
+
+  module Node
+    class FastAPI < Mobilis::Base::Node
+      attr_reader port: Integer
+      def initialize: (String name, ?port: Integer, **untyped args) -> void
+      def package_name: () -> String
+      def add_sqlalchemy_model: (String name, ?table: String?) ?{ (Mobilis::Model::SQLAlchemy::Model) -> untyped } -> Mobilis::Model::SQLAlchemy::Model
+    end
+
+
+  end
+
+  module Model
+    module SQLAlchemy
+      class Model
+        attr_reader name: String
+        attr_reader table: String
+        attr_reader columns: Array[Hash[Symbol, untyped]]
+        def initialize: (String name, ?table: String?, ?columns: Array[Hash[Symbol, untyped]]) -> void
+        def column: (String name, String sql_type, python_type: String, ?primary_key: bool, ?nullable: bool, ?unique: bool, ?default: String | Numeric | bool | nil, ?foreign_key: String?) -> self
+        def to_h: () -> Mobilis::serialized_record
+        def self.from_h: (Hash[Symbol, untyped] hash) -> instance
+      end
+    end
+  end
+
+  module DSL
+    class DSLContext
+      def fastapi: (String name, ?port: Integer) ?{ (Mobilis::Node::FastAPI) -> untyped } -> Mobilis::Node::FastAPI
+      private
+      def add_http_service: (untyped klass, String name, Integer port) ?{ (untyped) -> untyped } -> untyped
+    end
+  end
+
+  module Realized
+    class HTTPApplication < Mobilis::Base::BuildForm
+      def config_node: () -> (Mobilis::Node::FastAPI)
+      attr_reader database: Mobilis::Realized::PostgreSQL?
+      attr_reader collector: Mobilis::Realized::OtelCollector?
+      def initialize: (Mobilis::RealizedEnv env, Mobilis::Node::FastAPI node) -> void
+      def exposed_port_no: () -> Integer
+      def after_all_nodes_realized: () -> untyped
+      def otel_enabled?: () -> bool
+    end
+    class FastAPI < HTTPApplication
+      def config_node: () -> Mobilis::Node::FastAPI
+      def service_writer: () -> singleton(Mobilis::ServiceWriter::FastAPI)
+      def after_all_nodes_realized: () -> untyped
+    end
+  end
+
+  module ServiceWriter
+    class FastAPI < Mobilis::Base::ServiceWriter
+      def realized_node: () -> Mobilis::Realized::FastAPI
+      def write: () -> untyped
+      private
+      def dependencies: () -> Array[String]
+      def write_app: () -> untyped
+      def write_database: () -> untyped
+      def write_models: () -> untyped
+      def write_telemetry: () -> untyped
+    end
+  end
+end
