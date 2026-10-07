@@ -41,6 +41,8 @@ RSpec.describe "HTTP migration demo" do
       go = File.read("#{dir}/candidate/internal/app/routes.go")
       expect(python).to include('app.get("/items")', "select(Item).order_by(Item.id)")
       expect(go).to include('"GET /items"', "deps.DB.Query(r.Context()", "SELECT id, name FROM items ORDER BY id")
+      expect(python.split("@app.post").first).not_to include("start_as_current_span")
+      expect(go.split('mux.HandleFunc("POST /items"').first).not_to include("otel.Tracer(")
       expect(python).to include('app.post("/items")', "session.commit()", '"demo.write.mode": "actual"')
       expect(go).to include('"POST /items"', 'os.Getenv("SHADOW_WRITES")', '"demo.write.effect"', "tx.Commit(ctx)")
       expect(File.read("#{dir}/candidate-shadow/internal/app/routes.go")).to eq(go)
