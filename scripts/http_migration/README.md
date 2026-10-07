@@ -111,6 +111,38 @@ Partial-authority verification is deterministic: an unpublished listener uses th
 
 The operational scripts target `dc_test`. Python and its dependencies run from the generated application's image. They mount no repository files and need no host Python installation. All source, Dockerfiles, Compose configuration, verifier, and documentation live in the generated project. Take the entire directory to another host, build with `./dc_test build`, and use the same flow.
 
+## Unit tests
+
+Unit tests construct HTTP handlers without opening Postgres connections or configuring exporters. They need no Compose services, Envoy, Jaeger or collector. Install ordinary development dependencies once:
+
+```sh
+cd legacy
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -e '.[test]'
+pytest
+pytest --cov=service_legacy --cov-report=term-missing
+cd ../candidate
+go mod tidy
+go test ./...
+go test -race ./...
+go test -cover ./...
+go test -coverprofile=coverage.out ./...
+go tool cover -func=coverage.out
+cd ..
+./test
+```
+
+`./test` is a convenience shell wrapper around native pytest coverage and Go race/coverage commands; it uses the activated virtual environment and your installed Go toolchain. It never starts infrastructure or installs dependencies. Go's race detector requires a supported Go platform and a C compiler. The Python `test` extra contains pytest, pytest-cov/coverage.py and flexmock, separate from runtime dependencies. Coverage uses branches and reports missing lines; no arbitrary coverage gate is imposed.
+
+The generated archetypes provide a health smoke test and ordinary handler factories. Python's `create_app(telemetry=False)` avoids exporter setup, and its database engine is lazy. Go's `Handler(Dependencies)` constructs routes separately from `New`'s runtime resource setup. These are application construction seams, not a Mobilis testing DSL.
+
+Demo-owned `ItemStore`/`itemStore` collaborators isolate item database behavior. Python tests override FastAPI's real dependency and apply flexmock expectations only to existing methods on real production objects/modules. A regression test rejects an invented method. SQLite exercises the real SQLAlchemy read adapter without reproducing ORM internals. Go uses a small fake implementing the production interface, which rejects unexpected calls, wrong effects, duplicate commits and missing interactions.
+
+For identical input, Go HTTP tests require authority to commit the exact canonical effect once, shadow to make zero commit calls, and both to report that same effect. Malformed shadow marker values remain authoritative. Telemetry translation is checked deterministically; a local span recorder also checks the handler's emitted context/effect evidence without exporters. Python verifies committed-effect translation occurs only after a successful commit and never on failed writes.
+
+Keep the three levels distinct: Mobilis RSpec tests generation, generated unit suites test local behavior, and `./verify` tests real traffic, database effects and distributed tracing. Unit coverage intentionally leaves runtime bootstrap and the Postgres adapters to integration verification; it is not a claim that those paths are unit-tested.
+
 ## Generation and DSL
 
 For the author generating this artifact, run once from the Mobilis repository:
