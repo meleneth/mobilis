@@ -14,7 +14,7 @@ module Mobilis
 
       def initialize(system)
         @system = system
-        @named = Hash.new
+        @named = {}
       end
 
       def rails(name, primary_database: nil, api: false, &block)
@@ -154,7 +154,7 @@ module Mobilis
         node = Mobilis::Node::GoAws.new(name)
         system << node
         @named[name] = node
-        block&.call(node) 
+        block&.call(node)
         node
       end
 
@@ -171,26 +171,35 @@ module Mobilis
       end
 
       # One default HTTP route. Both values are independent percentages.
-      def route(from:, to:, candidate: nil, mirror_percent: 0, candidate_percent: 0)
+      def route(from:, to:, candidate: nil, shadow: nil, mirror_percent: 0, candidate_percent: 0)
         [mirror_percent, candidate_percent].each do |percent|
           unless percent.is_a?(Integer) && (0..100).cover?(percent)
             raise ArgumentError, "Routing percentages must be integers from 0 to 100"
           end
         end
-        if !candidate && (mirror_percent != 0 || candidate_percent != 0)
+        if !candidate && (shadow || mirror_percent != 0 || candidate_percent != 0)
           raise ArgumentError, "A candidate is required for mirroring or splitting"
         end
         source = from.is_a?(String) ? named(from) : from
-        targets = [to, candidate].compact.map { |target| target.is_a?(String) ? named(target) : target }
+        targets = [to, candidate, shadow].compact.map { |target| target.is_a?(String) ? named(target) : target }
         raise ArgumentError, "Route backends must be distinct" if targets.uniq.length != targets.length
         raise ArgumentError, "Only one default route is supported" if source.extra_depends_on.any? { |dep| dep[:http_route] }
 
         targets.each_with_index do |target, index|
           edge = source.has_extra_depends_on(target)
           edge[:http_route] = {
-            weight: index.zero? ? 100 - candidate_percent : candidate_percent,
-            mirror_percent: index.zero? ? 0 : mirror_percent
+            weight: if index.zero?
+                      100 - candidate_percent
+                    else
+                      ((index == 1) ? candidate_percent : 0)
+                    end,
+            mirror_percent: if index == (shadow ? 2 : 1)
+                              mirror_percent
+                            else
+                              0
+                            end
           }
+          edge[:http_route][:mirror_only] = true if index == 2
         end
         source
       end
@@ -206,7 +215,7 @@ module Mobilis
 
       def connect(from:, to:, force_skip_health_checks: false)
         from_node = from.is_a?(String) ? @named.fetch(from) : from
-        to_node   = to.is_a?(String)   ? @named.fetch(to)   : to
+        to_node = to.is_a?(String) ? @named.fetch(to) : to
         from_node.has_extra_depends_on(to_node, force_skip_health_checks: force_skip_health_checks)
       end
 

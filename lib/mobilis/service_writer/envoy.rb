@@ -5,18 +5,20 @@ module Mobilis
     class Envoy < Mobilis::Base::ServiceWriter
       def write
         Mobilis::YAMLWriter.write_yaml("envoy.yaml", configuration)
+        realized_node.each_model_of_type(Mobilis::Model::File, &:write_file)
       end
 
       def configuration
         routes = realized_node.routes
-        action = if routes.size == 1
-          {cluster: routes.first[:backend].name}
+        authoritative = routes.reject { |r| r[:mirror_only] }
+        action = if authoritative.size == 1
+          {cluster: authoritative.first[:backend].name}
         else
-          {weighted_clusters: {clusters: routes.map { |r| {name: r[:backend].name, weight: r[:weight]} }}}
+          {weighted_clusters: {runtime_key_prefix: "migration.authority", clusters: authoritative.map { |r| {name: r[:backend].name, weight: r[:weight]} }}}
         end
-        mirrors = routes.select { |r| r[:mirror_percent] > 0 }.map do |route|
+        mirrors = routes.select { |r| r[:mirror_percent] > 0 || r[:mirror_only] || (routes.size > 1 && r == routes[1] && routes.none? { |edge| edge[:mirror_only] }) }.map do |route|
           {cluster: route[:backend].name,
-           runtime_fraction: {default_value: {numerator: route[:mirror_percent], denominator: "HUNDRED"}}}
+           runtime_fraction: {runtime_key: "migration.mirror", default_value: {numerator: route[:mirror_percent], denominator: "HUNDRED"}}}
         end
         action[:request_mirror_policies] = mirrors unless mirrors.empty?
         manager = {
@@ -39,11 +41,13 @@ module Mobilis
             }}, random_sampling: {value: 100}
           }
         end
-        {static_resources: {
-          listeners: [{name: "http", address: address("0.0.0.0", realized_node.exposed_port_no),
-                       filter_chains: [{filters: [{name: "envoy.filters.network.http_connection_manager", typed_config: manager}]}]}],
-          clusters: clusters
-        }}
+        {admin: {address: address("0.0.0.0", 9901)},
+         layered_runtime: {layers: [{name: "admin", admin_layer: {}}]},
+         static_resources: {
+           listeners: [{name: "http", address: address("0.0.0.0", realized_node.exposed_port_no),
+                        filter_chains: [{filters: [{name: "envoy.filters.network.http_connection_manager", typed_config: manager}]}]}],
+           clusters: clusters
+         }}
       end
 
       private

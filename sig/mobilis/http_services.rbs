@@ -41,7 +41,7 @@ module Mobilis
       def fastapi: (String name, ?port: Integer) ?{ (Mobilis::Node::FastAPI) -> untyped } -> Mobilis::Node::FastAPI
       def go_http: (String name, ?port: Integer) ?{ (Mobilis::Node::GoHTTP) -> untyped } -> Mobilis::Node::GoHTTP
       def envoy: (String name, ?port: Integer) ?{ (Mobilis::Node::Envoy) -> untyped } -> Mobilis::Node::Envoy
-      def route: (from: String | Mobilis::Base::Node, to: String | Mobilis::Base::Node, ?candidate: String | Mobilis::Base::Node | nil, ?mirror_percent: Integer, ?candidate_percent: Integer) -> Mobilis::Base::Node
+      def route: (from: String | Mobilis::Base::Node, to: String | Mobilis::Base::Node, ?candidate: String | Mobilis::Base::Node | nil, ?shadow: String | Mobilis::Base::Node | nil, ?mirror_percent: Integer, ?candidate_percent: Integer) -> Mobilis::Base::Node
       private
       def add_http_service: (untyped klass, String name, Integer port) ?{ (untyped) -> untyped } -> untyped
     end

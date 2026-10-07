@@ -103,13 +103,33 @@ RSpec.describe "HTTP service topology" do
       manager = config[:static_resources][:listeners].first[:filter_chains].first[:filters].first[:typed_config]
       action = manager[:route_config][:virtual_hosts].first[:routes].first[:route]
       expect(action[:weighted_clusters][:clusters]).to eq([{name: "legacy", weight: 100 - authority}, {name: "candidate", weight: authority}])
-      expect(action.fetch(:request_mirror_policies, []).size).to eq(mirror.zero? ? 0 : 1)
-      expect(action[:request_mirror_policies].first[:runtime_fraction][:default_value][:numerator]).to eq(mirror) unless mirror.zero?
+      expect(action.fetch(:request_mirror_policies, []).size).to eq(1)
+      expect(action[:request_mirror_policies].first[:runtime_fraction][:default_value][:numerator]).to eq(mirror)
+      expect(action[:weighted_clusters][:runtime_key_prefix]).to eq("migration.authority")
+      expect(action[:request_mirror_policies].first[:runtime_fraction][:runtime_key]).to eq("migration.mirror")
+      expect(config[:layered_runtime][:layers]).to eq([{name: "admin", admin_layer: {}}])
       expect(manager[:tracing][:provider][:typed_config][:service_name]).to eq("gateway")
       clusters = config[:static_resources][:clusters]
       expect(clusters.last[:load_assignment][:endpoints].first[:lb_endpoints].first[:endpoint][:address][:socket_address]).to eq(address: "telemetry", port_value: 4317)
       expect(node.compose.clean_shrunk[:volumes]).to include("./gateway/envoy.yaml:/etc/envoy/envoy.yaml")
     end
+  end
+
+  it "keeps a separate shadow backend out of authoritative selection and round trips it" do
+    legacy = dsl.fastapi("legacy")
+    candidate = dsl.go_http("candidate")
+    shadow = dsl.go_http("candidate-shadow")
+    proxy = dsl.envoy("gateway")
+    dsl.route(from: proxy, to: legacy, candidate: candidate, shadow: shadow, mirror_percent: 0, candidate_percent: 100)
+    loaded = Mobilis::System.from_json(system.to_json)
+    env = Mobilis::RealizedEnv.new(loaded, Mobilis::ExecutionEnvironment.new(:test))
+    config = Mobilis::ServiceWriter::Envoy.new(nil, env, env.realized_node_by_name("gateway")).configuration
+    manager = config[:static_resources][:listeners].first[:filter_chains].first[:filters].first[:typed_config]
+    action = manager[:route_config][:virtual_hosts].first[:routes].first[:route]
+    expect(action[:weighted_clusters][:clusters]).to eq([{name: "legacy", weight: 0}, {name: "candidate", weight: 100}])
+    expect(action[:request_mirror_policies].first[:cluster]).to eq("candidate-shadow")
+    expect(action[:request_mirror_policies].first[:runtime_fraction][:default_value][:numerator]).to eq(0)
+    expect { dsl.route(from: dsl.envoy("other"), to: legacy, candidate: candidate, shadow: candidate) }.to raise_error(ArgumentError, /distinct/)
   end
 
   it "infers an ordinary proxy route from a single HTTP connection without telemetry" do
