@@ -196,8 +196,28 @@ def query_spans(spans):
         for key, value in tags(span).items())]
 
 
+def unique_spans(trace):
+    # Jaeger can return repeated delivery/query copies of the same logical span.
+    # Ignore only Jaeger's diagnostic metadata; conflicting evidence is an error.
+    result = {}
+    signatures = {}
+    for span in trace["spans"]:
+        identity = span["spanID"]
+        signature = {key: span.get(key) for key in
+                     ("traceID", "operationName", "references", "startTime", "duration", "logs")}
+        signature["service"] = service(trace, span)
+        signature["tags"] = {key: value for key, value in tags(span).items()
+                             if not key.startswith("@jaeger@")}
+        if identity in signatures:
+            require(signature == signatures[identity], ("conflicting duplicate span evidence", identity))
+        else:
+            signatures[identity] = signature
+            result[identity] = span
+    return list(result.values())
+
+
 def check_trace(trace, expected, write, value=None, authority=None):
-    spans = trace["spans"]
+    spans = unique_spans(trace)
     by_id = {span["spanID"]: span for span in spans}
     for name in expected:
         local = [span for span in spans if service(trace, span) == name]

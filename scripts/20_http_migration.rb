@@ -39,6 +39,7 @@ Mobilis::DSL.generate("http-migration") do
   DOCKER
   gateway = envoy("gateway")
   legacy.add_model(Mobilis::Model::File.new("demo/operations.py", File.read(File.join(__dir__, "http_migration/operations.py"))))
+  legacy.add_model(Mobilis::Model::File.new("demo/test_operations.py", File.read(File.join(__dir__, "http_migration/test_operations.py"))))
   legacy.add_model(Mobilis::Model::File.new("demo/initial-state.json", {mirror: mirror_percent, candidate: candidate_percent}.to_json))
   %w[seed exercise verify migration].each do |operation|
     wrapper = File.read(File.join(__dir__, "http_migration/demo-operation"))
