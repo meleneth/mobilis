@@ -5,29 +5,33 @@ require "fileutils"
 module Mobilis
   module Model
     class File
-      attr_reader :path, :content
+      attr_reader :path, :content, :executable
 
-      def initialize(path, content)
+      def initialize(path, content, executable: false)
         @path = path
         @content = content
+        @executable = executable
       end
 
       def to_h
         {
           type: self.class.name,
           path: @path,
-          content: @content
+          content: @content,
+          executable: @executable
         }
       end
 
       def write_file
         dir = ::File.dirname(@path)
         FileUtils.mkdir_p(dir)
-        ::File.write(@path, @content)
+        bytes = ::File.write(@path, @content)
+        FileUtils.chmod("+x", @path) if executable
+        bytes
       end
 
       def self.from_h(hash)
-        new(hash[:path], hash[:content])
+        new(hash[:path], hash[:content], executable: hash[:executable] == true)
       end
 
       def ppx_fields(dsl)

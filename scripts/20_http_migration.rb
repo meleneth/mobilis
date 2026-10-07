@@ -38,6 +38,13 @@ Mobilis::DSL.generate("http-migration") do
     CMD ["candidate-shadow"]
   DOCKER
   gateway = envoy("gateway")
+  legacy.add_model(Mobilis::Model::File.new("demo/operations.py", File.read(File.join(__dir__, "http_migration/operations.py"))))
+  legacy.add_model(Mobilis::Model::File.new("demo/initial-state.json", {mirror: mirror_percent, candidate: candidate_percent}.to_json))
+  %w[seed exercise verify migration].each do |operation|
+    wrapper = File.read(File.join(__dir__, "http_migration/demo-operation"))
+    gateway.add_model(Mobilis::Model::File.new("../#{operation}", wrapper, executable: true))
+  end
+  gateway.add_model(Mobilis::Model::File.new("../README.md", File.read(File.join(__dir__, "http_migration/README.md"))))
   [legacy, candidate, shadow].each do |service|
     connect(from: service, to: db)
     connect(from: service, to: traces)

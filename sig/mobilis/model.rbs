@@ -34,7 +34,8 @@ module Mobilis
     class File
       attr_reader path: String
       attr_reader content: String
-      def initialize: (String path, String content) -> void
+      attr_reader executable: bool
+      def initialize: (String path, String content, ?executable: bool) -> void
       def to_h: () -> Mobilis::serialized_record
       def write_file: () -> Integer
       def ppx_fields: (untyped dsl) -> untyped

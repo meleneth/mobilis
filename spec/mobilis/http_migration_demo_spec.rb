@@ -41,10 +41,19 @@ RSpec.describe "HTTP migration demo" do
       go = File.read("#{dir}/candidate/internal/app/routes.go")
       expect(python).to include('app.get("/items")', "select(Item).order_by(Item.id)")
       expect(go).to include('"GET /items"', "deps.DB.Query(r.Context()", "SELECT id, name FROM items ORDER BY id")
-      expect(python).to include('app.post("/items")', 'session.commit()', '"demo.write.mode": "actual"')
-      expect(go).to include('"POST /items"', 'os.Getenv("SHADOW_WRITES")', '"demo.write.effect"', 'tx.Commit(ctx)')
+      expect(python).to include('app.post("/items")', "session.commit()", '"demo.write.mode": "actual"')
+      expect(go).to include('"POST /items"', 'os.Getenv("SHADOW_WRITES")', '"demo.write.effect"', "tx.Commit(ctx)")
       expect(File.read("#{dir}/candidate-shadow/internal/app/routes.go")).to eq(go)
       expect(File.read("#{dir}/candidate-shadow/Dockerfile")).to include("ENV SHADOW_WRITES=true")
+      %w[seed migration exercise verify].each do |operation|
+        expect(File.executable?("#{dir}/#{operation}")).to be(true)
+        wrapper = File.read("#{dir}/#{operation}")
+        expect(wrapper).to include("./dc_test", "/app/demo/operations.py")
+        expect(wrapper).not_to include("/home/", "--network", "mobilis/")
+      end
+      operations = File.read("#{dir}/legacy/demo/operations.py")
+      expect(operations).to include("CREATE TRIGGER item_effect", "demo.write.effect", "exactly one authoritative insert", "disconnected evidence")
+      expect(File.read("#{dir}/README.md")).to include("./seed", "./migration 100 10", "./verify")
       expect(Mobilis::System.from_json(system.to_json).node_count).to eq(7)
     end
   end
@@ -55,5 +64,30 @@ RSpec.describe "HTTP migration demo" do
     loaded = Mobilis::System.from_json(system.to_json)
     env = Mobilis::RealizedEnv.new(loaded, Mobilis::ExecutionEnvironment.new(:test))
     expect(env.realized_node_by_name("legacy").compose.clean_shrunk[:depends_on][:store][:condition]).to eq("service_started")
+  end
+end
+
+RSpec.describe Mobilis::Model::File do
+  it "preserves executable permissions through graph serialization and writing" do
+    model = described_class.new("helper", "#!/bin/sh\nexit 0\n", executable: true)
+    loaded = described_class.from_h(model.to_h)
+    Dir.mktmpdir do |dir|
+      Dir.chdir(dir) { loaded.write_file }
+      expect(File.executable?("#{dir}/helper")).to be(true)
+    end
+    expect(described_class.from_h(path: "old", content: "old").executable).to be(false)
+  end
+end
+
+RSpec.describe Mobilis::Plugin::WriteFiles do
+  it "does not rewrite file models already consumed before HTTP image builds" do
+    manifest = instance_double(Mobilis::Manifest)
+    plugin = described_class.new(manifest)
+    [Mobilis::Realized::FastAPI, Mobilis::Realized::GoHTTP, Mobilis::Realized::Envoy].each do |klass|
+      node = klass.allocate
+      expect(node).not_to receive(:each_model_of_type)
+      allow(manifest).to receive(:each_node_of_type).and_yield(nil, node)
+      plugin.hook_after_dc_helpers
+    end
   end
 end
