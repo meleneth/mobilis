@@ -18,6 +18,8 @@ RSpec.describe Mobilis::ServiceWriter::GoHTTP do
           described_class.new(nil, env, node).write
           expect(File.read("go.mod")).to include("module mobilis.local/tiny-go", "go 1.25.0")
           expect(File.read("Dockerfile")).to include('CMD ["tiny-go"]', "CGO_ENABLED=0 go build", "EXPOSE 8200")
+          expect(File.read("Dockerfile")).to include("FROM debian:trixie-slim", "apt-get install -y --no-install-recommends ca-certificates")
+          expect(File.read("Dockerfile")).not_to include("alpine", "apk")
           main = File.read("cmd/tiny-go/main.go")
           expect(main).to include("signal.NotifyContext", "server.Shutdown(shutdownCtx)", "errors.Is(err, http.ErrServerClosed)", "defer cleanup()")
           app = File.read("internal/app/app.go")

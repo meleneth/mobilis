@@ -1,24 +1,28 @@
 module Mobilis
   module ContainerVersions
     ENVOY: String
+    DEBIAN: String
   end
 
   module Node
     class FastAPI < Mobilis::Base::Node
       attr_reader port: Integer
-      def initialize: (String name, ?port: Integer, **untyped args) -> void
+      attr_reader publish_port: bool
+      def initialize: (String name, ?port: Integer, ?publish_port: bool, **untyped args) -> void
       def package_name: () -> String
       def add_sqlalchemy_model: (String name, ?table: String?) ?{ (Mobilis::Model::SQLAlchemy::Model) -> untyped } -> Mobilis::Model::SQLAlchemy::Model
     end
 
     class GoHTTP < Mobilis::Base::Node
       attr_reader port: Integer
-      def initialize: (String name, ?port: Integer, **untyped args) -> void
+      attr_reader publish_port: bool
+      def initialize: (String name, ?port: Integer, ?publish_port: bool, **untyped args) -> void
     end
 
     class Envoy < Mobilis::Base::Node
       attr_reader port: Integer
-      def initialize: (String name, ?port: Integer, **untyped args) -> void
+      attr_reader verification_port: Integer?
+      def initialize: (String name, ?port: Integer, ?verification_port: Integer?, **untyped args) -> void
     end
   end
 
@@ -38,12 +42,12 @@ module Mobilis
 
   module DSL
     class DSLContext
-      def fastapi: (String name, ?port: Integer) ?{ (Mobilis::Node::FastAPI) -> untyped } -> Mobilis::Node::FastAPI
-      def go_http: (String name, ?port: Integer) ?{ (Mobilis::Node::GoHTTP) -> untyped } -> Mobilis::Node::GoHTTP
-      def envoy: (String name, ?port: Integer) ?{ (Mobilis::Node::Envoy) -> untyped } -> Mobilis::Node::Envoy
+      def fastapi: (String name, ?port: Integer, ?publish_port: bool) ?{ (Mobilis::Node::FastAPI) -> untyped } -> Mobilis::Node::FastAPI
+      def go_http: (String name, ?port: Integer, ?publish_port: bool) ?{ (Mobilis::Node::GoHTTP) -> untyped } -> Mobilis::Node::GoHTTP
+      def envoy: (String name, ?port: Integer, ?verification_port: Integer?) ?{ (Mobilis::Node::Envoy) -> untyped } -> Mobilis::Node::Envoy
       def route: (from: String | Mobilis::Base::Node, to: String | Mobilis::Base::Node, ?candidate: String | Mobilis::Base::Node | nil, ?shadow: String | Mobilis::Base::Node | nil, ?mirror_percent: Integer, ?candidate_percent: Integer) -> Mobilis::Base::Node
       private
-      def add_http_service: (untyped klass, String name, Integer port) ?{ (untyped) -> untyped } -> untyped
+      def add_http_service: (untyped klass, String name, Integer port, **untyped options) ?{ (untyped) -> untyped } -> untyped
     end
   end
 

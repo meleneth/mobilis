@@ -9,7 +9,7 @@ module Mobilis
       def initialize(env, node)
         super
         @has_service_dir = true
-        register_external_port(exposed_port_no, "#{name}_WEB_PORT", "#{name} HTTP port")
+        register_external_port(exposed_port_no, "#{name}_WEB_PORT", "#{name} HTTP port") if config_node.publish_port
         add_compose_raw_var("PORT", exposed_port_no)
       end
 

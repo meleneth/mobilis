@@ -102,7 +102,20 @@ RSpec.describe "HTTP service topology" do
       config = Mobilis::ServiceWriter::Envoy.new(nil, env, node).configuration
       manager = config[:static_resources][:listeners].first[:filter_chains].first[:filters].first[:typed_config]
       action = manager[:route_config][:virtual_hosts].first[:routes].first[:route]
-      expect(action[:weighted_clusters][:clusters]).to eq([{name: "legacy", weight: 100 - authority}, {name: "candidate", weight: authority}])
+      expect(action[:weighted_clusters][:clusters].map { |cluster| cluster.slice(:name, :weight) }).to eq([{name: "legacy", weight: 100 - authority}, {name: "candidate", weight: authority}])
+      expect(action[:weighted_clusters][:clusters].first[:request_headers_to_add]).to eq([
+        {header: {key: "x-mobilis-mirror-cluster", value: "candidate"}, append_action: "OVERWRITE_IF_EXISTS_OR_ADD"}
+      ])
+      expect(action[:weighted_clusters][:clusters].last).not_to have_key(:request_headers_to_add)
+      expect(action[:request_mirror_policies].first[:cluster_header]).to eq("x-mobilis-mirror-cluster")
+      expect(action[:request_mirror_policies].first[:request_headers_mutations]).to eq([
+        {append: {header: {key: "x-mobilis-shadow", value: "true"}, append_action: "OVERWRITE_IF_EXISTS_OR_ADD"}},
+        {remove: "x-mobilis-mirror-cluster"}
+      ])
+      expect(manager[:http_filters].map { |filter| filter[:name] }).to eq(%w[envoy.filters.http.header_mutation envoy.filters.http.router])
+      expect(manager[:http_filters].first[:typed_config][:mutations][:request_mutations]).to eq([
+        {remove: "x-mobilis-shadow"}, {remove: "x-mobilis-mirror-cluster"}
+      ])
       expect(action.fetch(:request_mirror_policies, []).size).to eq(1)
       expect(action[:request_mirror_policies].first[:runtime_fraction][:default_value][:numerator]).to eq(mirror)
       expect(action[:weighted_clusters][:runtime_key_prefix]).to eq("migration.authority")
@@ -126,13 +139,43 @@ RSpec.describe "HTTP service topology" do
     config = Mobilis::ServiceWriter::Envoy.new(nil, env, env.realized_node_by_name("gateway")).configuration
     manager = config[:static_resources][:listeners].first[:filter_chains].first[:filters].first[:typed_config]
     action = manager[:route_config][:virtual_hosts].first[:routes].first[:route]
-    expect(action[:weighted_clusters][:clusters]).to eq([{name: "legacy", weight: 0}, {name: "candidate", weight: 100}])
-    expect(action[:request_mirror_policies].first[:cluster]).to eq("candidate-shadow")
+    expect(action[:weighted_clusters][:clusters].map { |cluster| cluster.slice(:name, :weight) }).to eq([{name: "legacy", weight: 0}, {name: "candidate", weight: 100}])
+    expect(action[:request_mirror_policies].first[:cluster_header]).to eq("x-mobilis-mirror-cluster")
+    expect(action[:weighted_clusters][:clusters].first[:request_headers_to_add].first[:header][:value]).to eq("candidate-shadow")
     expect(action[:request_mirror_policies].first[:runtime_fraction][:default_value][:numerator]).to eq(0)
     proxy.extra_depends_on.find { |edge| edge[:http_route] && edge[:http_route][:mirror_only] }[:http_route][:weight] = 1
     proxy.extra_depends_on.find { |edge| edge[:http_route] && edge[:target] == candidate }[:http_route][:weight] = 99
     expect { realize }.to raise_error(ArgumentError, /Mirror-only/)
     expect { dsl.route(from: dsl.envoy("other"), to: legacy, candidate: candidate, shadow: candidate) }.to raise_error(ArgumentError, /distinct/)
+  end
+
+  it "keeps backends private and deterministic routing on an unpublished verification listener" do
+    legacy = dsl.fastapi("legacy", publish_port: false)
+    candidate = dsl.go_http("candidate", publish_port: false)
+    proxy = dsl.envoy("gateway", verification_port: 8081)
+    dsl.route(from: proxy, to: legacy, candidate: candidate, mirror_percent: 100, candidate_percent: 10)
+    loaded = Mobilis::System.from_json(system.to_json)
+    env = Mobilis::RealizedEnv.new(loaded, Mobilis::ExecutionEnvironment.new(:test))
+    %w[legacy candidate].each do |name|
+      expect(env.realized_node_by_name(name).compose.clean_shrunk).not_to have_key(:ports)
+    end
+    node = env.realized_node_by_name("gateway")
+    config = Mobilis::ServiceWriter::Envoy.new(nil, env, node).configuration
+    listeners = config[:static_resources][:listeners]
+    actions = listeners.map { |listener| listener[:filter_chains].first[:filters].first[:typed_config][:route_config][:virtual_hosts].first[:routes].first[:route] }
+    expect(actions.first[:weighted_clusters]).not_to have_key(:header_name)
+    expect(actions.last[:weighted_clusters][:header_name]).to eq("x-mobilis-routing-bucket")
+    expect(actions.last[:request_mirror_policies]).to eq(actions.first[:request_mirror_policies])
+    expect(node.compose.clean_shrunk[:ports].join).not_to include("8081", "9901")
+    expect(loaded[proxy.id].verification_port).to eq(8081)
+    expect(loaded[legacy.id].publish_port).to be(false)
+    expect(loaded[candidate.id].publish_port).to be(false)
+  end
+
+  it "rejects invalid or conflicting verification ports" do
+    [0, 65536, 8080, 9901, 9902].each do |port|
+      expect { dsl.envoy("gateway-#{port}", verification_port: port) }.to raise_error(ArgumentError)
+    end
   end
 
   it "infers an ordinary proxy route from a single HTTP connection without telemetry" do

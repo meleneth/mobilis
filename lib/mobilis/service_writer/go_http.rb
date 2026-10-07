@@ -22,8 +22,8 @@ module Mobilis
           WORKDIR /src
           COPY . .
           RUN go mod tidy && CGO_ENABLED=0 go build -trimpath -o /service ./cmd/#{realized_node.name}
-          FROM #{Mobilis::ContainerVersions::ALPINE}
-          RUN apk add --no-cache ca-certificates
+          FROM #{Mobilis::ContainerVersions::DEBIAN}
+          RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
           COPY --from=build /service /usr/local/bin/#{realized_node.name}
           USER 65532:65532
           EXPOSE #{realized_node.exposed_port_no}

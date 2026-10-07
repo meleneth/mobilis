@@ -49,12 +49,13 @@ module Mobilis
     OPENSEARCH    = "opensearchproject/opensearch:2.12.0"
 
     # ─── Proxies / HTTP ────────────────────────────────────────
-    ENVOY       = "envoyproxy/envoy:v1.35.3"
+    ENVOY       = "envoyproxy/envoy:v1.36.11"
     CADDY       = "caddy:2.7.6"
     NGINX       = "nginx:1.27.5-trixie"
     TRAEFIK     = "traefik:v2.10"
 
     # ─── Dev / Infra Tools ─────────────────────────────────────
+    DEBIAN = "debian:trixie-slim"
     ALPINE      = "alpine:3.19"
     BUSYBOX     = "busybox:1.36.1"
     CURL        = "curlimages/curl:8.5.0"

@@ -159,16 +159,16 @@ module Mobilis
         node
       end
 
-      def fastapi(name, port: 8000, &block)
-        add_http_service(Mobilis::Node::FastAPI, name, port, &block)
+      def fastapi(name, port: 8000, publish_port: true, &block)
+        add_http_service(Mobilis::Node::FastAPI, name, port, publish_port: publish_port, &block)
       end
 
-      def go_http(name, port: 8080, &block)
-        add_http_service(Mobilis::Node::GoHTTP, name, port, &block)
+      def go_http(name, port: 8080, publish_port: true, &block)
+        add_http_service(Mobilis::Node::GoHTTP, name, port, publish_port: publish_port, &block)
       end
 
-      def envoy(name, port: 8080, &block)
-        add_http_service(Mobilis::Node::Envoy, name, port, &block)
+      def envoy(name, port: 8080, verification_port: nil, &block)
+        add_http_service(Mobilis::Node::Envoy, name, port, verification_port: verification_port, &block)
       end
 
       # One default HTTP route. Both values are independent percentages.
@@ -207,8 +207,8 @@ module Mobilis
         source
       end
 
-      def add_http_service(klass, name, port, &block)
-        node = klass.new(name, port: port)
+      def add_http_service(klass, name, port, **options, &block)
+        node = klass.new(name, port: port, **options)
         system << node
         @named[name] = node
         block&.call(node)
