@@ -129,6 +129,9 @@ RSpec.describe "HTTP service topology" do
     expect(action[:weighted_clusters][:clusters]).to eq([{name: "legacy", weight: 0}, {name: "candidate", weight: 100}])
     expect(action[:request_mirror_policies].first[:cluster]).to eq("candidate-shadow")
     expect(action[:request_mirror_policies].first[:runtime_fraction][:default_value][:numerator]).to eq(0)
+    proxy.extra_depends_on.find { |edge| edge[:http_route] && edge[:http_route][:mirror_only] }[:http_route][:weight] = 1
+    proxy.extra_depends_on.find { |edge| edge[:http_route] && edge[:target] == candidate }[:http_route][:weight] = 99
+    expect { realize }.to raise_error(ArgumentError, /Mirror-only/)
     expect { dsl.route(from: dsl.envoy("other"), to: legacy, candidate: candidate, shadow: candidate) }.to raise_error(ArgumentError, /distinct/)
   end
 
@@ -139,6 +142,7 @@ RSpec.describe "HTTP service topology" do
     config = Mobilis::ServiceWriter::Envoy.new(nil, env, env.realized_node_by_name("gateway")).configuration
     manager = config[:static_resources][:listeners].first[:filter_chains].first[:filters].first[:typed_config]
     expect(manager).not_to have_key(:tracing)
+    expect(config).not_to have_key(:admin)
     expect(manager[:route_config][:virtual_hosts].first[:routes].first[:route]).to eq(cluster: "api")
   end
 end

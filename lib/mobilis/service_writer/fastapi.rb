@@ -68,9 +68,11 @@ module Mobilis
       end
 
       def write_app
+        # @type var imports: Array[String]
         imports = []
         imports << "from .database import engine" if realized_node.database
         imports << "from .telemetry import configure, instrument_app" if realized_node.otel_enabled?
+        # @type var cleanup: Array[String]
         cleanup = []
         cleanup << "engine.dispose()" if realized_node.database
         cleanup << "provider.shutdown()" if realized_node.otel_enabled?

@@ -67,6 +67,7 @@ module Mobilis
       def service_writer: () -> singleton(Mobilis::ServiceWriter::GoHTTP)
     end
     class Envoy < Mobilis::Base::ImageForm
+      def config_node: () -> Mobilis::Node::Envoy
       attr_reader collector: Mobilis::Realized::OtelCollector?
       attr_reader routes: Array[Hash[Symbol, untyped]]
       def initialize: (Mobilis::RealizedEnv env, Mobilis::Node::Envoy node) -> void

@@ -38,6 +38,7 @@ module Mobilis
       private
 
       def dependencies
+        # @type var deps: Hash[String, String]
         deps = {}
         deps["github.com/jackc/pgx/v5"] = "v5.7.6" if realized_node.database
         if realized_node.otel_enabled?
@@ -102,7 +103,9 @@ module Mobilis
         imports.concat(['"os"', '"time"', '"github.com/jackc/pgx/v5/pgxpool"']) if realized_node.database
         imports << '"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"' if realized_node.otel_enabled?
         imports << '"github.com/exaring/otelpgx"' if realized_node.otel_enabled? && realized_node.database
+        # @type var setup: Array[String]
         setup = []
+        # @type var cleanup: Array[String]
         cleanup = []
         if realized_node.otel_enabled?
           setup.concat(["shutdown, err := configureTelemetry(ctx)", "if err != nil { return nil, nil, err }"])

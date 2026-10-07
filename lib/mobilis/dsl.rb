@@ -14,6 +14,7 @@ module Mobilis
 
       def initialize(system)
         @system = system
+        # @type ivar @named: Hash[String, Mobilis::Base::Node]
         @named = {}
       end
 
@@ -187,7 +188,8 @@ module Mobilis
 
         targets.each_with_index do |target, index|
           edge = source.has_extra_depends_on(target)
-          edge[:http_route] = {
+          # @type var settings: Mobilis::http_route_settings
+          settings = {
             weight: if index.zero?
                       100 - candidate_percent
                     else
@@ -199,7 +201,8 @@ module Mobilis
                               0
                             end
           }
-          edge[:http_route][:mirror_only] = true if index == 2
+          settings[:mirror_only] = true if index == 2
+          edge[:http_route] = settings
         end
         source
       end

@@ -5,6 +5,7 @@ require "json"
 module Mobilis
   class System
     include Mobilis::PrettyPrint::PrettyPrintable
+
     attr_reader :config_nodes
     attr_reader :meta_project_name
 
@@ -33,13 +34,15 @@ module Mobilis
       config_nodes.each_value do |node|
         node.resolve_references_using(config_nodes) if node.respond_to?(:resolve_references_using)
         node.extra_depends_on.map! do |dependency|
-          dependency = { name: dependency } if dependency.is_a?(String)
+          dependency = {name: dependency} if dependency.is_a?(String)
           target_name = dependency[:name]
           if target_name
             target = config_nodes.values.find { |n| n.name == target_name }
             raise ArgumentError, "Unknown dependency #{target_name}" unless target
 
-            dependency = dependency.reject { |key, _| key == :name }.merge(target: target)
+            dependency = dependency.dup
+            dependency.delete(:name)
+            dependency[:target] = target
           end
           dependency
         end
