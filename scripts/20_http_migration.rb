@@ -1,6 +1,26 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# Generates a self-contained HTTP migration lab:
+#
+#   23 directories / 54 files
+#   - FastAPI legacy service
+#   - Go replacement service
+#   - PostgreSQL
+#   - Envoy traffic mirroring and progressive cutover
+#   - OpenTelemetry + Jaeger
+#   - dev/test Compose environments
+#   - unit and integration tests
+#   - seed/exercise/verify/migration operations
+#   - trace, effect, and bounded SQL-semantic verification
+#
+# Run this script once; the generated project operates independently of Mobilis.
+
+# or just go look at https://github.com/meleneth/strangler-fig-demo
+
+# this overstates the 'while services remain live' angle because envoy is getting restarted to change percentages,
+# but that's an implementation detail left to the reader
+
 require "mobilis"
 
 mirror_percent = Integer(ENV.fetch("MIRROR_PERCENT", "100"))
