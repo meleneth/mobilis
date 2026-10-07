@@ -63,9 +63,9 @@ Then inspect or run the generated project under `generate/`.
 | `17_observable_s3_storage.rb`                 | SeaweedFS-backed S3 storage with conditional observability wiring, Prometheus scraping, and Grafana panels.                                                                            |
 | `18_mnbme_otel_system.rb`                     | Rack microservice game demo extracted from MNBME: local gem support, Rack Docker image support, replicated service instances, Redis game state, and OpenTelemetry/Grafana/Loki wiring. |
 | `19_two_rails_local_gem.rb`                   | Two Rails services consuming one generated local gem, including per-service Docker build-context handling.                                                                            |
-| `20_http_migration.rb` | FastAPI/SQLAlchemy and Go/pgx behind Envoy, connection-derived tracing, mirroring and progressive traffic splitting. |
+| `20_http_migration.rb` | FastAPI and Go behind Envoy: live migration controls, safe shadow writes, semantic OTEL verification, and standalone generated operations. |
 
-See the [HTTP migration demo](scripts/http_migration/README.md) for the new DSL, package layout, running the demo and runtime verification.
+See the [HTTP migration demo](scripts/http_migration/README.md) for the generated-project walkthrough, effect verification, runtime controls, and DSL.
 
 The most complete current smoke demos are `08_large_iam_system.rb` for Rails
 service composition and `18_mnbme_otel_system.rb` for Rack/local-gem/multi-
