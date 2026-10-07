@@ -8,7 +8,10 @@ module Mobilis
 
       def initialize(realized_env, config_node)
         super(realized_env, config_node, Mobilis::ContainerVersions::OTEL_COLLECTOR)
-        @otel_url = add_env_only_var("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4318")
+        @otel_url = add_env_only_var("#{name}_otel_exporter_otlp_endpoint", internal_url)
+        # Compatibility export for existing manually aliased Rails definitions.
+        # Connection-driven consumers use this collector's internal_url instead.
+        add_env_only_var("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4318")
 
         @has_data_volume = false
         @has_service_dir = true
@@ -16,6 +19,10 @@ module Mobilis
         set_command("--config=/etc/otel-collector-config.yaml")
         register_external_port(exposed_port_no, "#{name}_COLLECTOR_PORT",
                                "#{name} collector port")
+      end
+
+      def grpc_port
+        4317
       end
 
       def exposed_port_no

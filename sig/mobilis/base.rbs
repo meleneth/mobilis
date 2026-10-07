@@ -63,6 +63,7 @@ module Mobilis
       def dependency_url_envfile_name: (Mobilis::Base::RealizedNode provider) -> String
       def dependency_url_container_name: (Mobilis::Base::RealizedNode provider) -> String
       def add_dependency_url: (Mobilis::Base::RealizedNode provider, ?container_name: String?) -> Mobilis::Primitives::EmitVar?
+      def connected_nodes: (singleton(Object) klass) -> Array[untyped]
       def populate_compose_depends_on: () -> untyped
 
       def compose: () -> Mobilis::AutoVivify

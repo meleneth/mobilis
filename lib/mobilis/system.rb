@@ -32,11 +32,16 @@ module Mobilis
     def resolve!
       config_nodes.each_value do |node|
         node.resolve_references_using(config_nodes) if node.respond_to?(:resolve_references_using)
-        node.extra_depends_on.each do |depends_on|
-          target_name = depends_on[:name]
-          target = config_nodes.values.find { |n| n.name == target_name } if target_name.is_a?(String)
-          depends_on[:target] = target if target
-          depends_on.delete(:name)
+        node.extra_depends_on.map! do |dependency|
+          dependency = { name: dependency } if dependency.is_a?(String)
+          target_name = dependency[:name]
+          if target_name
+            target = config_nodes.values.find { |n| n.name == target_name }
+            raise ArgumentError, "Unknown dependency #{target_name}" unless target
+
+            dependency = dependency.reject { |key, _| key == :name }.merge(target: target)
+          end
+          dependency
         end
       end
     end

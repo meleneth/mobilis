@@ -17,7 +17,11 @@ module Mobilis
         memory_limiter["check_interval"] = "5s"
 
         otlp_exporter = @otel_collector["exporters"]["otlp"]
-        otlp_exporter["endpoint"] = "jaeger:4317" # YOU DID NOT JUST HARDCODE THIS SHIT TODO FUCKING TODO
+        backends = realized_node.connected_nodes(Mobilis::Realized::Jaeger)
+        raise ArgumentError, "Collector supports one Jaeger exporter" if backends.size > 1
+
+        # Retain the historical default for definitions without an exporter edge.
+        otlp_exporter["endpoint"] = backends.first&.jaeger_endpoint || "jaeger:4317"
         otlp_exporter["tls"]["insecure"] = true
 
         @otel_collector["exporters"]["prometheus"]["endpoint"] = "0.0.0.0:9464"

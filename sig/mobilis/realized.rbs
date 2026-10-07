@@ -175,6 +175,7 @@ module Mobilis
     end
 
     class OtelCollector < Mobilis::Base::ImageForm
+      def grpc_port: () -> Integer
       attr_reader otel_url: Mobilis::Primitives::EmitVar
       def initialize: (Mobilis::RealizedEnv realized_env, Mobilis::Node::OtelCollector config_node) -> void
       def exposed_port_no: () -> Integer

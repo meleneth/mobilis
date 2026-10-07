@@ -45,15 +45,9 @@ module Mobilis
           id: id,
           name: name,
           type: self.class.name,
-          extra_depends_on: extra_depends_on.filter_map do |dep|
+          extra_depends_on: extra_depends_on.map do |dep|
             target = dep[:target]
-            name = dep[:name]
-
-            if target.is_a?(Mobilis::Base::Node)
-              target.name
-            elsif name.is_a?(String)
-              name
-            end
+            dep.reject { |key, _| key == :target }.merge(name: target ? target.name : dep[:name])
           end,
           models: models.map(&:to_h)
         }

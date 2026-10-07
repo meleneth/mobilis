@@ -103,7 +103,6 @@ Names are normalized on nodes by replacing `_` with `-`. Check raw input names v
 ## Known Issues To Keep In Mind
 
 - `RefSlot#hydrate_refs!` appears to use literal interpolation strings for lookup keys. Current specs do not fully prove hydration from only serialized IDs.
-- `System#resolve!` has suspicious `extra_depends_on` restoration over a hash; verify before relying on JSON round-trips for dependencies.
 - `RealizedEnv#build_realized_node` uses an explicit class map. Adding a node class also requires adding its realized mapping.
 - `GoAws` has DSL-ish helpers, but verify its internal arrays are initialized before using `queue`, `topic`, or `subscribe`.
 - `TODO.md` currently lists short tactical items, including the `rspec:install` issue.

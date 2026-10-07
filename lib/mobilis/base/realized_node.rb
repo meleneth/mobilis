@@ -88,6 +88,14 @@ module Mobilis
         )
       end
 
+      def connected_nodes(klass)
+        extra_depends_on.filter_map do |edge|
+          target = edge[:target]
+          provider = target.is_a?(Mobilis::Base::RealizedNode) ? target : realized_env.realized_node_for_config_node(target)
+          provider if provider.is_a?(klass)
+        end.uniq
+      end
+
       def populate_compose_depends_on
         extra_depends_on.each do |extra_dep|
           target = extra_dep[:target]
