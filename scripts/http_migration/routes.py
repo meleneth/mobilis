@@ -5,7 +5,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from opentelemetry import trace
 from sqlalchemy import select, text
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from .database import Session
 from .models import Item
 
@@ -26,14 +26,17 @@ def register(app):
 
     @app.get("/items")
     def items():
-        with Session() as session:
-            return [{"id": item.id, "name": item.name}
-                    for item in session.scalars(select(Item).order_by(Item.id))]
+        try:
+            with Session() as session:
+                return [{"id": item.id, "name": item.name}
+                        for item in session.scalars(select(Item).order_by(Item.id))]
+        except SQLAlchemyError:
+            return JSONResponse({"error": "database unavailable"}, status_code=503)
 
     @app.post("/items")
     async def create(request: Request):
         try:
-            value = json.loads(await request.body())
+            value = json.loads((await request.body()).decode("utf-8"))
         except (ValueError, UnicodeError):
             value = None
         if not validate(value):
@@ -48,6 +51,9 @@ def register(app):
                 except IntegrityError:
                     session.rollback()
                     return JSONResponse({"error": "item exists"}, status_code=409)
+                except SQLAlchemyError:
+                    session.rollback()
+                    return JSONResponse({"error": "database unavailable"}, status_code=503)
             # Emit actual only after the transaction commits.
             span.set_attributes({"demo.write.mode": "actual", "db.operation.name": "INSERT",
                                  "db.collection.name": "items", "demo.write.effect": json.dumps(effect, sort_keys=True)})
