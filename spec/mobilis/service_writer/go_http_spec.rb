@@ -20,10 +20,12 @@ RSpec.describe Mobilis::ServiceWriter::GoHTTP do
           expect(File.read("Dockerfile")).to include('CMD ["tiny-go"]', "CGO_ENABLED=0 go build", "EXPOSE 8200")
           expect(File.read("Dockerfile")).to include("FROM debian:trixie-slim", "apt-get install -y --no-install-recommends ca-certificates")
           expect(File.read("Dockerfile")).not_to include("alpine", "apk")
+          expect(File.read("internal/app/app_test.go")).to include("httptest.NewRecorder()", "Handler(Dependencies{})")
+          expect(File.read("go.mod")).not_to include("testify", "gomock", "ginkgo", "gomega")
           main = File.read("cmd/tiny-go/main.go")
           expect(main).to include("signal.NotifyContext", "server.Shutdown(shutdownCtx)", "errors.Is(err, http.ErrServerClosed)", "defer cleanup()")
           app = File.read("internal/app/app.go")
-          expect(app).to include("http.NewServeMux()", '"GET /health"')
+          expect(app).to include("func Handler(deps Dependencies) http.Handler", "return Handler(deps), cleanup, nil", "http.NewServeMux()", '"GET /health"')
           if database
             expect(app).to include('pgxpool.ParseConfig(os.Getenv("DATABASE_URL"))', "pool.Ping(pingCtx)", "pool.Close()")
             expect(node.env_vars_for_env_file.map(&:env_repr)).to include("TINY_GO_DATABASE_URL=postgres://store-test-user:store-test-password@store:5432/store_test")

@@ -8,6 +8,23 @@ module Mobilis
       def write
         FileUtils.mkdir_p("cmd/#{realized_node.name}")
         FileUtils.mkdir_p("internal/app")
+        File.write(".gitignore", "coverage.out\n")
+        File.write("internal/app/app_test.go", <<~GO)
+          package app
+
+          import (
+              "net/http/httptest"
+              "testing"
+          )
+
+          func TestHealth(t *testing.T) {
+              response := httptest.NewRecorder()
+              Handler(Dependencies{}).ServeHTTP(response, httptest.NewRequest("GET", "/health", nil))
+              if response.Code != 200 || response.Body.String() != `{"status":"ok"}` || response.Header().Get("Content-Type") != "application/json" {
+                  t.Fatalf("health response: %d %s %v", response.Code, response.Body, response.Header())
+              }
+          }
+        GO
         File.write("go.mod", <<~GO)
           module mobilis.local/#{realized_node.name}
 
@@ -144,13 +161,18 @@ module Mobilis
               #{setup.join("\n    ")}
               deps := Dependencies{HTTPClient: #{client}#{", DB: pool" if realized_node.database}}
               deps.HTTPClient.Timeout = 10*time.Second
+              return Handler(deps), cleanup, nil
+          }
+
+          // Handler constructs HTTP behavior without opening connections or exporters.
+          func Handler(deps Dependencies) http.Handler {
               mux := http.NewServeMux()
               mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
                   w.Header().Set("Content-Type", "application/json")
                   _, _ = w.Write([]byte(`{"status":"ok"}`))
               })
               register(mux, deps)
-              return #{realized_node.otel_enabled? ? 'otelhttp.NewHandler(mux, "http")' : "mux"}, cleanup, nil
+              return #{realized_node.otel_enabled? ? 'otelhttp.NewHandler(mux, "http")' : "mux"}
           }
         GO
         File.write("internal/app/routes.go", <<~GO)

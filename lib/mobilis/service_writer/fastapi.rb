@@ -9,6 +9,20 @@ module Mobilis
         package = realized_node.config_node.package_name
         @package_dir = "src/#{package}"
         FileUtils.mkdir_p(@package_dir)
+        FileUtils.mkdir_p("tests")
+        File.write(".gitignore", ".venv/\n__pycache__/\n.pytest_cache/\n.coverage\nhtmlcov/\n*.egg-info/\n")
+        File.write("tests/test_health.py", <<~PYTHON)
+          from fastapi.testclient import TestClient
+          from #{package}.app import create_app
+
+
+          def test_health():
+              with TestClient(create_app(telemetry=False)) as client:
+                  response = client.get("/health")
+              assert response.status_code == 200
+              assert response.json() == {"status": "ok"}
+              assert response.headers["content-type"] == "application/json"
+        PYTHON
         File.write("#{@package_dir}/__init__.py", "")
         File.write("pyproject.toml", <<~TOML)
           [build-system]
@@ -21,11 +35,24 @@ module Mobilis
           requires-python = ">=3.11"
           dependencies = #{dependencies.to_json}
 
+          [project.optional-dependencies]
+          test = ["pytest>=8,<10", "pytest-cov>=6,<8", "flexmock>=0.12,<1"]
+
           [project.scripts]
           #{realized_node.name} = "#{package}.cli:main"
 
           [tool.setuptools.packages.find]
           where = ["src"]
+
+          [tool.pytest.ini_options]
+          testpaths = ["tests"]
+
+          [tool.coverage.run]
+          branch = true
+          source = ["#{package}"]
+
+          [tool.coverage.report]
+          show_missing = true
         TOML
         File.write("Dockerfile", <<~DOCKER)
           FROM #{Mobilis::ContainerVersions::PYTHON}
@@ -70,12 +97,12 @@ module Mobilis
       def write_app
         # @type var imports: Array[String]
         imports = []
-        imports << "from .database import engine" if realized_node.database
+        imports << "from .database import get_engine" if realized_node.database
         imports << "from .telemetry import configure, instrument_app" if realized_node.otel_enabled?
         # @type var cleanup: Array[String]
         cleanup = []
-        cleanup << "engine.dispose()" if realized_node.database
-        cleanup << "provider.shutdown()" if realized_node.otel_enabled?
+        cleanup.concat(["if get_engine.cache_info().currsize:", "    get_engine().dispose()"]) if realized_node.database
+        cleanup.concat(["if provider is not None:", "    provider.shutdown()"]) if realized_node.otel_enabled?
         File.write("#{@package_dir}/app.py", <<~PYTHON)
           from contextlib import asynccontextmanager
           from fastapi import FastAPI
@@ -83,8 +110,8 @@ module Mobilis
           #{imports.join("\n")}
 
 
-          def create_app():
-              #{"provider = configure(#{"engine" if realized_node.database})" if realized_node.otel_enabled?}
+          def create_app(*, telemetry=True):
+              #{"provider = configure(#{"get_engine()" if realized_node.database}) if telemetry else None" if realized_node.otel_enabled?}
               @asynccontextmanager
               async def lifespan(app):
                   try:
@@ -99,7 +126,7 @@ module Mobilis
                   return {"status": "ok"}
 
               register(app)
-              #{"instrument_app(app)" if realized_node.otel_enabled?}
+              #{"if telemetry:\n        instrument_app(app)" if realized_node.otel_enabled?}
               return app
         PYTHON
       end
@@ -107,14 +134,20 @@ module Mobilis
       def write_database
         File.write("#{@package_dir}/database.py", <<~PYTHON)
           import os
+          from functools import lru_cache
           from sqlalchemy import create_engine
           from sqlalchemy.engine import make_url
-          from sqlalchemy.orm import sessionmaker
+          from sqlalchemy.orm import Session
 
           # Credentials, host and database come exclusively from the connection.
-          url = make_url(os.environ["DATABASE_URL"]).set(drivername="postgresql+psycopg")
-          engine = create_engine(url, pool_pre_ping=True)
-          Session = sessionmaker(engine)
+          @lru_cache(maxsize=1)
+          def get_engine():
+              url = make_url(os.environ["DATABASE_URL"]).set(drivername="postgresql+psycopg")
+              return create_engine(url, pool_pre_ping=True)
+
+
+          def get_session():
+              return Session(get_engine())
         PYTHON
       end
 
