@@ -17,69 +17,32 @@ Mobilis::DSL.generate("http-migration") do
     model.column("id", "Integer", python_type: "int", primary_key: true)
     model.column("name", "String(80)", python_type: "str", unique: true)
   end
-  legacy.add_model(Mobilis::Model::File.new("src/service_legacy/routes.py", <<~PYTHON))
-    from sqlalchemy import select
-    from .database import Session
-    from .models import Item
-
-
-    def register(app):
-        @app.get("/items")
-        def items():
-            with Session() as session:
-                return [{"id": item.id, "name": item.name}
-                        for item in session.scalars(select(Item).order_by(Item.id))]
-  PYTHON
+  legacy.add_model(Mobilis::Model::File.new("src/service_legacy/routes.py", File.read(File.join(__dir__, "http_migration/routes.py"))))
 
   candidate = go_http("candidate")
-  candidate.add_model(Mobilis::Model::File.new("internal/app/routes.go", <<~GO))
-    package app
-
-    import (
-        "encoding/json"
-        "log"
-        "net/http"
-    )
-
-    func register(mux *http.ServeMux, deps Dependencies) {
-        mux.HandleFunc("GET /items", func(w http.ResponseWriter, r *http.Request) {
-            rows, err := deps.DB.Query(r.Context(), "SELECT id, name FROM items ORDER BY id")
-            if err != nil {
-                log.Printf("query items: %v", err)
-                http.Error(w, "database unavailable", http.StatusServiceUnavailable)
-                return
-            }
-            defer rows.Close()
-            type item struct {
-                ID int `json:"id"`
-                Name string `json:"name"`
-            }
-            items := make([]item, 0)
-            for rows.Next() {
-                var value item
-                if err := rows.Scan(&value.ID, &value.Name); err != nil {
-                    log.Printf("scan item: %v", err)
-                    http.Error(w, "database error", http.StatusInternalServerError)
-                    return
-                }
-                items = append(items, value)
-            }
-            if err := rows.Err(); err != nil {
-                log.Printf("read items: %v", err)
-                http.Error(w, "database error", http.StatusInternalServerError)
-                return
-            }
-            w.Header().Set("Content-Type", "application/json")
-            if err := json.NewEncoder(w).Encode(items); err != nil { log.Printf("write response: %v", err) }
-        })
-    }
-  GO
+  shadow = go_http("candidate-shadow")
+  [candidate, shadow].each do |service|
+    service.add_model(Mobilis::Model::File.new("internal/app/routes.go", File.read(File.join(__dir__, "http_migration/routes.go"))))
+  end
+  # Ordinary image environment selects dry-run behavior in the second instance.
+  shadow.add_model(Mobilis::Model::File.new("Dockerfile", <<~DOCKER))
+    FROM #{Mobilis::ContainerVersions::GOLANG} AS build
+    WORKDIR /src
+    COPY . .
+    RUN go mod tidy && CGO_ENABLED=0 go build -trimpath -o /service ./cmd/candidate-shadow
+    FROM #{Mobilis::ContainerVersions::ALPINE}
+    RUN apk add --no-cache ca-certificates
+    COPY --from=build /service /usr/local/bin/candidate-shadow
+    ENV SHADOW_WRITES=true
+    USER 65532:65532
+    CMD ["candidate-shadow"]
+  DOCKER
   gateway = envoy("gateway")
-  [legacy, candidate].each do |service|
+  [legacy, candidate, shadow].each do |service|
     connect(from: service, to: db)
     connect(from: service, to: traces)
   end
   connect(from: gateway, to: traces)
-  route(from: gateway, to: legacy, candidate: candidate,
+  route(from: gateway, to: legacy, candidate: candidate, shadow: shadow,
     mirror_percent: mirror_percent, candidate_percent: candidate_percent)
 end

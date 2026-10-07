@@ -20,7 +20,7 @@ RSpec.describe "HTTP migration demo" do
     %w[test development production].each do |environment|
       env = Mobilis::RealizedEnv.new(system, Mobilis::ExecutionEnvironment.new(environment))
       services = env.realized_nodes.to_h { |node| [node.name, node.service_wrapped_compose[:services][node.name]] }
-      expect(services.keys).to eq(%w[store telemetry trace-viewer legacy candidate gateway])
+      expect(services.keys).to eq(%w[store telemetry trace-viewer legacy candidate candidate-shadow gateway])
       expect(services["legacy"][:build]).to eq(context: "./legacy")
       expect(services["candidate"][:environment]).to include("DATABASE_URL=${CANDIDATE_DATABASE_URL}")
       vars = env.all_envfile_vars.to_h { |var| [var.envfile_name, var.value] }
@@ -41,8 +41,11 @@ RSpec.describe "HTTP migration demo" do
       go = File.read("#{dir}/candidate/internal/app/routes.go")
       expect(python).to include('app.get("/items")', "select(Item).order_by(Item.id)")
       expect(go).to include('"GET /items"', "deps.DB.Query(r.Context()", "SELECT id, name FROM items ORDER BY id")
-      expect(python + go).not_to include("start_as_current_span", "otel.Tracer")
-      expect(Mobilis::System.from_json(system.to_json).node_count).to eq(6)
+      expect(python).to include('app.post("/items")', 'session.commit()', '"demo.write.mode": "actual"')
+      expect(go).to include('"POST /items"', 'os.Getenv("SHADOW_WRITES")', '"demo.write.effect"', 'tx.Commit(ctx)')
+      expect(File.read("#{dir}/candidate-shadow/internal/app/routes.go")).to eq(go)
+      expect(File.read("#{dir}/candidate-shadow/Dockerfile")).to include("ENV SHADOW_WRITES=true")
+      expect(Mobilis::System.from_json(system.to_json).node_count).to eq(7)
     end
   end
 
