@@ -10,7 +10,6 @@ import (
 	"regexp"
 
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -46,24 +45,26 @@ func recordRequestContext(r *http.Request) bool {
 	return shadow
 }
 
-// This is the only divergence: a shadow request skips the effect-commit boundary.
-func commitItem(ctx context.Context, db *pgxpool.Pool, effect itemEffect, shadow bool) (bool, error) {
+// This is the only divergence: shadow skips the same computed effect's commit.
+func commitItem(ctx context.Context, store itemStore, effect itemEffect, shadow bool) (bool, error) {
 	if shadow {
 		return false, nil
 	}
-	tx, err := db.Begin(ctx)
-	if err != nil {
-		return false, err
-	}
-	defer func() { _ = tx.Rollback(ctx) }()
-	_, err = tx.Exec(ctx, "SET LOCAL application_name = 'candidate'")
-	if err == nil {
-		_, err = tx.Exec(ctx, "INSERT INTO items (id, name) VALUES ($1, $2)", effect.Values.ID, effect.Values.Name)
-	}
-	if err == nil {
-		err = tx.Commit(ctx)
-	}
+	err := store.Commit(ctx, effect)
 	return err == nil, err
+}
+
+func effectAttributes(effect itemEffect, shadow, committed bool) []attribute.KeyValue {
+	encoded, _ := json.Marshal(effect)
+	mode := "actual"
+	if shadow {
+		mode = "shadow"
+	}
+	return []attribute.KeyValue{
+		attribute.String("demo.write.mode", mode), attribute.Bool("demo.request.shadow", shadow),
+		attribute.Bool("demo.write.committed", committed), attribute.String("db.operation.name", "INSERT"),
+		attribute.String("db.collection.name", "items"), attribute.String("demo.write.effect", string(encoded)),
+	}
 }
 
 func reply(w http.ResponseWriter, status int, value any) {
@@ -76,25 +77,19 @@ func reply(w http.ResponseWriter, status int, value any) {
 }
 
 func register(mux *http.ServeMux, deps Dependencies) {
+	registerItems(mux, postgresItems{deps.DB}, otel.Tracer("items"))
+}
+
+func registerItems(mux *http.ServeMux, store itemStore, tracer trace.Tracer) {
 	mux.HandleFunc("GET /items", func(w http.ResponseWriter, r *http.Request) {
 		recordRequestContext(r)
-		rows, err := deps.DB.Query(r.Context(), "SELECT id, name FROM items ORDER BY id")
+		items, err := store.List(r.Context())
 		if err != nil {
-			reply(w, 503, map[string]string{"error": "database unavailable"})
-			return
-		}
-		defer rows.Close()
-		items := make([]item, 0)
-		for rows.Next() {
-			var value item
-			if err := rows.Scan(&value.ID, &value.Name); err != nil {
+			if errors.Is(err, errInvalidRows) {
 				reply(w, 500, map[string]string{"error": "database error"})
-				return
+			} else {
+				reply(w, 503, map[string]string{"error": "database unavailable"})
 			}
-			items = append(items, value)
-		}
-		if err := rows.Err(); err != nil {
-			reply(w, 500, map[string]string{"error": "database error"})
 			return
 		}
 		reply(w, 200, items)
@@ -116,10 +111,9 @@ func register(mux *http.ServeMux, deps Dependencies) {
 			return
 		}
 		effect := determineEffect(value)
-		encodedEffect, _ := json.Marshal(effect)
-		ctx, span := otel.Tracer("items").Start(r.Context(), "items.write")
+		ctx, span := tracer.Start(r.Context(), "items.write")
 		defer span.End()
-		committed, err := commitItem(ctx, deps.DB, effect, shadow)
+		committed, err := commitItem(ctx, store, effect, shadow)
 		if err != nil {
 			var pgerr *pgconn.PgError
 			if errors.As(err, &pgerr) && pgerr.Code == "23505" {
@@ -129,13 +123,8 @@ func register(mux *http.ServeMux, deps Dependencies) {
 			reply(w, 503, map[string]string{"error": "database unavailable"})
 			return
 		}
-		mode := "actual"
-		if shadow {
-			mode = "shadow"
-		}
-		span.SetAttributes(attribute.String("demo.write.mode", mode), attribute.Bool("demo.request.shadow", shadow),
-			attribute.Bool("demo.write.committed", committed), attribute.String("db.operation.name", "INSERT"),
-			attribute.String("db.collection.name", "items"), attribute.String("demo.write.effect", string(encodedEffect)))
+		span.SetAttributes(effectAttributes(effect, shadow, committed)...)
+
 		reply(w, 201, value)
 	})
 }

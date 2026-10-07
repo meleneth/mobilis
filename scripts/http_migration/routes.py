@@ -1,13 +1,12 @@
 """Demo-owned item contract and committed semantic effect evidence."""
 import json
 import re
-from fastapi import Request
+from fastapi import Depends, Request
 from fastapi.responses import JSONResponse
 from opentelemetry import trace
-from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from .database import Session
-from .models import Item
+from .items import ItemStore, get_item_store, determine_effect
+from . import items as item_logic
 
 
 def validate(value):
@@ -26,37 +25,29 @@ def register(app):
         return response
 
     @app.get("/items")
-    def items():
+    def items(store: ItemStore = Depends(get_item_store)):
         try:
-            with Session() as session:
-                return [{"id": item.id, "name": item.name}
-                        for item in session.scalars(select(Item).order_by(Item.id))]
+            return store.list_items()
         except SQLAlchemyError:
             return JSONResponse({"error": "database unavailable"}, status_code=503)
 
     @app.post("/items")
-    async def create(request: Request):
+    async def create(request: Request, store: ItemStore = Depends(get_item_store)):
         try:
             value = json.loads((await request.body()).decode("utf-8"))
         except (ValueError, UnicodeError):
             value = None
         if not validate(value):
             return JSONResponse({"error": "invalid item"}, status_code=400)
-        effect = {"operation": "insert", "table": "items", "values": value}
+        effect = determine_effect(value)
         with trace.get_tracer("items").start_as_current_span("items.write") as span:
-            with Session() as session:
-                try:
-                    session.execute(text("SET LOCAL application_name = 'legacy'"))
-                    session.add(Item(**value))
-                    session.commit()
-                except IntegrityError:
-                    session.rollback()
-                    return JSONResponse({"error": "item exists"}, status_code=409)
-                except SQLAlchemyError:
-                    session.rollback()
-                    return JSONResponse({"error": "database unavailable"}, status_code=503)
-            # Emit actual only after the transaction commits.
-            span.set_attributes({"demo.write.mode": "actual", "demo.request.shadow": request.headers.get("x-mobilis-shadow") == "true",
-                                 "demo.write.committed": True, "db.operation.name": "INSERT",
-                                 "db.collection.name": "items", "demo.write.effect": json.dumps(effect, sort_keys=True)})
+            try:
+                store.commit(effect)
+            except IntegrityError:
+                return JSONResponse({"error": "item exists"}, status_code=409)
+            except SQLAlchemyError:
+                return JSONResponse({"error": "database unavailable"}, status_code=503)
+            # Evidence represents a completed transaction, never an attempted one.
+            span.set_attributes(item_logic.effect_attributes(effect,
+                shadow=request.headers.get("x-mobilis-shadow") == "true", committed=True))
         return JSONResponse(value, status_code=201)

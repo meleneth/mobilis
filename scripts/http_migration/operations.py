@@ -9,7 +9,9 @@ import urllib.parse
 import urllib.request
 import uuid
 from sqlalchemy import text
-from service_legacy.database import engine
+from service_legacy.database import get_engine
+
+engine = get_engine()
 from service_legacy.models import Base
 
 GATEWAY = "http://gateway:8080"

@@ -19,9 +19,13 @@ Mobilis::DSL.generate("http-migration") do
   end
   legacy.add_model(Mobilis::Model::File.new("src/service_legacy/routes.py", File.read(File.join(__dir__, "http_migration/routes.py"))))
 
+  legacy.add_model(Mobilis::Model::File.new("src/service_legacy/items.py", File.read(File.join(__dir__, "http_migration/items.py"))))
+  legacy.add_model(Mobilis::Model::File.new("tests/test_items.py", File.read(File.join(__dir__, "http_migration/test_items.py"))))
+
   candidate = go_http("candidate", publish_port: false)
   candidate.add_model(Mobilis::Model::File.new("internal/app/routes.go", File.read(File.join(__dir__, "http_migration/routes.go"))))
   candidate.add_model(Mobilis::Model::File.new("internal/app/routes_test.go", File.read(File.join(__dir__, "http_migration/routes_test.go"))))
+  candidate.add_model(Mobilis::Model::File.new("internal/app/items.go", File.read(File.join(__dir__, "http_migration/items.go"))))
   gateway = envoy("gateway", verification_port: 8081)
   legacy.add_model(Mobilis::Model::File.new("demo/operations.py", File.read(File.join(__dir__, "http_migration/operations.py"))))
   legacy.add_model(Mobilis::Model::File.new("demo/test_operations.py", File.read(File.join(__dir__, "http_migration/test_operations.py"))))
@@ -30,6 +34,7 @@ Mobilis::DSL.generate("http-migration") do
     wrapper = File.read(File.join(__dir__, "http_migration/demo-operation"))
     gateway.add_model(Mobilis::Model::File.new("../#{operation}", wrapper, executable: true))
   end
+  gateway.add_model(Mobilis::Model::File.new("../test", File.read(File.join(__dir__, "http_migration/test")), executable: true))
   gateway.add_model(Mobilis::Model::File.new("../demo", File.read(File.join(__dir__, "http_migration/demo")), executable: true))
   gateway.add_model(Mobilis::Model::File.new("../README.md", File.read(File.join(__dir__, "http_migration/README.md"))))
   [legacy, candidate].each do |service|
