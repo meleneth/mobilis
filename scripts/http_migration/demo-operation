@@ -26,12 +26,16 @@ if [[ "$operation" == "verify" ]]; then
   else
     run verify
     if [[ "$state" == "100 0" ]]; then
-      for candidate_service in candidate candidate-shadow; do
-        if ./dc_test ps --status running --services | grep -qx "$candidate_service"; then restore+=("$candidate_service"); fi
-      done
-      ./dc_test stop candidate candidate-shadow >/dev/null
-      echo "Verifying legacy authority with both candidate instances stopped"
+      if ./dc_test ps --status running --services | grep -qx candidate; then restore+=(candidate); fi
+      ./dc_test stop candidate >/dev/null
+      echo "Verifying legacy authority with candidate stopped"
       run failure
+      cleanup
+      restore=()
+      # Establish shadow evidence AFTER the deliberate failure-test restart.
+      # This candidate process then continues unchanged through partial/cutover.
+      echo "Verifying restored candidate shadowing with the same deployment"
+      run verify
     fi
   fi
 else

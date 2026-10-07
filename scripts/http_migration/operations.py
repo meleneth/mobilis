@@ -14,6 +14,7 @@ from service_legacy.models import Base
 
 GATEWAY = "http://gateway:8080"
 ADMIN = "http://gateway:9901"
+VERIFICATION = "http://gateway:8081"
 JAEGER = "http://trace-viewer:16686"
 
 
@@ -22,8 +23,8 @@ def require(condition, message):
         raise AssertionError(message)
 
 
-def http(url, value=None, trace_id=None, raw=None):
-    headers = {}
+def http(url, value=None, trace_id=None, raw=None, headers=None):
+    headers = dict(headers or {})
     if trace_id:
         headers["traceparent"] = f"00-{trace_id}-0123456789abcdef-01"
     data = raw if raw is not None else (json.dumps(value).encode() if value is not None else None)
@@ -62,7 +63,7 @@ def state():
 
 def ready(services):
     urls = {"legacy": "http://legacy:8000", "candidate": "http://candidate:8080",
-            "candidate-shadow": "http://candidate-shadow:8080", "gateway": GATEWAY}
+            "gateway": GATEWAY}
     for name in services:
         deadline = time.monotonic() + 30
         while True:
@@ -79,7 +80,7 @@ def migration(mirror, candidate):
     require(0 <= mirror <= 100 and 0 <= candidate <= 100, "Percentages must be 0..100")
     services = (["legacy"] if candidate < 100 else []) + (["candidate"] if candidate > 0 else [])
     if mirror > 0:
-        services.append("candidate-shadow")
+        services.append("candidate")
     ready(services)
     form = urllib.parse.urlencode({"migration.mirror": mirror,
                                   "migration.authority.legacy": 100 - candidate,
@@ -92,44 +93,60 @@ def migration(mirror, candidate):
     routing(mirror, candidate)
 
 
-def shadow_count():
+def candidate_count():
     stats = get(ADMIN + "/stats?format=json&filter=upstream_rq_total")["stats"]
-    return sum(s["value"] for s in stats if s["name"] == "cluster.candidate-shadow.upstream_rq_total")
+    return sum(s["value"] for s in stats if s["name"] == "cluster.candidate.upstream_rq_total")
+
+
+def gateway_candidate_ready(mirror, candidate):
+    if candidate == 0 and mirror != 100:
+        return
+    # Compose readiness alone does not prove Envoy has refreshed DNS after an
+    # intentional outage. Warm up through the real traffic policy before counting.
+    def successes():
+        stats = get(ADMIN + "/stats?format=json&filter=cluster.candidate.upstream_rq_2xx")["stats"]
+        return sum(stat["value"] for stat in stats if stat["name"] == "cluster.candidate.upstream_rq_2xx")
+    before = successes()
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline:
+        status, headers, _ = http(VERIFICATION + "/items", headers={"X-Mobilis-Routing-Bucket": "99"})
+        if candidate > 0 and status == 200 and headers.get("x-served-by") == "candidate":
+            return
+        if candidate == 0 and status == 200 and successes() > before:
+            return
+        time.sleep(0.2)
+    raise AssertionError("candidate did not become reachable through Envoy")
 
 
 def routing(mirror, candidate):
-    before = shadow_count()
+    gateway_candidate_ready(mirror, candidate)
+    before = candidate_count()
     counts = {"legacy": 0, "candidate": 0}
-    samples = 1000 if candidate in (1, 99) or mirror in (1, 99) else 120
-    for _ in range(samples):
-        status, headers, _ = http(GATEWAY + "/items")
-        require(status == 200, ("routing probe failed", status))
-        backend = headers.get("x-served-by")
-        require(backend in counts, ("missing authority header", headers))
-        counts[backend] += 1
-    if candidate == 0:
-        require(counts["candidate"] == 0, counts)
-    elif candidate == 100:
-        require(counts["legacy"] == 0, counts)
-    else:
-        require(all(counts.values()), ("split not observed", counts))
-        # A broad statistical guard detects reversed/incorrect weights without claiming exact counts.
-        observed = counts["candidate"] / samples
-        require(abs(observed - candidate / 100) < 0.20, ("unexpected split", counts))
+    # Every bucket is exercised exactly once on the internal listener. Public
+    # ingress does not honor this header and continues random weighted routing.
+    for bucket in range(100):
+        status, headers, _ = http(VERIFICATION + "/items", headers={"X-Mobilis-Routing-Bucket": str(bucket)})
+        expected = "legacy" if bucket < 100 - candidate else "candidate"
+        require(status == 200 and headers.get("x-served-by") == expected,
+                ("deterministic weighted routing", bucket, expected, status, headers))
+        counts[expected] += 1
     deadline = time.monotonic() + 10
+    eligible = counts["legacy"]
     while True:
-        mirrored = shadow_count() - before
-        if mirror != 100 or mirrored >= samples or time.monotonic() >= deadline:
+        mirrored = candidate_count() - before - counts["candidate"]
+        if mirror != 100 or mirrored >= eligible or time.monotonic() >= deadline:
             break
         time.sleep(0.2)
-    if mirror == 0:
-        require(mirrored == 0, ("unexpected mirroring", mirrored))
+    if mirror == 0 or eligible == 0:
+        require(mirrored == 0, ("unexpected mirroring/self-mirroring", mirrored))
     elif mirror == 100:
-        require(mirrored == samples, ("not every request mirrored", mirrored, samples))
+        require(mirrored == eligible, ("every legacy request must mirror exactly once", mirrored, eligible))
     else:
-        require(0 < mirrored < samples and abs(mirrored / samples - mirror / 100) < 0.20,
-                ("unexpected mirror fraction", mirrored, samples, mirror))
-    print(f"Observed routing: {counts}; shadow sends={mirrored}/{samples}", flush=True)
+        # Fractions below 100 are sampled; the authoritative split above is exact.
+        require(0 <= mirrored <= eligible, ("invalid mirror count", mirrored, eligible))
+    status, headers, _ = http(GATEWAY + "/items")
+    require(status == 200 and headers.get("x-served-by") in counts, "public ingress failed")
+    print(f"Observed deterministic routing: {counts}; shadow sends={mirrored}/{eligible} eligible legacy requests", flush=True)
 
 
 def seed():
@@ -225,16 +242,21 @@ def check_trace(trace, expected, write, value=None, authority=None):
         require(len(servers) == 1, (name, "expected one HTTP server", servers))
         parents = [ref["spanID"] for ref in servers[0]["references"] if ref["refType"] == "CHILD_OF"]
         require(any(parent in by_id and service(trace, by_id[parent]) == "gateway" for parent in parents), (name, "Envoy parent missing", parents))
+        shadow = name == "candidate" and authority == "legacy"
+        require(tags(servers[0]).get("demo.request.shadow") is shadow,
+                (name, "request shadow context mismatch", tags(servers[0])))
         queries = query_spans(local)
-        require(len(queries) == (0 if write and name == "candidate-shadow" else 1), (name, "unexpected item DB spans", queries))
+        require(len(queries) == (0 if write and shadow else 1), (name, "unexpected item DB spans", queries))
         effects = []
         if write:
             effects = [span for span in local if "demo.write.effect" in tags(span)]
             require(len(effects) == 1, (name, "missing/duplicate effect", effects))
             effect_span = effects[0]
             attrs = tags(effect_span)
-            mode = "shadow" if name == "candidate-shadow" else "actual"
+            mode = "shadow" if shadow else "actual"
             require(attrs.get("demo.write.mode") == mode, (name, "wrong write mode", attrs))
+            require(attrs.get("demo.request.shadow") is shadow and attrs.get("demo.write.committed") is (not shadow),
+                    (name, "shadow/commit evidence mismatch", attrs))
             require(attrs.get("db.operation.name") == "INSERT" and attrs.get("db.collection.name") == "items", attrs)
             require(json.loads(attrs["demo.write.effect"]) == {"operation": "insert", "table": "items", "values": value}, (name, "semantic effect mismatch", attrs))
         # SQL and effect evidence must descend from this service's request span.
@@ -247,7 +269,9 @@ def check_trace(trace, expected, write, value=None, authority=None):
                 parent = next((ref["spanID"] for ref in current["references"] if ref["refType"] == "CHILD_OF"), None)
                 require(parent in by_id, (name, "disconnected evidence", span))
                 current = by_id[parent]
-    actual_backends = {service(trace, span) for span in spans if tags(span).get("span.kind") == "server"} - {"gateway", "candidate-shadow"}
+    actual_backends = {service(trace, span) for span in spans
+                       if tags(span).get("span.kind") == "server"
+                       and tags(span).get("demo.request.shadow") is False} - {"gateway"}
     if authority:
         require(actual_backends == {authority}, ("unexpected authoritative backend", actual_backends))
 
@@ -269,27 +293,45 @@ def await_trace(trace_id, expected, write=False, value=None, authority=None):
     raise AssertionError(f"Trace {trace_id} did not satisfy verification: {last}")
 
 
-def verify_write(mirror, candidate, failure=False):
+def request_context(authority, candidate, spoof=False):
+    headers = {}
+    url = GATEWAY
+    if 0 < candidate < 100:
+        url = VERIFICATION
+        headers["X-Mobilis-Routing-Bucket"] = "0" if authority == "legacy" else "99"
+    if spoof:
+        headers["X-Mobilis-Shadow"] = "true"
+        headers["X-Mobilis-Mirror-Cluster"] = "candidate"
+    return url, headers
+
+
+def expected_services(authority, mirror, failure):
+    expected = {authority}
+    if authority == "legacy" and mirror == 100 and not failure:
+        expected.add("candidate")
+    return expected
+
+
+def verify_write(mirror, candidate, authority, failure=False, spoof=False):
     before, audit_before = snapshot()
     value = new_item()
     trace_id = uuid.uuid4().hex
-    status, headers, body = http(GATEWAY + "/items", value, trace_id)
-    require(status == 201 and body == value, ("write contract", status, body))
-    authority = headers.get("x-served-by")
-    require(authority in {"legacy", "candidate"}, headers)
-    if candidate in (0, 100):
-        require(authority == ("legacy" if candidate == 0 else "candidate"), "wrong authority")
+    url, request_headers = request_context(authority, candidate, spoof)
+    status, headers, body = http(url + "/items", value, trace_id, headers=request_headers)
+    require(status == 201 and body == value and headers.get("x-served-by") == authority,
+            ("write contract/authority", status, body, headers))
     after, audit_after = snapshot()
     require(after == sorted(before + [value], key=lambda item: item["id"]), "database mutation mismatch")
     new_effects = audit_after[len(audit_before):]
     effect = {"operation": "insert", "table": "items", "values": value}
     require(len(new_effects) == 1 and new_effects[0]["writer"] == authority and new_effects[0]["effect"] == effect,
             ("exactly one authoritative insert required; shadow must not mutate", new_effects))
-    expected = {authority}
-    if mirror == 100 and not failure:
-        expected.add("candidate-shadow")
+    expected = expected_services(authority, mirror, failure)
     await_trace(trace_id, expected, write=True, value=new_effects[0]["effect"]["values"], authority=authority)
-    print(f"Write verified: DB audit ({authority}) == committed effect" + (" == independent shadow intent; zero shadow DB calls" if "candidate-shadow" in expected else ""), flush=True)
+    mirrored = authority == "legacy" and "candidate" in expected
+    print(f"Write verified: DB audit ({authority}) == committed effect" +
+          (" == independent candidate shadow intent; zero shadow DB calls" if mirrored else "; no self-mirror") +
+          ("; spoofed caller marker sanitized" if spoof else ""), flush=True)
 
 
 def verify(failure=False):
@@ -298,18 +340,21 @@ def verify(failure=False):
         require((mirror, candidate) == (100, 0), "failure check requires 100/0")
     else:
         routing(mirror, candidate)
-    before, _ = snapshot()
-    trace_id = uuid.uuid4().hex
-    status, headers, body = http(GATEWAY + "/items", trace_id=trace_id)
-    require(status == 200 and body == before, ("read contract", status, body))
-    authority = headers["x-served-by"]
-    expected = {authority}
-    if mirror == 100 and not failure:
-        expected.add("candidate-shadow")
-    await_trace(trace_id, expected, authority=authority)
+    authorities = (["legacy"] if candidate < 100 else []) + (["candidate"] if candidate > 0 else [])
+    for authority in authorities:
+        before, _ = snapshot()
+        trace_id = uuid.uuid4().hex
+        url, request_headers = request_context(authority, candidate)
+        status, headers, body = http(url + "/items", trace_id=trace_id, headers=request_headers)
+        require(status == 200 and body == before and headers.get("x-served-by") == authority,
+                ("read contract/authority", status, body, headers))
+        expected = expected_services(authority, mirror, failure)
+        await_trace(trace_id, expected, authority=authority)
+        verify_write(mirror, candidate, authority, failure)
+        # At 0/100 and 100/0 this goes through PUBLIC ingress, proving external
+        # callers cannot suppress authoritative effects with reserved headers.
+        verify_write(mirror, candidate, authority, failure, spoof=True)
     require(get(GATEWAY + "/health") == {"status": "ok"}, "health contract")
-    verify_write(mirror, candidate, failure)
-    # Invalid input must not mutate DB; test actual services independently as well as the gateway.
     targets = [GATEWAY]
     if not failure:
         targets.append("http://candidate:8080")
@@ -333,7 +378,7 @@ def verify(failure=False):
         status, _, body = http(target + "/items", conflict)
         require((status, body) == (409, {"error": "item exists"}), (target, "duplicate name", status, body))
     require(snapshot() == original, "invalid/conflicting requests mutated DB")
-    print("PASS: running HTTP/read/write/effect contracts" + (" with both candidate instances stopped" if failure else ""), flush=True)
+    print("PASS: running HTTP/read/write/effect/context contracts" + (" with candidate stopped" if failure else ""), flush=True)
 
 
 def main():

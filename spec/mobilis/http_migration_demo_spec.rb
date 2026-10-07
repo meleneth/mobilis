@@ -20,9 +20,11 @@ RSpec.describe "HTTP migration demo" do
     %w[test development production].each do |environment|
       env = Mobilis::RealizedEnv.new(system, Mobilis::ExecutionEnvironment.new(environment))
       services = env.realized_nodes.to_h { |node| [node.name, node.service_wrapped_compose[:services][node.name]] }
-      expect(services.keys).to eq(%w[store telemetry trace-viewer legacy candidate candidate-shadow gateway])
+      expect(services.keys).to eq(%w[store telemetry trace-viewer legacy candidate gateway])
       expect(services["legacy"][:build]).to eq(context: "./legacy")
       expect(services["candidate"][:environment]).to include("DATABASE_URL=${CANDIDATE_DATABASE_URL}")
+      expect(services["legacy"]).not_to have_key(:ports)
+      expect(services["candidate"]).not_to have_key(:ports)
       vars = env.all_envfile_vars.to_h { |var| [var.envfile_name, var.value] }
       expect(vars["LEGACY_DATABASE_URL"]).to eq(vars["CANDIDATE_DATABASE_URL"])
       expect(vars["LEGACY_DATABASE_URL"]).to include("store-#{environment}-user", "store_#{environment}")
@@ -44,9 +46,12 @@ RSpec.describe "HTTP migration demo" do
       expect(python.split("@app.post").first).not_to include("start_as_current_span")
       expect(go.split('mux.HandleFunc("POST /items"').first).not_to include("otel.Tracer(")
       expect(python).to include('app.post("/items")', "session.commit()", '"demo.write.mode": "actual"')
-      expect(go).to include('"POST /items"', 'os.Getenv("SHADOW_WRITES")', '"demo.write.effect"', "tx.Commit(ctx)")
-      expect(File.read("#{dir}/candidate-shadow/internal/app/routes.go")).to eq(go)
-      expect(File.read("#{dir}/candidate-shadow/Dockerfile")).to include("ENV SHADOW_WRITES=true")
+      expect(go).to include('"POST /items"', "determineEffect(value)", "commitItem(ctx, deps.DB, effect, shadow)", '"demo.write.effect"', '"demo.write.committed"', "tx.Commit(ctx)")
+      expect(go).not_to include("SHADOW_WRITES", "os.Getenv")
+      expect(go.scan("effect := determineEffect(value)").size).to eq(1)
+      expect(File.read("#{dir}/candidate/internal/app/routes_test.go")).to include("TestShadowSkipsOnlyCommitBoundary", "TestShadowRequestContext")
+      expect(File.executable?("#{dir}/demo")).to be(true)
+      expect(File.read("#{dir}/demo")).to include("./dc_test up -d", "./seed", "./migration", "./exercise", "./verify", "0 10 50")
       %w[seed migration exercise verify].each do |operation|
         expect(File.executable?("#{dir}/#{operation}")).to be(true)
         wrapper = File.read("#{dir}/#{operation}")
@@ -56,7 +61,7 @@ RSpec.describe "HTTP migration demo" do
       operations = File.read("#{dir}/legacy/demo/operations.py")
       expect(operations).to include("CREATE TRIGGER item_effect", "demo.write.effect", "exactly one authoritative insert", "disconnected evidence")
       expect(File.read("#{dir}/README.md")).to include("./seed", "./migration 100 10", "./verify")
-      expect(Mobilis::System.from_json(system.to_json).node_count).to eq(7)
+      expect(Mobilis::System.from_json(system.to_json).node_count).to eq(6)
     end
   end
 
