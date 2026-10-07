@@ -63,7 +63,7 @@ Then inspect or run the generated project under `generate/`.
 | `17_observable_s3_storage.rb`                 | SeaweedFS-backed S3 storage with conditional observability wiring, Prometheus scraping, and Grafana panels.                                                                            |
 | `18_mnbme_otel_system.rb`                     | Rack microservice game demo extracted from MNBME: local gem support, Rack Docker image support, replicated service instances, Redis game state, and OpenTelemetry/Grafana/Loki wiring. |
 | `19_two_rails_local_gem.rb`                   | Two Rails services consuming one generated local gem, including per-service Docker build-context handling.                                                                            |
-| `20_http_migration.rb` | FastAPI and Go behind Envoy: live migration controls, safe shadow writes, semantic OTEL verification, and standalone generated operations. |
+| `20_http_migration.rb` | FastAPI and Go behind Envoy: live migration controls, trusted request shadow context on one Go candidate, semantic OTEL verification, and a standalone generated `./demo`. |
 
 See the [HTTP migration demo](scripts/http_migration/README.md) for the generated-project walkthrough, effect verification, runtime controls, and DSL.
 

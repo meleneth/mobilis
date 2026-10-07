@@ -1,5 +1,7 @@
 # HTTP migration validation — 2026-10-07
 
+This records the preceding deployment-based design. The [request-context correction and current validation](2026-10-07-http-migration-request-context.md) supersede its two-candidate architecture.
+
 The demo was generated and Docker-built in an isolated directory outside the Mobilis checkout. The final running artifact is `/tmp/mobilis-http-migration-validated-20261007/generate`. Its normal operations used only its own scripts, application images, Compose configuration, and mounted generated files. No runtime verifier or application source was mounted from Mobilis.
 
 ## Runtime mechanism
