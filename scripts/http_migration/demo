@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")"
-./dc_test up -d
+source ./demo-env
+echo "Running demo in $MOBILIS_ENV using $mobilis_dc"
+dc up -d
 ./seed
 for candidate_percent in 0 10 50; do
   ./migration 100 "$candidate_percent"

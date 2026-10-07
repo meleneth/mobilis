@@ -56,7 +56,8 @@ RSpec.describe "HTTP migration demo" do
       expect(go.scan("effect := determineEffect(value)").size).to eq(1)
       expect(File.read("#{dir}/candidate/internal/app/routes_test.go")).to include("TestShadowSkipsOnlyCommitBoundary", "TestShadowRequestContext")
       expect(File.executable?("#{dir}/demo")).to be(true)
-      expect(File.read("#{dir}/demo")).to include("./dc_test up -d", "./seed", "./migration", "./exercise", "./verify", "0 10 50")
+      expect(File.read("#{dir}/demo")).to include("source ./demo-env", "dc up -d", "./seed", "./migration", "./exercise", "./verify", "0 10 50")
+      expect(File.read("#{dir}/demo-env")).to include("MOBILIS_ENV:-development", "./dc_dev", "./dc_test", "./dc_prod")
       expect(File.read("#{dir}/legacy/tests/test_items.py")).to include("flexmock(store)", "TestClient", "invented_database_method")
       expect(File.executable?("#{dir}/test")).to be(true)
       expect(File.read("#{dir}/test")).to include("pytest --cov=service_legacy", "go test -race -cover ./...")
@@ -64,11 +65,14 @@ RSpec.describe "HTTP migration demo" do
       %w[seed migration exercise verify].each do |operation|
         expect(File.executable?("#{dir}/#{operation}")).to be(true)
         wrapper = File.read("#{dir}/#{operation}")
-        expect(wrapper).to include("./dc_test", "/app/demo/operations.py")
+        expect(wrapper).to include("source ./demo-env", "dc run", "/app/demo/operations.py")
         expect(wrapper).not_to include("/home/", "--network", "mobilis/")
       end
       operations = File.read("#{dir}/legacy/demo/operations.py")
       expect(operations).to include("CREATE TRIGGER item_effect", "demo.write.effect", "exactly one authoritative insert", "disconnected evidence")
+      expect(operations).to include("SQL meaning drift", "instrumented SQL meaning drift", "demo.sql.parameters")
+      expect(File.read("#{dir}/legacy/demo/sql_meaning.py")).to include('read="postgres"', "unused SQL bindings")
+      expect(File.read("#{dir}/legacy/Dockerfile")).to include("-r demo/requirements.txt")
       expect(File.read("#{dir}/README.md")).to include("./seed", "./migration 100 10", "./verify")
       expect(Mobilis::System.from_json(system.to_json).node_count).to eq(6)
     end

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Sourced by every infrastructure-facing demo helper after changing directory.
+export MOBILIS_ENV=${MOBILIS_ENV:-development}
+case "$MOBILIS_ENV" in
+  development) mobilis_dc=./dc_dev ;;
+  test) mobilis_dc=./dc_test ;;
+  production) mobilis_dc=./dc_prod ;;
+  *) echo "MOBILIS_ENV must be development, test, or production (got: $MOBILIS_ENV)" >&2; exit 2 ;;
+esac
+dc() { "$mobilis_dc" "$@"; }

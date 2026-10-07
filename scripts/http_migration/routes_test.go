@@ -183,7 +183,7 @@ func TestShadowRequestContext(t *testing.T) {
 
 func checkEffectEvidence(t *testing.T, recorder *tracetest.SpanRecorder, shadow bool, expected itemEffect) {
 	t.Helper()
-	effects, servers := 0, 0
+	effects, servers, plans := 0, 0, 0
 	for _, span := range recorder.Ended() {
 		if span.SpanContext().TraceID().String() != "11111111111111111111111111111111" {
 			t.Fatal("request context was lost")
@@ -207,10 +207,22 @@ func checkEffectEvidence(t *testing.T, recorder *tracetest.SpanRecorder, shadow 
 			if attrs["demo.request.shadow"] != shadow {
 				t.Fatal(attrs)
 			}
+		} else if span.Name() == "items.sql" {
+			plans++
+			bindings, err := json.Marshal([]any{expected.Values.ID, expected.Values.Name})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !shadow || attrs["demo.sql.executed"] != false || attrs["demo.sql.text"] != "INSERT INTO items (id, name) VALUES ($1, $2)" || attrs["demo.sql.parameters"] != string(bindings) {
+				t.Fatal("shadow SQL plan drift", attrs)
+			}
 		}
 	}
 	if effects != 1 || servers != 1 {
 		t.Fatalf("effects=%d servers=%d", effects, servers)
+	}
+	if (shadow && plans != 1) || (!shadow && plans != 0) {
+		t.Fatalf("unexpected shadow SQL plans: %d", plans)
 	}
 }
 

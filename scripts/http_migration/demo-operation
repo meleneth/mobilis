@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")"
+source ./demo-env
 operation=$(basename "$0")
-run() { ./dc_test run --rm --no-deps -T legacy python /app/demo/operations.py "$@"; }
+echo "Running $operation in $MOBILIS_ENV using $mobilis_dc"
+run() { dc run --rm --no-deps -T legacy python /app/demo/operations.py "$@"; }
 viewer() {
   local binding
-  binding=$(./dc_test port trace-viewer 16686 | tail -n 1)
+  binding=$(dc port trace-viewer 16686 | tail -n 1)
   echo "Traces: http://localhost:${binding##*:}"
 }
 if [[ "$operation" == "verify" ]]; then
@@ -13,21 +15,21 @@ if [[ "$operation" == "verify" ]]; then
   restore=()
   cleanup() {
     if (( ${#restore[@]} )); then
-      ./dc_test start "${restore[@]}" >/dev/null
+      dc start "${restore[@]}" >/dev/null
       run ready "${restore[@]}" >/dev/null
     fi
   }
   trap cleanup EXIT
   if [[ "$state" == "0 100" ]]; then
-    if ./dc_test ps --status running --services | grep -qx legacy; then restore+=(legacy); fi
-    ./dc_test stop legacy >/dev/null
+    if dc ps --status running --services | grep -qx legacy; then restore+=(legacy); fi
+    dc stop legacy >/dev/null
     echo "Verifying complete candidate cutover with legacy stopped"
     run verify
   else
     run verify
     if [[ "$state" == "100 0" ]]; then
-      if ./dc_test ps --status running --services | grep -qx candidate; then restore+=(candidate); fi
-      ./dc_test stop candidate >/dev/null
+      if dc ps --status running --services | grep -qx candidate; then restore+=(candidate); fi
+      dc stop candidate >/dev/null
       echo "Verifying legacy authority with candidate stopped"
       run failure
       cleanup

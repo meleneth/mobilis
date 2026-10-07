@@ -16,10 +16,31 @@ From the generated project directory, with Docker Compose and Bash available, ru
 ./demo
 ```
 
+The default environment is **development** (`dc_dev`). All infrastructure-facing
+helpers (`demo`, `seed`, `migration`, `exercise`, `verify`) select the same Compose
+wrapper through `MOBILIS_ENV`. Set it once in your shell to keep separate commands
+on the same environment:
+
+```sh
+export MOBILIS_ENV=development  # default; uses ./dc_dev
+./demo
+export MOBILIS_ENV=test         # uses ./dc_test
+./migration 100 10
+./verify
+# MOBILIS_ENV=production uses ./dc_prod
+```
+
+`demo-env` validates that choice and defines the shared `dc` function. Each helper
+prints its operation, selected environment, and wrapper. A one-command assignment such as
+`MOBILIS_ENV=test ./demo` applies to that command and its children; subsequent
+standalone commands use your shell's setting. Each environment has its own
+database, Envoy runtime settings, and Jaeger instance. `./seed` resets data in the
+selected environment. For direct Compose commands, use the matching wrapper.
+
 It runs this progression:
 
 ```sh
-./dc_test up -d
+./dc_dev up -d  # default development environment
 ./seed
 
 ./migration 100 0
@@ -43,6 +64,45 @@ Helpers discover ports and print a clickable human-facing Jaeger URL. `./exercis
 
 `./seed` resets the demo table to `[{"id":1,"name":"example"}]` and clears the write audit. It is destructive to demo data and intended for local demonstrations. It can be repeated between runs. Run it with no concurrent workload; exercises and verification deliberately accumulate identifiable items until the next reset. Schema creation and the audit trigger are demo-owned initialization, not a generated general-purpose migration system.
 
+## Where the OpenTelemetry verifier lives
+
+Read **`legacy/demo/operations.py` in the generated project**. Its source in the
+Mobilis repository is **`scripts/http_migration/operations.py`**. This is the actual
+Python code that queries OpenTelemetry evidence in Jaeger and decides whether the
+demo passes:
+
+- `verify()` orchestrates live read/write checks and expected-error contracts.
+- `verify_write()` compares HTTP results, Postgres state, the write audit, and traced effects.
+- `await_trace()` polls Jaeger's `/api/traces/<trace_id>` for the correlated request.
+- `check_trace()` checks gateway parentage, request context, SQL/effect ancestry,
+  semantic effects, and rejects unexpected error spans or HTTP statuses in successful checks.
+- `unique_spans()` rejects conflicting duplicate span evidence.
+
+`./verify` is the Bash entry point. It runs that Python file at
+`/app/demo/operations.py` inside a temporary container from the legacy application
+image, using the selected environment's network and database configuration. The
+application's `legacy/src/service_legacy/telemetry.py` configures instrumentation
+and export; it does not assess correctness. `legacy/demo/test_operations.py`
+contains regression tests for the verifier. After editing verifier Python in an
+existing generated project, rebuild its legacy image with the selected Compose
+wrapper (for example `./dc_dev build legacy`) before running `./verify`.
+
+Verification deliberately sends malformed requests expecting `400` and duplicate
+IDs/names expecting `409`. Those duplicate inserts produce real SQL constraint
+error spans. The helper announces this phase and checks exact status/body results
+and unchanged database state. The separate candidate-outage phase deliberately
+produces failed mirror requests (`503`), while checking that legacy succeeds.
+These expected failures can appear in Jaeger even when the demo passes. Successful
+correlated read/write checks reject unexpected errors, including failed discarded
+mirror responses; only the explicit outage check permits a gateway mirror `503`.
+
+Trace context preserves the **trace ID** across gateway, authority, and mirror.
+Each span has its own **span ID**; `traceparent` carries the caller's span ID as the
+downstream span's parent. In Jaeger, inspect the same trace and its parent/child
+tree. The verifier supplies a synthetic caller context without exporting a caller
+span, so the gateway can have an external parent absent from Jaeger. Backend,
+SQL, and effect parents must be present within the verified trace.
+
 ## What the walkthrough proves
 
 `./migration MIRROR_PERCENT CANDIDATE_PERCENT` changes two independent Envoy runtime settings:
@@ -64,6 +124,11 @@ Write verification proves more than matching status codes. It sends a new item t
 4. Retrieves that same trace and extracts the authoritative committed effect.
 5. At full mirroring, extracts the shadow candidate's independently computed effect and checks that its request emitted zero item database spans.
 6. Compares the database audit effect, authoritative telemetry effect, and shadow intent as parsed semantic objects; checks the evidence spans belong to the corresponding HTTP request.
+7. Parses PostgreSQL statements and bound parameters from both implementations, including the candidate's prepared shadow insert. Compares their SQL meaning against the item contract and checks executed statements against the independent database instrumentation. Different projections, predicates, ordering, limits, insert targets or bindings fail even if responses and reported effects still match.
+
+Read verification compares both actual SQL statements at full mirroring. The Python adapter captures the driver's SQL and bindings through SQLAlchemy's execution event; Go records the exact statement and arguments passed to pgx. Shadow inserts use the same `insertPlan` builder as real candidate commits, reporting SQL and bindings without executing them. Evidence must belong to the correlated request, and missing or duplicate evidence fails verification.
+
+The verifier uses [SQLGlot's PostgreSQL AST](https://sqlglot.com/sqlglot/dialects/postgres.html) with the demo's `items(id INTEGER, name VARCHAR)` schema. It normalizes table qualifications/aliases, formatting, default ascending order, driver placeholders and schema-preserving parameter casts; it maps insert bindings by target column. This is a bounded comparison for this contract, not a general SQL equivalence solver. Unsupported statements, clauses, casts, multiple statements or missing/unused bindings fail closed. Extra queries to other tables are checked too; only transaction controls and the deliberate writer identity setting are excluded. Conflict handling and database constraints remain outside shadow equivalence.
 
 The Go handler parses and validates input and constructs its insert effect once, before a small commitment function checks request context. The shadow path makes no database call; the authoritative path applies that computed effect. The authoritative handler emits its effect only after a successful transaction commit. The audit trigger independently records the resulting row values and transaction's application identity. At complete cutover the candidate really inserts, and verification succeeds while the legacy server is stopped.
 
@@ -109,7 +174,7 @@ These are supported Envoy runtime controls: weighted-cluster runtime weights, ru
 
 Partial-authority verification is deterministic: an unpublished listener uses the same route policy and runtime keys, plus Envoy's weighted-cluster `header_name` support. The verifier exercises all 100 selection buckets and targets both implementations for correlated writes. The public listener does not honor that diagnostic header and retains normal random selection. The verifier checks exact authority counts, mirror counters, and no candidate self-mirroring; correctness does not depend on random selection getting lucky.
 
-The operational scripts target `dc_test`. Python and its dependencies run from the generated application's image. They mount no repository files and need no host Python installation. All source, Dockerfiles, Compose configuration, verifier, and documentation live in the generated project. Take the entire directory to another host, build with `./dc_test build`, and use the same flow.
+The operational scripts default to `dc_dev`; `MOBILIS_ENV` selects `dc_test` or `dc_prod` consistently through `demo-env`. Python and its dependencies run from the generated application's image. They mount no repository files and need no host Python installation. All source, Dockerfiles, Compose configuration, verifier, and documentation live in the generated project. Take the entire directory to another host, build with the selected wrapper (by default `./dc_dev build`), and use the same flow.
 
 ## Unit tests
 
@@ -120,7 +185,9 @@ cd legacy
 python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install -e '.[test]'
+python -m pip install -r demo/requirements.txt
 pytest
+pytest demo/test_operations.py
 pytest --cov=service_legacy --cov-report=term-missing
 cd ../candidate
 go mod tidy

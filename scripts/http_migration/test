@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")"
-(cd legacy && pytest --cov=service_legacy --cov-report=term-missing)
+(cd legacy && pytest --cov=service_legacy --cov-report=term-missing tests demo/test_operations.py)
 (cd candidate && go test -race -cover ./...)

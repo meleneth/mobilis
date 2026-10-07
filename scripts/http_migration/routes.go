@@ -48,6 +48,9 @@ func recordRequestContext(r *http.Request) bool {
 // This is the only divergence: shadow skips the same computed effect's commit.
 func commitItem(ctx context.Context, store itemStore, effect itemEffect, shadow bool) (bool, error) {
 	if shadow {
+		statement, parameters := insertPlan(effect)
+		_, span := sqlEvidence(ctx, statement, parameters, false)
+		span.End()
 		return false, nil
 	}
 	err := store.Commit(ctx, effect)

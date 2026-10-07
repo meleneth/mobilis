@@ -11,8 +11,8 @@ import uuid
 from sqlalchemy import text
 from service_legacy.database import get_engine
 
-engine = get_engine()
 from service_legacy.models import Base
+from sql_meaning import sql_meaning, is_control_sql
 
 GATEWAY = "http://gateway:8080"
 ADMIN = "http://gateway:9901"
@@ -152,6 +152,7 @@ def routing(mirror, candidate):
 
 
 def seed():
+    engine = get_engine()
     Base.metadata.create_all(engine)
     with engine.begin() as connection:
         connection.execute(text("""
@@ -175,7 +176,7 @@ def seed():
 
 
 def snapshot():
-    with engine.connect() as connection:
+    with get_engine().connect() as connection:
         items = [dict(row._mapping) for row in connection.execute(text("SELECT id, name FROM items ORDER BY id"))]
         effects = [dict(row._mapping) for row in connection.execute(text("SELECT sequence, writer, effect FROM item_effects ORDER BY sequence"))]
     return items, effects
@@ -211,7 +212,7 @@ def service(trace, span):
 
 def query_spans(spans):
     return [span for span in spans if not span["operationName"].startswith("prepare ") and any(
-        key in {"db.statement", "db.query.text"} and "items" in str(value).lower()
+        key in {"db.statement", "db.query.text"} and not is_control_sql(str(value))
         for key, value in tags(span).items())]
 
 
@@ -235,9 +236,26 @@ def unique_spans(trace):
     return list(result.values())
 
 
-def check_trace(trace, expected, write, value=None, authority=None):
+def check_trace(trace, expected, write, value=None, authority=None, failure=False):
     spans = unique_spans(trace)
     by_id = {span["spanID"]: span for span in spans}
+    # Successful response/effect evidence cannot excuse a failed SQL call or
+    # discarded mirror response. Only the explicit outage check permits a
+    # gateway mirror failure; the authoritative path must still be healthy.
+    status = 201 if write else 200
+    for span in spans:
+        attrs = tags(span)
+        name = service(trace, span)
+        http_status = attrs.get("http.response.status_code", attrs.get("http.status_code"))
+        outage_mirror = (failure and authority == "legacy" and name == "gateway"
+                         and span["operationName"] == "mirror" and str(http_status) == "503")
+        if outage_mirror:
+            continue
+        require(not attrs.get("error") and attrs.get("otel.status_code") != "ERROR",
+                (name, "unexpected error span", span))
+        if http_status is not None:
+            require(str(http_status) == str(status),
+                    (name, "unexpected HTTP span status", http_status, status))
     for name in expected:
         local = [span for span in spans if service(trace, span) == name]
         servers = [span for span in local if tags(span).get("span.kind") == "server"]
@@ -248,7 +266,26 @@ def check_trace(trace, expected, write, value=None, authority=None):
         require(tags(servers[0]).get("demo.request.shadow") is shadow,
                 (name, "request shadow context mismatch", tags(servers[0])))
         queries = query_spans(local)
-        require(len(queries) == (0 if write and shadow else 1), (name, "unexpected item DB spans", queries))
+        require(len(queries) == (0 if write and shadow else 1), (name, "unexpected application DB spans", queries))
+        sql_spans = [span for span in local if "demo.sql.text" in tags(span)]
+        require(len(sql_spans) == 1, (name, "missing/duplicate SQL meaning evidence", sql_spans))
+        sql_attrs = tags(sql_spans[0])
+        require(sql_attrs.get("demo.sql.executed") is (not (write and shadow))
+                and sql_attrs.get("demo.sql.executemany") is False,
+                (name, "SQL execution mode mismatch", sql_attrs))
+        parameters = json.loads(sql_attrs["demo.sql.parameters"])
+        meaning = sql_meaning(sql_attrs["demo.sql.text"], parameters)
+        expected_meaning = ({"operation": "insert", "table": "items", "values": value} if write else
+                            sql_meaning("SELECT id, name FROM items ORDER BY id", []))
+        require(meaning == expected_meaning,
+                (name, "SQL meaning drift", meaning, expected_meaning, sql_attrs["demo.sql.text"]))
+        # Executed evidence must agree with the independently instrumented DB
+        # query, so stale application evidence cannot conceal adapter SQL drift.
+        for query in queries:
+            attrs = tags(query)
+            statement = attrs.get("db.query.text", attrs.get("db.statement"))
+            require(sql_meaning(statement, parameters) == meaning,
+                    (name, "instrumented SQL meaning drift", statement, meaning))
         effects = []
         if write:
             effects = [span for span in local if "demo.write.effect" in tags(span)]
@@ -262,7 +299,7 @@ def check_trace(trace, expected, write, value=None, authority=None):
             require(attrs.get("db.operation.name") == "INSERT" and attrs.get("db.collection.name") == "items", attrs)
             require(json.loads(attrs["demo.write.effect"]) == {"operation": "insert", "table": "items", "values": value}, (name, "semantic effect mismatch", attrs))
         # SQL and effect evidence must descend from this service's request span.
-        for span in queries + effects:
+        for span in queries + effects + sql_spans:
             current = span
             seen = set()
             while current["spanID"] != servers[0]["spanID"]:
@@ -278,7 +315,7 @@ def check_trace(trace, expected, write, value=None, authority=None):
         require(actual_backends == {authority}, ("unexpected authoritative backend", actual_backends))
 
 
-def await_trace(trace_id, expected, write=False, value=None, authority=None):
+def await_trace(trace_id, expected, write=False, value=None, authority=None, failure=False):
     deadline = time.monotonic() + 60
     last = "trace missing"
     while time.monotonic() < deadline:
@@ -286,8 +323,8 @@ def await_trace(trace_id, expected, write=False, value=None, authority=None):
             data = get(JAEGER + "/api/traces/" + trace_id)["data"]
             if data:
                 trace = data[0]
-                check_trace(trace, expected, write, value, authority)
-                print(f"Trace {trace_id}: {sorted(expected)}; propagation, parentage and {'effect' if write else 'query'} evidence passed", flush=True)
+                check_trace(trace, expected, write, value, authority, failure)
+                print(f"Trace {trace_id}: {sorted(expected)}; propagation, parentage, SQL meaning/bindings and {'effect' if write else 'query'} evidence passed", flush=True)
                 return trace
         except (urllib.error.URLError, KeyError, AssertionError) as error:
             last = str(error)
@@ -329,7 +366,7 @@ def verify_write(mirror, candidate, authority, failure=False, spoof=False):
     require(len(new_effects) == 1 and new_effects[0]["writer"] == authority and new_effects[0]["effect"] == effect,
             ("exactly one authoritative insert required; shadow must not mutate", new_effects))
     expected = expected_services(authority, mirror, failure)
-    await_trace(trace_id, expected, write=True, value=new_effects[0]["effect"]["values"], authority=authority)
+    await_trace(trace_id, expected, write=True, value=new_effects[0]["effect"]["values"], authority=authority, failure=failure)
     mirrored = authority == "legacy" and "candidate" in expected
     print(f"Write verified: DB audit ({authority}) == committed effect" +
           (" == independent candidate shadow intent; zero shadow DB calls" if mirrored else "; no self-mirror") +
@@ -351,7 +388,7 @@ def verify(failure=False):
         require(status == 200 and body == before and headers.get("x-served-by") == authority,
                 ("read contract/authority", status, body, headers))
         expected = expected_services(authority, mirror, failure)
-        await_trace(trace_id, expected, authority=authority)
+        await_trace(trace_id, expected, authority=authority, failure=failure)
         verify_write(mirror, candidate, authority, failure)
         # At 0/100 and 100/0 this goes through PUBLIC ingress, proving external
         # callers cannot suppress authoritative effects with reserved headers.
@@ -369,6 +406,9 @@ def verify(failure=False):
                b'{"id":2,"name":"ok","extra":1}', b'{"id":2,"name":"ok"} {}',
                '{"id":2,"name":"ok"}'.encode("utf-16"),
                b'\xef\xbb\xbf{"id":2,"name":"ok"}']
+    print("Expected-error contract checks: deliberately sending invalid JSON/items (400) "
+          "and duplicate IDs/names (409). Duplicate checks intentionally produce SQL "
+          "constraint errors; every response and unchanged DB state must pass.", flush=True)
     for target in targets:
         for raw in invalid:
             status, _, body = http(target + "/items", raw=raw)
@@ -379,8 +419,10 @@ def verify(failure=False):
         conflict["name"] = original[0][0]["name"]
         status, _, body = http(target + "/items", conflict)
         require((status, body) == (409, {"error": "item exists"}), (target, "duplicate name", status, body))
+        print(f"Expected errors verified at {target}: {len(invalid)} invalid requests → 400; "
+              "duplicate ID and name → 409", flush=True)
     require(snapshot() == original, "invalid/conflicting requests mutated DB")
-    print("PASS: running HTTP/read/write/effect/context contracts" + (" with candidate stopped" if failure else ""), flush=True)
+    print("PASS: running HTTP/read/write/SQL/effect/context contracts" + (" with candidate stopped" if failure else ""), flush=True)
 
 
 def main():

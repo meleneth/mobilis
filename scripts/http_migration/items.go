@@ -2,8 +2,11 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // This interface is owned by the demo; the archetype still supplies ordinary pgx.
@@ -17,8 +20,25 @@ type postgresItems struct{ db *pgxpool.Pool }
 var _ itemStore = postgresItems{}
 var errInvalidRows = errors.New("invalid item rows")
 
+func insertPlan(effect itemEffect) (string, []any) {
+	return "INSERT INTO items (id, name) VALUES ($1, $2)", []any{effect.Values.ID, effect.Values.Name}
+}
+
+func sqlEvidence(ctx context.Context, statement string, parameters []any, executed bool) (context.Context, trace.Span) {
+	if parameters == nil {
+		parameters = []any{}
+	}
+	encoded, _ := json.Marshal(parameters)
+	return trace.SpanFromContext(ctx).TracerProvider().Tracer("items").Start(ctx, "items.sql", trace.WithAttributes(
+		attribute.String("demo.sql.text", statement), attribute.String("demo.sql.parameters", string(encoded)),
+		attribute.Bool("demo.sql.executed", executed), attribute.Bool("demo.sql.executemany", false)))
+}
+
 func (store postgresItems) List(ctx context.Context) ([]item, error) {
-	rows, err := store.db.Query(ctx, "SELECT id, name FROM items ORDER BY id")
+	statement := "SELECT id, name FROM items ORDER BY id"
+	ctx, span := sqlEvidence(ctx, statement, nil, true)
+	defer span.End()
+	rows, err := store.db.Query(ctx, statement)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +65,10 @@ func (store postgresItems) Commit(ctx context.Context, effect itemEffect) error 
 	defer func() { _ = tx.Rollback(ctx) }()
 	_, err = tx.Exec(ctx, "SET LOCAL application_name = 'candidate'")
 	if err == nil {
-		_, err = tx.Exec(ctx, "INSERT INTO items (id, name) VALUES ($1, $2)", effect.Values.ID, effect.Values.Name)
+		statement, parameters := insertPlan(effect)
+		queryCtx, span := sqlEvidence(ctx, statement, parameters, true)
+		_, err = tx.Exec(queryCtx, statement, parameters...)
+		span.End()
 	}
 	if err == nil {
 		err = tx.Commit(ctx)

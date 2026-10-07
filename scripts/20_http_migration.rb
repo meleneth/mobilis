@@ -29,6 +29,16 @@ Mobilis::DSL.generate("http-migration") do
   gateway = envoy("gateway", verification_port: 8081)
   legacy.add_model(Mobilis::Model::File.new("demo/operations.py", File.read(File.join(__dir__, "http_migration/operations.py"))))
   legacy.add_model(Mobilis::Model::File.new("demo/test_operations.py", File.read(File.join(__dir__, "http_migration/test_operations.py"))))
+  legacy.add_model(Mobilis::Model::File.new("demo/sql_meaning.py", File.read(File.join(__dir__, "http_migration/sql_meaning.py"))))
+  legacy.add_model(Mobilis::Model::File.new("demo/requirements.txt", "sqlglot==27.29.0\n"))
+  legacy.add_model(Mobilis::Model::File.new("Dockerfile", <<~DOCKER))
+    FROM #{Mobilis::ContainerVersions::PYTHON}
+    WORKDIR /app
+    COPY . .
+    RUN pip install --no-cache-dir . -r demo/requirements.txt
+    EXPOSE 8000
+    CMD ["legacy"]
+  DOCKER
   legacy.add_model(Mobilis::Model::File.new("demo/initial-state.json", {mirror: mirror_percent, candidate: candidate_percent}.to_json))
   %w[seed exercise verify migration].each do |operation|
     wrapper = File.read(File.join(__dir__, "http_migration/demo-operation"))
@@ -36,6 +46,7 @@ Mobilis::DSL.generate("http-migration") do
   end
   gateway.add_model(Mobilis::Model::File.new("../test", File.read(File.join(__dir__, "http_migration/test")), executable: true))
   gateway.add_model(Mobilis::Model::File.new("../demo", File.read(File.join(__dir__, "http_migration/demo")), executable: true))
+  gateway.add_model(Mobilis::Model::File.new("../demo-env", File.read(File.join(__dir__, "http_migration/demo-env"))))
   gateway.add_model(Mobilis::Model::File.new("../README.md", File.read(File.join(__dir__, "http_migration/README.md"))))
   [legacy, candidate].each do |service|
     connect(from: service, to: db)
