@@ -5,10 +5,11 @@ require "json"
 require "net/http"
 require "open3"
 require "uri"
+require "yaml"
 
 # Run after deployment. A gateway URL allows testing before DNS is installed:
 # MOBILIS_GATEWAY_URL=http://127.0.0.1:18080 ruby scripts/kubernetes/verify.rb
-project = "initial"
+project = ENV.fetch("MOBILIS_DEMO_PROJECT", "initial")
 environment = ENV.fetch("MOBILIS_ENV", "dev")
 base = "#{environment}.deva.station"
 namespace = "#{project}-#{environment}"
@@ -30,7 +31,7 @@ grafana_host = "#{project}-grafana.#{base}"
 response = request.call(app_host, "/")
 abort "App failed: #{response.code} #{response.body}" unless response.code == "200"
 abort "Unexpected app response" unless JSON.parse(response.body).fetch("project") == project
-%w[loki prometheus otel-collector alloy].each do |service|
+%w[loki prometheus otel-collector alloy app-db app-db-cache app-db-cable app-db-queue].each do |service|
   response = request.call("#{project}-#{service}.#{base}", "/")
   abort "Private service #{service} received an external route" unless response.code == "404"
 end
@@ -78,5 +79,29 @@ end
 output, status = Open3.capture2("kubectl", "--context", context, "-n", namespace, "get", "services", "-o", "json")
 abort "Cannot inspect Kubernetes Services" unless status.success?
 services = JSON.parse(output).fetch("items")
-abort "Expected seven ClusterIP services" unless services.size == 7 && services.all? { |service| service.dig("spec", "type") == "ClusterIP" }
+expected_count = (environment == "prod") ? 11 : 8
+abort "Unexpected ClusterIP services" unless services.size == expected_count && services.all? { |service| service.dig("spec", "type") == "ClusterIP" }
+# Compare the user's generated artifact with project-only and environment queries.
+root = ENV.fetch("MOBILIS_ARTIFACT_ROOT", File.expand_path("../../generate", __dir__))
+expected = YAML.load_stream(File.read(File.join(root, "kubernetes", environment, "resources.yml")))
+kinds = expected.map { |object| object.fetch("kind") }.uniq.join(",")
+selector = "mobilis.io/project=#{project}"
+output, status = Open3.capture2("kubectl", "--context", context, "get", kinds, "-A", "-l", selector, "-o", "json")
+abort "Cannot discover project resources" unless status.success?
+project_objects = JSON.parse(output).fetch("items")
+expected.each do |object|
+  live = project_objects.find do |candidate|
+    candidate["kind"] == object["kind"] && candidate.dig("metadata", "name") == object.dig("metadata", "name") &&
+      candidate.dig("metadata", "namespace") == object.dig("metadata", "namespace")
+  end
+  abort "Resource missing from project discovery: #{object["kind"]}/#{object.dig("metadata", "name")}" unless live
+  labels = object.dig("metadata", "labels")
+  abort "Missing ownership labels" unless labels.fetch("mobilis.io/project") == project && labels.fetch("mobilis.io/environment") == environment
+  abort "Live ownership differs from artifact" unless labels.all? { |key, value| live.dig("metadata", "labels", key) == value }
+end
+output, status = Open3.capture2("kubectl", "--context", context, "get", kinds, "-A", "-l", "#{selector},mobilis.io/environment=#{environment}", "-o", "json")
+abort "Cannot discover environment resources" unless status.success?
+selected = JSON.parse(output).fetch("items")
+abort "Environment discovery mismatch" unless selected.size == expected.size && selected.all? { |object| object.dig("metadata", "labels", "mobilis.io/environment") == environment }
+
 puts "Verified #{namespace}: Istio endpoints, Rails trace in Jaeger, metrics and logs through Grafana, and private infrastructure."

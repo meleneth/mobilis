@@ -52,9 +52,9 @@ The helper defaults to `kind-devastation`, checks Istio, and checks namespace
 ownership and route hostname collisions before building. It uses the existing
 realized build contexts, Dockerfiles, args and target, tags application images as
 `registry.deva.station/initial/app:dev`, and pushes them to the registry that
-Devastation configures and trusts in Kind. It applies resources, removes obsolete
-owned objects (including removed public routes), restarts application deployments
-to pull updated local tags, and waits for readiness. An explicit
+Devastation configures and trusts in Kind. It applies the complete generated resources and waits for readiness. It does not
+prune resources or restart existing workloads. Mobilis generates a project once;
+subsequent changes and lifecycle operations belong to the artifact owner. An explicit
 `MOBILIS_KUBE_CONTEXT` can select another context using the same runtime setup.
 
 ## Observe and verify
@@ -70,17 +70,17 @@ demo credentials remain `admin` / `mobilis-admin`.
 Run from the Mobilis repository after deployment:
 
 ```sh
-ruby scripts/kubernetes/verify.rb
+MOBILIS_ARTIFACT_ROOT=/path/to/generated/project ruby scripts/kubernetes/verify.rb
 ```
 
 The verifier checks all three public routes, traces in Jaeger, counters and logs
-through Grafana's data source proxy, seven ClusterIP services, and HTTP 404 for the
-four private infrastructure hostnames. It retries asynchronous telemetry delivery.
+through Grafana's data source proxy, eight ClusterIP services in dev/test (eleven in prod, including Rails database fanout), and HTTP 404 for the
+private infrastructure hostnames, including the database. It retries asynchronous telemetry delivery.
 Before DNS is available, forward the existing gateway and set an address override:
 
 ```sh
 kubectl --context kind-devastation -n istio-system port-forward service/istio-ingressgateway 18080:80
-MOBILIS_GATEWAY_URL=http://127.0.0.1:18080 ruby scripts/kubernetes/verify.rb
+MOBILIS_GATEWAY_URL=http://127.0.0.1:18080 MOBILIS_ARTIFACT_ROOT=/path/to/generated/project ruby scripts/kubernetes/verify.rb
 ```
 
 The override still sends the generated Host headers and exercises Istio routing.
@@ -88,10 +88,10 @@ It does not verify Devastation DNS or TLS.
 
 ## Scope and limits
 
-This is a local deployment slice. Storage is ephemeral (emptyDir or container
-storage); replacing pods loses databases and observability data. It does not
-implement production storage, lifecycle policy, cluster provisioning, or an
-alternate ingress layer. Existing local/demo environment values are reused.
+This is a local deployment slice. Declared state uses PVCs in dev/prod and
+emptyDir in test. See [storage and ownership](2026-10-09-kubernetes-storage.md)
+for the verified durability boundary. Jaeger remains an in-memory trace backend.
+There is no lifecycle policy, cluster provisioning, or alternate ingress layer. Existing local/demo environment values are reused.
 No Kubernetes Secret system is introduced. Configuration uses file mounts; future
 Vault-delivered files can use that same workload boundary.
 
@@ -104,7 +104,7 @@ Validation is covered by `spec/mobilis/kubernetes_spec.rb`, executable deploymen
 helper tests, and the opt-in live verifier. The normal suite remains
 `bundle exec rspec`.
 
-## Live validation, 2026-10-09
+## Original live validation, 2026-10-09 (before durable storage)
 
 Generated the new demo in an isolated `/tmp` directory and deployed `initial-dev`
 to the local Devastation Kind cluster. The Rails image was built with its generated

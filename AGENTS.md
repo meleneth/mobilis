@@ -122,3 +122,18 @@ Suggested format for larger plans:
 - Open questions
 
 Avoid burying multi-step implementation plans in `AGENTS.md`; stale plans make future agents worse.
+
+## Kubernetes generation contract
+
+Mobilis is a one-shot generator. Generated projects belong to users and standard
+tooling afterward. Do not add regeneration, upgrades, pruning, reconciliation,
+or Mobilis-managed runtime lifecycle machinery.
+
+State paths are declared on realized resources with `declare_storage`; Compose
+binds remain independent. Kubernetes uses the existing realized environments:
+PVCs in dev/prod, emptyDir in test. All Kubernetes objects receive ownership
+labels through `Generator#resource` and `Universe#labels`, including namespaces
+and PVCs. Retain the existing `mobilis.io` label convention.
+
+See [Kubernetes storage and ownership](notes/2026-10-09-kubernetes-storage.md) for
+the Devastation durability boundary and standard-tooling verification.
