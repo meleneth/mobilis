@@ -22,7 +22,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run docs:build
+      - run: npm run docs:check
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:
@@ -44,6 +44,14 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/configure-pages@v5
+      - name: Verify Pages uses the documentation workflow
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { data: pages } = await github.rest.repos.getPages(context.repo)
+            if (pages.build_type !== 'workflow') {
+              core.setFailed('Set Settings → Pages → Build and deployment → Source to GitHub Actions. Branch publishing runs Jekyll and overwrites VitePress.')
+            }
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
