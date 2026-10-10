@@ -3,7 +3,9 @@
 
 require "mobilis"
 
-Mobilis::DSL.generate("initial") do
+project = ENV.fetch("MOBILIS_DEMO_PROJECT", "initial")
+
+Mobilis::DSL.generate(project) do
   deploy_kubernetes "*.deva.station" do
     istio do
       expose "app", root: true
@@ -12,7 +14,26 @@ Mobilis::DSL.generate("initial") do
     end
   end
 
-  rails("app", api: true) do |svc|
+  rails("app", api: true, primary_database: postgres("app-db")) do |svc|
+    svc.add_rails_model("durability_record") do |model|
+      model.string "value"
+      model.existing!
+    end
+    # Supply the demo schema as an artifact; generation needs no running database.
+    svc.write_file("app/models/durability_record.rb", <<~RAILS)
+      class DurabilityRecord < ApplicationRecord
+      end
+    RAILS
+    svc.write_file("db/migrate/20261009000000_create_durability_records.rb", <<~RAILS)
+      class CreateDurabilityRecords < ActiveRecord::Migration[8.1]
+        def change
+          create_table :durability_records do |table|
+            table.string :value
+            table.timestamps
+          end
+        end
+      end
+    RAILS
     svc.write_file("config/routes.rb", <<~RAILS)
       Rails.application.routes.draw do
         root "demo#index"
@@ -21,7 +42,7 @@ Mobilis::DSL.generate("initial") do
       end
     RAILS
     svc.write_file("config/initializers/demo_hosts.rb", <<~RAILS)
-      Rails.application.config.hosts += %w[initial.dev.deva.station initial.test.deva.station initial.prod.deva.station app]
+      Rails.application.config.hosts += %w[#{project}.dev.deva.station #{project}.test.deva.station #{project}.prod.deva.station app]
     RAILS
     svc.write_file("app/controllers/demo_controller.rb", <<~RAILS)
       class DemoController < ActionController::API
@@ -31,7 +52,7 @@ Mobilis::DSL.generate("initial") do
           count = REQUESTS[:mutex].synchronize { REQUESTS[:count] += 1 }
           Instrumentation.trace("demo.request", attributes: { request_count: count }) do
             Rails.logger.info("Kubernetes demo request \#{count}")
-            render json: { project: "initial", message: "Hello from Kubernetes and Istio", requests: count }
+            render json: { project: "#{project}", message: "Hello from Kubernetes and Istio", requests: count }
           end
         end
 

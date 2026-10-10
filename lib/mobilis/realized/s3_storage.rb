@@ -28,6 +28,7 @@ module Mobilis
 
         register_external_port(S3_PORT, "#{name}_S3_PORT", "#{name} S3 API port")
         add_volume(data_volume_env_var.env_var_ref, "/data")
+        declare_storage("data", "/data")
         add_volume("./#{name}/entrypoint.sh", "/usr/local/bin/mobilis-seaweedfs-entrypoint.sh")
         compose[:entrypoint] << "/bin/sh"
         compose[:entrypoint] << "/usr/local/bin/mobilis-seaweedfs-entrypoint.sh"

@@ -8,6 +8,7 @@ module Mobilis
       def initialize(realized_env, config_node)
         super(realized_env, config_node, Mobilis::ContainerVersions::ALLOY)
         @has_service_dir = true
+        declare_storage("data", "/var/lib/alloy/data", fs_group: 473)
         add_volume("./#{name}/config.alloy", "/etc/alloy/config.alloy")
         add_volume("/var/run/docker.sock", "/var/run/docker.sock:ro")
         compose[:command] << "run"

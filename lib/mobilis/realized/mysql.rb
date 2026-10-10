@@ -22,6 +22,7 @@ module Mobilis
         set_compose_image(Mobilis::ContainerVersions::MYSQL)
         set_healthcheck_command("mysqladmin ping -h 127.0.0.1 -u#{@mysql_user_env_var.env_var_ref} -p#{@mysql_password_env_var.env_var_ref}")
         add_volume(data_volume_env_var.env_var_ref, "/var/lib/mysql")
+        declare_storage("data", "/var/lib/mysql")
       end
 
       def root_password

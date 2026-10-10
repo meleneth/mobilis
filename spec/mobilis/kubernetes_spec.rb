@@ -41,8 +41,17 @@ RSpec.describe "Kubernetes deployment" do
     expect(system.kubernetes_deployment.exposures).to eq([
       {name: "app", root: true}, {name: "jaeger", root: false}, {name: "grafana", root: false}
     ])
-    expect(system.node_count).to eq(7)
+    expect(system.node_count).to eq(8)
     expect(system.config_nodes.values.find { |node| node.name == "app" }.has_connected_depends_on_class?(Mobilis::Node::OtelCollector)).to be_truthy
+  end
+
+  it "supplies the database demo schema as files without requesting a runtime model generator" do
+    app = demo_system.config_nodes.values.find { |node| node.name == "app" }
+    models = app.each_model_of_type(Mobilis::Model::Rails::Model).to_a
+    expect(models.map(&:name)).to eq(["durability_record"])
+    expect(models.none?(&:generate_model?)).to be(true)
+    files = app.each_model_of_type(Mobilis::Model::File).to_a
+    expect(files.map(&:path)).to include("app/models/durability_record.rb", "db/migrate/20261009000000_create_durability_records.rb")
   end
 
   it "derives dev/test/prod namespaces and project-first flat hosts" do
@@ -182,9 +191,9 @@ RSpec.describe "Kubernetes deployment" do
       universe = manifest.kubernetes_universes.find { |env| env.environment == "dev" }
       resources = generator.resources_for(universe)
       workloads = resources.select { |resource| resource["kind"] == "Deployment" }
-      expect(workloads.map { |resource| resource.dig("metadata", "name") }).to contain_exactly("app", "grafana", "jaeger", "loki", "otel-collector", "prometheus", "alloy")
+      expect(workloads.map { |resource| resource.dig("metadata", "name") }).to contain_exactly("app", "grafana", "jaeger", "loki", "otel-collector", "prometheus", "alloy", "app-db")
       services = resources.select { |resource| resource["kind"] == "Service" }
-      expect(services.size).to eq(7)
+      expect(services.size).to eq(8)
       expect(services.map { |resource| resource.dig("spec", "type") }.uniq).to eq(["ClusterIP"])
       routes = resources.select { |resource| resource["kind"] == "VirtualService" }
       expect(routes.map { |resource| resource.dig("metadata", "name") }).to contain_exactly("app", "jaeger", "grafana")
@@ -222,12 +231,139 @@ RSpec.describe "Kubernetes deployment" do
       expect(Mobilis::Kubernetes::Generator.new(loaded_manifest, directory).resources_for(loaded_universe)).to eq(resources)
       expect(universe.services.map { |node| node.compose.clean_shrunk }).to eq(compose_before)
       expect(File.executable?("#{directory}/deploy-kubernetes")).to be(true)
-      expect(generator.builds_for(universe)).to eq([{service: "app", image: "registry.deva.station/initial/app:dev", build: {context: "./app"}}])
+      expect(generator.builds_for(universe).first).to include(service: "app", image: "registry.deva.station/initial/app:dev")
+      expect(generator.builds_for(universe).first[:build]).to include(context: "./app", labels: {
+        "org.opencontainers.image.vendor" => "Mobilis", "mobilis.project" => "initial",
+        "mobilis.environment" => "dev", "mobilis.service" => "app"
+      })
       other = Mobilis::Manifest.new(system_for("another") {
         deploy_kubernetes "*.deva.station"
         rails "app"
       })
       expect(Mobilis::Kubernetes::Generator.new(other, directory).image_for(other.kubernetes_universes.first, other.realized_env(:test).realized_node_by_name("app"))).to eq("registry.deva.station/another/app:test")
+    end
+  end
+
+  it "backs declared state with owned PVCs in dev/prod and emptyDir in test without changing Compose" do
+    manifest = Mobilis::Manifest.new(demo_system)
+    Dir.mktmpdir do |directory|
+      write_service_files(manifest, directory)
+      FileUtils.mkdir_p(File.join(directory, "app", "config"))
+      File.write(File.join(directory, "app", "config", "master.key"), "fixture-master-key\n")
+      generator = Mobilis::Kubernetes::Generator.new(manifest, directory)
+      manifest.kubernetes_universes.each do |universe|
+        before = universe.services.map { |node| node.compose.clean_shrunk }
+        if universe.environment == "prod"
+          resources = generator.resources_for(universe)
+          deployment = resources.find { |object| object["kind"] == "Deployment" && object.dig("metadata", "name") == "app" }
+          env = deployment.dig("spec", "template", "spec", "containers", 0, "env")
+          expect(env).to include("name" => "RAILS_MASTER_KEY", "value" => "fixture-master-key")
+          %w[CACHE_DATABASE_URL CABLE_DATABASE_URL QUEUE_DATABASE_URL].each do |name|
+            expect(env.map { |entry| entry["name"] }).to include(name)
+          end
+        end
+        resources = generator.resources_for(universe)
+        claims = resources.select { |object| object["kind"] == "PersistentVolumeClaim" }
+        expected_services = %w[alloy app-db grafana loki prometheus]
+        expected_services.concat(%w[app-db-cache app-db-cable app-db-queue]) if universe.environment == "prod"
+        expect(claims.size).to eq((universe.environment == "test") ? 0 : expected_services.size)
+        resources.each do |object|
+          expect(object.dig("metadata", "labels")).to include(universe.labels)
+          unless %w[Namespace Gateway].include?(object["kind"])
+            service = object.dig("metadata", "labels", "mobilis.io/service")
+            expect(universe.services.map(&:name)).to include(service)
+            expect(service).to eq(object.dig("metadata", "name")) unless object["kind"] == "PersistentVolumeClaim"
+          end
+        end
+        universe.services.each do |node|
+          workload = resources.find { |object| object["kind"] == "Deployment" && object.dig("metadata", "name") == node.name }
+          pod = workload.dig("spec", "template", "spec")
+          expect(workload.dig("spec", "template", "metadata", "labels")).to eq(universe.labels(node.name))
+          expect(node.storage_requirements.empty?).to eq(!expected_services.include?(node.name))
+          node.storage_requirements.each do |storage|
+            mount = pod.fetch("containers").first.fetch("volumeMounts").find { |entry| entry["mountPath"] == storage[:path] }
+            volume = pod.fetch("volumes").find { |entry| entry["name"] == mount.fetch("name") }
+            if universe.environment == "test"
+              expect(volume).to include("emptyDir" => {})
+              expect(volume).not_to have_key("persistentVolumeClaim")
+            else
+              identity = "#{universe.namespace}-#{node.name}-#{storage[:name]}"
+              expect(volume).to include("persistentVolumeClaim" => {"claimName" => identity})
+              claim = claims.find { |entry| entry.dig("metadata", "name") == identity }
+              expect(claim.dig("metadata", "labels")).to eq(universe.labels(node.name))
+              expect(claim.fetch("spec")).to eq("accessModes" => ["ReadWriteOnce"], "resources" => {"requests" => {"storage" => "1Gi"}})
+            end
+          end
+        end
+        universe.services.each do |node|
+          expect(node.service_wrapped_compose.dig(:services, node.name, :labels)).to include(
+            "mobilis.io/project" => "initial", "mobilis.io/service" => node.name
+          )
+        end
+        expect(universe.services.map { |node| node.compose.clean_shrunk }).to eq(before)
+        expect(generator.resources_for(universe)).to eq(resources)
+      end
+    end
+  end
+
+  it "supports multiple logical volumes and distinguishes projects through artifact metadata" do
+    identities = []
+    %w[first second].each do |project|
+      manifest = Mobilis::Manifest.new(system_for(project) do
+        deploy_kubernetes "*.deva.station"
+        postgres "database"
+      end)
+      generator = Mobilis::Kubernetes::Generator.new(manifest, "/tmp")
+      manifest.kubernetes_universes.each do |universe|
+        node = universe.services.first
+        node.declare_storage("archive", "/archive", size: "2Gi")
+        resources = generator.resources_for(universe)
+        resources.each { |object| expect(object.dig("metadata", "labels")).to include(universe.labels) }
+        claims = resources.select { |object| object["kind"] == "PersistentVolumeClaim" }
+        identities.concat(claims.map { |object| object.dig("metadata", "name") })
+        expect(claims.size).to eq((universe.environment == "test") ? 0 : 2)
+      end
+    end
+    expect(identities.uniq.size).to eq(identities.size)
+  end
+
+  it "rejects ambiguous derived claim identities instead of emitting colliding PVCs" do
+    manifest = Mobilis::Manifest.new(system_for do
+      deploy_kubernetes "*.deva.station"
+      postgres "a"
+      postgres "a-b"
+    end)
+    universe = manifest.kubernetes_universes.find { |env| env.environment == "dev" }
+    universe.services.find { |node| node.name == "a" }.declare_storage("b-data", "/archive")
+    generator = Mobilis::Kubernetes::Generator.new(manifest, "/tmp")
+    expect { generator.resources_for(universe) }.to raise_error(ArgumentError, /identity collision/)
+  end
+
+  it "stamps only Mobilis-built Dockerfiles and publishes environment image labels in build plans" do
+    manifest = Mobilis::Manifest.new(system_for do
+      deploy_kubernetes "*.deva.station"
+      rails "app"
+      postgres "database"
+    end)
+    Dir.mktmpdir do |directory|
+      Dir.chdir(directory) do
+        File.write("Dockerfile", "FROM scratch\n")
+        env = manifest.realized_env(:test)
+        writer = Mobilis::Base::ServiceWriter.new(manifest, env, env.realized_node_by_name("app"))
+        writer.write_image_ownership
+        stamped = File.read("Dockerfile")
+        expect(stamped).to include('org.opencontainers.image.vendor="Mobilis"', 'mobilis.project="initial"', 'mobilis.service="app"')
+        upstream = env.realized_node_by_name("database")
+        Mobilis::Base::ServiceWriter.new(manifest, env, upstream).write_image_ownership
+        expect(File.read("Dockerfile")).to eq(stamped)
+        expect(upstream.compose.clean_shrunk).not_to have_key(:build)
+        generator = Mobilis::Kubernetes::Generator.new(manifest, directory)
+        manifest.kubernetes_universes.each do |universe|
+          builds = generator.builds_for(universe)
+          expect(builds.map { |entry| entry[:service] }).to eq(["app"])
+          expect(builds.first.dig(:build, :labels)).to include("mobilis.project" => "initial", "mobilis.environment" => universe.environment)
+        end
+      end
     end
   end
 
@@ -242,7 +378,7 @@ RSpec.describe "Kubernetes deployment" do
     node.compose[:build][:args][:MODE] = "demo"
     node.compose[:build][:target] = "final"
     generator = Mobilis::Kubernetes::Generator.new(manifest, "/tmp")
-    expect(generator.builds_for(manifest.kubernetes_universes.first).first[:build]).to eq(context: "./", dockerfile: "./app/Dockerfile", args: {MODE: "demo"}, target: "final")
+    expect(generator.builds_for(manifest.kubernetes_universes.first).first[:build]).to include(context: "./", dockerfile: "./app/Dockerfile", args: {MODE: "demo"}, target: "final")
   end
 
   it "keeps the existing Rails OTEL demo Compose-only with its original graph" do

@@ -46,7 +46,15 @@ module Mobilis
         end
 
         def service_wrapped_compose
-          { services: { name => compose.clean_shrunk } }
+          details = compose.clean_shrunk
+          # These service fragments are shared across Compose environments.
+          # Compose itself supplies the environment-scoped project label.
+          details[:labels] = (details[:labels] || {}).merge(
+            "app.kubernetes.io/managed-by" => "mobilis",
+            "mobilis.io/project" => meta_project_name,
+            "mobilis.io/service" => name
+          )
+          {services: {name => details}}
         end
       end
     end

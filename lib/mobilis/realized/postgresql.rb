@@ -24,6 +24,7 @@ module Mobilis
         set_compose_image(Mobilis::ContainerVersions::POSTGRES)
         set_healthcheck_command("pg_isready -U #{@postgres_user_env_var.env_var_ref} -d #{@postgres_db_env_var.env_var_ref}")
         add_volume(data_volume_env_var.env_var_ref, "/var/lib/postgresql")
+        declare_storage("data", "/var/lib/postgresql")
       end
 
       def after_all_nodes_realized

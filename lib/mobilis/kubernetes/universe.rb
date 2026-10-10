@@ -39,6 +39,10 @@ module Mobilis
         labels
       end
 
+      def persistent_storage?
+        !realized_env.is_test?
+      end
+
       def self.validate_collisions!(universes)
         namespaces = universes.map(&:namespace)
         raise ArgumentError, "Kubernetes namespace collision" unless namespaces.uniq.size == namespaces.size

@@ -8,6 +8,7 @@ module Mobilis
 
         @has_data_volume = false
         @has_service_dir = true
+        declare_storage("data", "/prometheus", fs_group: 65_534)
         add_volume("./#{name}/prometheus.yml", "/etc/prometheus/prometheus.yml")
         register_external_port(exposed_port_no, "#{name}_WEB_PORT",
                                "#{name} web interface port")

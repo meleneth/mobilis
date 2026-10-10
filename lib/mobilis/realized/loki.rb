@@ -6,6 +6,7 @@ module Mobilis
       def initialize(realized_env, config_node)
         super(realized_env, config_node, Mobilis::ContainerVersions::LOKI)
         @has_service_dir = true
+        declare_storage("data", "/loki", fs_group: 10_001)
         register_external_port(exposed_port_no, "#{name}_WEB_PORT", "#{name} web interface port")
         add_volume("./#{name}/loki-config.yaml", "/etc/loki/loki-config.yaml")
         compose[:command] << "-config.file=/etc/loki/loki-config.yaml"

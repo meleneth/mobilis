@@ -12,6 +12,7 @@ module Mobilis
         @has_data_volume = true
         @has_dockerfile = false
         add_volume("./data/#{environment}/#{name}", "/var/lib/grafana")
+        declare_storage("data", "/var/lib/grafana", fs_group: 472)
         add_volume("./#{name}/provisioning/datasources", "/etc/grafana/provisioning/datasources")
         add_volume("./#{name}/provisioning/dashboards", "/etc/grafana/provisioning/dashboards")
         add_compose_raw_var("GF_PATHS_PROVISIONING", "/etc/grafana/provisioning")

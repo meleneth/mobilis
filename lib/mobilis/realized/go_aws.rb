@@ -11,6 +11,7 @@ module Mobilis
 
         # Persistent state
         add_volume("./#{name}/data", "/data")
+        declare_storage("data", "/data")
 
         # Config file
         add_volume("./#{name}/goaws.yaml", "/etc/goaws/goaws.yaml")

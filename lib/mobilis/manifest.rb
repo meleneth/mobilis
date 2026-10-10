@@ -271,7 +271,11 @@ module Mobilis
 
         Only the listed services have external routes. All workload Services are ClusterIP.
         Resources and build plans are in `kubernetes/{dev,test,prod}/`.
-        This local deployment uses ephemeral storage; deleting or replacing pods loses their data.
+        Declared state uses PVCs in dev/prod and emptyDir in test, at the same container paths.
+        PVCs use the cluster's default StorageClass. Preserve the PVC and its underlying storage.
+        Apply independently with `kubectl apply -f kubernetes/dev/resources.yml` after publishing images.
+        Resources use `mobilis.io/project=#{system.meta_project_name}` and `mobilis.io/environment` labels.
+        Mobilis generates once; subsequent lifecycle and artifact changes belong to standard tooling.
         Generated configuration is mounted as files. No Kubernetes Secrets are generated.
       MARKDOWN
     end
@@ -449,6 +453,7 @@ module Mobilis
             directory_service.chdir_project(realized_node)
             writer = realized_node.service_writer.new(self, realized_env, realized_node)
             writer.write
+            writer.write_image_ownership
             directory_service.chdir_generate
             service_dirs_written[name] = true
           end

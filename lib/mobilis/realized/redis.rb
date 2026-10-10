@@ -15,6 +15,7 @@ module Mobilis
 
         set_compose_image(Mobilis::ContainerVersions::REDIS)
         set_healthcheck_command("redis-cli ping")
+        declare_storage("data", "/data")
       end
 
       def url

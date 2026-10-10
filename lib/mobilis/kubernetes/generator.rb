@@ -39,9 +39,13 @@ module Mobilis
           build = node.compose.clean_shrunk[:build]
           next unless build
 
-          unsupported = build.keys - %i[context dockerfile args target]
+          unsupported = build.keys - %i[context dockerfile args target labels]
           raise ArgumentError, "Unsupported Kubernetes build options for #{node.name}: #{unsupported}" unless unsupported.empty?
-          {service: node.name, image: image_for(universe, node), build: build}
+          labels = (build[:labels] || {}).merge(
+            "org.opencontainers.image.vendor" => "Mobilis", "mobilis.project" => universe.project,
+            "mobilis.environment" => universe.environment, "mobilis.service" => node.name
+          )
+          {service: node.name, image: image_for(universe, node), build: build.merge(labels: labels)}
         end
       end
 
@@ -75,6 +79,9 @@ module Mobilis
           container["command"] = compose[:entrypoint] if compose[:entrypoint]
           container["readinessProbe"] = {"tcpSocket" => {"port" => target_port_for(node, ports.first)}, "initialDelaySeconds" => 5} unless ports.empty?
           pod_spec = {"containers" => [container], "volumes" => volumes}
+          groups = node.storage_requirements.filter_map { |storage| storage[:fs_group] }.uniq
+          raise ArgumentError, "Conflicting storage groups for #{node.name}" if groups.size > 1
+          pod_spec["securityContext"] = {"fsGroup" => groups.first} unless groups.empty?
           pod_spec["serviceAccountName"] = node.name if node.is_a?(Mobilis::Realized::Alloy)
           template = {"metadata" => {"labels" => universe.labels(node.name),
                                      "annotations" => {"mobilis.io/config-digest" => Digest::SHA256.hexdigest(JSON.generate(configs))}},
@@ -84,6 +91,8 @@ module Mobilis
              "selector" => {"matchLabels" => universe.labels(node.name)}, "template" => template}, service: node.name)
         end
         resources.concat(istio_resources(universe))
+        identities = resources.map { |object| [object["kind"], object.dig("metadata", "namespace"), object.dig("metadata", "name")] }
+        raise ArgumentError, "Kubernetes resource identity collision" unless identities.uniq.size == identities.size
         resources
       end
 
@@ -120,7 +129,7 @@ module Mobilis
       end
 
       def environment_for(node)
-        values = node.compose_environment.vars_for_compose.to_h do |var|
+        values = node.compose_environment_override.vars_for_compose.to_h do |var|
           value = var.value
           if var.is_alias_only
             source = node.realized_env.all_envfile_vars.find { |candidate| candidate.envfile_name == var.envfile_name && !candidate.is_alias_only }
@@ -130,6 +139,8 @@ module Mobilis
           [var.key, value.to_s]
         end
         if node.is_a?(Mobilis::Realized::Rails)
+          master_key = File.join(root, node.name, "config", "master.key")
+          values["RAILS_MASTER_KEY"] ||= File.read(master_key).strip if File.file?(master_key)
           values["RAILS_ENV"] = node.environment
           values["RAILS_LOG_TO_STDOUT"] = "true"
           values["RAILS_SERVE_STATIC_FILES"] = "true"
@@ -145,12 +156,25 @@ module Mobilis
         data = {}
         volumes = []
         mounts = []
-        # Compose data bind mounts become explicitly ephemeral local-demo storage.
-        # Configuration remains a file mount, compatible with future Vault files.
+        configs = []
+        node.storage_requirements.each do |storage|
+          volume_name = "state-#{storage.fetch(:name)}"
+          if universe.persistent_storage?
+            claim_name = "#{universe.namespace}-#{node.name}-#{storage.fetch(:name)}"
+            configs << resource(universe, "v1", "PersistentVolumeClaim", claim_name,
+              {"accessModes" => ["ReadWriteOnce"], "resources" => {"requests" => {"storage" => storage.fetch(:size)}}}, service: node.name)
+            volumes << {"name" => volume_name, "persistentVolumeClaim" => {"claimName" => claim_name}}
+          else
+            volumes << {"name" => volume_name, "emptyDir" => {}}
+          end
+          mounts << {"name" => volume_name, "mountPath" => storage.fetch(:path)}
+        end
+        # Declared state replaces Compose data binds. Configuration stays embedded.
         bindings = node.compose_volumes.data.dup
         bindings.delete("/var/run/docker.sock") if node.is_a?(Mobilis::Realized::Alloy)
         bindings.each_with_index do |(source, destination), index|
           destination = destination.delete_suffix(":ro")
+          next if node.storage_requirements.any? { |storage| storage[:path] == destination }
           volume_name = "v#{index}"
           source_var = source.match(/\A\$\{([^}]+)\}\z/)
           if source_var
@@ -159,9 +183,7 @@ module Mobilis
             source = var.value.to_s
           end
           if source.start_with?("./data/")
-            volumes << {"name" => volume_name, "emptyDir" => {}}
-            mounts << {"name" => volume_name, "mountPath" => destination}
-            next
+            raise ArgumentError, "Undeclared Kubernetes state path for #{node.name}: #{destination}"
           end
           # Application source is already baked into its normal Mobilis build.
           next if node.compose_build_context && source == "./#{node.name}"
@@ -187,11 +209,6 @@ module Mobilis
           mount["subPath"] = File.basename(path) unless File.directory?(path)
           mounts << mount
         end
-        if node.is_a?(Mobilis::Realized::Loki)
-          volumes << {"name" => "storage", "emptyDir" => {}}
-          mounts << {"name" => "storage", "mountPath" => "/loki"}
-        end
-        configs = []
         unless data.empty?
           raise ArgumentError, "ConfigMap for #{node.name} exceeds 1 MiB" if data.values.sum(&:bytesize) > 1_000_000
           config = resource(universe, "v1", "ConfigMap", node.name, nil, service: node.name)
