@@ -4,7 +4,6 @@
 # Copied into the generated project; no Mobilis installation required at deploy time.
 require "json"
 require "open3"
-require "yaml"
 
 abort "Usage: ./deploy-kubernetes [dev|test|prod]" if ARGV.size > 1
 ENVIRONMENT = ARGV.fetch(0, "dev")
@@ -57,26 +56,12 @@ JSON.parse(File.read("#{DIRECTORY}/builds.json")).each do |entry|
   args.concat(["-f", File.join(build.fetch("context"), build.fetch("dockerfile"))]) if build["dockerfile"]
   args.concat(["--target", build["target"]]) if build["target"]
   (build["args"] || {}).each { |name, value| args.concat(["--build-arg", "#{name}=#{value}"]) }
+  (build["labels"] || {}).each { |name, value| args.concat(["--label", "#{name}=#{value}"]) }
   run!(*args, build.fetch("context"))
   run!("docker", "push", entry.fetch("image"))
 end
 run!(*KUBECTL, "apply", "-f", "#{DIRECTORY}/resources.yml")
 
-# Remove previously generated objects that disappeared from the declaration,
-# including removed public routes. Never prune unowned resources or namespaces.
-kinds = %w[Deployment Service ConfigMap Gateway VirtualService ServiceAccount Role RoleBinding]
-api_kinds = %w[deployments services configmaps gateways.networking.istio.io virtualservices.networking.istio.io serviceaccounts roles rolebindings]
-desired = YAML.load_stream(File.read("#{DIRECTORY}/resources.yml")).map { |object| [object.fetch("kind"), object.dig("metadata", "name")] }
 selector = expected.map { |key, value| "#{key}=#{value}" }.join(",")
-query!("get", api_kinds.join(","), "-n", NAMESPACE, "-l", selector, "-o", "json").fetch("items").each do |object|
-  identity = [object.fetch("kind"), object.dig("metadata", "name")]
-  next if desired.include?(identity)
-  run!(*KUBECTL, "delete", api_kinds.fetch(kinds.index(identity.first)), identity.last, "-n", NAMESPACE)
-end
-
-# Local environment image tags are stable; restarting pulls the latest build.
-JSON.parse(File.read("#{DIRECTORY}/builds.json")).each do |entry|
-  run!(*KUBECTL, "rollout", "restart", "deployment/#{entry.fetch("service")}", "-n", NAMESPACE)
-end
 run!(*KUBECTL, "rollout", "status", "deployment", "-n", NAMESPACE, "-l", selector, "--timeout=300s")
 UNIVERSE.fetch("public").each { |service, host| puts "#{service}: http://#{host}" }

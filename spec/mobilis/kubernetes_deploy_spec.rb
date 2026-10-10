@@ -18,7 +18,7 @@ RSpec.describe "Generated Kubernetes deployment helper" do
       ))
       File.write("#{directory}/kubernetes/dev/builds.json", JSON.dump([
         {service: "app", image: "registry.deva.station/initial/app:dev",
-         build: {context: "./", dockerfile: "app/Dockerfile", args: {VALUE: "literal $(touch unwanted)"}, target: "final"}}
+         build: {context: "./", dockerfile: "app/Dockerfile", args: {VALUE: "literal $(touch unwanted)"}, labels: {"mobilis.project" => "initial"}, target: "final"}}
       ]))
       File.write("#{directory}/kubernetes/dev/resources.yml", YAML.dump("kind" => "Deployment", "metadata" => {"name" => "app"}))
       File.write("#{directory}/fixtures.json", JSON.dump(namespace: namespace, routes: routes, stale: stale))
@@ -63,10 +63,9 @@ RSpec.describe "Generated Kubernetes deployment helper" do
     run_helper do |output, error, status, commands|
       expect(status).to be_success, error
       expect(commands).to include(["docker", "build", "-t", "registry.deva.station/initial/app:dev", "-f", "./app/Dockerfile",
-        "--target", "final", "--build-arg", "VALUE=literal $(touch unwanted)", "./"])
+        "--target", "final", "--build-arg", "VALUE=literal $(touch unwanted)", "--label", "mobilis.project=initial", "./"])
       expect(commands).to include(["docker", "push", "registry.deva.station/initial/app:dev"])
       expect(commands).to include(["kubectl", "--context", "kind-devastation", "apply", "-f", "kubernetes/dev/resources.yml"])
-      expect(commands).to include(["kubectl", "--context", "kind-devastation", "rollout", "restart", "deployment/app", "-n", "initial-dev"])
       expect(output).to include("app: http://initial.dev.deva.station")
     end
   end
@@ -88,12 +87,10 @@ RSpec.describe "Generated Kubernetes deployment helper" do
     end
   end
 
-  it "allows redeploying owned resources and removes obsolete public routes" do
-    route = {metadata: {namespace: "initial-dev", labels: labels}, spec: {hosts: ["initial.dev.deva.station"]}}
-    stale = {kind: "VirtualService", metadata: {name: "removed", namespace: "initial-dev", labels: labels}}
-    run_helper(namespace: {metadata: {labels: labels}}, routes: [route], stale: [stale]) do |_output, error, status, commands|
+  it "does not prune resources or manage workload restarts" do
+    run_helper do |_output, error, status, commands|
       expect(status).to be_success, error
-      expect(commands).to include(["kubectl", "--context", "kind-devastation", "delete", "virtualservices.networking.istio.io", "removed", "-n", "initial-dev"])
+      expect(commands.none? { |command| command.include?("delete") || command.include?("restart") }).to be(true)
     end
   end
 end
