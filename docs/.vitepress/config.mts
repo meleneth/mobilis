@@ -4,6 +4,7 @@ export default defineConfig({
   title: 'Mobilis',
   description: 'Scaffold multi-service projects with Ruby, Docker Compose, and Kubernetes.',
   base: '/mobilis/',
+  appearance: 'dark',
   lastUpdated: true,
   themeConfig: {
     nav: [
