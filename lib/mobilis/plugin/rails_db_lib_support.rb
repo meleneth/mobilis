@@ -7,6 +7,7 @@ module Mobilis
       extend Forwardable
 
       def hook_after_services_written
+        changed = false
         @manifest.each_node_of_type(Mobilis::Realized::Rails) do |realized_env, realized_node|
           next unless realized_node.primary_database
 
@@ -21,6 +22,7 @@ module Mobilis
               should_install = false if line.include? install_line
             end
             if should_install
+              changed = true
               gsub_lines(/pkg-config/, "pkg-config #{build_packages.join(" ")}")
               insert_before(/Run and own/,
                             "RUN apt-get update -qq && \\",
@@ -29,7 +31,7 @@ module Mobilis
             end
           end
         end
-        commit_all "Augment Rails dockerfiles for db library packages"
+        commit_all "Augment Rails dockerfiles for db library packages" if changed
       end
 
       #  def hook_after_dc_helpers

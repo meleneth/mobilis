@@ -16,6 +16,7 @@ module Mobilis
       @realized_envs = environments.map do |env|
         Mobilis::RealizedEnv.new(system, env)
       end
+      kubernetes_universes if system.kubernetes_deployment
 
       return if suppress_plugins
 
@@ -70,6 +71,21 @@ module Mobilis
       run_plugin_hooks :hook_create_rails_models
       run_plugin_hooks :hook_after_rails_models_created
       run_plugin_hooks :hook_run_commands
+      write_kubernetes if system.kubernetes_deployment
+    end
+
+    def kubernetes_universes
+      return [] unless system.kubernetes_deployment
+
+      universes = realized_envs.map { |env| Mobilis::Kubernetes::Universe.new(env, system.kubernetes_deployment) }
+      Mobilis::Kubernetes::Universe.validate_collisions!(universes)
+      universes
+    end
+
+    def write_kubernetes
+      directory_service.chdir_generate
+      Mobilis::Kubernetes::Generator.new(self, Dir.pwd).write
+      commit_all("Kubernetes workloads and Istio routes")
     end
 
     def write_mobilis_system
@@ -233,6 +249,30 @@ module Mobilis
 
         #{grafana_readme_section}
         #{pgadmin_readme_section}
+        #{kubernetes_readme_section}
+      MARKDOWN
+    end
+
+    def kubernetes_readme_section
+      return "" unless system.kubernetes_deployment
+
+      hosts = kubernetes_universes.flat_map do |universe|
+        universe.public_services.map { |name, host| "- #{universe.environment} #{name}: `http://#{host}`" }
+      end.join("\n")
+      <<~MARKDOWN
+        ## Kubernetes / Istio
+
+        Run `./deploy-kubernetes dev` (or `test`, `prod`) to build using the generated
+        Dockerfiles, push to the Devastation registry, and deploy through Istio.
+        The default context is `kind-devastation`; `MOBILIS_KUBE_CONTEXT` selects another context.
+        Istio and the registry must already be installed. DNS and edge TLS belong to Devastation.
+
+        #{hosts}
+
+        Only the listed services have external routes. All workload Services are ClusterIP.
+        Resources and build plans are in `kubernetes/{dev,test,prod}/`.
+        This local deployment uses ephemeral storage; deleting or replacing pods loses their data.
+        Generated configuration is mounted as files. No Kubernetes Secrets are generated.
       MARKDOWN
     end
 

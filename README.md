@@ -64,6 +64,10 @@ Then inspect or run the generated project under `generate/`.
 | `18_mnbme_otel_system.rb`                     | Rack microservice game demo extracted from MNBME: local gem support, Rack Docker image support, replicated service instances, Redis game state, and OpenTelemetry/Grafana/Loki wiring. |
 | `19_two_rails_local_gem.rb`                   | Two Rails services consuming one generated local gem, including per-service Docker build-context handling.                                                                            |
 | `20_http_migration.rb` | FastAPI and Go behind Envoy: live migration controls, trusted request shadow context on one Go candidate, SQL meaning/binding and committed-effect OTEL verification, and a standalone generated `./demo` (defaults to development; select with `MOBILIS_ENV`). |
+| `21_kubernetes_initial.rb` | Rails and observability deployed to Devastation Kubernetes through Istio. Generates Compose plus dev/test/prod Kubernetes resources and a registry-backed deployment helper. |
+
+The [Kubernetes guide](notes/2026-10-09-kubernetes-istio.md) documents deployment,
+project-first hostnames, private services, and end-to-end telemetry verification.
 
 The HTTP demo's [operator guide](scripts/http_migration/README.md) documents environment selection and expected error checks. Its actual Jaeger/OTEL correctness verifier is [scripts/http_migration/operations.py](scripts/http_migration/operations.py), generated as `legacy/demo/operations.py`; start with `verify()`, `await_trace()`, and `check_trace()`.
 

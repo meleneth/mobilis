@@ -8,6 +8,7 @@ module Mobilis
 
     attr_reader :config_nodes
     attr_reader :meta_project_name
+    attr_accessor :kubernetes_deployment
 
     def initialize(meta_project_name)
       @config_nodes = {}
@@ -50,11 +51,13 @@ module Mobilis
     end
 
     def to_h
-      {
+      result = {
         name: "mobilis",
         meta_project_name: meta_project_name,
         nodes: config_nodes.values.map(&:to_h)
       }
+      result[:deploy_kubernetes] = kubernetes_deployment.to_h if kubernetes_deployment
+      result
     end
 
     def to_json(*args)
@@ -67,6 +70,9 @@ module Mobilis
 
     def self.from_h(hash)
       sys = new(hash[:meta_project_name])
+      if hash[:deploy_kubernetes]
+        sys.kubernetes_deployment = Mobilis::Kubernetes::Declaration.from_h(hash[:deploy_kubernetes])
+      end
       raw_nodes = Array(hash[:nodes])
 
       raw_nodes.each do |node_data|

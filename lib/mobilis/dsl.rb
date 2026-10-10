@@ -18,6 +18,14 @@ module Mobilis
         @named = {}
       end
 
+      def deploy_kubernetes(domain, &block)
+        raise ArgumentError, "Only one deploy_kubernetes declaration is allowed" if system.kubernetes_deployment
+
+        declaration = Mobilis::Kubernetes::Declaration.new(domain)
+        declaration.instance_exec(&block) if block
+        system.kubernetes_deployment = declaration
+      end
+
       def rails(name, primary_database: nil, api: false, &block)
         node = Mobilis::Node::Rails.new(name)
         node.primary_database = primary_database
