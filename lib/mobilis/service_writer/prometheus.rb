@@ -3,7 +3,7 @@ module Mobilis
     class Prometheus < Mobilis::Base::ServiceWriter
       def datasources
         data = Mobilis::AutoVivify.new
-        data["global"]["scrape_interval"] = "5s"
+        data["global"]["scrape_interval"] = "60s"
         scrape_config = Mobilis::AutoVivify.new
         scrape_config["job_name"] = "otel_collector"
         static_config = Mobilis::AutoVivify.new

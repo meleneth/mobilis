@@ -72,7 +72,7 @@ Mobilis::DSL.generate(project) do
   prometheus("prometheus") do |svc|
     svc.write_file("prometheus.yml", <<~YAML)
       global:
-        scrape_interval: 5s
+        scrape_interval: 60s
       scrape_configs:
         - job_name: otel_collector
           static_configs:

@@ -77,14 +77,14 @@ module Mobilis
           compose = node.compose.clean_shrunk
           container["args"] = compose[:command] if compose[:command]
           container["command"] = compose[:entrypoint] if compose[:entrypoint]
-          container["readinessProbe"] = {"tcpSocket" => {"port" => target_port_for(node, ports.first)}, "initialDelaySeconds" => 5} unless ports.empty?
+          container["readinessProbe"] = {"tcpSocket" => {"port" => target_port_for(node, ports.first)}, "initialDelaySeconds" => 5, "periodSeconds" => 30} unless ports.empty?
           pod_spec = {"containers" => [container], "volumes" => volumes}
           groups = node.storage_requirements.filter_map { |storage| storage[:fs_group] }.uniq
           raise ArgumentError, "Conflicting storage groups for #{node.name}" if groups.size > 1
           pod_spec["securityContext"] = {"fsGroup" => groups.first} unless groups.empty?
           pod_spec["serviceAccountName"] = node.name if node.is_a?(Mobilis::Realized::Alloy)
           template = {"metadata" => {"labels" => universe.labels(node.name),
-                                     "annotations" => {"mobilis.io/config-digest" => Digest::SHA256.hexdigest(JSON.generate(configs))}},
+                                     "annotations" => {"readiness.status.sidecar.istio.io/periodSeconds" => "30", "mobilis.io/config-digest" => Digest::SHA256.hexdigest(JSON.generate(configs))}},
                       "spec" => pod_spec}
           resources << resource(universe, "apps/v1", "Deployment", node.name,
             {"replicas" => 1, "strategy" => {"type" => "Recreate"},
