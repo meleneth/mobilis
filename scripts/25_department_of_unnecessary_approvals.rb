@@ -60,4 +60,8 @@ Mobilis::DSL.generate("department-of-unnecessary-approvals") do
   end
   worker.add_model(Mobilis::Model::File.new("internal/app/decision_recording.go",
     File.read(File.join(source, ENV["DUA_OTEL"] == "1" ? "worker_otel.go" : "worker_plain.go"))))
+  if ENV["DUA_OTEL"] == "1"
+    applications.add_model(Mobilis::Model::File.new("demo/otel-enabled", "connected\n"))
+    applications.add_model(Mobilis::Model::File.new("demo/verify_traces.py", File.read(File.join(source, "verify_traces.py"))))
+  end
 end

@@ -23,7 +23,9 @@ and bind mount commands control local cleanup.
 
 Set `DUA_OTEL=1` **while generating** for explicit collector connections to
 Gateway, both subgraphs, and the Go worker. Without it, no collector, Jaeger or
-exporter is required. Generated projects operate without the Mobilis source.
+exporter is required. The connected runner also checks asynchronous span links,
+the gateway mutation, PostgreSQL insert and a federated Cassandra lookup in
+Jaeger. Generated projects operate without the Mobilis source.
 
 Applications commits to PostgreSQL before publishing. If Pub/Sub is down,
 the mutation returns an error while a pending row remains: there is a
