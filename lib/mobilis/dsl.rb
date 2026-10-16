@@ -175,6 +175,14 @@ module Mobilis
         node
       end
 
+      def google_pubsub(name, project: "mobilis-local", publish_port: false, &block)
+        node = Mobilis::Node::GooglePubSub.new(name, project_id: project, publish_port: publish_port)
+        system << node
+        @named[name] = node
+        block&.call(node)
+        node
+      end
+
       def fastapi(name, port: 8000, publish_port: true, &block)
         add_http_service(Mobilis::Node::FastAPI, name, port, publish_port: publish_port, &block)
       end
@@ -232,10 +240,23 @@ module Mobilis
       end
       private :add_http_service
 
-      def connect(from:, to:, force_skip_health_checks: false)
+      def connect(from:, to:, force_skip_health_checks: false, publish: nil, subscribe: nil)
         from_node = from.is_a?(String) ? @named.fetch(from) : from
         to_node = to.is_a?(String) ? @named.fetch(to) : to
-        from_node.has_extra_depends_on(to_node, force_skip_health_checks: force_skip_health_checks)
+        if to_node.is_a?(Mobilis::Node::GooglePubSub)
+          publishes, consumes = to_node.validate_connection!(publish: publish, subscribe: subscribe)
+          if from_node.extra_depends_on.any? { |dependency| dependency[:target] == to_node }
+            raise ArgumentError, "Declare Pub/Sub publish and subscribe roles in one connect call"
+          end
+          edge = from_node.has_extra_depends_on(to_node, force_skip_health_checks: force_skip_health_checks)
+          edge[:pubsub_publish] = publishes
+          edge[:pubsub_subscribe] = consumes
+          edge
+        else
+          raise ArgumentError, "publish: and subscribe: require a Google Pub/Sub target" if publish || subscribe
+
+          from_node.has_extra_depends_on(to_node, force_skip_health_checks: force_skip_health_checks)
+        end
       end
 
       def named(name)

@@ -43,6 +43,7 @@ module Mobilis
     RABBITMQ    = "rabbitmq:3.13-management"
     LOCALSTACK  = "localstack/localstack:4.6.0"
     GOAWS       = "admiralpiett/goaws:v0.5.4"
+    GOOGLE_CLOUD_EMULATORS = "gcr.io/google.com/cloudsdktool/google-cloud-cli:573.0.0-emulators"
 
     # ─── Search / Indexing ─────────────────────────────────────
     ELASTICSEARCH = "elasticsearch:8.18.0"

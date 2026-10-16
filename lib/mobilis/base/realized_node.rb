@@ -99,6 +99,9 @@ module Mobilis
       end
 
       def populate_compose_depends_on
+        brokers = connected_nodes(Mobilis::Realized::GooglePubSub)
+        raise ArgumentError, "#{name} supports one Pub/Sub emulator connection" if brokers.length > 1
+
         extra_depends_on.each do |extra_dep|
           target = extra_dep[:target]
           provider =
@@ -121,6 +124,18 @@ module Mobilis
                 add_compose_raw_var(key, value)
               end
             end
+          end
+          if provider.is_a?(Mobilis::Realized::GooglePubSub)
+            publishes = Array(extra_dep[:pubsub_publish])
+            consumes = Array(extra_dep[:pubsub_subscribe])
+            if publishes.empty? && consumes.empty?
+              raise ArgumentError, "#{name} Pub/Sub connection requires publish or subscribe declarations"
+            end
+            add_compose_raw_var("PUBSUB_EMULATOR_HOST", "#{provider.name}:#{Mobilis::Realized::GooglePubSub::PORT}")
+            add_compose_raw_var("PUBSUB_PROJECT_ID", provider.config_node.project_id)
+            add_compose_raw_var("GOOGLE_CLOUD_PROJECT", provider.config_node.project_id)
+            add_compose_raw_var("MOBILIS_PUBSUB_PUBLISH_TOPICS", publishes.join(","))
+            add_compose_raw_var("MOBILIS_PUBSUB_SUBSCRIPTIONS", consumes.join(","))
           end
         end
       end
