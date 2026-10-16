@@ -22,6 +22,7 @@ Mobilis::DSL.generate("department-of-unnecessary-approvals") do
       model.column("correlation_id", "String(36)", python_type: "str", unique: true)
       model.column("activity", "String(80)", python_type: "str")
       model.column("justification", "String(400)", python_type: "str")
+      model.column("target_name", "String(80)", python_type: "str", nullable: true)
     end
   end
   connect(from: applications, to: applications_db)

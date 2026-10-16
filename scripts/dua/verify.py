@@ -14,10 +14,10 @@ from service_applications.pubsub_client import publish
 
 GATEWAY = "http://gateway:5000/graphql"
 CASES = [
-    ("DEPLOY_RUBBER_DUCK", "Morale improvement", "APPROVED", "Rubber duck deployment improves morale without a committee."),
-    ("SECOND_COFFEE", "The first was too procedural", "DENIED", "Form C-2 for a second coffee was not attached."),
-    ("RENAME_PRODUCTION_SERVER", "production-final-final", "DENIED", "Production server names containing final are prohibited by the Naming Office."),
-    ("FRIDAY_DEPENDENCY", "Scheduling clarity", "APPROVED_WITH_WARNING", "Friday may be a dependency, but cannot be pinned in production."),
+    ("DEPLOY_RUBBER_DUCK", "Morale improvement", None, "APPROVED", "Rubber duck deployment improves morale without a committee."),
+    ("SECOND_COFFEE", "The first was too procedural", None, "DENIED", "Form C-2 for a second coffee was not attached."),
+    ("RENAME_PRODUCTION_SERVER", "Consistent naming", "production-final-final", "DENIED", "Production server names containing final are prohibited by the Naming Office."),
+    ("FRIDAY_DEPENDENCY", "Scheduling clarity", None, "APPROVED_WITH_WARNING", "Friday may be a dependency, but cannot be pinned in production."),
 ]
 
 
@@ -54,7 +54,7 @@ def poll(predicate, description, seconds=90):
 
 
 def application_query(identity):
-    return graphql("query($id: ID!) { application(id: $id) { id activity justification correlationId status decision { outcome reason } } }",
+    return graphql("query($id: ID!) { application(id: $id) { id activity justification targetName correlationId status decision { outcome reason } } }",
                    {"id": identity})["application"]
 
 
@@ -65,12 +65,14 @@ def verify(records, minimum_counts=None):
             persisted = session.scalar(select(ApplicationRecord).where(ApplicationRecord.id == identity))
             assert persisted is not None, f"PostgreSQL is missing {identity}"
             assert persisted.correlation_id == record["correlation_id"]
+            assert persisted.target_name == record["target_name"]
         def complete():
             result = application_query(identity)
             return result if result and result["decision"] else None
         result = poll(complete, f"federated decision for {identity}")
         assert result["id"] == identity and result["activity"] == record["activity"], result
         assert result["justification"] == record["justification"], result
+        assert result["targetName"] == record["target_name"], result
         assert result["correlationId"] == record["correlation_id"], result
         assert result["status"] == record["outcome"], result
         assert result["decision"] == {"outcome": record["outcome"], "reason": record["reason"]}, result
@@ -94,19 +96,21 @@ def verify(records, minimum_counts=None):
 def exercise():
     before = processing()
     records = []
-    for activity, justification, outcome, reason in CASES:
+    for activity, justification, target_name, outcome, reason in CASES:
         result = graphql(
-            "mutation($activity: String!, $justification: String!) { requestApproval(activity: $activity, justification: $justification) { id activity justification correlationId status } }",
-            {"activity": activity, "justification": justification})["requestApproval"]
+            "mutation($activity: String!, $justification: String!, $targetName: String) { requestApproval(activity: $activity, justification: $justification, targetName: $targetName) { id activity justification targetName correlationId status } }",
+            {"activity": activity, "justification": justification, "targetName": target_name})["requestApproval"]
         assert result["id"] and result["correlationId"], result
         assert result["status"] in ("PENDING", outcome), result
         records.append({"id": result["id"], "correlation_id": result["correlationId"],
-                        "activity": activity, "justification": justification, "outcome": outcome, "reason": reason})
+                        "activity": activity, "justification": justification, "target_name": target_name,
+                        "outcome": outcome, "reason": reason})
     verify(records, {"inserted": before["inserted"] + len(records)})
     duplicate = records[0]
     original_message_id = read_json(f"http://decisions:8000/records/{duplicate['id']}")["message_id"]
     event = {"version": 1, "application_id": duplicate["id"], "correlation_id": duplicate["correlation_id"],
-             "activity": duplicate["activity"], "justification": duplicate["justification"]}
+             "activity": duplicate["activity"], "justification": duplicate["justification"],
+             "target_name": duplicate["target_name"]}
     publish("applications", json.dumps(event).encode(), {"correlation_id": duplicate["correlation_id"]})
     publish("applications", b'{"version": 99}', {})
     poll(lambda: processing() if processing()["duplicates"] >= before["duplicates"] + 1

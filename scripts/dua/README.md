@@ -50,6 +50,8 @@ curl -fsS http://localhost:5000/graphql -H 'Content-Type: application/json' \
 
 `status` is `PENDING` until the worker records a decision; `decision` is null
 during that interval. The verifier polls the real final state with a deadline.
+For `RENAME_PRODUCTION_SERVER`, supply `targetName`; names containing `final`
+are rejected, while other proposed names are approved by this fixed catalogue.
 
 Set `DUA_OTEL=1` **while generating** for explicit collector connections to
 Gateway, both subgraphs, and the Go worker. Without it, no collector, Jaeger or

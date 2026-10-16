@@ -17,12 +17,14 @@ func (store *fakeStore) Insert(_ context.Context, event ApprovalEvent, decision 
 }
 
 func TestPolicies(t *testing.T) {
-    cases := []struct{ activity, outcome string }{
-        {"DEPLOY_RUBBER_DUCK", "APPROVED"}, {"SECOND_COFFEE", "DENIED"},
-        {"RENAME_PRODUCTION_SERVER", "DENIED"}, {"FRIDAY_DEPENDENCY", "APPROVED_WITH_WARNING"},
+    cases := []struct{ activity, target, outcome string }{
+        {"DEPLOY_RUBBER_DUCK", "", "APPROVED"}, {"SECOND_COFFEE", "", "DENIED"},
+        {"RENAME_PRODUCTION_SERVER", "production-final-final", "DENIED"},
+        {"RENAME_PRODUCTION_SERVER", "production-blue", "APPROVED"},
+        {"FRIDAY_DEPENDENCY", "", "APPROVED_WITH_WARNING"},
     }
     for _, tc := range cases {
-        decision, err := policy(ApprovalEvent{Activity: tc.activity})
+        decision, err := policy(ApprovalEvent{Activity: tc.activity, TargetName: tc.target})
         if err != nil || decision.Outcome != tc.outcome || decision.Reason == "" { t.Fatalf("%s: %+v %v", tc.activity, decision, err) }
     }
     if _, err := policy(ApprovalEvent{Activity: "APPROVE_EVERYTHING"}); err == nil { t.Fatal("unknown policy accepted") }
@@ -48,4 +50,9 @@ func TestDatabaseFailureDoesNotLookApplied(t *testing.T) {
     store := &fakeStore{fail: true}
     applied, err := recordDecision(context.Background(), store, ApprovalEvent{}, Decision{}, "message")
     if applied || err == nil { t.Fatalf("applied=%v err=%v", applied, err) }
+}
+
+func TestRenameRequiresExplicitTarget(t *testing.T) {
+    _, err := parseEvent([]byte(`{"version":1,"application_id":"00000000-0000-4000-8000-000000000001","correlation_id":"00000000-0000-4000-8000-000000000002","activity":"RENAME_PRODUCTION_SERVER","justification":"Please"}`))
+    if err == nil { t.Fatal("rename without target accepted") }
 }

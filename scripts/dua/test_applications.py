@@ -40,3 +40,9 @@ def test_database_failure_does_not_publish(monkeypatch):
         asyncio.run(schema.Mutation().request_approval("SECOND_COFFEE", "Administrative fatigue", info))
     session.rollback.assert_called_once()
     publisher.assert_not_called()
+
+
+def test_rename_requires_proposed_name():
+    import asyncio
+    with pytest.raises(ValueError, match="proposed target name"):
+        asyncio.run(schema.Mutation().request_approval("RENAME_PRODUCTION_SERVER", "Please", Mock(context={"session": Mock()})))

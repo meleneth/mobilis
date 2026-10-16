@@ -8,6 +8,7 @@ import (
     "log"
     "net/http"
     "os"
+    "strings"
     "sync/atomic"
     "time"
 
@@ -22,6 +23,7 @@ type ApprovalEvent struct {
     CorrelationID string `json:"correlation_id"`
     Activity string `json:"activity"`
     Justification string `json:"justification"`
+    TargetName string `json:"target_name"`
 }
 
 type Decision struct { Outcome, Reason string }
@@ -33,7 +35,10 @@ func policy(event ApprovalEvent) (Decision, error) {
     case "SECOND_COFFEE":
         return Decision{"DENIED", "Form C-2 for a second coffee was not attached."}, nil
     case "RENAME_PRODUCTION_SERVER":
-        return Decision{"DENIED", "Production server names containing final are prohibited by the Naming Office."}, nil
+        if strings.Contains(strings.ToLower(event.TargetName), "final") {
+            return Decision{"DENIED", "Production server names containing final are prohibited by the Naming Office."}, nil
+        }
+        return Decision{"APPROVED", "The Naming Office found no forbidden finality in the proposed name."}, nil
     case "FRIDAY_DEPENDENCY":
         return Decision{"APPROVED_WITH_WARNING", "Friday may be a dependency, but cannot be pinned in production."}, nil
     default:
@@ -48,6 +53,9 @@ func parseEvent(data []byte) (ApprovalEvent, error) {
     if _, err := uuid.Parse(event.ApplicationID); err != nil { return event, errors.New("invalid application ID") }
     if _, err := uuid.Parse(event.CorrelationID); err != nil { return event, errors.New("invalid correlation ID") }
     if len(event.Justification) == 0 || len(event.Justification) > 400 { return event, errors.New("invalid justification") }
+    if event.Activity == "RENAME_PRODUCTION_SERVER" && (event.TargetName == "" || len(event.TargetName) > 80) {
+        return event, errors.New("invalid proposed target name")
+    }
     if _, err := policy(event); err != nil { return event, err }
     return event, nil
 }
