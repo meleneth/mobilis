@@ -60,6 +60,10 @@ Mobilis::DSL.generate("department-of-unnecessary-approvals") do
   end
   worker.add_model(Mobilis::Model::File.new("internal/app/decision_recording.go",
     File.read(File.join(source, ENV["DUA_OTEL"] == "1" ? "worker_otel.go" : "worker_plain.go"))))
+  [applications, decisions].each do |service|
+    service.add_model(Mobilis::Model::File.new("src/service_#{service.name}/resolver_spans.py",
+      File.read(File.join(source, ENV["DUA_OTEL"] == "1" ? "resolver_spans_otel.py" : "resolver_spans_plain.py"))))
+  end
   if ENV["DUA_OTEL"] == "1"
     applications.add_model(Mobilis::Model::File.new("demo/otel-enabled", "connected\n"))
     applications.add_model(Mobilis::Model::File.new("demo/verify_traces.py", File.read(File.join(source, "verify_traces.py"))))

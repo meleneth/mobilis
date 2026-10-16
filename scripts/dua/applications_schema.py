@@ -8,6 +8,7 @@ from starlette.concurrency import run_in_threadpool
 
 from .models import ApplicationRecord
 from .pubsub_client import publish
+from .resolver_spans import traced_resolver
 
 
 @strawberry.federation.type(keys=["id"])
@@ -30,6 +31,7 @@ def get_application(session, identity):
 @strawberry.type
 class Query:
     @strawberry.field
+    @traced_resolver("dua.application_lookup")
     async def application(self, id: strawberry.ID, info: strawberry.Info) -> Application | None:
         record = await run_in_threadpool(get_application, info.context["session"], str(id))
         return as_graphql(record) if record else None
@@ -38,6 +40,7 @@ class Query:
 @strawberry.type
 class Mutation:
     @strawberry.mutation
+    @traced_resolver("dua.request_approval")
     async def request_approval(self, activity: str, justification: str,
                                info: strawberry.Info) -> Application:
         if activity not in {"DEPLOY_RUBBER_DUCK", "SECOND_COFFEE", "RENAME_PRODUCTION_SERVER", "FRIDAY_DEPENDENCY"}:

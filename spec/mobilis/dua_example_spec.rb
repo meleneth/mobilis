@@ -35,6 +35,7 @@ RSpec.describe "Department of Unnecessary Approvals example" do
       expect(worker.cassandra.name).to eq("decisions-db")
       expect(worker.otel_enabled?).to eq(telemetry)
       expect(nodes["bureaucrat"].models.find { |model| model.path == "internal/app/decision_recording.go" }.content.include?("go.opentelemetry.io/otel")).to eq(telemetry)
+      expect(nodes["applications"].models.find { |model| model.is_a?(Mobilis::Model::File) && model.path.end_with?("resolver_spans.py") }.content.include?("from opentelemetry import trace")).to eq(telemetry)
     end
   end
 end

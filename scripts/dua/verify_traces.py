@@ -57,6 +57,10 @@ def verify(records):
                            for span in spans):
                     diagnostics.append(f"{correlation}: linked gateway mutation missing")
                     continue
+                if not any(service(producer, span) == "applications" and span["operationName"] == "dua.request_approval"
+                           for span in spans):
+                    diagnostics.append(f"{correlation}: linked Applications resolver missing")
+                    continue
                 if not any(service(producer, span) == "applications" and span["operationName"].startswith("INSERT ")
                            and tag(span, "db.system") == "postgresql" for span in spans):
                     diagnostics.append(f"{correlation}: linked PostgreSQL INSERT missing")
@@ -68,6 +72,7 @@ def verify(records):
             any(service(trace, span) == "gateway" and span["operationName"] == "POST /graphql" for span in trace["spans"])
             and any(service(trace, span) == "applications" and span["operationName"] == "POST /graphql" for span in trace["spans"])
             and any(service(trace, span) == "decisions" and span["operationName"] == "POST /graphql" for span in trace["spans"])
+            and any(service(trace, span) == "decisions" and span["operationName"] == "dua.decision_lookup" for span in trace["spans"])
             and any(service(trace, span) == "decisions" and span["operationName"] == "cassandra.select" for span in trace["spans"])
             for trace in gateway_traces)
         if not pending and federated_read:

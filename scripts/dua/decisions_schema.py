@@ -3,6 +3,7 @@ import strawberry
 from starlette.concurrency import run_in_threadpool
 
 from .cassandra_client import execute
+from .resolver_spans import traced_resolver
 
 
 @strawberry.type
@@ -27,11 +28,13 @@ class Application:
         return cls(id=id)
 
     @strawberry.field
+    @traced_resolver("dua.decision_lookup")
     async def decision(self) -> Decision | None:
         row = await run_in_threadpool(lookup, str(self.id))
         return Decision(outcome=row.outcome, reason=row.reason) if row else None
 
     @strawberry.field
+    @traced_resolver("dua.decision_status")
     async def status(self) -> str:
         row = await run_in_threadpool(lookup, str(self.id))
         return row.outcome if row else "PENDING"
