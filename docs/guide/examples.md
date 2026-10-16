@@ -35,6 +35,7 @@ Then inspect or run the generated project under `generate/`.
 | [`22_cassandra.rb`](https://github.com/meleneth/mobilis/blob/core/scripts/22_cassandra.rb) | Single-node Cassandra with schema initialization and a native client write/read example. |
 | [`23_google_pubsub.rb`](https://github.com/meleneth/mobilis/blob/core/scripts/23_google_pubsub.rb) | Official Google Pub/Sub emulator, publisher, independent pull subscriptions, competing consumers, redelivery, and a generated integration runner. |
 | [`24_grafbase_federation.rb`](https://github.com/meleneth/mobilis/blob/core/scripts/24_grafbase_federation.rb) | Grafbase Gateway and two Strawberry Federation v2 subgraphs with SQL-backed entity resolution, a composed query, and negative composition checks. |
+| [`25_department_of_unnecessary_approvals.rb`](https://github.com/meleneth/mobilis/blob/core/scripts/25_department_of_unnecessary_approvals.rb) | Standalone DUA demo: federated FastAPI services, PostgreSQL, Pub/Sub emulator, Go worker, Cassandra conditional decisions, and optional linked OpenTelemetry traces. |
 
 The [Kubernetes guide](./kubernetes.md) documents deployment,
 project-first hostnames, private services, and end-to-end telemetry verification.

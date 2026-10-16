@@ -104,6 +104,7 @@ def exercise():
                         "activity": activity, "justification": justification, "outcome": outcome, "reason": reason})
     verify(records, {"inserted": before["inserted"] + len(records)})
     duplicate = records[0]
+    original_message_id = read_json(f"http://decisions:8000/records/{duplicate['id']}")["message_id"]
     event = {"version": 1, "application_id": duplicate["id"], "correlation_id": duplicate["correlation_id"],
              "activity": duplicate["activity"], "justification": duplicate["justification"]}
     publish("applications", json.dumps(event).encode(), {"correlation_id": duplicate["correlation_id"]})
@@ -112,6 +113,8 @@ def exercise():
          and processing()["malformed"] >= before["malformed"] + 1 else None,
          "duplicate suppression and terminal malformed acknowledgment")
     verify(records)
+    assert read_json(f"http://decisions:8000/records/{duplicate['id']}")["message_id"] == original_message_id, \
+        "Duplicate delivery replaced the authoritative Cassandra decision"
     assert processing()["acknowledged"] >= before["acknowledged"] + len(records) + 2
     print(json.dumps(records))
 
