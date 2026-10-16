@@ -11,4 +11,7 @@ if ./dc_dev run --rm gateway-composer grafbase compose --config /app/demo/invali
   echo "Incompatible federation schemas unexpectedly composed" >&2
   exit 1
 fi
+if [ -f sites/demo/otel-enabled ]; then
+  ./dc_dev run --rm sites python demo/verify_traces.py
+fi
 echo "Grafbase generated-project integration passed"

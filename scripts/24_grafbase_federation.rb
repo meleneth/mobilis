@@ -15,6 +15,7 @@ Mobilis::DSL.generate("federation-demo") do
     end
     service.add_model(Mobilis::Model::File.new("demo/seed.py", File.read(File.join(__dir__, "federation/seed_sites.py"))))
     service.add_model(Mobilis::Model::File.new("demo/verify.py", File.read(File.join(__dir__, "federation/verify.py"))))
+    service.add_model(Mobilis::Model::File.new("demo/verify_traces.py", File.read(File.join(__dir__, "federation/verify_traces.py"))))
     service.add_model(Mobilis::Model::File.new("demo/integration", File.read(File.join(__dir__, "federation/integration")), executable: true))
     service.add_model(Mobilis::Model::File.new("tests/test_schema.py", File.read(File.join(__dir__, "federation/test_sites.py"))))
   end
@@ -40,6 +41,7 @@ Mobilis::DSL.generate("federation-demo") do
   connect(from: gateway, to: deployments)
 
   if ENV["FEDERATION_DEMO_OTEL"] == "1"
+    sites.add_model(Mobilis::Model::File.new("demo/otel-enabled", "connected\n"))
     collector = otel_collector("telemetry")
     traces = jaeger("trace-viewer")
     connect(from: collector, to: traces)

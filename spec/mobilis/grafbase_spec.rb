@@ -54,6 +54,7 @@ RSpec.describe "Grafbase federation" do
         expect(fragment[:services]).to have_key("gateway-composer")
         expect(fragment[:services]["gateway"][:depends_on]["gateway-composer"][:condition]).to eq("service_completed_successfully")
         expect(fragment[:services]["gateway"][:ports].length).to eq(1)
+        expect(realized_gateway.env_vars_for_env_file.map(&:env_repr)).to include("GATEWAY_WEB_PORT=5050")
         expect(realized_service.compose.clean_shrunk[:healthcheck][:test].last).to include("/health")
         Dir.chdir(dir) do
           realized_gateway.service_writer.new(nil, env, realized_gateway).write
@@ -62,7 +63,9 @@ RSpec.describe "Grafbase federation" do
           expect(File.read("gateway.toml").include?("trace_context = true")).to eq(telemetry)
           Dir.mkdir("app")
           Dir.chdir("app") { realized_service.service_writer.new(nil, env, realized_service).write }
-          expect(File.read("app/pyproject.toml")).to include("strawberry-graphql[fastapi]")
+          dependencies = File.read("app/pyproject.toml")
+          expect(dependencies).to include("strawberry-graphql[fastapi]")
+          expect(dependencies.include?("opentelemetry-exporter-otlp-proto-http")).to eq(telemetry)
           expect(File.read("app/src/service_sites/app.py")).to include("GraphQLRouter(schema")
           expect(system("python3", "-m", "compileall", "-q", "app/src")).to be(true)
         end

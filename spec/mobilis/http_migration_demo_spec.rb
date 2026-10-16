@@ -103,7 +103,8 @@ RSpec.describe Mobilis::Plugin::WriteFiles do
   it "does not rewrite file models already consumed before HTTP image builds" do
     manifest = instance_double(Mobilis::Manifest)
     plugin = described_class.new(manifest)
-    [Mobilis::Realized::FastAPI, Mobilis::Realized::GoHTTP, Mobilis::Realized::Envoy].each do |klass|
+    [Mobilis::Realized::FastAPI, Mobilis::Realized::GoHTTP,
+      Mobilis::Realized::Envoy, Mobilis::Realized::Grafbase].each do |klass|
       node = klass.allocate
       expect(node).not_to receive(:each_model_of_type)
       allow(manifest).to receive(:each_node_of_type).and_yield(nil, node)

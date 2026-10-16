@@ -34,6 +34,7 @@ Then inspect or run the generated project under `generate/`.
 | [`21_kubernetes_initial.rb`](https://github.com/meleneth/mobilis/blob/core/scripts/21_kubernetes_initial.rb) | Rails and observability deployed to Devastation Kubernetes through Istio. Generates Compose plus dev/test/prod Kubernetes resources and a registry-backed deployment helper. |
 | [`22_cassandra.rb`](https://github.com/meleneth/mobilis/blob/core/scripts/22_cassandra.rb) | Single-node Cassandra with schema initialization and a native client write/read example. |
 | [`23_google_pubsub.rb`](https://github.com/meleneth/mobilis/blob/core/scripts/23_google_pubsub.rb) | Official Google Pub/Sub emulator, publisher, independent pull subscriptions, competing consumers, redelivery, and a generated integration runner. |
+| [`24_grafbase_federation.rb`](https://github.com/meleneth/mobilis/blob/core/scripts/24_grafbase_federation.rb) | Grafbase Gateway and two Strawberry Federation v2 subgraphs with SQL-backed entity resolution, a composed query, and negative composition checks. |
 
 The [Kubernetes guide](./kubernetes.md) documents deployment,
 project-first hostnames, private services, and end-to-end telemetry verification.

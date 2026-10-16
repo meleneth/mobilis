@@ -93,6 +93,8 @@ Provider endpoints are driven by model exposure metadata even without a consumer
 | FastAPI / Go HTTP → PostgreSQL | `DATABASE_URL` and database-specific generated application support; one PostgreSQL connection is supported |
 | FastAPI → Cassandra | Contact points, port, datacenter, keyspace, credentials, and a native Python client; other service types receive connection variables through `connect` |
 | FastAPI / Go HTTP → Google Pub/Sub | Scoped publisher and pull subscriber variables, official clients, and optional connected collector spans |
+| Grafbase → FastAPI GraphQL subgraph | Local federation composition and gateway routing to the subgraph's `/graphql` endpoint |
+| Grafbase → OTEL Collector | Gateway OTLP export and W3C trace propagation, only on this explicit edge |
 | FastAPI / Go HTTP → OTEL Collector | Trace exporters and HTTP/database instrumentation using the connected collector |
 | Envoy → OTEL Collector | OpenTelemetry tracing configuration in the generated Envoy listener |
 | OTEL Collector → Jaeger | Export target chosen from the connected Jaeger; at most one Jaeger exporter |

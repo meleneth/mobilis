@@ -24,7 +24,7 @@ This is a materializing entrypoint: running the definition writes `generate/` an
 | Area | DSL methods |
 | --- | --- |
 | Ruby applications | `rails`, `rack` |
-| HTTP applications and proxy | `flask`, `fastapi`, `go_http`, `envoy` |
+| HTTP applications and proxy | `flask`, `fastapi`, `go_http`, `envoy`, `grafbase` |
 | Databases and cache | `postgres`, `mysql`, `redis`, `pgadmin` |
 | Object storage | `s3` (also `s3_storage`) |
 | Messaging | `google_pubsub`, `goaws`, legacy `localstack` |
