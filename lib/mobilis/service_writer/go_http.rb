@@ -268,7 +268,7 @@ module Mobilis
           }
 
           // Receive runs handler for a pull subscription. Handler must explicitly Ack or Nack each message.
-          func (ps *PubSub) Receive(ctx context.Context, subscription string, handler func(context.Context, *pubsub.Message)) error {
+          func (ps *PubSub) Receive(ctx context.Context, subscription string, handler func(context.Context, *pubsub.Message) error) error {
               if !allowedPubSub("MOBILIS_PUBSUB_SUBSCRIPTIONS", subscription) {
                   return fmt.Errorf("Pub/Sub subscription %s is not declared for this service", subscription)
               }
@@ -277,9 +277,13 @@ module Mobilis
                   #{'remote := trace.SpanContextFromContext(extracted)' if traced}
                   #{'options := []trace.SpanStartOption{trace.WithSpanKind(trace.SpanKindConsumer), trace.WithAttributes(attribute.String("messaging.system", "gcp_pubsub"), attribute.String("messaging.operation", "process"), attribute.String("messaging.destination.name", subscription), attribute.String("messaging.message.id", message.ID))}' if traced}
                   #{'if remote.IsValid() { options = append(options, trace.WithLinks(trace.Link{SpanContext: remote})) }' if traced}
+                  #{'if message.DeliveryAttempt != nil { options = append(options, trace.WithAttributes(attribute.Int("messaging.message.delivery_attempt", *message.DeliveryAttempt))) }' if traced}
                   #{'processCtx, span := otel.Tracer("mobilis.pubsub").Start(deliveryCtx, "pubsub.process", options...)' if traced}
                   #{'defer span.End()' if traced}
-                  handler(#{traced ? 'processCtx' : 'deliveryCtx'}, message)
+                  err := handler(#{traced ? 'processCtx' : 'deliveryCtx'}, message)
+                  #{'if err != nil { span.SetStatus(codes.Error, "process failed"); span.SetAttributes(attribute.String("error.type", fmt.Sprintf("%T", err))) }' if traced}
+                  // The handler must explicitly Ack or Nack; an error is not an acknowledgment.
+                  _ = err
               })
           }
         GO

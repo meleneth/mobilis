@@ -50,7 +50,9 @@ Call `ack()` only after work succeeds, or `nack()` to make the delivery
 available again. An unacknowledged delivery may return after its ack deadline.
 The Go HTTP generator adds a `PubSub` client using the official
 `cloud.google.com/go/pubsub/v2` package; its `Publish` and `Receive` helpers
-also require explicit `Ack()` or `Nack()` in the receive handler. Application
+also require explicit `Ack()` or `Nack()` in the receive handler. The Go handler
+returns an error so a connected collector can record a failed processing span;
+returning an error alone does not ack or nack the delivery. Application
 handlers and idempotent business writes remain yours to implement.
 
 Two subscriptions on one topic each receive a copy. Workers pulling one
