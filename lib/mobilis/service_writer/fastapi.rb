@@ -77,6 +77,7 @@ module Mobilis
         write_cassandra if realized_node.cassandra
         write_pubsub if realized_node.pubsub
         write_models if realized_node.database
+        write_graphql_support if realized_node.config_node.graphql_subgraph_name
         write_telemetry if realized_node.otel_enabled?
         # Existing file models can supply ordinary application handlers.
         realized_node.each_model_of_type(Mobilis::Model::File, &:write_file)
@@ -89,6 +90,7 @@ module Mobilis
         deps.concat(["SQLAlchemy>=2.0,<2.1", "psycopg[binary]>=3.2,<4"]) if realized_node.database
         deps << "cassandra-driver>=3.29,<4" if realized_node.cassandra
         deps << "google-cloud-pubsub>=2.30,<3" if realized_node.pubsub
+        deps << "strawberry-graphql[fastapi]>=0.280,<1" if realized_node.config_node.graphql_subgraph_name
         if realized_node.otel_enabled?
           deps.concat(["opentelemetry-sdk>=1.30,<2", "opentelemetry-exporter-otlp-proto-http>=1.30,<2",
             "opentelemetry-instrumentation-fastapi", "opentelemetry-instrumentation-httpx",
@@ -105,6 +107,11 @@ module Mobilis
         imports << "from .cassandra_client import close_cassandra" if realized_node.cassandra
         imports << "from .pubsub_client import close_pubsub" if realized_node.pubsub
         imports << "from .telemetry import configure, instrument_app" if realized_node.otel_enabled?
+        if realized_node.config_node.graphql_subgraph_name
+          imports << "from strawberry.fastapi import GraphQLRouter"
+          imports << "from .graphql_schema import schema"
+          imports << "from .graphql_support import get_graphql_context"
+        end
         # @type var cleanup: Array[String]
         cleanup = []
         cleanup.concat(["if get_engine.cache_info().currsize:", "    get_engine().dispose()"]) if realized_node.database
@@ -134,6 +141,7 @@ module Mobilis
                   return {"status": "ok"}
 
               register(app)
+              #{'app.include_router(GraphQLRouter(schema, context_getter=get_graphql_context), prefix="/graphql")' if realized_node.config_node.graphql_subgraph_name}
               #{"if telemetry:\n        instrument_app(app)" if realized_node.otel_enabled?}
               return app
         PYTHON
@@ -157,6 +165,42 @@ module Mobilis
           def get_session():
               return Session(get_engine())
         PYTHON
+      end
+
+      def write_graphql_support
+        if realized_node.database
+          File.write("#{@package_dir}/graphql_support.py", <<~PYTHON)
+            from starlette.concurrency import run_in_threadpool
+            from sqlalchemy import select
+            from .database import get_session
+
+
+            def get_graphql_context():
+                # FastAPI closes this session when the GraphQL request finishes.
+                with get_session() as session:
+                    yield {"session": session}
+
+
+            async def load_by_ids(session, model, ids, *, limit=100):
+                unique_ids = list(dict.fromkeys(ids))
+                if len(unique_ids) > limit:
+                    raise ValueError(f"GraphQL relationship load exceeds {limit} keys")
+                if not unique_ids:
+                    return {}
+
+                def query():
+                    key = model.__mapper__.primary_key[0]
+                    records = session.scalars(select(model).where(key.in_(unique_ids))).all()
+                    return {getattr(record, key.key): record for record in records}
+
+                return await run_in_threadpool(query)
+          PYTHON
+        else
+          File.write("#{@package_dir}/graphql_support.py", <<~PYTHON)
+            async def get_graphql_context():
+                return {}
+          PYTHON
+        end
       end
 
       def write_cassandra

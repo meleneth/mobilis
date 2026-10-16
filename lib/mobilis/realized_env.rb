@@ -119,6 +119,7 @@ module Mobilis
       when Mobilis::Node::FastAPI then Mobilis::Realized::FastAPI.new(self, config_node)
       when Mobilis::Node::GoHTTP then Mobilis::Realized::GoHTTP.new(self, config_node)
       when Mobilis::Node::Envoy then Mobilis::Realized::Envoy.new(self, config_node)
+      when Mobilis::Node::Grafbase then Mobilis::Realized::Grafbase.new(self, config_node)
       when Mobilis::Node::Localstack then Mobilis::Realized::Localstack.new(self, config_node)
       when Mobilis::Node::PostgreSQL then Mobilis::Realized::PostgreSQL.new(self, config_node)
       when Mobilis::Node::Cassandra then Mobilis::Realized::Cassandra.new(self, config_node)

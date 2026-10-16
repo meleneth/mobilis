@@ -195,6 +195,14 @@ module Mobilis
         add_http_service(Mobilis::Node::Envoy, name, port, verification_port: verification_port, &block)
       end
 
+      def grafbase(name, port: 5000, &block)
+        node = Mobilis::Node::Grafbase.new(name, port: port)
+        system << node
+        @named[name] = node
+        block&.call(node)
+        node
+      end
+
       # One default HTTP route. Both values are independent percentages.
       def route(from:, to:, candidate: nil, shadow: nil, mirror_percent: 0, candidate_percent: 0)
         [mirror_percent, candidate_percent].each do |percent|

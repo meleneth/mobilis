@@ -2,6 +2,8 @@
 
 module Mobilis
   module ContainerVersions
+    GRAFBASE_GATEWAY = "ghcr.io/grafbase/gateway:0.53.5"
+    GRAFBASE_CLI = "0.105.2"
     # ─── Language Runtimes ─────────────────────────────────────
     CRYSTAL     = "crystallang/crystal:1.9.2-alpine"
     GOLANG      = "golang:1.25.3-trixie"
