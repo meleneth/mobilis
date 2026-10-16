@@ -8,7 +8,7 @@ module Mobilis
           FROM node:22-bookworm-slim
           RUN npm install --global grafbase@#{Mobilis::ContainerVersions::GRAFBASE_CLI}
           WORKDIR /app
-          COPY compose.toml compose.sh /app/
+          COPY . /app/
         DOCKER
         File.write("compose.toml", realized_node.subgraphs.map do |subgraph|
           name = subgraph.config_node.graphql_subgraph_name
@@ -31,6 +31,9 @@ module Mobilis
         File.chmod(0o755, "compose.sh")
         telemetry = if realized_node.collector
                       <<~TOML
+                        [telemetry]
+                        service_name = "#{realized_node.name}"
+
                         [telemetry.exporters.otlp]
                         enabled = true
                         endpoint = "#{realized_node.collector.internal_url}"
@@ -46,6 +49,7 @@ module Mobilis
                       ""
                     end
         File.write("gateway.toml", telemetry)
+        realized_node.each_model_of_type(Mobilis::Model::File, &:write_file)
       end
     end
   end

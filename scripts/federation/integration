@@ -1,0 +1,14 @@
+#!/bin/sh
+set -eu
+cd "$(dirname "$0")/../.."
+
+./dc_dev up -d sites-db deployments-db
+./dc_dev run --rm sites python demo/seed.py
+./dc_dev run --rm deployments python demo/seed.py
+./dc_dev up -d --wait
+./dc_dev run --rm sites python demo/verify.py
+if ./dc_dev run --rm gateway-composer grafbase compose --config /app/demo/invalid.toml; then
+  echo "Incompatible federation schemas unexpectedly composed" >&2
+  exit 1
+fi
+echo "Grafbase generated-project integration passed"

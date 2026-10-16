@@ -172,13 +172,14 @@ module Mobilis
           File.write("#{@package_dir}/graphql_support.py", <<~PYTHON)
             from starlette.concurrency import run_in_threadpool
             from sqlalchemy import select
+            from strawberry.dataloader import DataLoader
             from .database import get_session
 
 
             def get_graphql_context():
                 # FastAPI closes this session when the GraphQL request finishes.
                 with get_session() as session:
-                    yield {"session": session}
+                    yield {"session": session, "loaders": {}}
 
 
             async def load_by_ids(session, model, ids, *, limit=100):
@@ -194,6 +195,28 @@ module Mobilis
                     return {getattr(record, key.key): record for record in records}
 
                 return await run_in_threadpool(query)
+
+
+            def grouped_loader(session, model, foreign_key, *, max_keys=100, max_rows=500):
+                column = getattr(model, foreign_key)
+
+                async def load(keys):
+                    unique_keys = list(dict.fromkeys(keys))
+                    if len(unique_keys) > max_keys:
+                        raise ValueError(f"GraphQL relationship load exceeds {max_keys} keys")
+
+                    def query():
+                        return session.scalars(select(model).where(column.in_(unique_keys)).limit(max_rows + 1)).all()
+
+                    records = await run_in_threadpool(query)
+                    if len(records) > max_rows:
+                        raise ValueError(f"GraphQL relationship load exceeds {max_rows} rows")
+                    grouped = {key: [] for key in keys}
+                    for record in records:
+                        grouped[getattr(record, foreign_key)].append(record)
+                    return [grouped[key] for key in keys]
+
+                return DataLoader(load_fn=load)
           PYTHON
         else
           File.write("#{@package_dir}/graphql_support.py", <<~PYTHON)

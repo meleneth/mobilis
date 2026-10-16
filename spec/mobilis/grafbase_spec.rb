@@ -54,6 +54,7 @@ RSpec.describe "Grafbase federation" do
         expect(fragment[:services]).to have_key("gateway-composer")
         expect(fragment[:services]["gateway"][:depends_on]["gateway-composer"][:condition]).to eq("service_completed_successfully")
         expect(fragment[:services]["gateway"][:ports].length).to eq(1)
+        expect(realized_service.compose.clean_shrunk[:healthcheck][:test].last).to include("/health")
         Dir.chdir(dir) do
           realized_gateway.service_writer.new(nil, env, realized_gateway).write
           config = File.read("compose.toml")
@@ -67,5 +68,24 @@ RSpec.describe "Grafbase federation" do
         end
       end
     end
+  end
+end
+
+RSpec.describe "Grafbase numbered example" do
+  it "declares two SQL-backed subgraphs and a connected gateway" do
+    configured = nil
+    manifest = instance_double(Mobilis::Manifest, materialize: nil)
+    allow(Mobilis::Manifest).to receive(:new) do |system|
+      configured = system
+      manifest
+    end
+    load File.expand_path("../../scripts/24_grafbase_federation.rb", __dir__)
+    expect(manifest).to have_received(:materialize)
+    gateway = configured.config_nodes.values.find { |node| node.is_a?(Mobilis::Node::Grafbase) }
+    expect(gateway.extra_depends_on.map { |edge| edge[:target].name }).to eq(%w[sites deployments])
+    services = configured.config_nodes.values.grep(Mobilis::Node::FastAPI)
+    expect(services.map(&:graphql_subgraph_name)).to eq(%w[sites deployments])
+    expect(services.all? { |service| service.has_model_class?(Mobilis::Model::SQLAlchemy::Model) }).to be(true)
+    expect(gateway.models.find { |model| model.path == "demo/invalid-sites.graphql" }.content).to include("id: ID!")
   end
 end

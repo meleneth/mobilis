@@ -1,0 +1,7 @@
+[subgraphs.sites]
+schema_path = "/app/demo/invalid-sites.graphql"
+url = "http://sites:8000/graphql"
+
+[subgraphs.deployments]
+schema_path = "/app/demo/invalid-deployments.graphql"
+url = "http://deployments:8000/graphql"
