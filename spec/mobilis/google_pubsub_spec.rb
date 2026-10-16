@@ -58,7 +58,7 @@ RSpec.describe "Google Pub/Sub emulator topology" do
       Dir.chdir(dir) { broker.service_writer.new(nil, env, broker).write }
       expect(File.read("#{dir}/Dockerfile")).to include(Mobilis::ContainerVersions::GOOGLE_CLOUD_EMULATORS)
       expect(JSON.parse(File.read("#{dir}/topology.json"))["subscriptions"].length).to eq(2)
-      expect(File.read("#{dir}/bootstrap.py")).to include("except AlreadyExists", "existing.topic != topic_path")
+      expect(File.read("#{dir}/bootstrap.py")).to include("except AlreadyExists", "existing.topic != topic_path", "provision()  # Exercise")
       expect(system("python3", "-m", "py_compile", "#{dir}/bootstrap.py", "#{dir}/health.py")).to be(true)
     end
   end
@@ -137,6 +137,9 @@ RSpec.describe "Pub/Sub numbered example" do
     publisher = configured.config_nodes.values.find { |node| node.name == "publisher" }
     verifier = publisher.models.find { |model| model.is_a?(Mobilis::Model::File) && model.path == "demo/verify.py" }
     expect(verifier.executable).to be(true)
-    expect(verifier.content).to include("nack", "redelivery verified")
+    expect(verifier.content).to include("nack", "redelivery, and missing-topic rejection verified")
+    runner = publisher.models.find { |model| model.is_a?(Mobilis::Model::File) && model.path == "demo/integration" }
+    expect(runner.executable).to be(true)
+    expect(runner.content).to include("./dc_dev restart events", "./dc_dev down")
   end
 end

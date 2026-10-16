@@ -92,6 +92,7 @@ Provider endpoints are driven by model exposure metadata even without a consumer
 | Rack → OTEL Collector | OTEL gems, `config/otel.rb`, environment values, and startup preload |
 | FastAPI / Go HTTP → PostgreSQL | `DATABASE_URL` and database-specific generated application support; one PostgreSQL connection is supported |
 | FastAPI → Cassandra | Contact points, port, datacenter, keyspace, credentials, and a native Python client; other service types receive connection variables through `connect` |
+| FastAPI / Go HTTP → Google Pub/Sub | Scoped publisher and pull subscriber variables, official clients, and optional connected collector spans |
 | FastAPI / Go HTTP → OTEL Collector | Trace exporters and HTTP/database instrumentation using the connected collector |
 | Envoy → OTEL Collector | OpenTelemetry tracing configuration in the generated Envoy listener |
 | OTEL Collector → Jaeger | Export target chosen from the connected Jaeger; at most one Jaeger exporter |
@@ -109,6 +110,8 @@ Grafana provisions supported data sources from the realized environment, even wi
 Affordances are emitted during the one-time generation. Review and extend their application code in the generated project. Mobilis does not reconcile later edits with a revised connection graph.
 
 The [IAM example](https://github.com/meleneth/mobilis/blob/core/scripts/08_large_iam_system.rb) demonstrates several providers, filterable models, consumers, and collector connections together.
+
+See [Google Pub/Sub emulator](./google-pubsub.md) for role-scoped `connect` declarations and delivery behavior.
 # Cassandra
 
 Declare a single-node Cassandra database and connect a FastAPI consumer through

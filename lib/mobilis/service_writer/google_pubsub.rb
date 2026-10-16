@@ -87,6 +87,7 @@ module Mobilis
                       if attempt == 59:
                           raise RuntimeError("Pub/Sub emulator unavailable after 120 seconds") from error
                       time.sleep(2)
+              provision()  # Exercise existing-topic and existing-subscription paths before readiness.
               open("/tmp/mobilis-pubsub-ready", "w", encoding="utf-8").close()
               sys.exit(server.wait())
           except Exception as error:

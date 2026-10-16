@@ -17,6 +17,7 @@ export default defineConfig({
         { text: 'Getting started', link: '/guide/getting-started' },
         { text: 'Writing a system', link: '/guide/dsl' },
         { text: 'Connection affordances', link: '/guide/connections' },
+        { text: 'Google Pub/Sub emulator', link: '/guide/google-pubsub' },
         { text: 'OpenTelemetry and observability', link: '/guide/observability' },
         { text: 'Shared local gems', link: '/guide/local-gems' },
         { text: 'Generated projects', link: '/guide/generated-projects' },

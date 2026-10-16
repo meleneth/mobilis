@@ -27,7 +27,7 @@ This is a materializing entrypoint: running the definition writes `generate/` an
 | HTTP applications and proxy | `flask`, `fastapi`, `go_http`, `envoy` |
 | Databases and cache | `postgres`, `mysql`, `redis`, `pgadmin` |
 | Object storage | `s3` (also `s3_storage`) |
-| Messaging demos | `goaws`, legacy `localstack` |
+| Messaging | `google_pubsub`, `goaws`, legacy `localstack` |
 | Observability | `otel_collector`, `jaeger`, `prometheus`, `grafana`, `loki`, `alloy` |
 
 Declarations return service nodes. Pass those nodes to options such as `primary_database:` or to `connect`:

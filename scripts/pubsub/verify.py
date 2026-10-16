@@ -4,6 +4,8 @@ import json
 import time
 from urllib.request import Request, urlopen
 
+from service_publisher.pubsub_client import publish
+
 
 def post(service, route, payload):
     request = Request(f"http://{service}:8000{route}",
@@ -36,4 +38,11 @@ assert receive("alpha-one", third, fail=True)["outcome"] == "nacked"
 assert receive("alpha-two", third)["outcome"] == "acked"
 assert receive("beta-worker", third)["outcome"] == "acked"
 
-print("Pub/Sub fan-out, competing alpha consumers, ack, nack, and redelivery verified")
+try:
+    publish("missing-topic", b"not-published")
+except ValueError as error:
+    assert "missing-topic" in str(error)
+else:
+    raise AssertionError("Publishing to an undeclared topic must fail")
+
+print("Pub/Sub fan-out, competing alpha consumers, ack, nack, redelivery, and missing-topic rejection verified")

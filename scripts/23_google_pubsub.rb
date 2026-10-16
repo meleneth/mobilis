@@ -15,6 +15,7 @@ Mobilis::DSL.generate("pubsub-demo") do
   publisher = fastapi("publisher", publish_port: false)
   publisher.add_model(Mobilis::Model::File.new("src/service_publisher/routes.py", File.read(File.join(__dir__, "pubsub/publisher_routes.py"))))
   publisher.add_model(Mobilis::Model::File.new("demo/verify.py", File.read(File.join(__dir__, "pubsub/verify.py")), executable: true))
+  publisher.add_model(Mobilis::Model::File.new("demo/integration", File.read(File.join(__dir__, "pubsub/integration")), executable: true))
   connect(from: publisher, to: events, publish: "requests")
 
   {"alpha-one" => "alpha", "alpha-two" => "alpha", "beta-worker" => "beta"}.each do |service_name, subscription|

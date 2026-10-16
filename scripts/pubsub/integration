@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+
+cd "$(dirname "$0")/../.."
+
+./dc_dev up -d --wait
+./dc_dev run --rm publisher python demo/verify.py
+
+# The official emulator has session-local state. Restarting must provision
+# the declared topology again before connected services become healthy.
+./dc_dev restart events
+./dc_dev up -d --wait
+./dc_dev run --rm publisher python demo/verify.py
+
+# Removing the stack resets the emulator state; a fresh start must recreate it.
+./dc_dev down
+./dc_dev up -d --wait
+./dc_dev run --rm publisher python demo/verify.py
+
+echo "Pub/Sub generated-project integration passed"
