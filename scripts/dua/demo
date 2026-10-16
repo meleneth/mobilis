@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")"
+command="${1:-}"
+case "$command" in
+  up) ./dc_dev up -d --wait ;;
+  seed) ./dc_dev run --rm applications python -c 'from service_applications.database import get_engine; from service_applications.models import Base; Base.metadata.create_all(get_engine())' ;;
+  exercise) ./dc_dev run --rm -T applications python demo/verify.py exercise > .dua-state.json ;;
+  verify) test -s .dua-state.json || { echo 'Run ./demo exercise first' >&2; exit 1; }
+          ./dc_dev run --rm -T applications python demo/verify.py verify < .dua-state.json ;;
+  down) ./dc_dev down ;;
+  *) echo 'usage: ./demo {up|seed|exercise|verify|down}' >&2; exit 2 ;;
+esac

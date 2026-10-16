@@ -8,6 +8,7 @@ import (
     "log"
     "net/http"
     "os"
+    "sync/atomic"
     "time"
 
     "cloud.google.com/go/pubsub/v2"
@@ -57,6 +58,11 @@ type decisionStore interface {
 
 type cassandraStore struct { session *gocql.Session }
 
+var acknowledged atomic.Int64
+var inserted atomic.Int64
+var duplicates atomic.Int64
+var malformed atomic.Int64
+
 func (store cassandraStore) Insert(ctx context.Context, event ApprovalEvent, decision Decision, messageID string) (bool, error) {
     applied, err := store.session.Query(
         "INSERT INTO decisions (application_id, correlation_id, activity, outcome, reason, message_id) VALUES (?, ?, ?, ?, ?, ?) IF NOT EXISTS",
@@ -82,6 +88,8 @@ func processMessage(ctx context.Context, store decisionStore, message *pubsub.Me
     if err != nil {
         log.Printf("terminal invalid event message_id=%s error=%v", message.ID, err)
         message.Ack() // Invalid schema is terminal; it must not poison the subscription.
+        malformed.Add(1)
+        acknowledged.Add(1)
         return
     }
     decision, _ := policy(event)
@@ -92,11 +100,14 @@ func processMessage(ctx context.Context, store decisionStore, message *pubsub.Me
         return
     }
     if applied {
+        inserted.Add(1)
         log.Printf("decision inserted application_id=%s correlation_id=%s message_id=%s", event.ApplicationID, event.CorrelationID, message.ID)
     } else {
+        duplicates.Add(1)
         log.Printf("duplicate decision suppressed application_id=%s correlation_id=%s message_id=%s", event.ApplicationID, event.CorrelationID, message.ID)
     }
     message.Ack()
+    acknowledged.Add(1)
     log.Printf("acknowledged application_id=%s message_id=%s", event.ApplicationID, message.ID)
 }
 
@@ -115,6 +126,13 @@ func receiveLoop(ctx context.Context, ps *PubSub, store decisionStore) {
 }
 
 func register(mux *http.ServeMux, deps Dependencies) {
+    mux.HandleFunc("GET /processing", func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "application/json")
+        _ = json.NewEncoder(w).Encode(map[string]int64{
+            "acknowledged": acknowledged.Load(), "inserted": inserted.Load(),
+            "duplicates": duplicates.Load(), "malformed": malformed.Load(),
+        })
+    })
     go func() {
         // Compose readiness orders startup; this retry also covers transient Cassandra restarts.
         for {

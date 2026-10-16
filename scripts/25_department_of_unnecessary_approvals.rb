@@ -48,7 +48,7 @@ Mobilis::DSL.generate("department-of-unnecessary-approvals") do
 
   files = {
     applications => {"demo/verify.py" => "verify.py", "tests/test_dua.py" => "test_applications.py"},
-    decisions => {"tests/test_dua.py" => "test_decisions.py"},
+    decisions => {"src/service_decisions/routes.py" => "decisions_routes.py", "tests/test_dua.py" => "test_decisions.py"},
     worker => {"internal/app/routes.go" => "worker.go", "internal/app/worker_test.go" => "worker_test.go"},
     gateway => {"../demo" => "demo", "../README.md" => "README.md"}
   }
