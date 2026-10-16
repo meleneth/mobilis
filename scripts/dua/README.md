@@ -70,3 +70,25 @@ and replay failed publishes after a broker outage. Cassandra
 uses one local node and replication factor one: this demonstrates neither
 fault tolerance nor disaster recovery. The Pub/Sub emulator does not certify
 hosted service ordering or exactly-once guarantees.
+
+## Observed verification — 2026-10-16
+
+Fresh projects generated in separate directories passed `up`, `seed`,
+`exercise`, `verify`, and `down` with observability connected and disconnected.
+Both runs used real PostgreSQL, the official Pub/Sub emulator, Cassandra, and
+Grafbase containers. Four applications reached the expected decisions through
+federation. Duplicate delivery preserved the original Cassandra message ID;
+the worker acknowledged processed events and terminated a malformed event.
+
+The connected run verified four asynchronous producer-to-consumer span links,
+named resolvers, PostgreSQL writes, worker Cassandra writes, and a federated
+Cassandra lookup. The disconnected run generated no collector or Jaeger and
+reported no exporter failures. Grafbase emits its own optional hosted-platform
+telemetry warning; no hosted account is needed.
+
+Generated Python tests passed (Applications: 5; Decisions: 3), as did Go policy,
+conditional-insertion, and error tests. Broker/database failure paths use test
+doubles; the container verifier exercises successful persistence, duplicate
+delivery, and malformed-event disposition. Mobilis's repository suite passed
+258 examples with 0 failures and 2 existing pending examples; documentation
+build and link checks passed.
