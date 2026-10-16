@@ -64,10 +64,11 @@ var duplicates atomic.Int64
 var malformed atomic.Int64
 
 func (store cassandraStore) Insert(ctx context.Context, event ApprovalEvent, decision Decision, messageID string) (bool, error) {
+    existing := map[string]interface{}{}
     applied, err := store.session.Query(
         "INSERT INTO decisions (application_id, correlation_id, activity, outcome, reason, message_id) VALUES (?, ?, ?, ?, ?, ?) IF NOT EXISTS",
         event.ApplicationID, event.CorrelationID, event.Activity, decision.Outcome, decision.Reason, messageID,
-    ).WithContext(ctx).ScanCAS()
+    ).WithContext(ctx).MapScanCAS(existing)
     return applied, err
 }
 
