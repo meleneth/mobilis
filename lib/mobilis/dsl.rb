@@ -52,6 +52,14 @@ module Mobilis
         node
       end
 
+      def cassandra(name, &block)
+        node = Mobilis::Node::Cassandra.new(name)
+        system << node
+        @named[name] = node
+        block&.call(node)
+        node
+      end
+
       def pgadmin(name, databases: [], &block)
         node = Mobilis::Node::Pgadmin.new(name)
         Array(databases).each { |database| node.add_database(database) }

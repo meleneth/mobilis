@@ -55,7 +55,7 @@ module Mobilis
           show_missing = true
         TOML
         File.write("Dockerfile", <<~DOCKER)
-          FROM #{Mobilis::ContainerVersions::PYTHON}
+          FROM #{realized_node.cassandra ? "python:3.12-bookworm" : Mobilis::ContainerVersions::PYTHON}
           WORKDIR /app
           COPY . .
           RUN pip install --no-cache-dir .
@@ -74,6 +74,7 @@ module Mobilis
         write_app
         File.write("#{@package_dir}/routes.py", "def register(app):\n    pass\n")
         write_database if realized_node.database
+        write_cassandra if realized_node.cassandra
         write_models if realized_node.database
         write_telemetry if realized_node.otel_enabled?
         # Existing file models can supply ordinary application handlers.
@@ -85,6 +86,7 @@ module Mobilis
       def dependencies
         deps = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1", "httpx>=0.27,<1", "requests>=2.32,<3"]
         deps.concat(["SQLAlchemy>=2.0,<2.1", "psycopg[binary]>=3.2,<4"]) if realized_node.database
+        deps << "cassandra-driver>=3.29,<4" if realized_node.cassandra
         if realized_node.otel_enabled?
           deps.concat(["opentelemetry-sdk>=1.30,<2", "opentelemetry-exporter-otlp-proto-http>=1.30,<2",
             "opentelemetry-instrumentation-fastapi", "opentelemetry-instrumentation-httpx",
@@ -98,10 +100,12 @@ module Mobilis
         # @type var imports: Array[String]
         imports = []
         imports << "from .database import get_engine" if realized_node.database
+        imports << "from .cassandra_client import close_cassandra" if realized_node.cassandra
         imports << "from .telemetry import configure, instrument_app" if realized_node.otel_enabled?
         # @type var cleanup: Array[String]
         cleanup = []
         cleanup.concat(["if get_engine.cache_info().currsize:", "    get_engine().dispose()"]) if realized_node.database
+        cleanup << "close_cassandra()" if realized_node.cassandra
         cleanup.concat(["if provider is not None:", "    provider.shutdown()"]) if realized_node.otel_enabled?
         File.write("#{@package_dir}/app.py", <<~PYTHON)
           from contextlib import asynccontextmanager
@@ -148,6 +152,70 @@ module Mobilis
 
           def get_session():
               return Session(get_engine())
+        PYTHON
+      end
+
+      def write_cassandra
+        execution = if realized_node.otel_enabled?
+                      <<~PYTHON.rstrip
+                        with trace.get_tracer(__name__).start_as_current_span(
+                                "cassandra." + operation,
+                                attributes={"db.system": "cassandra", "db.operation": operation,
+                                            "db.namespace": os.environ["CASSANDRA_KEYSPACE"],
+                                            "server.address": os.environ["CASSANDRA_CONTACT_POINTS"]},
+                                record_exception=False, set_status_on_exception=False) as span:
+                            try:
+                                return get_session().execute(statement, parameters)
+                            except Exception as error:
+                                span.set_attribute("error.type", type(error).__name__)
+                                span.set_status(Status(StatusCode.ERROR))
+                                raise
+                      PYTHON
+                    else
+                      "return get_session().execute(statement, parameters)"
+                    end
+        File.write("#{@package_dir}/cassandra_client.py", <<~PYTHON)
+          import os
+          from cassandra.auth import PlainTextAuthProvider
+          from cassandra.cluster import Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT
+          from cassandra.policies import DCAwareRoundRobinPolicy
+          #{"from opentelemetry import trace\nfrom opentelemetry.trace import Status, StatusCode" if realized_node.otel_enabled?}
+
+          _cluster = None
+          _session = None
+
+
+          def get_session():
+              global _cluster, _session
+              if _session is None:
+                  points = [point.strip() for point in os.environ["CASSANDRA_CONTACT_POINTS"].split(",") if point.strip()]
+                  auth = PlainTextAuthProvider(username=os.environ["CASSANDRA_USERNAME"], password=os.environ["CASSANDRA_PASSWORD"])
+                  _cluster = Cluster(points, port=int(os.environ["CASSANDRA_PORT"]),
+                                     auth_provider=auth, protocol_version=4,
+                                     execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(
+                                         load_balancing_policy=DCAwareRoundRobinPolicy(
+                                             local_dc=os.environ["CASSANDRA_DATACENTER"]))})
+                  try:
+                      _session = _cluster.connect(os.environ["CASSANDRA_KEYSPACE"])
+                  except Exception:
+                      _cluster.shutdown()
+                      _cluster = None
+                      raise
+              return _session
+
+
+          def execute(operation, statement, parameters=None):
+              if not operation.isidentifier():
+                  raise ValueError("operation must be a safe identifier")
+              #{execution.lines.join("        ").rstrip}
+
+
+          def close_cassandra():
+              global _cluster, _session
+              if _cluster is not None:
+                  _cluster.shutdown()
+              _cluster = None
+              _session = None
         PYTHON
       end
 

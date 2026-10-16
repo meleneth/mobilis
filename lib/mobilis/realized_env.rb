@@ -121,6 +121,7 @@ module Mobilis
       when Mobilis::Node::Envoy then Mobilis::Realized::Envoy.new(self, config_node)
       when Mobilis::Node::Localstack then Mobilis::Realized::Localstack.new(self, config_node)
       when Mobilis::Node::PostgreSQL then Mobilis::Realized::PostgreSQL.new(self, config_node)
+      when Mobilis::Node::Cassandra then Mobilis::Realized::Cassandra.new(self, config_node)
       when Mobilis::Node::Pgadmin then Mobilis::Realized::Pgadmin.new(self, config_node)
       when Mobilis::Node::MySQL then Mobilis::Realized::MySQL.new(self, config_node)
       when Mobilis::Node::OtelCollector then Mobilis::Realized::OtelCollector.new(self, config_node)

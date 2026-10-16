@@ -91,6 +91,7 @@ Provider endpoints are driven by model exposure metadata even without a consumer
 | Rails → OTEL Collector | OTEL dependencies, initializer, `Instrumentation.trace`, and structured JSON logging |
 | Rack → OTEL Collector | OTEL gems, `config/otel.rb`, environment values, and startup preload |
 | FastAPI / Go HTTP → PostgreSQL | `DATABASE_URL` and database-specific generated application support; one PostgreSQL connection is supported |
+| FastAPI → Cassandra | Contact points, port, datacenter, keyspace, credentials, and a native Python client; other service types receive connection variables through `connect` |
 | FastAPI / Go HTTP → OTEL Collector | Trace exporters and HTTP/database instrumentation using the connected collector |
 | Envoy → OTEL Collector | OpenTelemetry tracing configuration in the generated Envoy listener |
 | OTEL Collector → Jaeger | Export target chosen from the connected Jaeger; at most one Jaeger exporter |
@@ -108,3 +109,58 @@ Grafana provisions supported data sources from the realized environment, even wi
 Affordances are emitted during the one-time generation. Review and extend their application code in the generated project. Mobilis does not reconcile later edits with a revised connection graph.
 
 The [IAM example](https://github.com/meleneth/mobilis/blob/core/scripts/08_large_iam_system.rb) demonstrates several providers, filterable models, consumers, and collector connections together.
+# Cassandra
+
+Declare a single-node Cassandra database and connect a FastAPI consumer through
+the normal `connect` edge:
+
+```ruby
+history = cassandra("history") do |db|
+  db.version("4.1") # optional; defaults to ContainerVersions::CASSANDRA
+  db.datacenter("datacenter1")
+  db.keyspace("approvals")
+  db.schema_file("schema.cql")
+end
+api = fastapi("records")
+connect(from: api, to: history)
+```
+
+The generated consumer receives `CASSANDRA_CONTACT_POINTS`, `CASSANDRA_PORT`,
+`CASSANDRA_DATACENTER`, `CASSANDRA_KEYSPACE`, `CASSANDRA_USERNAME`, and
+`CASSANDRA_PASSWORD`. It uses the native `cassandra-driver` package; import
+`<package>.cassandra_client.execute(operation, cql, parameters)` from generated
+FastAPI code. The operation must be a simple identifier, such as `insert` or
+`select`. Parameterized CQL keeps values out of the statement and out of spans.
+
+The database stores data under `data/<environment>/<name>` in the generated
+project. The container becomes healthy only after authenticated CQL succeeds,
+the keyspace exists, and schema initialization succeeds. Startup repeats
+`CREATE ... IF NOT EXISTS` declarations and never erases existing data. The
+optional schema file may contain only `CREATE TABLE`, `CREATE TYPE`, or
+`CREATE INDEX` declarations with `IF NOT EXISTS`. Schema changes to existing
+objects need a separate migration process. Failed startup reports whether
+readiness, role, keyspace, or schema initialization failed; inspect
+`./dc_dev logs history` for the CQL error.
+The generated application role receives `SELECT` and `MODIFY` on its keyspace.
+
+Generated test and development environments use `mobilis_dev` /
+`mobilis_dev_password`. Production env files contain `REPLACE_CASSANDRA_USER`
+and `REPLACE_CASSANDRA_PASSWORD`; replace both before startup. These local
+credentials and generated env files are not a production secret-management
+design. The initial `cassandra` superuser remains in this local image and must
+be handled before any real deployment.
+
+To try the independent write/read example, run `bundle exec ruby scripts/22_cassandra.rb`
+once, then in the generated directory run `./dc_dev up -d --build` and
+`./dc_dev run --rm records python demo/run.py`. Set
+`CASSANDRA_DEMO_OTEL=1` when generating to add a collector connection.
+Only that connection enables client-side database spans; spans contain the
+operation, keyspace, server address, and error status, but no CQL statement,
+parameters, or credentials. The collector itself needs an exporter connection
+to make spans viewable. This is client instrumentation, not Cassandra server
+tracing.
+
+This first slice uses one Cassandra node and `SimpleStrategy` with replication
+factor 1. It demonstrates persistence and client access, not replication or
+fault tolerance. Production topology, replication strategy, TLS, secret
+delivery, backup, disaster recovery, and schema migration remain future work.

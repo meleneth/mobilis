@@ -112,6 +112,16 @@ module Mobilis
 
           register_depends_on(provider, force_skip_health_checks: extra_dep[:force_skip_health_checks] == true)
           add_dependency_url(provider)
+          if provider.is_a?(Mobilis::Realized::Cassandra)
+            provider.connection_values.each do |key, value|
+              if %w[CASSANDRA_USERNAME CASSANDRA_PASSWORD].include?(key)
+                suffix = key == "CASSANDRA_USERNAME" ? "user" : "password"
+                add_compose_aliased_var(key, "#{provider.name}_cassandra_#{suffix}", value)
+              else
+                add_compose_raw_var(key, value)
+              end
+            end
+          end
         end
       end
     end

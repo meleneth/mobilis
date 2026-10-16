@@ -4,7 +4,7 @@ module Mobilis
   module Realized
     # Shared realization of the two HTTP application archetypes.
     class HTTPApplication < Mobilis::Base::BuildForm
-      attr_reader :database, :collector
+      attr_reader :database, :collector, :cassandra
 
       def initialize(env, node)
         super
@@ -23,6 +23,13 @@ module Mobilis
 
         @database = databases.first
         add_compose_aliased_var("DATABASE_URL", "#{name}_database_url", database.url) if database
+        cassandras = connected_nodes(Mobilis::Realized::Cassandra)
+        raise ArgumentError, "#{name} supports one Cassandra connection" if cassandras.length > 1
+
+        @cassandra = cassandras.first
+        if cassandra
+          raise ArgumentError, "#{name} Cassandra connection requires a keyspace" unless cassandra.config_node.keyspace_name
+        end
         collectors = connected_nodes(Mobilis::Realized::OtelCollector)
         raise ArgumentError, "#{name} supports one collector" if collectors.length > 1
 
