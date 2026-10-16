@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from service_applications import applications_schema as schema
+from service_applications import graphql_schema as schema
 
 
 def test_event_payload_has_stable_identity(monkeypatch):

@@ -1,7 +1,7 @@
 import asyncio
 from unittest.mock import Mock
 
-from service_decisions import decisions_schema as schema
+from service_decisions import graphql_schema as schema
 
 
 def test_pending_and_completed_decision(monkeypatch):
