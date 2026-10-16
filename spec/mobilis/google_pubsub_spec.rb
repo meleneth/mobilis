@@ -62,4 +62,81 @@ RSpec.describe "Google Pub/Sub emulator topology" do
       expect(system("python3", "-m", "py_compile", "#{dir}/bootstrap.py", "#{dir}/health.py")).to be(true)
     end
   end
+
+  [false, true].each do |telemetry|
+    it "generates Python client wiring with telemetry #{telemetry}" do
+      system = Mobilis::System.new("pubsub-python")
+      dsl = Mobilis::DSL::DSLContext.new(system)
+      broker = dsl.google_pubsub("events") do |node|
+        node.topic("requests")
+        node.subscription("worker-a", topic: "requests")
+      end
+      api = dsl.fastapi("api")
+      dsl.connect(from: api, to: broker, publish: "requests", subscribe: "worker-a")
+      dsl.connect(from: api, to: dsl.otel_collector("traces")) if telemetry
+      env = Mobilis::RealizedEnv.new(system, Mobilis::ExecutionEnvironment.new(:test))
+      realized = env.realized_node_by_name("api")
+      Dir.mktmpdir do |dir|
+        Dir.chdir(dir) { realized.service_writer.new(nil, env, realized).write }
+        source = File.read("#{dir}/src/service_api/pubsub_client.py")
+        expect(source).to include("PublisherClient", "SubscriberClient", "modify_ack_deadline", "def ack", "def nack")
+        expect(source.include?("TraceContextTextMapPropagator")).to eq(telemetry)
+        expect(source.include?("links=links")).to eq(telemetry)
+        expect(source).not_to include("messaging.message.payload", "record_exception=True")
+        expect(File.read("#{dir}/pyproject.toml")).to include("google-cloud-pubsub")
+        expect(system("python3", "-m", "compileall", "-q", "#{dir}/src")).to be(true)
+      end
+    end
+  end
+
+  [false, true].each do |telemetry|
+    it "generates Go client wiring with telemetry #{telemetry}" do
+      system = Mobilis::System.new("pubsub-go")
+      dsl = Mobilis::DSL::DSLContext.new(system)
+      broker = dsl.google_pubsub("events") do |node|
+        node.topic("requests")
+        node.subscription("worker-a", topic: "requests")
+      end
+      api = dsl.go_http("worker")
+      dsl.connect(from: api, to: broker, publish: "requests", subscribe: "worker-a")
+      dsl.connect(from: api, to: dsl.otel_collector("traces")) if telemetry
+      env = Mobilis::RealizedEnv.new(system, Mobilis::ExecutionEnvironment.new(:test))
+      realized = env.realized_node_by_name("worker")
+      Dir.mktmpdir do |dir|
+        Dir.chdir(dir) { realized.service_writer.new(nil, env, realized).write }
+        source = File.read("#{dir}/internal/app/pubsub.go")
+        expect(source).to include("cloud.google.com/go/pubsub/v2", "message *pubsub.Message", "Ack or Nack each message")
+        expect(source.include?("trace.WithLinks")).to eq(telemetry)
+        expect(File.read("#{dir}/go.mod")).to include("cloud.google.com/go/pubsub/v2 v2.7.0")
+        if ENV["PUBSUB_GO_BUILD"] == "1"
+          Dir.chdir(dir) do
+            go_env = {"GOPATH" => "/tmp/mobilis-go-pubsub", "GOMODCACHE" => "/tmp/mobilis-go-pubsub/pkg/mod", "GOCACHE" => "/tmp/mobilis-go-pubsub/cache"}
+            expect(system(go_env, "go", "mod", "tidy")).to be(true)
+            expect(system(go_env, "go", "test", "./...")).to be(true)
+          end
+        end
+      end
+    end
+  end
+end
+
+RSpec.describe "Pub/Sub numbered example" do
+  it "declares one publisher, independent subscriptions, and competing consumers" do
+    configured = nil
+    manifest = instance_double(Mobilis::Manifest, materialize: nil)
+    allow(Mobilis::Manifest).to receive(:new) do |system|
+      configured = system
+      manifest
+    end
+    load File.expand_path("../../scripts/23_google_pubsub.rb", __dir__)
+    expect(manifest).to have_received(:materialize)
+    broker = configured.config_nodes.values.find { |node| node.is_a?(Mobilis::Node::GooglePubSub) }
+    expect(broker.topics).to eq(["requests"])
+    expect(broker.subscriptions.map { |item| item[:name] }).to eq(%w[alpha beta])
+    expect(configured.config_nodes.values.map(&:name)).to eq(%w[events publisher alpha-one alpha-two beta-worker])
+    publisher = configured.config_nodes.values.find { |node| node.name == "publisher" }
+    verifier = publisher.models.find { |model| model.is_a?(Mobilis::Model::File) && model.path == "demo/verify.py" }
+    expect(verifier.executable).to be(true)
+    expect(verifier.content).to include("nack", "redelivery verified")
+  end
 end

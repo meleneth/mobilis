@@ -48,6 +48,7 @@ module Mobilis
         DOCKER
         write_main
         write_app
+        write_pubsub if realized_node.pubsub
         write_telemetry if realized_node.otel_enabled?
         realized_node.each_model_of_type(Mobilis::Model::File, &:write_file)
       end
@@ -58,6 +59,7 @@ module Mobilis
         # @type var deps: Hash[String, String]
         deps = {}
         deps["github.com/jackc/pgx/v5"] = "v5.7.6" if realized_node.database
+        deps["cloud.google.com/go/pubsub/v2"] = "v2.7.0" if realized_node.pubsub
         if realized_node.otel_enabled?
           deps.merge!(
             "go.opentelemetry.io/otel" => "v1.38.0",
@@ -130,8 +132,15 @@ module Mobilis
           imports << '"log"'
         end
         setup << "var pool *pgxpool.Pool" if realized_node.database
+        setup << "var ps *PubSub" if realized_node.pubsub
+        setup << "var err error" if realized_node.pubsub && !realized_node.otel_enabled?
         cleanup.unshift("if pool != nil { pool.Close() }") if realized_node.database
+        cleanup.unshift("if ps != nil { _ = ps.Close() }") if realized_node.pubsub
         setup << "cleanup := func() {\n        #{cleanup.join("\n        ")}\n    }"
+        if realized_node.pubsub
+          setup << "ps, err = NewPubSub(ctx)"
+          setup << "if err != nil { cleanup(); return nil, nil, err }"
+        end
         if realized_node.database
           setup << 'cfg, err := pgxpool.ParseConfig(os.Getenv("DATABASE_URL"))'
           setup << "if err != nil { cleanup(); return nil, nil, err }"
@@ -146,6 +155,7 @@ module Mobilis
         client = realized_node.otel_enabled? ? "&http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}" : "&http.Client{}"
         fields = ["HTTPClient *http.Client"]
         fields << "DB *pgxpool.Pool" if realized_node.database
+        fields << "PubSub *PubSub" if realized_node.pubsub
         File.write("internal/app/app.go", <<~GO)
           package app
 
@@ -159,7 +169,7 @@ module Mobilis
 
           func New(ctx context.Context) (http.Handler, func(), error) {
               #{setup.join("\n    ")}
-              deps := Dependencies{HTTPClient: #{client}#{", DB: pool" if realized_node.database}}
+              deps := Dependencies{HTTPClient: #{client}#{", DB: pool" if realized_node.database}#{", PubSub: ps" if realized_node.pubsub}}
               deps.HTTPClient.Timeout = 10*time.Second
               return Handler(deps), cleanup, nil
           }
@@ -181,6 +191,97 @@ module Mobilis
           import "net/http"
 
           func register(mux *http.ServeMux, deps Dependencies) {}
+        GO
+      end
+
+      def write_pubsub
+        traced = realized_node.otel_enabled?
+        File.write("internal/app/pubsub.go", <<~GO)
+          package app
+
+          import (
+              "context"
+              "fmt"
+              "os"
+              "strings"
+              "sync"
+              "cloud.google.com/go/pubsub/v2"
+              #{'"go.opentelemetry.io/otel"' if traced}
+              #{'"go.opentelemetry.io/otel/attribute"' if traced}
+              #{'"go.opentelemetry.io/otel/propagation"' if traced}
+              #{'"go.opentelemetry.io/otel/codes"' if traced}
+              #{'"go.opentelemetry.io/otel/trace"' if traced}
+          )
+
+          type PubSub struct {
+              client *pubsub.Client
+              mu sync.Mutex
+              publishers map[string]*pubsub.Publisher
+          }
+
+          func NewPubSub(ctx context.Context) (*PubSub, error) {
+              project := os.Getenv("PUBSUB_PROJECT_ID")
+              if project == "" { return nil, fmt.Errorf("PUBSUB_PROJECT_ID is required") }
+              client, err := pubsub.NewClient(ctx, project)
+              if err != nil { return nil, fmt.Errorf("Pub/Sub client unavailable: %w", err) }
+              return &PubSub{client: client, publishers: map[string]*pubsub.Publisher{}}, nil
+          }
+
+          func (ps *PubSub) Close() error {
+              ps.mu.Lock()
+              defer ps.mu.Unlock()
+              for _, publisher := range ps.publishers { publisher.Stop() }
+              return ps.client.Close()
+          }
+
+          func allowedPubSub(variable, name string) bool {
+              for _, value := range strings.Split(os.Getenv(variable), ",") {
+                  if value != "" && value == name { return true }
+              }
+              return false
+          }
+
+          func (ps *PubSub) publisher(topic string) *pubsub.Publisher {
+              ps.mu.Lock()
+              defer ps.mu.Unlock()
+              publisher := ps.publishers[topic]
+              if publisher == nil {
+                  publisher = ps.client.Publisher(topic)
+                  ps.publishers[topic] = publisher
+              }
+              return publisher
+          }
+
+          // Publish sends bytes only to topics declared on this service's connection.
+          func (ps *PubSub) Publish(ctx context.Context, topic string, data []byte, attributes map[string]string) (string, error) {
+              if !allowedPubSub("MOBILIS_PUBSUB_PUBLISH_TOPICS", topic) {
+                  return "", fmt.Errorf("Pub/Sub topic %s is not declared for this service", topic)
+              }
+              attrs := make(map[string]string, len(attributes))
+              for key, value := range attributes { attrs[key] = value }
+              #{'ctx, span := otel.Tracer("mobilis.pubsub").Start(ctx, "pubsub.publish", trace.WithSpanKind(trace.SpanKindProducer), trace.WithAttributes(attribute.String("messaging.system", "gcp_pubsub"), attribute.String("messaging.operation", "publish"), attribute.String("messaging.destination.name", topic)))' if traced}
+              #{'defer span.End()' if traced}
+              #{'otel.GetTextMapPropagator().Inject(ctx, propagation.MapCarrier(attrs))' if traced}
+              id, err := ps.publisher(topic).Publish(ctx, &pubsub.Message{Data: data, Attributes: attrs}).Get(ctx)
+              #{'if err != nil { span.SetStatus(codes.Error, "publish failed"); span.SetAttributes(attribute.String("error.type", fmt.Sprintf("%T", err))) } else { span.SetAttributes(attribute.String("messaging.message.id", id)) }' if traced}
+              return id, err
+          }
+
+          // Receive runs handler for a pull subscription. Handler must explicitly Ack or Nack each message.
+          func (ps *PubSub) Receive(ctx context.Context, subscription string, handler func(context.Context, *pubsub.Message)) error {
+              if !allowedPubSub("MOBILIS_PUBSUB_SUBSCRIPTIONS", subscription) {
+                  return fmt.Errorf("Pub/Sub subscription %s is not declared for this service", subscription)
+              }
+              return ps.client.Subscriber(subscription).Receive(ctx, func(deliveryCtx context.Context, message *pubsub.Message) {
+                  #{'extracted := otel.GetTextMapPropagator().Extract(context.Background(), propagation.MapCarrier(message.Attributes))' if traced}
+                  #{'remote := trace.SpanContextFromContext(extracted)' if traced}
+                  #{'options := []trace.SpanStartOption{trace.WithSpanKind(trace.SpanKindConsumer), trace.WithAttributes(attribute.String("messaging.system", "gcp_pubsub"), attribute.String("messaging.operation", "process"), attribute.String("messaging.destination.name", subscription), attribute.String("messaging.message.id", message.ID))}' if traced}
+                  #{'if remote.IsValid() { options = append(options, trace.WithLinks(trace.Link{SpanContext: remote})) }' if traced}
+                  #{'processCtx, span := otel.Tracer("mobilis.pubsub").Start(deliveryCtx, "pubsub.process", options...)' if traced}
+                  #{'defer span.End()' if traced}
+                  handler(#{traced ? 'processCtx' : 'deliveryCtx'}, message)
+              })
+          }
         GO
       end
 

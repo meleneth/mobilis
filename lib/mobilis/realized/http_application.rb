@@ -4,7 +4,7 @@ module Mobilis
   module Realized
     # Shared realization of the two HTTP application archetypes.
     class HTTPApplication < Mobilis::Base::BuildForm
-      attr_reader :database, :collector, :cassandra
+      attr_reader :database, :collector, :cassandra, :pubsub
 
       def initialize(env, node)
         super
@@ -30,6 +30,10 @@ module Mobilis
         if cassandra
           raise ArgumentError, "#{name} Cassandra connection requires a keyspace" unless cassandra.config_node.keyspace_name
         end
+        pubsubs = connected_nodes(Mobilis::Realized::GooglePubSub)
+        raise ArgumentError, "#{name} supports one Pub/Sub emulator" if pubsubs.length > 1
+
+        @pubsub = pubsubs.first
         collectors = connected_nodes(Mobilis::Realized::OtelCollector)
         raise ArgumentError, "#{name} supports one collector" if collectors.length > 1
 

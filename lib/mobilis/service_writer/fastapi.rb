@@ -75,6 +75,7 @@ module Mobilis
         File.write("#{@package_dir}/routes.py", "def register(app):\n    pass\n")
         write_database if realized_node.database
         write_cassandra if realized_node.cassandra
+        write_pubsub if realized_node.pubsub
         write_models if realized_node.database
         write_telemetry if realized_node.otel_enabled?
         # Existing file models can supply ordinary application handlers.
@@ -87,6 +88,7 @@ module Mobilis
         deps = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1", "httpx>=0.27,<1", "requests>=2.32,<3"]
         deps.concat(["SQLAlchemy>=2.0,<2.1", "psycopg[binary]>=3.2,<4"]) if realized_node.database
         deps << "cassandra-driver>=3.29,<4" if realized_node.cassandra
+        deps << "google-cloud-pubsub>=2.30,<3" if realized_node.pubsub
         if realized_node.otel_enabled?
           deps.concat(["opentelemetry-sdk>=1.30,<2", "opentelemetry-exporter-otlp-proto-http>=1.30,<2",
             "opentelemetry-instrumentation-fastapi", "opentelemetry-instrumentation-httpx",
@@ -101,11 +103,13 @@ module Mobilis
         imports = []
         imports << "from .database import get_engine" if realized_node.database
         imports << "from .cassandra_client import close_cassandra" if realized_node.cassandra
+        imports << "from .pubsub_client import close_pubsub" if realized_node.pubsub
         imports << "from .telemetry import configure, instrument_app" if realized_node.otel_enabled?
         # @type var cleanup: Array[String]
         cleanup = []
         cleanup.concat(["if get_engine.cache_info().currsize:", "    get_engine().dispose()"]) if realized_node.database
         cleanup << "close_cassandra()" if realized_node.cassandra
+        cleanup << "close_pubsub()" if realized_node.pubsub
         cleanup.concat(["if provider is not None:", "    provider.shutdown()"]) if realized_node.otel_enabled?
         File.write("#{@package_dir}/app.py", <<~PYTHON)
           from contextlib import asynccontextmanager
@@ -216,6 +220,133 @@ module Mobilis
                   _cluster.shutdown()
               _cluster = None
               _session = None
+        PYTHON
+      end
+
+      def write_pubsub
+        traced = realized_node.otel_enabled?
+        publish_body = if traced
+                         <<~PYTHON.rstrip
+                           with trace.get_tracer(__name__).start_as_current_span(
+                                   "pubsub.publish", kind=SpanKind.PRODUCER,
+                                   attributes={"messaging.system": "gcp_pubsub", "messaging.operation": "publish",
+                                               "messaging.destination.name": topic},
+                                   record_exception=False, set_status_on_exception=False) as span:
+                               try:
+                                   TraceContextTextMapPropagator().inject(attributes)
+                                   message_id = _publisher_client().publish(path, data, **attributes).result(timeout=10)
+                                   span.set_attribute("messaging.message.id", message_id)
+                                   return message_id
+                               except Exception as error:
+                                   span.set_attribute("error.type", type(error).__name__)
+                                   span.set_status(Status(StatusCode.ERROR))
+                                   raise
+                         PYTHON
+                       else
+                         "return _publisher_client().publish(path, data, **attributes).result(timeout=10)"
+                       end
+        process_body = if traced
+                         <<~PYTHON.rstrip
+                           extracted = TraceContextTextMapPropagator().extract(self.attributes)
+                           remote = trace.get_current_span(extracted).get_span_context()
+                           links = [Link(remote)] if remote.is_valid else []
+                           with trace.get_tracer(__name__).start_as_current_span(
+                                   "pubsub.process", kind=SpanKind.CONSUMER, links=links,
+                                   attributes={"messaging.system": "gcp_pubsub", "messaging.operation": "process",
+                                               "messaging.destination.name": self.subscription,
+                                               "messaging.message.id": self.message_id,
+                                               "messaging.message.delivery_attempt": self.delivery_attempt},
+                                   record_exception=False, set_status_on_exception=False) as span:
+                               try:
+                                   return handler(self)
+                               except Exception as error:
+                                   span.set_attribute("error.type", type(error).__name__)
+                                   span.set_status(Status(StatusCode.ERROR))
+                                   raise
+                         PYTHON
+                       else
+                         "return handler(self)"
+                       end
+        File.write("#{@package_dir}/pubsub_client.py", <<~PYTHON)
+          import os
+          from google.cloud import pubsub_v1
+          from google.api_core.exceptions import DeadlineExceeded
+          #{"from opentelemetry import trace\nfrom opentelemetry.trace import Link, SpanKind, Status, StatusCode\nfrom opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator" if traced}
+
+          _publisher = None
+          _subscriber = None
+
+
+          def _allowed(variable):
+              return set(filter(None, os.environ.get(variable, "").split(",")))
+
+
+          def _publisher_client():
+              global _publisher
+              if _publisher is None:
+                  _publisher = pubsub_v1.PublisherClient()
+              return _publisher
+
+
+          def _subscriber_client():
+              global _subscriber
+              if _subscriber is None:
+                  _subscriber = pubsub_v1.SubscriberClient()
+              return _subscriber
+
+
+          def publish(topic, data, attributes=None):
+              if topic not in _allowed("MOBILIS_PUBSUB_PUBLISH_TOPICS"):
+                  raise ValueError("Pub/Sub topic is not declared for this service: " + topic)
+              if not isinstance(data, bytes):
+                  raise TypeError("Pub/Sub payload must be bytes")
+              attributes = dict(attributes or {})
+              path = _publisher_client().topic_path(os.environ["PUBSUB_PROJECT_ID"], topic)
+              #{publish_body.lines.join("    ").rstrip}
+
+
+          class Delivery:
+              def __init__(self, subscription, received):
+                  self.subscription = subscription
+                  self.ack_id = received.ack_id
+                  self.data = received.message.data
+                  self.attributes = dict(received.message.attributes)
+                  self.message_id = received.message.message_id
+                  self.delivery_attempt = received.delivery_attempt or 0
+
+              def process(self, handler):
+                  #{process_body.lines.join("        ").rstrip}
+
+              def ack(self):
+                  path = _subscriber_client().subscription_path(os.environ["PUBSUB_PROJECT_ID"], self.subscription)
+                  _subscriber_client().acknowledge(request={"subscription": path, "ack_ids": [self.ack_id]}, timeout=5)
+
+              def nack(self):
+                  path = _subscriber_client().subscription_path(os.environ["PUBSUB_PROJECT_ID"], self.subscription)
+                  _subscriber_client().modify_ack_deadline(request={"subscription": path, "ack_ids": [self.ack_id],
+                                                            "ack_deadline_seconds": 0}, timeout=5)
+
+
+          def pull(subscription, max_messages=1, timeout=5):
+              if subscription not in _allowed("MOBILIS_PUBSUB_SUBSCRIPTIONS"):
+                  raise ValueError("Pub/Sub subscription is not declared for this service: " + subscription)
+              path = _subscriber_client().subscription_path(os.environ["PUBSUB_PROJECT_ID"], subscription)
+              try:
+                  response = _subscriber_client().pull(request={"subscription": path, "max_messages": max_messages},
+                                                       timeout=timeout)
+              except DeadlineExceeded:
+                  return []
+              return [Delivery(subscription, item) for item in response.received_messages]
+
+
+          def close_pubsub():
+              global _publisher, _subscriber
+              if _publisher is not None:
+                  _publisher.transport.close()
+              if _subscriber is not None:
+                  _subscriber.transport.close()
+              _publisher = None
+              _subscriber = None
         PYTHON
       end
 

@@ -42,6 +42,10 @@ module Mobilis
               "gcloud", "beta", "emulators", "pubsub", "start",
               "--project=" + project, "--host-port=0.0.0.0:8085",
           ])
+          try:
+              os.unlink("/tmp/mobilis-pubsub-ready")
+          except FileNotFoundError:
+              pass
 
 
           def terminate(_signal, _frame):
