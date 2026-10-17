@@ -90,11 +90,9 @@ module Mobilis
               provision()  # Exercise existing-topic and existing-subscription paths before readiness.
               open("/tmp/mobilis-pubsub-ready", "w", encoding="utf-8").close()
               sys.exit(server.wait())
-          except Exception as error:
-              print(f"Pub/Sub initialization failed: {error}", file=sys.stderr, flush=True)
-              server.terminate()
-              sys.exit(1)
           finally:
+              if server.poll() is None:
+                  server.terminate()
               publisher.transport.close()
               subscriber.transport.close()
         PYTHON

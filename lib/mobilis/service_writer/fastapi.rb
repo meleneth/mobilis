@@ -240,7 +240,7 @@ module Mobilis
                                 record_exception=False, set_status_on_exception=False) as span:
                             try:
                                 return get_session().execute(statement, parameters)
-                            except Exception as error:
+                            except (NoHostAvailable, OperationTimedOut, ReadTimeout, Unavailable, WriteTimeout) as error:
                                 span.set_attribute("error.type", type(error).__name__)
                                 span.set_status(Status(StatusCode.ERROR))
                                 raise
@@ -250,8 +250,10 @@ module Mobilis
                     end
         File.write("#{@package_dir}/cassandra_client.py", <<~PYTHON)
           import os
+          from contextlib import ExitStack
+          from cassandra import OperationTimedOut, ReadTimeout, Unavailable, WriteTimeout
           from cassandra.auth import PlainTextAuthProvider
-          from cassandra.cluster import Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT
+          from cassandra.cluster import Cluster, ExecutionProfile, EXEC_PROFILE_DEFAULT, NoHostAvailable
           from cassandra.policies import DCAwareRoundRobinPolicy
           #{"from opentelemetry import trace\nfrom opentelemetry.trace import Status, StatusCode" if realized_node.otel_enabled?}
 
@@ -264,17 +266,17 @@ module Mobilis
               if _session is None:
                   points = [point.strip() for point in os.environ["CASSANDRA_CONTACT_POINTS"].split(",") if point.strip()]
                   auth = PlainTextAuthProvider(username=os.environ["CASSANDRA_USERNAME"], password=os.environ["CASSANDRA_PASSWORD"])
-                  _cluster = Cluster(points, port=int(os.environ["CASSANDRA_PORT"]),
-                                     auth_provider=auth, protocol_version=4,
-                                     execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(
-                                         load_balancing_policy=DCAwareRoundRobinPolicy(
-                                             local_dc=os.environ["CASSANDRA_DATACENTER"]))})
-                  try:
-                      _session = _cluster.connect(os.environ["CASSANDRA_KEYSPACE"])
-                  except Exception:
-                      _cluster.shutdown()
-                      _cluster = None
-                      raise
+                  with ExitStack() as cleanup:
+                      cluster = Cluster(points, port=int(os.environ["CASSANDRA_PORT"]),
+                                        auth_provider=auth, protocol_version=4,
+                                        execution_profiles={EXEC_PROFILE_DEFAULT: ExecutionProfile(
+                                            load_balancing_policy=DCAwareRoundRobinPolicy(
+                                                local_dc=os.environ["CASSANDRA_DATACENTER"]))})
+                      cleanup.callback(cluster.shutdown)
+                      session = cluster.connect(os.environ["CASSANDRA_KEYSPACE"])
+                      cleanup.pop_all()
+                  _cluster = cluster
+                  _session = session
               return _session
 
 
@@ -307,7 +309,7 @@ module Mobilis
                                    message_id = _publisher_client().publish(path, data, **attributes).result(timeout=10)
                                    span.set_attribute("messaging.message.id", message_id)
                                    return message_id
-                               except Exception as error:
+                               except (GoogleAPICallError, OSError) as error:
                                    span.set_attribute("error.type", type(error).__name__)
                                    span.set_status(Status(StatusCode.ERROR))
                                    raise
@@ -329,7 +331,7 @@ module Mobilis
                                    record_exception=False, set_status_on_exception=False) as span:
                                try:
                                    return handler(self)
-                               except Exception as error:
+                               except (GoogleAPICallError, OSError, RuntimeError, ValueError, UnicodeError) as error:
                                    span.set_attribute("error.type", type(error).__name__)
                                    span.set_status(Status(StatusCode.ERROR))
                                    raise
@@ -340,7 +342,7 @@ module Mobilis
         File.write("#{@package_dir}/pubsub_client.py", <<~PYTHON)
           import os
           from google.cloud import pubsub_v1
-          from google.api_core.exceptions import DeadlineExceeded
+          from google.api_core.exceptions import DeadlineExceeded, GoogleAPICallError
           #{"from opentelemetry import trace\nfrom opentelemetry.trace import Link, SpanKind, Status, StatusCode\nfrom opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator" if traced}
 
           _publisher = None

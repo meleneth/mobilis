@@ -228,8 +228,6 @@ def add_mnbme_gem(service)
             def monster_name
               rng = RandomNameGenerator.new(RandomNameGenerator::ROMAN)
               "#{rng.compose(3)} #{rng.compose(3)} #{rng.compose(3)}"
-            rescue StandardError
-              retry
             end
           end
         end
@@ -436,8 +434,6 @@ Mobilis::DSL.generate("mnbme") do
         rng = RandomNameGenerator.new(RandomNameGenerator::ELVEN)
         suffix = ENV.fetch("HOSTNAME", "local")[0, 6]
         "#{rng.compose(3)} #{rng.compose(3)} #{suffix}"
-      rescue StandardError
-        retry
       end
 
       def accountservice
@@ -478,7 +474,7 @@ Mobilis::DSL.generate("mnbme") do
             game_uuid = response.body[:game_uuid]
           end
           sleep 1
-        rescue StandardError => e
+        rescue Faraday::Error, JSON::ParserError, KeyError => e
           puts({ service: "playerservice", event: "error", error: e.message }.to_json)
           sleep 2
         end

@@ -13,7 +13,7 @@ module Mobilis
     def self.clean_structure(data)
       # Converts symbols and weird objects to JSON-compatible plain data
       JSON.parse(JSON.dump(data))
-    rescue => e
+    rescue JSON::GeneratorError, JSON::ParserError, TypeError => e
       raise "Mobilis::YAMLWriter failed to clean data structure for YAML output: #{e.message}"
     end
   end

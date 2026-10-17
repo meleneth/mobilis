@@ -3,6 +3,7 @@ import json
 import re
 from sqlalchemy import event, select, text
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import SQLAlchemyError
 from opentelemetry import trace
 from .database import get_session
 from .models import Item
@@ -48,7 +49,7 @@ class ItemStore:
                 session.execute(text("SET LOCAL application_name = 'legacy'"))
                 session.add(Item(**effect["values"]))
                 session.commit()
-            except Exception:
+            except SQLAlchemyError:
                 session.rollback()
                 raise
 

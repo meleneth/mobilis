@@ -1,6 +1,7 @@
 import os
 from fastapi import HTTPException
 from pydantic import BaseModel
+from google.api_core.exceptions import GoogleAPICallError
 from .pubsub_client import pull
 
 
@@ -30,5 +31,5 @@ def register(app):
                 return result
 
             return {"message": deliveries[0].process(handle)}
-        except Exception as error:
+        except (GoogleAPICallError, OSError, UnicodeError) as error:
             raise HTTPException(status_code=503, detail="Pub/Sub subscriber unavailable") from error

@@ -94,7 +94,7 @@ def test_authoritative_write_commits_exactly_one_computed_effect(client, store, 
 
 
 @pytest.mark.parametrize("error,status,body", [
-    (IntegrityError(None, None, Exception("duplicate")), 409, {"error": "item exists"}),
+    (IntegrityError(None, None, RuntimeError("duplicate")), 409, {"error": "item exists"}),
     (SQLAlchemyError("commit failed"), 503, {"error": "database unavailable"})])
 def test_write_dependency_failures(client, store, error, status, body):
     flexmock(store).should_receive("commit").with_args(EFFECT).and_raise(error).once()

@@ -82,8 +82,6 @@ module Mobilis
               case msg
               when String
                 msg
-              when Exception
-                "\#{msg.class}: \#{msg.message}"
               else
                 msg.inspect
               end

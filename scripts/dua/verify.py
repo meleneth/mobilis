@@ -124,13 +124,9 @@ def exercise():
 
 
 if __name__ == "__main__":
-    try:
-        if sys.argv[1:] == ["exercise"]:
-            exercise()
-        elif sys.argv[1:] == ["verify"]:
-            verify(json.load(sys.stdin))
-        else:
-            raise SystemExit("usage: verify.py exercise|verify")
-    except Exception as error:
-        print(f"DUA verification failed: {error}", file=sys.stderr)
-        raise
+    if sys.argv[1:] == ["exercise"]:
+        exercise()
+    elif sys.argv[1:] == ["verify"]:
+        verify(json.load(sys.stdin))
+    else:
+        raise SystemExit("usage: verify.py exercise|verify")

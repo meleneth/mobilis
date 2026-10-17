@@ -1,6 +1,8 @@
 from fastapi import HTTPException
 from pydantic import BaseModel
 from uuid import uuid4
+from cassandra import OperationTimedOut, ReadTimeout, Unavailable, WriteTimeout
+from cassandra.cluster import NoHostAvailable
 from .cassandra_client import execute
 
 
@@ -14,7 +16,7 @@ def register(app):
         identity = uuid4()
         try:
             execute("insert", "INSERT INTO records (id, note) VALUES (%s, %s)", (identity, record.note))
-        except Exception as error:
+        except (NoHostAvailable, OperationTimedOut, ReadTimeout, Unavailable, WriteTimeout) as error:
             raise HTTPException(status_code=503, detail="Cassandra write unavailable") from error
         return {"id": str(identity), "note": record.note}
 
@@ -25,7 +27,7 @@ def register(app):
             row = execute("select", "SELECT note FROM records WHERE id = %s", (UUID(identity),)).one()
         except ValueError as error:
             raise HTTPException(status_code=400, detail="Invalid record ID") from error
-        except Exception as error:
+        except (NoHostAvailable, OperationTimedOut, ReadTimeout, Unavailable, WriteTimeout) as error:
             raise HTTPException(status_code=503, detail="Cassandra read unavailable") from error
         if row is None:
             raise HTTPException(status_code=404, detail="Record not found")

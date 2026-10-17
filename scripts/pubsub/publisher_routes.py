@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from pydantic import BaseModel
+from google.api_core.exceptions import GoogleAPICallError
 from .pubsub_client import publish
 
 
@@ -12,6 +13,6 @@ def register(app):
     def send(event: Event):
         try:
             identity = publish("requests", event.value.encode("utf-8"))
-        except Exception as error:
+        except (GoogleAPICallError, OSError) as error:
             raise HTTPException(status_code=503, detail="Pub/Sub publisher unavailable") from error
         return {"message_id": identity}

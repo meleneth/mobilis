@@ -4,6 +4,7 @@ from uuid import uuid4
 
 import strawberry
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 from starlette.concurrency import run_in_threadpool
 
 from .models import ApplicationRecord
@@ -60,7 +61,7 @@ class Mutation:
             try:
                 session.add(record)
                 session.commit()
-            except Exception:
+            except (OSError, SQLAlchemyError):
                 session.rollback()
                 raise
 

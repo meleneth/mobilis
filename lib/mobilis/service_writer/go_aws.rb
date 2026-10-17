@@ -74,8 +74,12 @@ module Mobilis
         return default if cfg.nil?
 
         if cfg.respond_to?(:[])
-          v = cfg[key] rescue nil
-          return v unless v.nil?
+          begin
+            value = cfg[key]
+            return value unless value.nil?
+          rescue KeyError, TypeError
+            # Try method-shaped access below.
+          end
         end
 
         meth = key.to_s

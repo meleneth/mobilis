@@ -6,6 +6,7 @@ accepted. SQLGlot supplies a PostgreSQL AST; driver spelling is not meaning.
 from sqlglot import exp, parse
 from sqlglot.optimizer.normalize_identifiers import normalize_identifiers
 from sqlglot.optimizer.qualify import qualify
+from sqlglot.errors import ParseError, OptimizeError
 import re
 
 SCHEMA = {"items": {"id": "INT", "name": "VARCHAR"}}
@@ -101,5 +102,5 @@ def sql_meaning(statement, parameters):
         return {"operation": "insert", "table": "items", "values": result}
     except AssertionError:
         raise
-    except Exception as error:
+    except (ParseError, OptimizeError, ValueError, TypeError, KeyError, IndexError, AttributeError) as error:
         raise AssertionError(f"unsupported SQL evidence: {statement!r}: {error}") from error
