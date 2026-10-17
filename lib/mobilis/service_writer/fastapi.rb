@@ -6,6 +6,8 @@ module Mobilis
   module ServiceWriter
     class FastAPI < Mobilis::Base::ServiceWriter
       def write
+        local_packages = realized_node.config_node.each_model_of_type(Mobilis::Model::LocalPythonPackage).to_a.uniq(&:name)
+        local_packages.each { |package| package.write_files("../packages/#{package.name}") }
         package = realized_node.config_node.package_name
         @package_dir = "src/#{package}"
         FileUtils.mkdir_p(@package_dir)
@@ -57,8 +59,8 @@ module Mobilis
         File.write("Dockerfile", <<~DOCKER)
           FROM #{realized_node.cassandra ? "python:3.12-bookworm" : Mobilis::ContainerVersions::PYTHON}
           WORKDIR /app
-          COPY . .
-          RUN pip install --no-cache-dir .
+          #{local_packages.empty? ? "COPY . ." : "COPY packages /app/packages\nCOPY #{realized_node.name} /app"}
+          RUN pip install --no-cache-dir #{local_packages.map { |package| "./packages/#{package.name} " }.join}.
           EXPOSE #{realized_node.exposed_port_no}
           CMD ["#{realized_node.name}"]
         DOCKER
@@ -87,6 +89,7 @@ module Mobilis
 
       def dependencies
         deps = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1", "httpx>=0.27,<1", "requests>=2.32,<3"]
+        deps.concat(realized_node.config_node.each_model_of_type(Mobilis::Model::LocalPythonPackage).map { |package| "#{package.name}==0.1.0" })
         deps.concat(["SQLAlchemy>=2.0,<2.1", "psycopg[binary]>=3.2,<4"]) if realized_node.database
         deps << "cassandra-driver>=3.29,<4" if realized_node.cassandra
         deps << "google-cloud-pubsub>=2.30,<3" if realized_node.pubsub

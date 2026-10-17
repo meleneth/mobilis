@@ -11,7 +11,7 @@ module Mobilis
           # committing them here produces empty commits (and aborts generation).
           next if [Mobilis::Realized::Rack, Mobilis::Realized::FastAPI,
             Mobilis::Realized::GoHTTP, Mobilis::Realized::Envoy,
-            Mobilis::Realized::Grafbase].any? { |klass| realized_node.is_a?(klass) }
+            Mobilis::Realized::Grafbase, Mobilis::Realized::Airflow].any? { |klass| realized_node.is_a?(klass) }
 
           realized_node.each_model_of_type(Mobilis::Model::File) do |model|
             next unless realized_env.is_test?

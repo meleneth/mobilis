@@ -117,6 +117,7 @@ module Mobilis
     def build_realized_node(config_node)
       case config_node
       when Mobilis::Node::FastAPI then Mobilis::Realized::FastAPI.new(self, config_node)
+      when Mobilis::Node::Airflow then Mobilis::Realized::Airflow.new(self, config_node)
       when Mobilis::Node::GoHTTP then Mobilis::Realized::GoHTTP.new(self, config_node)
       when Mobilis::Node::Envoy then Mobilis::Realized::Envoy.new(self, config_node)
       when Mobilis::Node::Grafbase then Mobilis::Realized::Grafbase.new(self, config_node)

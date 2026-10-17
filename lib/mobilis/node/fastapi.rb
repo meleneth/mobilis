@@ -39,6 +39,18 @@ module Mobilis
       def package_name
         "service_#{name.tr("-", "_")}"
       end
+
+      def local_package(name, &block)
+        package = Mobilis::Model::LocalPythonPackage.new(name)
+        block&.call(package)
+        use_local_package(package)
+      end
+
+      def use_local_package(package)
+        raise ArgumentError, "Expected LocalPythonPackage" unless package.is_a?(Mobilis::Model::LocalPythonPackage)
+        add_model(package) unless models.include?(package)
+        package
+      end
     end
   end
 end

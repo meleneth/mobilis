@@ -52,6 +52,14 @@ module Mobilis
         node
       end
 
+      def airflow(name, &block)
+        node = Mobilis::Node::Airflow.new(name)
+        system << node
+        @named[name] = node
+        block&.call(node)
+        node
+      end
+
       def cassandra(name, &block)
         node = Mobilis::Node::Cassandra.new(name)
         system << node
