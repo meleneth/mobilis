@@ -191,8 +191,8 @@ module Mobilis
         node
       end
 
-      def kafka(name, publish_port: false, &block)
-        node = Mobilis::Node::Kafka.new(name, publish_port: publish_port)
+      def kafka(name, publish_port: false, brokers: 1, &block)
+        node = Mobilis::Node::Kafka.new(name, publish_port: publish_port, brokers: brokers)
         system << node
         @named[name] = node
         block&.call(node)

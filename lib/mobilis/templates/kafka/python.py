@@ -9,7 +9,7 @@ from opentelemetry import propagate, trace
 from opentelemetry.trace import Link
 
 
-BOOTSTRAP = os.environ["KAFKA_BOOTSTRAP_SERVERS"]
+BOOTSTRAP = [server.strip() for server in os.environ["KAFKA_BOOTSTRAP_SERVERS"].split(",")]
 PUBLISH_TOPICS = frozenset(filter(None, os.getenv("MOBILIS_KAFKA_PUBLISH_TOPICS", "").split(",")))
 SUBSCRIPTIONS = frozenset(filter(None, os.getenv("MOBILIS_KAFKA_SUBSCRIPTIONS", "").split(",")))
 tracer = trace.get_tracer(__name__)

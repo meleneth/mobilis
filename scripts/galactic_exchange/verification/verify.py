@@ -83,6 +83,26 @@ def lag(group):
     return sum(values)
 
 
+def broker_ready(name):
+    run("exec", "-T", name, "/opt/kafka/bin/kafka-broker-api-versions.sh",
+        "--bootstrap-server", "localhost:9092")
+    return True
+
+
+def replicated_topics():
+    for topic in ("exchange.commands", "exchange.executions"):
+        output = run("exec", "-T", "events", "/opt/kafka/bin/kafka-topics.sh",
+                     "--bootstrap-server", "localhost:9092", "--describe", "--topic", topic)
+        if "ReplicationFactor: 3" not in output or "PartitionCount: 5" not in output:
+            return False
+        partitions = [line for line in output.splitlines() if "Partition:" in line and "Leader:" in line]
+        if len(partitions) != 5 or any("Replicas:" not in line or "Isr:" not in line
+                                       or len(line.split("Isr:", 1)[1].strip().split(",")) != 3
+                                       for line in partitions):
+            return False
+    return True
+
+
 def expected_state(commands):
     quantities = {}
     markets = {}
@@ -103,6 +123,9 @@ def expected_state(commands):
 
 def main():
     run("up", "-d", "--build")
+    for broker in ("events", "events-2", "events-3"):
+        wait_for(broker + " ready", lambda broker=broker: broker_ready(broker))
+    wait_for("three-replica topics", replicated_topics)
     trading = "http://127.0.0.1:" + env_value("TRADING_API_WEB_PORT")
     market = "http://127.0.0.1:" + env_value("MARKET_WEB_PORT")
     portfolio = "http://127.0.0.1:" + env_value("PORTFOLIO_WEB_PORT")
@@ -129,13 +152,23 @@ def main():
     wait_for("first portfolio projection", lambda: positions() == first_positions)
     wait_for("first market projection", lambda: request("GET", market + "/markets")[1] == first_markets)
 
+    run("stop", "events-3")
+    status, result = request("POST", trading + "/trades", commands[3])
+    assert status == 202 and result["status"] == "accepted"
+    four_positions, four_markets = expected_state(commands[:4])
+    wait_for("broker failure leaves portfolio writable", lambda: positions() == four_positions)
+    wait_for("broker failure leaves market writable", lambda: request("GET", market + "/markets")[1] == four_markets)
+    run("start", "events-3")
+    wait_for("third broker rejoins", lambda: broker_ready("events-3"))
+    wait_for("topic replicas resynchronize", replicated_topics)
+
     run("stop", "portfolio-consumer")
-    for command in commands[3:]:
+    for command in commands[4:]:
         status, result = request("POST", trading + "/trades", command)
         assert status == 202 and result["status"] == "accepted"
     final_positions, final_markets = expected_state(commands)
     wait_for("market advances while portfolio is stopped", lambda: request("GET", market + "/markets")[1] == final_markets)
-    assert positions() == first_positions
+    assert positions() == four_positions
     # Kafka's group tool may omit partitions with no committed offset yet.
     wait_for("portfolio consumer lag", lambda: lag("portfolio-v1") > 0)
     run("start", "portfolio-consumer")

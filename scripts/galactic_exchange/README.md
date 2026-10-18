@@ -9,6 +9,9 @@ commands, verifies broker acknowledgments and execution IDs, pauses and resumes
 the portfolio consumer, replays the retained execution log into an empty second
 PostgreSQL database with a new group, and injects a duplicate execution.
 
+The event log runs on three KRaft brokers with three replicas per topic and
+minimum in-sync replicas of two. The verifier stops one broker and confirms
+new commands still receive acknowledgments before restarting it.
 `exchange.commands` and `exchange.executions` each have five partitions. The
 commodity is the key on both topics. Every command for one commodity reaches
 one partition and is handled in that partition's offset order. No total order
@@ -34,5 +37,6 @@ gauges on port 9000 within the Compose network. Consumer lag is available via
 portfolio-v1`. The single broker exposes JMX internally; this demonstration
 does not package a JMX exporter agent.
 
-The broker is a single KRaft node with one replica. It is intended for local
-development and this demonstration, not for a fault tolerant deployment.
+This local three-broker cluster demonstrates one-broker fault tolerance. Its
+Compose volumes are durable until explicitly removed; it is not a production
+security or operations configuration.

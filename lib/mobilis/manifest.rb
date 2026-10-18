@@ -12,6 +12,19 @@ module Mobilis
 
     def initialize(system, suppress_plugins: false)
       @system = system
+      generated_broker_names = system.config_nodes.values.flat_map do |node|
+        next [] unless node.is_a?(Mobilis::Node::Kafka)
+
+        ["#{node.name}-topics", *(2..node.brokers).map { |index| "#{node.name}-#{index}" }]
+      end
+      declared_names = system.config_nodes.values.map(&:name)
+      duplicates = generated_broker_names.select do |name|
+        declared_names.include?(name) || generated_broker_names.count(name) > 1
+      end.uniq
+      raise ArgumentError, "Kafka broker service names collide: #{duplicates.join(', ')}" unless duplicates.empty?
+      if system.kubernetes_deployment && system.config_nodes.values.any? { |node| node.is_a?(Mobilis::Node::Kafka) && node.brokers > 1 }
+        raise ArgumentError, "Multi-broker Kafka generation currently supports Docker Compose, not Kubernetes"
+      end
       @directory_service = Mobilis::Services::Directory.new
       @realized_envs = environments.map do |env|
         Mobilis::RealizedEnv.new(system, env)

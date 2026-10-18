@@ -34,8 +34,59 @@ RSpec.describe "Kafka generation" do
     client = dsl.go_http("client")
     expect { broker.topic("bad/name", partitions: 2, retention_ms: 1000) }.to raise_error(ArgumentError)
     expect { broker.topic("other", partitions: 0, retention_ms: 1000) }.to raise_error(ArgumentError)
+    expect { dsl.kafka("even", brokers: 2) }.to raise_error(ArgumentError, /odd/)
+    expect { broker.topic("over-replicated", partitions: 2, retention_ms: 1000, replication_factor: 2) }.to raise_error(ArgumentError, /replication/)
     expect { dsl.connect(from: client, to: broker, publish: "missing") }.to raise_error(ArgumentError, /Undeclared/)
     expect { dsl.connect(from: client, to: broker, subscribe: [{topic: "valid"}]) }.to raise_error(KeyError)
+  end
+
+  it "generates one three-broker KRaft cluster with replicated topics and host listeners" do
+    system = Mobilis::System.new("cluster")
+    dsl = Mobilis::DSL::DSLContext.new(system)
+    broker = dsl.kafka("events", brokers: 3, publish_port: true) do |node|
+      node.topic("commands", partitions: 5, retention_ms: 1000)
+    end
+    producer = dsl.go_http("producer")
+    dsl.connect(from: producer, to: broker, publish: "commands")
+    loaded = Mobilis::System.from_json(system.to_json)
+    expect(loaded.config_nodes.values.grep(Mobilis::Node::Kafka).first.brokers).to eq(3)
+    env = Mobilis::RealizedEnv.new(loaded, Mobilis::ExecutionEnvironment.new(:development))
+    realized = env.realized_node_by_name("events")
+    compose = realized.service_wrapped_compose
+    expect(compose[:services].keys).to include("events", "events-2", "events-3", "events-topics")
+    expect(compose[:volumes].keys).to contain_exactly("events-data", "events-2-data", "events-3-data")
+    quorum = "KAFKA_CONTROLLER_QUORUM_VOTERS=1@events:9093,2@events-2:9093,3@events-3:9093"
+    (1..3).each do |index|
+      service = compose[:services].fetch(index == 1 ? "events" : "events-#{index}")
+      expect(service[:environment]).to include(quorum, "KAFKA_NODE_ID=#{index}",
+                                               "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=3",
+                                               "KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=2")
+      expect(service[:environment].join).to include("HOST://localhost:#{9093 + index}")
+      expect(service[:ports].join).to include("#{9093 + index}:9094") if index > 1
+    end
+    expect(compose[:services]["events-topics"][:depends_on].keys).to contain_exactly("events", "events-2", "events-3")
+    client = env.realized_node_by_name("producer")
+    expect(client.compose.clean_shrunk[:environment]).to include("KAFKA_BOOTSTRAP_SERVERS=events:9092,events-2:9092,events-3:9092")
+    Dir.mktmpdir do |dir|
+      Dir.chdir(dir) { realized.service_writer.new(nil, env, realized).write }
+      expect(File.read("#{dir}/provision.sh")).to include("--replication-factor 3", "min.insync.replicas=2")
+    end
+  end
+
+  it "rejects a declared service that collides with a generated broker name" do
+    system = Mobilis::System.new("collision")
+    dsl = Mobilis::DSL::DSLContext.new(system)
+    dsl.kafka("events", brokers: 3) { |node| node.topic("commands", partitions: 3, retention_ms: 1000) }
+    dsl.redis("events-2")
+    expect { Mobilis::Manifest.new(system, suppress_plugins: true) }.to raise_error(ArgumentError, /events-2/)
+  end
+
+  it "rejects multi-broker Kubernetes output before materialization" do
+    system = Mobilis::System.new("kubernetes-cluster")
+    dsl = Mobilis::DSL::DSLContext.new(system)
+    dsl.kafka("events", brokers: 3) { |node| node.topic("commands", partitions: 3, retention_ms: 1000) }
+    dsl.deploy_kubernetes("*.example.test")
+    expect { Mobilis::Manifest.new(system, suppress_plugins: true) }.to raise_error(ArgumentError, /Docker Compose/)
   end
 
   it "writes KRaft broker, deterministic topics and ready dependencies" do

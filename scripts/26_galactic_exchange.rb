@@ -17,7 +17,7 @@ end
 
 system = Mobilis::System.new("galactic-exchange")
 dsl = Mobilis::DSL::DSLContext.new(system)
-broker = dsl.kafka("events") do |node|
+broker = dsl.kafka("events", brokers: 3) do |node|
   node.topic("exchange.commands", partitions: 5, retention_ms: 604_800_000, cleanup_policy: "delete")
   node.topic("exchange.executions", partitions: 5, retention_ms: 604_800_000, cleanup_policy: "delete")
 end
@@ -76,7 +76,7 @@ manifest.materialize
 
 Dir.chdir(File.join(root, "generate")) do
   common = {
-    "KAFKA_BOOTSTRAP_SERVERS" => "events:9092",
+    "KAFKA_BOOTSTRAP_SERVERS" => "events:9092,events-2:9092,events-3:9092",
     "OTEL_EXPORTER_OTLP_ENDPOINT" => collector_url,
     "OTEL_EXPORTER_OTLP_PROTOCOL" => "http/protobuf",
     "OTEL_PROPAGATORS" => "tracecontext,baggage"

@@ -37,7 +37,7 @@ func declaredTopic(topic string) bool {
 }
 
 func NewKafka() (*Kafka, error) {
-    client, err := kgo.NewClient(kgo.SeedBrokers(os.Getenv("KAFKA_BOOTSTRAP_SERVERS")),
+    client, err := kgo.NewClient(kgo.SeedBrokers(strings.Split(os.Getenv("KAFKA_BOOTSTRAP_SERVERS"), ",")...),
         kgo.ProducerBatchCompression(kgo.NoCompression()))
     if err != nil { return nil, err }
     return &Kafka{client: client}, nil
@@ -70,7 +70,7 @@ func NewKafkaConsumer(topic, group string) (*KafkaConsumer, error) {
         if subscription == topic+":"+group { allowed = true; break }
     }
     if !allowed { return nil, fmt.Errorf("undeclared Kafka subscription %s:%s", topic, group) }
-    client, err := kgo.NewClient(kgo.SeedBrokers(os.Getenv("KAFKA_BOOTSTRAP_SERVERS")),
+    client, err := kgo.NewClient(kgo.SeedBrokers(strings.Split(os.Getenv("KAFKA_BOOTSTRAP_SERVERS"), ",")...),
         kgo.ConsumerGroup(group), kgo.ConsumeTopics(topic), kgo.DisableAutoCommit(),
         kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()))
     if err != nil { return nil, err }
