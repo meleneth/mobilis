@@ -26,6 +26,9 @@ module Mobilis
               assert response.headers["content-type"] == "application/json"
         PYTHON
         File.write("#{@package_dir}/__init__.py", "")
+        wheel_names = []
+        wheel_names.concat(["kafka_python-3.0.11-py3-none-any.whl", "prometheus_client-0.26.0-py3-none-any.whl"]) if realized_node.kafka
+        wheel_names << "redis-7.2.0-py3-none-any.whl" if realized_node.connected_nodes(Mobilis::Realized::Redis).any?
         File.write("pyproject.toml", <<~TOML)
           [build-system]
           requires = ["setuptools>=75"]
@@ -60,6 +63,8 @@ module Mobilis
           FROM #{realized_node.cassandra ? "python:3.12-bookworm" : Mobilis::ContainerVersions::PYTHON}
           WORKDIR /app
           #{local_packages.empty? ? "COPY . ." : "COPY packages /app/packages\nCOPY #{realized_node.name} /app"}
+          #{wheel_names.any? && !local_packages.empty? ? "COPY #{realized_node.name}/vendor /app/vendor" : ""}
+          #{wheel_names.any? ? "RUN pip install --no-cache-dir #{wheel_names.map { |wheel| "/app/vendor/#{wheel}" }.join(" ")}" : ""}
           RUN pip install --no-cache-dir #{local_packages.map { |package| "./packages/#{package.name} " }.join}.
           EXPOSE #{realized_node.exposed_port_no}
           CMD ["#{realized_node.name}"]
@@ -78,6 +83,8 @@ module Mobilis
         write_database if realized_node.database
         write_cassandra if realized_node.cassandra
         write_pubsub if realized_node.pubsub
+        write_kafka if realized_node.kafka
+        write_redis_wheel if realized_node.connected_nodes(Mobilis::Realized::Redis).any?
         write_models if realized_node.database
         write_graphql_support if realized_node.config_node.graphql_subgraph_name
         write_telemetry if realized_node.otel_enabled?
@@ -92,7 +99,9 @@ module Mobilis
         deps.concat(realized_node.config_node.each_model_of_type(Mobilis::Model::LocalPythonPackage).map { |package| "#{package.name}==0.1.0" })
         deps.concat(["SQLAlchemy>=2.0,<2.1", "psycopg[binary]>=3.2,<4"]) if realized_node.database
         deps << "cassandra-driver>=3.29,<4" if realized_node.cassandra
+        deps << "redis==7.2.0" if realized_node.connected_nodes(Mobilis::Realized::Redis).any?
         deps << "google-cloud-pubsub>=2.30,<3" if realized_node.pubsub
+        deps.concat(["kafka-python==3.0.11", "opentelemetry-api>=1.30,<2", "prometheus-client==0.26.0"]) if realized_node.kafka
         deps << "strawberry-graphql[fastapi]>=0.280,<1" if realized_node.config_node.graphql_subgraph_name
         if realized_node.otel_enabled?
           deps.concat(["opentelemetry-sdk>=1.30,<2", "opentelemetry-exporter-otlp-proto-http>=1.30,<2",
@@ -101,6 +110,18 @@ module Mobilis
           deps << "opentelemetry-instrumentation-sqlalchemy" if realized_node.database
         end
         deps
+      end
+
+      def write_kafka
+        FileUtils.mkdir_p("vendor")
+        FileUtils.cp(File.expand_path("../vendor/kafka_python-3.0.11-py3-none-any.whl", __dir__), "vendor/")
+        FileUtils.cp(File.expand_path("../vendor/prometheus_client-0.26.0-py3-none-any.whl", __dir__), "vendor/")
+        File.write("#{@package_dir}/kafka_client.py", File.read(File.expand_path("../templates/kafka/python.py", __dir__)))
+      end
+
+      def write_redis_wheel
+        FileUtils.mkdir_p("vendor")
+        FileUtils.cp(File.expand_path("../vendor/redis-7.2.0-py3-none-any.whl", __dir__), "vendor/")
       end
 
       def write_app

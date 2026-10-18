@@ -4,7 +4,7 @@ module Mobilis
   module Realized
     # Shared realization of the two HTTP application archetypes.
     class HTTPApplication < Mobilis::Base::BuildForm
-      attr_reader :database, :collector, :cassandra, :pubsub
+      attr_reader :database, :collector, :cassandra, :pubsub, :kafka
 
       def initialize(env, node)
         super
@@ -18,7 +18,7 @@ module Mobilis
       end
 
       def after_all_nodes_realized
-        databases = connected_nodes(Mobilis::Realized::SQLDatabase)
+        databases = connected_nodes(Mobilis::Realized::SQLDatabase).reject { |node| node.is_a?(Mobilis::Realized::Redis) }
         raise ArgumentError, "#{name} supports one PostgreSQL connection" if databases.length > 1 || databases.any? { |db| !db.is_a?(Mobilis::Realized::PostgreSQL) }
 
         @database = databases.first
@@ -34,6 +34,10 @@ module Mobilis
         raise ArgumentError, "#{name} supports one Pub/Sub emulator" if pubsubs.length > 1
 
         @pubsub = pubsubs.first
+        kafkas = connected_nodes(Mobilis::Realized::Kafka)
+        raise ArgumentError, "#{name} supports one Kafka broker connection" if kafkas.length > 1
+
+        @kafka = kafkas.first
         collectors = connected_nodes(Mobilis::Realized::OtelCollector)
         raise ArgumentError, "#{name} supports one collector" if collectors.length > 1
 

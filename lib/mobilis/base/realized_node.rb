@@ -114,6 +114,12 @@ module Mobilis
           raise Mobilis::NoSuchNode.new("Could not find realized dependency for #{name}") unless provider
 
           register_depends_on(provider, force_skip_health_checks: extra_dep[:force_skip_health_checks] == true)
+          if provider.is_a?(Mobilis::Realized::Kafka)
+            compose_depends_on.data[:"#{provider.name}-topics"] = {condition: "service_completed_successfully"}
+            add_compose_raw_var("KAFKA_BOOTSTRAP_SERVERS", "#{provider.name}:9092")
+            add_compose_raw_var("MOBILIS_KAFKA_PUBLISH_TOPICS", Array(extra_dep[:kafka_publish]).join(","))
+            add_compose_raw_var("MOBILIS_KAFKA_SUBSCRIPTIONS", Array(extra_dep[:kafka_subscribe]).map { |item| "#{item[:topic]}:#{item[:group]}" }.join(","))
+          end
           add_dependency_url(provider)
           if provider.is_a?(Mobilis::Realized::Cassandra)
             provider.connection_values.each do |key, value|

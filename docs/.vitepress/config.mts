@@ -20,6 +20,7 @@ export default defineConfig({
         { text: 'Google Pub/Sub emulator', link: '/guide/google-pubsub' },
         { text: 'Grafbase federation', link: '/guide/federation' },
         { text: 'OpenTelemetry and observability', link: '/guide/observability' },
+        { text: 'Apache Kafka', link: '/guide/kafka' },
         { text: 'Shared local gems', link: '/guide/local-gems' },
         { text: 'Generated projects', link: '/guide/generated-projects' },
         { text: 'Example scripts', link: '/guide/examples' },

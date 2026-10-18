@@ -22,6 +22,10 @@ module Mobilis
         "redis://#{name}:#{internal_port_no}"
       end
 
+      def internal_url
+        url
+      end
+
       def additional_gems
         ["redis"]
       end

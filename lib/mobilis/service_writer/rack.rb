@@ -8,6 +8,7 @@ module Mobilis
       def write
         write_local_gems
         write_model_files
+        write_kafka if realized_node.connected_nodes(Mobilis::Realized::Kafka).any?
         write_otel_config if realized_node.otel_enabled?
         write_default_config_ru unless File.exist?("config.ru")
         write_gemfile
@@ -15,6 +16,10 @@ module Mobilis
       end
 
       private
+
+      def write_kafka
+        File.write("kafka_client.rb", File.read(File.expand_path("../templates/kafka/ruby.rb", __dir__)))
+      end
 
       def write_local_gems
         Dir.chdir("..") do

@@ -139,6 +139,7 @@ module Mobilis
       when Mobilis::Node::S3Storage then Mobilis::Realized::S3Storage.new(self, config_node)
       when Mobilis::Node::GoAws then Mobilis::Realized::GoAws.new(self, config_node)
       when Mobilis::Node::GooglePubSub then Mobilis::Realized::GooglePubSub.new(self, config_node)
+      when Mobilis::Node::Kafka then Mobilis::Realized::Kafka.new(self, config_node)
       end
     end
   end

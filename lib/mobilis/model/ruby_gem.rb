@@ -3,19 +3,21 @@
 module Mobilis
   module Model
     class RubyGem
-      attr_reader :name, :git, :branch, :group, :path, :require_name
+      attr_reader :name, :git, :branch, :group, :path, :require_name, :version
 
-      def initialize(name, git: nil, branch: nil, group: nil, path: nil, require_name: nil)
+      def initialize(name, git: nil, branch: nil, group: nil, path: nil, require_name: nil, version: nil)
         @name = name
         @git = git
         @branch = branch
         @group = group
         @path = path
         @require_name = require_name
+        @version = version
       end
 
       def bundle_add_args
         args = [name]
+        args.concat(["--version", version]) if version
         args.concat(["--git", git]) if git
         args.concat(["--branch", branch]) if branch
         args.concat(["--group", group]) if group
@@ -32,7 +34,7 @@ module Mobilis
         options << %(path: #{path.inspect}) if path
         options << %(require: #{require_name.inspect}) if require_name
         suffix = options.empty? ? "" : ", #{options.join(", ")}"
-        %(gem #{name.inspect}#{suffix})
+        %(gem #{name.inspect}#{version ? ", #{version.inspect}" : ""}#{suffix})
       end
 
       def to_h
@@ -43,7 +45,8 @@ module Mobilis
           branch: branch,
           group: group,
           path: path,
-          require_name: require_name
+          require_name: require_name,
+          version: version
         }.compact
       end
 
@@ -54,7 +57,8 @@ module Mobilis
           branch: hash[:branch],
           group: hash[:group],
           path: hash[:path],
-          require_name: hash[:require_name]
+          require_name: hash[:require_name],
+          version: hash[:version]
         )
       end
     end

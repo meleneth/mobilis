@@ -8,6 +8,10 @@ module Mobilis
         FileUtils.rm_rf(".git")
         write_local_gems
         normalize_rails_runtime
+        if realized_node.connected_nodes(Mobilis::Realized::Kafka).any?
+          FileUtils.mkdir_p("lib")
+          File.write("lib/mobilis_kafka.rb", File.read(File.expand_path("../templates/kafka/ruby.rb", __dir__)))
+        end
         @manifest.commit_all("add Rails project #{@realized_node.name}")
       end
 

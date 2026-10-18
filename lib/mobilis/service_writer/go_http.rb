@@ -49,6 +49,7 @@ module Mobilis
         write_main
         write_app
         write_pubsub if realized_node.pubsub
+        write_kafka if realized_node.kafka
         write_telemetry if realized_node.otel_enabled?
         realized_node.each_model_of_type(Mobilis::Model::File, &:write_file)
       end
@@ -60,6 +61,10 @@ module Mobilis
         deps = {}
         deps["github.com/jackc/pgx/v5"] = "v5.7.6" if realized_node.database
         deps["cloud.google.com/go/pubsub/v2"] = "v2.7.0" if realized_node.pubsub
+        if realized_node.kafka
+          deps["github.com/twmb/franz-go"] = "v1.21.6"
+          deps["go.opentelemetry.io/otel"] = "v1.38.0"
+        end
         if realized_node.otel_enabled?
           deps.merge!(
             "go.opentelemetry.io/otel" => "v1.38.0",
@@ -133,12 +138,18 @@ module Mobilis
         end
         setup << "var pool *pgxpool.Pool" if realized_node.database
         setup << "var ps *PubSub" if realized_node.pubsub
-        setup << "var err error" if realized_node.pubsub && !realized_node.otel_enabled?
+        setup << "var kafka *Kafka" if realized_node.kafka
+        setup << "var err error" if (realized_node.pubsub || realized_node.kafka) && !realized_node.otel_enabled?
         cleanup.unshift("if pool != nil { pool.Close() }") if realized_node.database
         cleanup.unshift("if ps != nil { _ = ps.Close() }") if realized_node.pubsub
+        cleanup.unshift("if kafka != nil { kafka.Close() }") if realized_node.kafka
         setup << "cleanup := func() {\n        #{cleanup.join("\n        ")}\n    }"
         if realized_node.pubsub
           setup << "ps, err = NewPubSub(ctx)"
+          setup << "if err != nil { cleanup(); return nil, nil, err }"
+        end
+        if realized_node.kafka
+          setup << "kafka, err = NewKafka()"
           setup << "if err != nil { cleanup(); return nil, nil, err }"
         end
         if realized_node.database
@@ -156,6 +167,7 @@ module Mobilis
         fields = ["HTTPClient *http.Client"]
         fields << "DB *pgxpool.Pool" if realized_node.database
         fields << "PubSub *PubSub" if realized_node.pubsub
+        fields << "Kafka *Kafka" if realized_node.kafka
         File.write("internal/app/app.go", <<~GO)
           package app
 
@@ -169,7 +181,7 @@ module Mobilis
 
           func New(ctx context.Context) (http.Handler, func(), error) {
               #{setup.join("\n    ")}
-              deps := Dependencies{HTTPClient: #{client}#{", DB: pool" if realized_node.database}#{", PubSub: ps" if realized_node.pubsub}}
+              deps := Dependencies{HTTPClient: #{client}#{", DB: pool" if realized_node.database}#{", PubSub: ps" if realized_node.pubsub}#{", Kafka: kafka" if realized_node.kafka}}
               deps.HTTPClient.Timeout = 10*time.Second
               return Handler(deps), cleanup, nil
           }
@@ -192,6 +204,10 @@ module Mobilis
 
           func register(mux *http.ServeMux, deps Dependencies) {}
         GO
+      end
+
+      def write_kafka
+        File.write("internal/app/kafka.go", File.read(File.expand_path("../templates/kafka/go.go", __dir__)))
       end
 
       def write_pubsub

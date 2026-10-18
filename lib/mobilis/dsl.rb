@@ -191,6 +191,14 @@ module Mobilis
         node
       end
 
+      def kafka(name, publish_port: false, &block)
+        node = Mobilis::Node::Kafka.new(name, publish_port: publish_port)
+        system << node
+        @named[name] = node
+        block&.call(node)
+        node
+      end
+
       def fastapi(name, port: 8000, publish_port: true, &block)
         add_http_service(Mobilis::Node::FastAPI, name, port, publish_port: publish_port, &block)
       end
@@ -268,8 +276,21 @@ module Mobilis
           edge[:pubsub_publish] = publishes
           edge[:pubsub_subscribe] = consumes
           edge
+        elsif to_node.is_a?(Mobilis::Node::Kafka)
+          publishes, consumes = to_node.validate_connection!(publish: publish, subscribe: subscribe)
+          if from_node.extra_depends_on.any? { |dependency| dependency[:target] == to_node }
+            raise ArgumentError, "Declare Kafka publish and subscribe roles in one connect call"
+          end
+          edge = from_node.has_extra_depends_on(to_node, force_skip_health_checks: force_skip_health_checks)
+          edge[:kafka_publish] = publishes
+          edge[:kafka_subscribe] = consumes
+          if from_node.is_a?(Mobilis::Node::Ruby) && !from_node.models.any? { |model| model.is_a?(Mobilis::Model::RubyGem) && model.name == "rdkafka" }
+            from_node.add_gem("rdkafka", version: "= 0.29.0")
+            from_node.add_gem("opentelemetry-api", version: "~> 1.11")
+          end
+          edge
         else
-          raise ArgumentError, "publish: and subscribe: require a Google Pub/Sub target" if publish || subscribe
+          raise ArgumentError, "publish: and subscribe: require a Google Pub/Sub or Kafka target" if publish || subscribe
 
           from_node.has_extra_depends_on(to_node, force_skip_health_checks: force_skip_health_checks)
         end

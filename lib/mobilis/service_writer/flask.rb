@@ -5,6 +5,13 @@ module Mobilis
         write_Dockerfile
         write_requirements_txt
         write_app_py
+        if @realized_node.connected_nodes(Mobilis::Realized::Kafka).any?
+          FileUtils.mkdir_p("vendor")
+          FileUtils.cp(File.expand_path("../vendor/kafka_python-3.0.11-py3-none-any.whl", __dir__), "vendor/")
+          FileUtils.cp(File.expand_path("../vendor/redis-7.2.0-py3-none-any.whl", __dir__), "vendor/")
+          File.write("kafka_client.py", File.read(File.expand_path("../templates/kafka/python.py", __dir__)))
+        end
+        @realized_node.each_model_of_type(Mobilis::Model::File, &:write_file)
         @manifest.commit_all("add flask project #{@realized_node.name}")
       end
 
@@ -18,6 +25,7 @@ module Mobilis
 
           # Copy the requirements file and install dependencies
           COPY requirements.txt .
+          #{"COPY vendor /app/vendor\nRUN pip install --no-cache-dir /app/vendor/kafka_python-3.0.11-py3-none-any.whl /app/vendor/redis-7.2.0-py3-none-any.whl" if @realized_node.connected_nodes(Mobilis::Realized::Kafka).any?}
           RUN pip install --no-cache-dir -r requirements.txt
 
           # Copy the application code
@@ -45,6 +53,7 @@ module Mobilis
           requests
           prometheus_flask_exporter
           gunicorn
+          #{"kafka-python==3.0.11" if @realized_node.connected_nodes(Mobilis::Realized::Kafka).any?}
         HERE
       end
 

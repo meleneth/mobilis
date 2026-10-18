@@ -40,10 +40,10 @@ module Mobilis
     ALLOY       = "grafana/alloy:latest"
 
     # ─── Messaging / Queues ────────────────────────────────────
-    KAFKA       = "bitnami/kafka:4.0.0"
     NATS        = "nats:2.10.10"
     RABBITMQ    = "rabbitmq:3.13-management"
     LOCALSTACK  = "localstack/localstack:4.6.0"
+    KAFKA       = "apache/kafka:4.2.2"
     GOAWS       = "admiralpiett/goaws:v0.5.4"
     GOOGLE_CLOUD_EMULATORS = "gcr.io/google.com/cloudsdktool/google-cloud-cli:573.0.0-emulators"
 
