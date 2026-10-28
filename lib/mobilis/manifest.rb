@@ -26,8 +26,9 @@ module Mobilis
         raise ArgumentError, "Multi-broker Kafka generation currently supports Docker Compose, not Kubernetes"
       end
       @directory_service = Mobilis::Services::Directory.new
+      port_allocator = Mobilis::RealizedEnv::PortAllocator.new(system.starting_port)
       @realized_envs = environments.map do |env|
-        Mobilis::RealizedEnv.new(system, env)
+        Mobilis::RealizedEnv.new(system, env, port_allocator: port_allocator)
       end
       kubernetes_universes if system.kubernetes_deployment
 
@@ -259,6 +260,13 @@ module Mobilis
         - `./dc_test` runs the test environment.
         - `./dc_dev` runs the development environment.
         - `./dc_prod` runs the production environment.
+
+        ## Host ports
+
+        Starting port: `#{system.starting_port}`. Each generated host port is
+        reserved in increments of ten. Internal container ports are unchanged.
+
+        #{realized_envs.flat_map { |env| env.realized_nodes.flat_map { |node| node.envfile_vars.data.filter_map { |var| "- #{env.environment} `#{var.envfile_name}=#{var.value}`" if var.envfile_name&.end_with?("_PORT") } } }.join("\n")}
 
         #{grafana_readme_section}
         #{pgadmin_readme_section}

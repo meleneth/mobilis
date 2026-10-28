@@ -11,18 +11,36 @@ module Mobilis
     include Mobilis::PrettyPrint::PrettyPrintable
     attr_reader :system, :environment, :realized_nodes
 
-    @@next_port_no = 11_000
-    @@port_spacing = 10
+    # One sequence is shared by the three realized environments of a manifest.
+    # A standalone RealizedEnv gets its own sequence for deterministic inspection.
+    class PortAllocator
+      def initialize(starting_port)
+        @next_port = starting_port
+      end
+
+      def reserve
+        raise ArgumentError, "Generated host ports exceed 65535" if @next_port > 65_535
+
+        port = @next_port
+        @next_port += 10
+        port
+      end
+    end
 
     def_delegators :@environment, :is_production?, :is_development?, :is_test?
     def_delegators :@system, :meta_project_name
 
-    def initialize(system, environment)
+    def initialize(system, environment, port_allocator: nil)
       @system = system
       @environment = environment
       @realized_nodes = []
+      @port_allocator = port_allocator || PortAllocator.new(system.starting_port)
 
       build_all_nodes!
+    end
+
+    def reserve_external_port
+      @port_allocator.reserve
     end
 
     def to_s

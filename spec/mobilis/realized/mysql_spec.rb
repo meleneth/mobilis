@@ -21,8 +21,6 @@ RSpec.describe Mobilis::Realized::MySQL do
   end
 
   it "constructs per-environment variables including data dir" do
-    Mobilis::Base::RealizedNode.class_variable_set(:@@next_port_no, 42_069)
-
     keys = realized_mysql.envfile_vars.data.map(&:env_repr)
     expect(keys).to eq([
                          "USERDB_DATABASE_URL=mysql2://userdb-test-user:userdb-test-password@userdb:3306/userdb_test",
@@ -30,7 +28,7 @@ RSpec.describe Mobilis::Realized::MySQL do
                          "USERDB_MYSQL_PASSWORD=userdb-test-password",
                          "USERDB_MYSQL_DATABASE=userdb_test",
                          "USERDB_MYSQL_ROOT_PASSWORD=userdb-test-root-password",
-                         "USERDB_MYSQL_PORT=42079",
+                         "USERDB_MYSQL_PORT=11010",
                          "USERDB_MYSQL_DATA=./data/test/userdb"
                        ])
   end

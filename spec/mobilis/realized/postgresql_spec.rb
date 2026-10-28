@@ -37,15 +37,13 @@ RSpec.describe Mobilis::Realized::PostgreSQL do
                        ])
   end
   it "constructs per-environment variables including data dir" do
-    Mobilis::Base::RealizedNode.class_variable_set(:@@next_port_no, 42_069)
-
     keys = subject.envfile_vars.data.map(&:env_repr)
     expect(keys).to eq([
                          "USERDB_DATABASE_URL=postgres://userdb-test-user:userdb-test-password@userdb:5432/userdb_test",
                          "USERDB_POSTGRES_USER=userdb-test-user",
                          "USERDB_POSTGRES_PASSWORD=userdb-test-password",
                          "USERDB_POSTGRES_DB=userdb_test",
-                         "USERDB_POSTGRES_PORT=42079",
+                         "USERDB_POSTGRES_PORT=11010",
                          "USERDB_POSTGRES_DATA=./data/test/userdb"
                        ])
   end

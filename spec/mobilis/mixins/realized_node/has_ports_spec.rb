@@ -1,6 +1,10 @@
 class TestableHasPorts
   include Mobilis::Mixins::RealizedNode::HasEnvVars
   include Mobilis::Mixins::RealizedNode::HasPorts
+
+  def realized_env
+    @realized_env ||= Struct.new(:reserve_external_port).new(11_000)
+  end
 end
 
 RSpec.describe Mobilis::Mixins::RealizedNode::HasEnvVars do

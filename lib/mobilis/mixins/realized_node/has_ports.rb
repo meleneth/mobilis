@@ -5,9 +5,6 @@ module Mobilis
     module RealizedNode
       # Mixin to add port mapping support to RealizedNode.
       module HasPorts
-        @@next_port_no = 11_000
-        @@next_port_increment = 10
-
         def port_maps
           @port_maps = Array.new unless defined?(@port_maps) && @port_maps
           @port_maps
@@ -18,9 +15,8 @@ module Mobilis
         # end
 
         def register_external_port(internal_port_no, env_var, memo)
-          new_port_no = @@next_port_no
+          new_port_no = realized_env.reserve_external_port
           created_env_var = add_env_only_var(env_var, new_port_no)
-          @@next_port_no += @@next_port_increment
           new_port = Mobilis::Primitives::PortMap.new(created_env_var.env_var_ref, internal_port_no, memo)
           compose_ports.add(new_port)
           new_port

@@ -18,8 +18,6 @@ RSpec.describe Mobilis::Realized::S3Storage do
   end
 
   it "constructs S3 consumer variables" do
-    Mobilis::Base::RealizedNode.class_variable_set(:@@next_port_no, 42_069)
-
     keys = realized_s3.envfile_vars.data.map(&:env_repr)
     expect(keys).to eq([
                          "ASSETS_S3_ENDPOINT_URL=http://assets:8333",
@@ -27,7 +25,7 @@ RSpec.describe Mobilis::Realized::S3Storage do
                          "ASSETS_S3_SECRET_ACCESS_KEY=assets-test-secret-key",
                          "ASSETS_S3_REGION=us-east-1",
                          "ASSETS_S3_BUCKET=uploads",
-                         "ASSETS_S3_PORT=42079",
+                         "ASSETS_S3_PORT=11010",
                          "ASSETS_SEAWEEDFS_DATA=./data/test/assets"
                        ])
   end

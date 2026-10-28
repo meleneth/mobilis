@@ -8,11 +8,16 @@ module Mobilis
 
     attr_reader :config_nodes
     attr_reader :meta_project_name
+    attr_reader :starting_port
     attr_accessor :kubernetes_deployment
 
-    def initialize(meta_project_name)
+    def initialize(meta_project_name, starting_port: 11_000)
+      unless starting_port.is_a?(Integer) && (1..65_535).cover?(starting_port)
+        raise ArgumentError, "starting_port must be a TCP port number"
+      end
       @config_nodes = {}
       @meta_project_name = meta_project_name
+      @starting_port = starting_port
     end
 
     def <<(config_node)
@@ -54,6 +59,7 @@ module Mobilis
       result = {
         name: "mobilis",
         meta_project_name: meta_project_name,
+        starting_port: starting_port,
         nodes: config_nodes.values.map(&:to_h)
       }
       result[:deploy_kubernetes] = kubernetes_deployment.to_h if kubernetes_deployment
@@ -69,7 +75,7 @@ module Mobilis
     end
 
     def self.from_h(hash)
-      sys = new(hash[:meta_project_name])
+      sys = new(hash[:meta_project_name], starting_port: hash.fetch(:starting_port, 11_000))
       if hash[:deploy_kubernetes]
         sys.kubernetes_deployment = Mobilis::Kubernetes::Declaration.from_h(hash[:deploy_kubernetes])
       end
