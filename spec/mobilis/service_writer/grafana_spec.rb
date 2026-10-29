@@ -69,6 +69,18 @@ RSpec.describe Mobilis::ServiceWriter::Grafana do
     end
   end
 
+  it "provisions a project dashboard supplied as a file model" do
+    realized_node.config_node.add_model(
+      Mobilis::Model::File.new("provisioning/dashboards/syracuse-iii.json", '{"title":"Syracuse III"}')
+    )
+    Dir.mktmpdir do |dir|
+      Dir.chdir(dir) do
+        writer.write
+        expect(File.read("provisioning/dashboards/syracuse-iii.json")).to eq('{"title":"Syracuse III"}')
+      end
+    end
+  end
+
   context "with S3 storage" do
     let(:manifest) { build(:manifest, system: build(:system, :with_observable_s3_storage), suppress_plugins: true) }
 

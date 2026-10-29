@@ -58,6 +58,7 @@ module Mobilis
         dashboards.each do |filename, dashboard|
           File.write("provisioning/dashboards/#{filename}", JSON.pretty_generate(dashboard))
         end
+        realized_node.each_model_of_type(Mobilis::Model::File, &:write_file)
       end
 
       private
