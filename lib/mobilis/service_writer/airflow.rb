@@ -15,12 +15,15 @@ module Mobilis
         packages.each { |package| package.write_files("../packages/#{package.name}") }
         realized_node.each_model_of_type(Mobilis::Model::File, &:write_file)
         extras = realized_node.collector ? "[celery,postgres,redis,fab,otel]" : "[celery,postgres,redis,fab]"
+        package_install = packages.map { |pkg| "/opt/airflow/local-packages/#{pkg.name}" }.join(" ")
+        isolated = realized_node.config_node.isolated_packages?
         File.write("Dockerfile", <<~DOCKER)
           FROM apache/airflow:#{VERSION}-python#{PYTHON}
           COPY --chown=airflow:0 packages /opt/airflow/local-packages
           COPY --chown=airflow:0 #{realized_node.name}/validate_dags.py /opt/airflow/validate_dags.py
+          #{isolated ? "RUN python -m venv /opt/airflow/telemetry-venv && /opt/airflow/telemetry-venv/bin/pip install --no-cache-dir #{package_install}" : ""}
           RUN pip install --no-cache-dir --constraint https://raw.githubusercontent.com/apache/airflow/constraints-#{VERSION}/constraints-#{PYTHON}.txt \\
-              "apache-airflow#{extras}==#{VERSION}" #{packages.map { |pkg| "/opt/airflow/local-packages/#{pkg.name}" }.join(" ")}
+              "apache-airflow#{extras}==#{VERSION}" #{isolated ? "" : package_install}
         DOCKER
         File.write("validate_dags.py", <<~PYTHON)
           from airflow.models.dagbag import DagBag
@@ -42,6 +45,7 @@ module Mobilis
 
           Generated Airflow #{VERSION} on Python #{PYTHON}. Edit DAGs in `dags/` directly; they are mounted into the parser and workers.
           Edit packages in `../packages/`, then run `../dc_dev build` and `../dc_dev up -d` from this directory. The Docker image installs distributions through pip; it does not depend on Mobilis or PYTHONPATH.
+          #{isolated ? "Packages are installed in `/opt/airflow/telemetry-venv` for `@task.external_python` tasks; Airflow keeps its own constrained dependencies." : ""}
 
           From the project root, independently test packages with `python#{PYTHON} -m venv .venv`,
           `. .venv/bin/activate`, `pip install -e 'packages/PACKAGE[test]'`, and `pytest packages/PACKAGE/tests`.

@@ -84,6 +84,27 @@ RSpec.describe "Airflow generation" do
     end
   end
 
+  it "isolates SQLAlchemy 2 task packages from Airflow's constrained environment" do
+    system = graph
+    service = system.each_config_node.find { |item| item.is_a?(Mobilis::Node::Airflow) }
+    service.isolate_local_packages!
+    restored = Mobilis::System.from_json(system.to_json)
+    expect(restored.each_config_node.find { |item| item.is_a?(Mobilis::Node::Airflow) }.isolated_packages?).to be(true)
+    manifest = Mobilis::Manifest.new(restored, suppress_plugins: true)
+    env = manifest.realized_env(:test)
+    node = env.realized_node_by_name("orchestrator")
+    Dir.mktmpdir do |root|
+      FileUtils.mkdir_p("#{root}/orchestrator")
+      Dir.chdir("#{root}/orchestrator") do
+        Mobilis::ServiceWriter::Airflow.new(manifest, env, node).write
+        dockerfile = File.read("Dockerfile")
+        expect(dockerfile).to include("python -m venv /opt/airflow/telemetry-venv")
+        expect(dockerfile).to include("/opt/airflow/telemetry-venv/bin/pip install --no-cache-dir /opt/airflow/local-packages/sample-domain")
+        expect(dockerfile.lines.grep(/apache-airflow\[celery/).join).not_to include("sample-domain")
+      end
+    end
+  end
+
   it "declares three real DAGs and two nonempty packages in the numbered example" do
     system = nil
     allow(Mobilis::DSL).to receive(:generate) do |name, &block|

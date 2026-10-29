@@ -3,6 +3,23 @@
 module Mobilis
   module Node
     class Airflow < Mobilis::Base::Node
+      def initialize(name, isolated_packages: false, **args)
+        super(name, **args)
+        @isolated_packages = isolated_packages == true
+      end
+
+      def isolate_local_packages!
+        @isolated_packages = true
+      end
+
+      def isolated_packages?
+        @isolated_packages
+      end
+
+      def to_h
+        super.merge(isolated_packages: isolated_packages?)
+      end
+
       def local_package(name, &block)
         package = Mobilis::Model::LocalPythonPackage.new(name)
         block&.call(package)
