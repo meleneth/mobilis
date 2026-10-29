@@ -104,7 +104,8 @@ RSpec.describe Mobilis::Plugin::WriteFiles do
     manifest = instance_double(Mobilis::Manifest)
     plugin = described_class.new(manifest)
     [Mobilis::Realized::FastAPI, Mobilis::Realized::GoHTTP,
-      Mobilis::Realized::Envoy, Mobilis::Realized::Grafbase].each do |klass|
+      Mobilis::Realized::Envoy, Mobilis::Realized::Grafbase,
+      Mobilis::Realized::Airflow, Mobilis::Realized::Grafana].each do |klass|
       node = klass.allocate
       expect(node).not_to receive(:each_model_of_type)
       allow(manifest).to receive(:each_node_of_type).and_yield(nil, node)
