@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "base64"
 require "digest"
 require "json"
 
@@ -45,7 +44,7 @@ module Mobilis
         members.concat(entries.map { |entry| [entry.path, entry.content, entry.executable] })
         tar = build_tar(members)
         raise ArgumentError, "Embedded archive exceeds #{MAX_DECODED_SIZE} decoded bytes" if tar.bytesize > MAX_DECODED_SIZE
-        encoded = Base64.strict_encode64(tar)
+        encoded = strict_encode64(tar)
         raise ArgumentError, "Embedded archive exceeds #{MAX_ENCODED_SIZE} encoded bytes" if encoded.bytesize > MAX_ENCODED_SIZE
 
         encoded
@@ -55,7 +54,7 @@ module Mobilis
         raise ArgumentError, "Embedded archive payload must be Base64 text" unless payload.is_a?(String)
         raise ArgumentError, "Embedded archive exceeds #{MAX_ENCODED_SIZE} encoded bytes" if payload.bytesize > MAX_ENCODED_SIZE
 
-        tar = Base64.strict_decode64(payload)
+        tar = strict_decode64(payload)
         raise ArgumentError, "Embedded archive exceeds #{MAX_DECODED_SIZE} decoded bytes" if tar.bytesize > MAX_DECODED_SIZE
 
         members = read_tar(tar)
@@ -99,6 +98,20 @@ module Mobilis
       end
 
       private
+
+      def strict_encode64(content)
+        [content].pack("m0")
+      end
+
+      def strict_decode64(payload)
+        valid = payload.empty? || (
+          (payload.bytesize % 4).zero? &&
+          payload.match?(/\A(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)?\z/)
+        )
+        raise ArgumentError, "Embedded archive payload is not strict Base64" unless valid
+
+        payload.unpack1("m0")
+      end
 
       def normalize_entries(files)
         raise ArgumentError, "Embedded archive files must be a Hash" unless files.is_a?(Hash)

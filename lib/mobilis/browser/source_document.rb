@@ -121,7 +121,7 @@ module Mobilis
         block = root_call&.block
         raise ArgumentError, "Source must contain a Mobilis::DSL.generate or .build block" unless block
 
-        insertion = block.closing_loc.start_offset
+        insertion = relationship_nodes.first&.location&.start_offset || block.closing_loc.start_offset
         indent = declaration_nodes.first&.then { |node| source[line_start(node.location.start_offset)...node.location.start_offset] } || "  "
         replace(insertion, insertion, "#{indent}#{type}(#{name.dump})\n")
       end

@@ -91,6 +91,46 @@ selects its Prism-located Ruby source range. Services created through nested or
 dynamic Ruby expressions remain visible in the diagram but may not have a
 safe source declaration to navigate to.
 
+## Service inspector
+
+Selecting a builder card or Mermaid node opens the same service inspector and
+selects the declaration's Prism range without evaluating Ruby. Direct literal
+constructor properties and `connect`/`route` declarations have surgical form
+controls. Incoming relationships remain read-only at the target because their
+source declaration is owned by the originating service. Mobilis reference
+slots and realized `depends_on` edges are displayed separately from semantic
+connections.
+
+The inspector always exposes the complete validated node JSON and a source
+navigation action. Service-specific block APIs, dynamic expressions, and
+properties without an established literal rewrite are intentionally edited in
+the authoritative Ruby pane; the playground does not synthesize lossy controls
+for them.
+
+## Embedded documents
+
+A service can carry a versioned Base64 tar bundle in ordinary valid Ruby:
+
+```ruby
+rack("api") do |service|
+  service.embedded_archive("application-files", payload: "...")
+end
+```
+
+The shared `Mobilis::EmbeddedArchive` codec emits deterministic ustar archives
+with a `.mobilis-archive.json` manifest, sorted paths, normalized metadata,
+SHA-256 integrity records, an optional entrypoint, and dependency metadata.
+Only regular files with safe relative paths are accepted. Encoded/decoded,
+entry-count, and per-file limits are enforced; links and special tar entries
+are rejected.
+
+The inspector lists recognized bundles. Opening and typing in a text member is
+browser-only staged state. Save performs one Ruby request that checks the parent
+source revision, repacks through the shared codec, replaces only the payload's
+Prism range, and validates the complete DSL before committing. The operation is
+undoable. Binary members are preserved and visible in the tree but not opened
+as text.
+
 ## Source invariants
 
 - Valid source evaluates to the real `Mobilis::System` model.
@@ -123,6 +163,14 @@ semantic model across a worker protocol. A worker becomes appropriate if
 measured generation latency becomes interactive; request IDs already prevent a
 stale generation result from replacing a newer one. Long-running native
 subprocess generators are intentionally local-only.
+
+The browser owns the event loop and Ruby has no polling or scheduled workload.
+An on-screen counter records semantic Ruby invocations and elapsed time.
+Selection, scrolling, graph navigation, archive browsing, and staged archive
+typing do not cross the Ruby bridge. A dedicated worker was not introduced:
+the current Ruby application directly renders Haml/Turbo updates and measured
+operations are synchronous and short; moving that VM would require a new DOM
+render protocol without improving idle behavior.
 
 ## Compatibility findings
 

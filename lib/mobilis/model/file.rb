@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "base64"
 require "fileutils"
 
 module Mobilis
@@ -24,7 +23,7 @@ module Mobilis
         if text.valid_encoding?
           result[:content] = text
         else
-          result[:content_base64] = Base64.strict_encode64(@content)
+          result[:content_base64] = [@content].pack("m0")
         end
         result
       end
@@ -38,8 +37,18 @@ module Mobilis
       end
 
       def self.from_h(hash)
-        content = hash.key?(:content_base64) ? Base64.strict_decode64(hash[:content_base64]) : hash[:content]
+        content = hash.key?(:content_base64) ? decode_base64(hash[:content_base64]) : hash[:content]
         new(hash[:path], content, executable: hash[:executable] == true)
+      end
+
+      def self.decode_base64(payload)
+        valid = payload.is_a?(String) && (payload.empty? || (
+          (payload.bytesize % 4).zero? &&
+          payload.match?(/\A(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)?\z/)
+        ))
+        raise ArgumentError, "File content_base64 is not strict Base64" unless valid
+
+        payload.unpack1("m0")
       end
 
       def ppx_fields(dsl)

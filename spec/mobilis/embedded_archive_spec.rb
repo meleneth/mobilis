@@ -49,25 +49,25 @@ RSpec.describe Mobilis::EmbeddedArchive do
     expect { described_class.unpack("not base64!") }.to raise_error(ArgumentError)
 
     payload = described_class.pack(files: {"app.rb" => "safe\n"})
-    corrupt_tar = Base64.strict_decode64(payload)
+    corrupt_tar = payload.unpack1("m0")
     corrupt_tar.setbyte(0, corrupt_tar.getbyte(0) ^ 1)
-    expect { described_class.unpack(Base64.strict_encode64(corrupt_tar)) }
+    expect { described_class.unpack([corrupt_tar].pack("m0")) }
       .to raise_error(ArgumentError, /checksum/)
 
-    manifest_tampered = Base64.strict_decode64(payload)
+    manifest_tampered = payload.unpack1("m0")
     content_offset = 512
     marker = manifest_tampered.index(Digest::SHA256.hexdigest("safe\n"), content_offset)
     manifest_tampered.setbyte(marker, marker ? "0".ord : 0)
     header = manifest_tampered.byteslice(0, 512).dup
     header[148, 8] = "        "
     manifest_tampered[148, 8] = format("%06o\0 ", header.bytes.sum)
-    expect { described_class.unpack(Base64.strict_encode64(manifest_tampered)) }
+    expect { described_class.unpack([manifest_tampered].pack("m0")) }
       .to raise_error(ArgumentError, /integrity/)
   end
 
   it "rejects unsupported tar entry types before executing or exposing them" do
     payload = described_class.pack(files: {"app.rb" => "safe\n"})
-    tar = Base64.strict_decode64(payload)
+    tar = payload.unpack1("m0")
     manifest_size = tar.byteslice(124, 12).split("\0", 2).first.to_i(8)
     member_offset = 512 + ((manifest_size + 511) / 512 * 512)
     tar.setbyte(member_offset + 156, "2".ord)
@@ -75,7 +75,7 @@ RSpec.describe Mobilis::EmbeddedArchive do
     header[148, 8] = "        "
     tar[member_offset + 148, 8] = format("%06o\0 ", header.bytes.sum)
 
-    expect { described_class.unpack(Base64.strict_encode64(tar)) }
+    expect { described_class.unpack([tar].pack("m0")) }
       .to raise_error(ArgumentError, /Unsupported tar entry type/)
   end
 

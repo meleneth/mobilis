@@ -15,17 +15,29 @@
 - Live Mermaid architecture derived from the validated `Mobilis::System`, with
   explicit dependencies, reference relationships, stale-state recovery, and
   source/builder navigation.
+- A synchronized full service inspector with complete validated configuration,
+  safe literal property controls, connection role/target editing, incoming
+  relationship inspection, and distinct operational dependency presentation.
+- Deterministic versioned Base64/ustar embedded bundles, shared by native Ruby
+  and WASM, with integrity checks, safe paths, normalized metadata, binary file
+  preservation, and size limits.
+- Browser-only virtual document navigation and staging, atomic revision-checked
+  archive commits into one Prism-located payload, discard, and undo/redo.
+- Semantic runtime call/duration instrumentation. Selection, scrolling, graph
+  navigation, archive browsing, and document typing leave the Ruby VM idle.
 
 ## Verified
 
-The Ruby suite passes 305 examples (2 pre-existing pending examples). It covers
+The Ruby suite passes 342 examples (2 pre-existing pending examples). It covers
 source/model round trips, byte identity, comments, unrelated source, invalid
 input, dynamic expressions, Rails authoring, capabilities, Haml, Turbo Stream
 markup, authoring export, stable real PostgreSQL generation, and a native parity
-fixture. Four Playwright journeys pass in system Chrome, covering runtime and
+fixture. Nine Playwright journeys pass in system Chrome, covering runtime and
 DOM/Turbo initialization, visual/source editing, invalid-source recovery, exact
 native/WASM PostgreSQL output parity, generation, file navigation, DSL download,
-and project ZIP structure.
+and project ZIP structure, inspector relationship edits, archive
+save/reopen/undo/conflict behavior, and Ruby quiescence during nonsemantic UI
+interaction.
 
 The production container packages only nginx and static assets; there is no
 runtime Ruby process or generation endpoint. See the repository handoff for
@@ -40,11 +52,15 @@ present in the nginx runtime image.
 
 - Rails and explicit host-command generation require local execution.
 - The visual form maps direct service calls and selected literal properties.
-  Arbitrary metaprogramming remains source-only and is preserved.
+  The inspector exposes complete evaluated configuration, but service-specific
+  block APIs and arbitrary metaprogramming remain source-only and are preserved.
 - Syntax highlighting is limited to readable monospaced source/output; no
   JavaScript editor framework is included.
 - Generation remains synchronous in the main VM pending evidence that a worker
   protocol is needed.
+- Embedded archive editing supports regular text members. Binary members are
+  byte-preserved but intentionally read-only, and archive entrypoint/dependency
+  metadata is currently authored through the codec rather than a visual form.
 - Diagram navigation is available for direct, statically located service calls.
   Services produced by nested calls or metaprogramming are still shown from the
   evaluated model but do not have an independently safe source range to focus.

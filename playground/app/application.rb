@@ -125,6 +125,8 @@ module MobilisPlayground
         value = target[:type].to_s == "checkbox" ? target[:checked].to_s == "true" : target[:value].to_s
         visual_edit { source_document.update_property(id, property, value) }
       end
+    rescue ArgumentError, KeyError, RuntimeError, TypeError => error
+      report_error(error)
     end
 
     def handle_click(event)

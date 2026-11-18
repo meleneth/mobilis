@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "base64"
 require "digest"
 
 module Mobilis
@@ -75,7 +74,7 @@ module Mobilis
               revision: entry.sha256,
               dirty: false,
               editable: entry.content_type.start_with?("text/"),
-              content_base64: Base64.strict_encode64(entry.content),
+              content_base64: [entry.content].pack("m0"),
               archive_id: archive.id,
               parent_revision: archive.parent_revision
             )

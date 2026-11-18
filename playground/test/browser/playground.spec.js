@@ -52,12 +52,75 @@ test("removes connected nodes and edges through the visual builder", async ({ pa
 test("selects a diagram node without mutating source", async ({ page }) => {
   const editor = page.getByLabel("Mobilis Ruby DSL");
   const original = await editor.inputValue();
+  const invocationCount = await rubyInvocationCount(page);
   await page.locator("#architecture-canvas .node").filter({ hasText: "PostgreSQL: database" }).click();
 
   const databaseCard = page.locator(".service-card").filter({ has: page.locator('.service-name[value="database"]') });
   await expect(databaseCard).toHaveClass(/diagram-selected/);
   expect(await editor.evaluate(element => element.value.slice(element.selectionStart, element.selectionEnd))).toContain('postgres("database")');
   await expect(editor).toHaveValue(original);
+  await page.mouse.wheel(0, 300);
+  await page.waitForTimeout(250);
+  expect(await rubyInvocationCount(page)).toBe(invocationCount);
+});
+
+test("edits relationships through the selected service inspector", async ({ page }) => {
+  await page.getByLabel("New service name").fill("queue");
+  await page.locator("#new-service-type").selectOption("redis");
+  await page.getByRole("button", { name: "Add service" }).click();
+
+  const cacheCard = page.locator(".service-card").filter({ has: page.locator('.service-name[value="cache"]') });
+  await cacheCard.locator(".select-service").click();
+  const inspector = page.locator(".service-inspector:not(.hidden)");
+  await expect(inspector).toContainText("cache");
+  await inspector.locator(".relationship-target").selectOption("queue");
+  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(/connect\(from: "cache", to: "queue"\)/);
+  await expect(page.locator("#architecture-canvas")).toContainText("Redis: queue");
+
+  await inspector.locator(".remove-relationship").click();
+  await expect(page.getByLabel("Mobilis Ruby DSL")).not.toHaveValue(/connect\(from: "cache"/);
+  await expect(page.locator("#architecture-region")).toContainText("3 nodes · 0 edges");
+});
+
+test("browses, commits, reopens, undoes, and conflict-checks embedded documents", async ({ page }) => {
+  const fixture = await page.evaluate(() => fetch("/parity/embedded-source.rb").then(response => response.text()));
+  const rubyEditor = page.getByLabel("Mobilis Ruby DSL");
+  await rubyEditor.fill(fixture);
+  await expect(page.locator("#diagnostics-region")).toContainText("Source is valid");
+
+  const archive = page.locator("details.embedded-archive");
+  await archive.evaluate(element => { element.open = true; });
+  const invocationCount = await rubyInvocationCount(page);
+  await page.getByRole("button", { name: /README\.md/ }).click();
+  expect(await rubyInvocationCount(page)).toBe(invocationCount);
+
+  const embeddedEditor = page.getByLabel("Embedded document editor");
+  await expect(embeddedEditor).toHaveValue("hello from the archive\n");
+  await embeddedEditor.fill("edited in the browser\n");
+  expect(await rubyInvocationCount(page)).toBe(invocationCount);
+  await expect(page.locator("#embedded-document-state")).toContainText("Unsaved");
+  await page.getByRole("button", { name: "Save into Ruby archive" }).click();
+  await expect(rubyEditor).toBeVisible();
+  await expect(rubyEditor).toHaveValue(/This comment and the second archive member/);
+  expect(await rubyInvocationCount(page)).toBe(invocationCount + 1);
+
+  await openEmbeddedMember(page, /README\.md/);
+  await expect(page.getByLabel("Embedded document editor")).toHaveValue("edited in the browser\n");
+  await page.getByRole("button", { name: "Return to Ruby" }).click();
+  await page.getByRole("button", { name: /Undo embedded document edit/ }).click();
+  await openEmbeddedMember(page, /README\.md/);
+  await expect(page.getByLabel("Embedded document editor")).toHaveValue("hello from the archive\n");
+
+  await page.getByLabel("Embedded document editor").fill("must not overwrite newer Ruby\n");
+  await page.evaluate(() => {
+    const editor = document.getElementById("dsl-source");
+    editor.value = `# newer parent revision\n${editor.value}`;
+    editor.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await expect(page.locator("#embedded-document-conflict")).toBeVisible();
+  await page.getByRole("button", { name: "Save into Ruby archive" }).click();
+  await expect(page.locator("#diagnostics-region")).toContainText("parent Ruby source changed");
+  await expect(page.locator("#embedded-document-state")).toContainText("Save failed");
 });
 
 test("generates real files and navigates the read-only browser", async ({ page }) => {
@@ -89,6 +152,16 @@ async function readDownload(download) {
   const chunks = [];
   for await (const chunk of await download.createReadStream()) chunks.push(chunk);
   return Buffer.concat(chunks);
+}
+
+async function rubyInvocationCount(page) {
+  return Number(await page.locator("#ruby-runtime-metrics").getAttribute("data-invocation-count"));
+}
+
+async function openEmbeddedMember(page, name) {
+  const archive = page.locator("details.embedded-archive");
+  await archive.evaluate(element => { element.open = true; });
+  await page.getByRole("button", { name }).click();
 }
 
 test("downloads the exact DSL definition", async ({ page }) => {

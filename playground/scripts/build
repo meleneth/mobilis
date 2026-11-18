@@ -16,6 +16,7 @@ cp -R node_modules/@zip.js/zip.js/. public/vendor/zip/
 cp node_modules/mermaid/dist/mermaid.esm.min.mjs public/vendor/mermaid/
 cp -R node_modules/mermaid/dist/chunks/mermaid.esm.min public/vendor/mermaid/chunks/
 cp "${repository_dir}/spec/fixtures/browser/postgres-compose.yml" public/parity/
+ruby scripts/build_embedded_fixture.rb public/parity/embedded-source.rb
 cp node_modules/@ruby/4.0-wasm-wasi/dist/ruby+stdlib.wasm public/mobilis.wasm
 
 haml_path="$(BUNDLE_GEMFILE="${playground_dir}/Gemfile" bundle show haml)"

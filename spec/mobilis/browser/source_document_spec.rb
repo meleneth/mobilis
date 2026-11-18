@@ -74,6 +74,26 @@ RSpec.describe Mobilis::Browser::SourceDocument do
     expect(changed).to start_with("# project heading")
   end
 
+  it "adds a service before relationships so it can become their target" do
+    source = <<~RUBY
+      Mobilis::DSL.build("ordered") do
+        rack("api")
+        redis("cache")
+        connect(from: "api", to: "cache")
+      end
+    RUBY
+
+    changed = described_class.new(source).add(:redis, "queue")
+    retargeted = described_class.new(changed).update_relationship(
+      described_class.new(changed).analyze.relationships.fetch(0).id,
+      :to,
+      "queue"
+    )
+
+    expect(retargeted.index('redis("queue")')).to be < retargeted.index("connect(")
+    expect(described_class.new(retargeted).analyze).to be_valid
+  end
+
   it "removes static connections associated with a visually removed service" do
     connected = <<~RUBY
       Mobilis::DSL.build("demo") do
