@@ -34,4 +34,22 @@ RSpec.describe MobilisPlayground::Renderer do
     expect(html).to include("1 nodes · 0 edges")
     expect(html).to include("id='architecture-canvas'")
   end
+
+  it "renders the full inspector with distinct connection and dependency sections" do
+    analysis = Mobilis::Browser::SourceDocument.new(<<~RUBY).analyze
+      Mobilis::DSL.build("inspect") do
+        rack("api")
+        redis("cache")
+        connect(from: "api", to: "cache")
+      end
+    RUBY
+    topology = Mobilis::Browser::Topology.from_analysis(analysis)
+    services = Mobilis::Browser::ServiceInspector.new(analysis, topology).services
+    html = described_class.new.render(:inspector, services:)
+
+    expect(html).to include("Semantic outgoing connections")
+    expect(html).to include("Operational dependencies")
+    expect(html).to include("Complete validated configuration")
+    expect(html).to include("relationship-editor")
+  end
 end

@@ -37,6 +37,7 @@ module MobilisPlayground
         :layout,
         builder: render_builder,
         editor: render_editor,
+        inspector: render_inspector,
         architecture: render_architecture,
         files: render_files,
         file_content: render_file_content,
@@ -44,6 +45,7 @@ module MobilisPlayground
       )
       bind_events(document)
       render_diagram
+      refresh_selection
       self
     end
 
@@ -53,17 +55,14 @@ module MobilisPlayground
       input_handler = proc { |event| handle_input(event) }
       click_handler = proc { |event| handle_click(event) }
       change_handler = proc { |event| handle_change(event) }
-      diagram_handler = proc { |event| handle_diagram_selection(event) }
-      document.addEventListener("input", &input_handler)
-      document.addEventListener("click", &click_handler)
-      document.addEventListener("change", &change_handler)
-      document.addEventListener("mobilis:service-select", &diagram_handler)
-      @event_handlers.concat([input_handler, click_handler, change_handler, diagram_handler])
+      document.addEventListener("mobilis:source-input", &input_handler)
+      document.addEventListener("mobilis:semantic-click", &click_handler)
+      document.addEventListener("mobilis:semantic-change", &change_handler)
+      @event_handlers.concat([input_handler, click_handler, change_handler])
     end
 
     def handle_input(event)
-      target = event[:target]
-      return unless target[:id].to_s == "dsl-source"
+      target = event[:detail][:target]
 
       @source = target[:value].to_s
       analysis = source_document.analyze
@@ -74,6 +73,7 @@ module MobilisPlayground
         @errors = []
         @status = "Source is valid. Visual model updated locally."
         replace("builder-region", render_builder)
+        replace("inspector-region", render_inspector)
       else
         @diagram_stale = true
         @errors = analysis.errors
@@ -81,23 +81,40 @@ module MobilisPlayground
       end
       replace("architecture-region", render_architecture)
       render_diagram
+      refresh_selection
       replace("diagnostics-region", render_diagnostics)
     end
 
     def handle_change(event)
-      target = event[:target]
+      target = event[:detail][:target]
       classes = target[:classList]
-      visual_control = %w[service-name service-type service-property].any? { |name| class_member?(classes, name) }
+      visual_control = %w[service-name service-type service-property inspector-service-property relationship-kind relationship-target relationship-property]
+        .any? { |name| class_member?(classes, name) }
       return unless visual_control
 
-      card = target.call(:closest, ".service-card")
+      if %w[relationship-kind relationship-target relationship-property].any? { |name| class_member?(classes, name) }
+        editor = target.call(:closest, ".relationship-editor")
+        relationship_id = editor[:dataset][:relationshipId].to_s
+        property = if class_member?(classes, "relationship-kind")
+                     :kind
+                   elsif class_member?(classes, "relationship-target")
+                     :to
+                   else
+                     target[:dataset][:property].to_s
+                   end
+        value = target[:type].to_s == "checkbox" ? target[:checked].to_s == "true" : target[:value].to_s
+        visual_edit { source_document.update_relationship(relationship_id, property, value) }
+        return
+      end
 
-      id = card[:dataset][:serviceId].to_s
+      container = target.call(:closest, ".service-card") || target.call(:closest, ".service-inspector")
+
+      id = (container[:dataset][:serviceId] || container[:dataset][:sourceId]).to_s
       if class_member?(classes, "service-name")
         visual_edit { source_document.rename(id, target[:value].to_s) }
       elsif class_member?(classes, "service-type")
         visual_edit { source_document.change_type(id, target[:value].to_s) }
-      elsif class_member?(classes, "service-property")
+      elsif class_member?(classes, "service-property") || class_member?(classes, "inspector-service-property")
         property = target[:dataset][:property].to_s
         value = target[:type].to_s == "checkbox" ? target[:checked].to_s == "true" : target[:value].to_s
         visual_edit { source_document.update_property(id, property, value) }
@@ -105,14 +122,21 @@ module MobilisPlayground
     end
 
     def handle_click(event)
-      target = event[:target]
-      return unless target[:tagName].to_s == "BUTTON"
+      target = event[:detail][:target]
 
-      event.call(:preventDefault)
       id = target[:id].to_s
       if class_member?(target[:classList], "remove-service")
         card = target.call(:closest, ".service-card")
         visual_edit { source_document.remove(card[:dataset][:serviceId].to_s) }
+      elsif class_member?(target[:classList], "remove-relationship")
+        editor = target.call(:closest, ".relationship-editor")
+        visual_edit { source_document.remove_relationship(editor[:dataset][:relationshipId].to_s) }
+      elsif class_member?(target[:classList], "add-relationship")
+        editor = target.call(:closest, ".new-relationship")
+        from = editor[:dataset][:from].to_s
+        to = editor.call(:querySelector, ".new-relationship-target")[:value].to_s
+        kind = editor.call(:querySelector, ".new-relationship-kind")[:value].to_s
+        visual_edit { source_document.add_relationship(from:, to:, kind:) }
       elsif class_member?(target[:classList], "file-link")
         @selected_file = target[:dataset][:path].to_s
         replace("files-region", render_files)
@@ -157,8 +181,10 @@ module MobilisPlayground
       @status = "Visual edit applied surgically to Ruby source."
       replace("editor-region", render_editor)
       replace("builder-region", render_builder)
+      replace("inspector-region", render_inspector)
       replace("architecture-region", render_architecture)
       render_diagram
+      refresh_selection
       replace("diagnostics-region", render_diagnostics)
     end
 
@@ -227,32 +253,6 @@ module MobilisPlayground
       class_list.contains(name).to_s == "true"
     end
 
-    def handle_diagram_selection(event)
-      topology_id = event[:detail][:topologyId].to_s
-      node = @topology.node(topology_id)
-      return unless node
-
-      document = JS.global[:document]
-      selected = document.call(:querySelectorAll, ".diagram-selected")
-      selected[:length].to_i.times do |index|
-        selected[index][:classList].remove("diagram-selected")
-      end
-
-      if node.source_id
-        card = document.call(:querySelector, %(.service-card[data-service-id="#{node.source_id}"]))
-        if card
-          card[:classList].add("diagram-selected")
-          card.call(:scrollIntoView, JS.eval("return {block: 'nearest', behavior: 'smooth'}"))
-        end
-      end
-
-      return unless node.start_offset && node.end_offset
-
-      editor = element("dsl-source")
-      editor.call(:focus, JS.eval("return {preventScroll: true}"))
-      editor.call(:setSelectionRange, node.start_offset, node.end_offset)
-    end
-
     def source_document
       self.class.source_document(@source)
     end
@@ -263,11 +263,13 @@ module MobilisPlayground
 
     def render_builder
       capabilities = Mobilis::Browser::Capabilities.for_system(@analysis.system)
+      inspector_services = service_inspector.services
       @renderer.render(
         :builder,
         declarations: @analysis.declarations,
         service_types: Mobilis::Browser::SourceDocument::SERVICE_TYPES,
         property_schemas: Mobilis::Browser::SourceDocument::PROPERTY_SCHEMAS,
+        inspector_services:,
         capabilities:
       )
     end
@@ -280,14 +282,29 @@ module MobilisPlayground
       @renderer.render(:architecture, topology: @topology, stale: @diagram_stale)
     end
 
+    def render_inspector
+      @renderer.render(:inspector, services: service_inspector.services)
+    end
+
+    def service_inspector
+      Mobilis::Browser::ServiceInspector.new(@analysis, @topology)
+    end
+
     def render_diagram
       return if @topology.empty?
 
-      selection = @topology.nodes.to_h do |node|
+      nodes = @topology.nodes.to_h do |node|
         [node.id, {sourceId: node.source_id, startOffset: node.start_offset, endOffset: node.end_offset}]
       end
+      edges = @topology.edges.map do |edge|
+        {sourceId: edge.source_id, startOffset: edge.start_offset, endOffset: edge.end_offset, from: edge.from}
+      end
       diagram = Mobilis::Browser::MermaidDiagram.new(@topology).source
-      JS.global[:MobilisDiagram].call(:render, diagram, JSON.generate(selection))
+      JS.global[:MobilisDiagram].call(:render, diagram, JSON.generate(nodes: nodes, edges: edges))
+    end
+
+    def refresh_selection
+      JS.global[:MobilisSelection].call(:refresh)
     end
 
     def render_files

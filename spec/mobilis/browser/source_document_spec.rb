@@ -95,6 +95,70 @@ RSpec.describe Mobilis::Browser::SourceDocument do
     expect(described_class.new(changed).analyze).to be_valid
   end
 
+  it "locates semantic relationship declarations and preserves their options" do
+    connected = <<~RUBY
+      Mobilis::DSL.build("demo") do
+        rack("api")
+        kafka("events") { |broker| broker.topic("commands", partitions: 1, retention_ms: 1_000) }
+        connect(from: "api", to: "events", publish: "commands") # preserve
+      end
+    RUBY
+
+    relationship = described_class.new(connected).analyze.relationships.fetch(0)
+
+    expect(relationship.to_h).to include(
+      kind: :connect, from: "api", to: "events", editable: true,
+      properties: include(publish: "commands")
+    )
+  end
+
+  it "surgically changes and removes relationship fields without touching comments" do
+    connected = <<~RUBY
+      Mobilis::DSL.build("demo") do
+        rack("api")
+        redis("cache")
+        postgres("database")
+        connect(from: "api", to: "cache", force_skip_health_checks: true) # keep me
+      end
+    RUBY
+    document = described_class.new(connected)
+    id = document.analyze.relationships.fetch(0).id
+    changed = document.update_relationship(id, :to, "database")
+    changed_document = described_class.new(changed)
+    changed_id = changed_document.analyze.relationships.fetch(0).id
+    changed = changed_document.update_relationship(changed_id, :force_skip_health_checks, nil)
+
+    expect(changed).to include('connect(from: "api", to: "database") # keep me')
+    expect(described_class.new(changed).analyze).to be_valid
+  end
+
+  it "adds and removes one relationship declaration without regenerating services" do
+    document = described_class.new(source)
+    connected = document.add_relationship(from: "main-db", to: "main-db", kind: :connect)
+    connected_document = described_class.new(connected)
+    relationship = connected_document.analyze.relationships.fetch(0)
+    restored = connected_document.remove_relationship(relationship.id)
+
+    expect(connected).to include('connect(from: "main-db", to: "main-db")')
+    expect(restored).to eq(source)
+  end
+
+  it "rejects rewriting a dynamic relationship" do
+    dynamic = <<~RUBY
+      target = "cache"
+      Mobilis::DSL.build("demo") do
+        rack("api")
+        redis("cache")
+        connect(from: "api", to: target)
+      end
+    RUBY
+    document = described_class.new(dynamic)
+
+    expect(document.analyze.relationships.fetch(0).editable).to be(false)
+    expect { document.update_relationship(document.analyze.relationships.fetch(0).id, :to, "other") }
+      .to raise_error(ArgumentError, /Dynamic relationships/)
+  end
+
   it "authors Rails while evaluating generate declarations without materializing" do
     rails_source = <<~RUBY
       # locally executable definition

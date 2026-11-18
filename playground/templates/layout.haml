@@ -9,11 +9,13 @@
       %button#download-authoring-bundle.rounded.border.border-line.px-3.py-2.text-xs.text-slate-200.hover:bg-slate-800 Local bundle
       %button#generate-button.rounded.bg-teal-300.px-3.py-2.text-xs.font-bold.text-slate-950.hover:bg-teal-200 Generate project
 
-%section.mx-auto.grid.max-w-screen-2xl.gap-3.p-3.lg:grid-cols-2
+%section.mx-auto.grid.max-w-screen-2xl.gap-3.p-3.lg:grid-cols-2.xl:grid-cols-3
   #builder-region.min-h-96.rounded-lg.border.border-line.bg-panel
     != builder
   #editor-region.min-h-96.rounded-lg.border.border-line.bg-panel
     != editor
+  #inspector-region.min-h-96.rounded-lg.border.border-line.bg-panel{class: "lg:col-span-2 xl:col-span-1"}
+    != inspector
 
 %section.mx-auto.max-w-screen-2xl.px-3.pb-3
   #architecture-region.rounded-lg.border.border-line.bg-panel

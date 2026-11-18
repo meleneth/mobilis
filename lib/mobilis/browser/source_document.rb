@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "json"
 require "prism"
 
 module Mobilis
@@ -26,7 +27,10 @@ module Mobilis
       Declaration = Data.define(
         :id, :type, :name, :editable, :start_offset, :end_offset, :properties
       )
-      Analysis = Data.define(:source, :system, :declarations, :errors) do
+      Relationship = Data.define(
+        :id, :kind, :from, :to, :editable, :start_offset, :end_offset, :properties
+      )
+      Analysis = Data.define(:source, :system, :declarations, :relationships, :errors) do
         def valid? = errors.empty?
       end
 
@@ -41,17 +45,17 @@ module Mobilis
         syntax_errors = parse_result.errors.map do |error|
           "#{error.message} (line #{error.location.start_line}, column #{error.location.start_column + 1})"
         end
-        return Analysis.new(source:, system: nil, declarations: [], errors: syntax_errors) unless syntax_errors.empty?
+        return invalid_analysis(syntax_errors) unless syntax_errors.empty?
 
         system = evaluate
         unless system.is_a?(Mobilis::System)
-          return Analysis.new(source:, system: nil, declarations: [], errors: ["Source must define a system with Mobilis::DSL.generate or Mobilis::DSL.build"])
+          return invalid_analysis(["Source must define a system with Mobilis::DSL.generate or Mobilis::DSL.build"])
         end
 
-        Analysis.new(source:, system:, declarations: declarations, errors: [])
+        Analysis.new(source:, system:, declarations: declarations, relationships: relationships, errors: [])
       rescue ArgumentError, KeyError, LoadError, NameError, NotImplementedError,
         RuntimeError, SecurityError, SyntaxError, SystemCallError, TypeError => error
-        Analysis.new(source:, system: nil, declarations: [], errors: ["#{error.class}: #{error.message}"])
+        invalid_analysis(["#{error.class}: #{error.message}"])
       end
 
       def rename(id, name)
@@ -117,15 +121,71 @@ module Mobilis
         replace(insertion, insertion, "#{indent}#{type}(#{name.dump})\n")
       end
 
-      def add_dependency(from:, to:)
+      def add_relationship(from:, to:, kind: :connect, properties: {})
         block = root_call&.block
         raise ArgumentError, "Source must contain a Mobilis::DSL.generate or .build block" unless block
+        kind = kind.to_sym
+        raise ArgumentError, "Relationship type must be connect or route" unless %i[connect route].include?(kind)
 
         insertion = block.closing_loc.start_offset
-        replace(insertion, insertion, "  connect(from: #{from.dump}, to: #{to.dump})\n")
+        options = properties.filter_map do |key, value|
+          next if value.nil? || value == ""
+
+          ", #{key}: #{ruby_literal(value)}"
+        end.join
+        replace(insertion, insertion, "  #{kind}(from: #{from.dump}, to: #{to.dump}#{options})\n")
+      end
+
+      alias_method :add_dependency, :add_relationship
+
+      def update_relationship(id, property, value)
+        relationship, node = editable_relationship(id)
+        property = property.to_sym
+        if property == :kind
+          kind = value.to_sym
+          raise ArgumentError, "Relationship type must be connect or route" unless %i[connect route].include?(kind)
+          if kind != relationship.kind && (relationship.properties.keys - %i[from to]).any?
+            raise ArgumentError, "Remove relationship-specific options before changing its type"
+          end
+          return replace(node.message_loc.start_offset, node.message_loc.end_offset, kind.to_s)
+        end
+
+        allowed = relationship.kind == :connect ? %i[to force_skip_health_checks publish subscribe] : %i[to candidate shadow mirror_percent candidate_percent]
+        raise ArgumentError, "#{property} is not supported by #{relationship.kind}" unless allowed.include?(property)
+
+        element = keyword_elements(node).find { |candidate| keyword_name(candidate) == property }
+        if value.nil? || value == ""
+          raise ArgumentError, "A relationship target cannot be empty" if property == :to
+          return source unless element
+
+          start_offset, end_offset = optional_keyword_range(node, element)
+          return replace(start_offset, end_offset, "")
+        end
+
+        replacement = relationship_property_source(property, value)
+        if element
+          raise ArgumentError, "Dynamic relationship expressions cannot be safely rewritten" if literal_value(element.value) == :dynamic
+
+          replace(element.value.location.start_offset, element.value.location.end_offset, replacement)
+        else
+          closing = node.closing_loc
+          raise ArgumentError, "Relationship options require a parenthesized call" unless closing
+
+          replace(closing.start_offset, closing.start_offset, ", #{property}: #{replacement}")
+        end
+      end
+
+      def remove_relationship(id)
+        _relationship, node = editable_relationship(id)
+        start_offset, end_offset = line_range(node.location.start_offset, node.location.end_offset)
+        replace(start_offset, end_offset, "")
       end
 
       private
+
+      def invalid_analysis(errors)
+        Analysis.new(source:, system: nil, declarations: [], relationships: [], errors:)
+      end
 
       def evaluate
         call = root_call
@@ -177,6 +237,24 @@ module Mobilis
         end
       end
 
+      def relationships
+        relationship_nodes.map do |node|
+          properties = keyword_properties(node)
+          from = properties[:from]
+          to = properties[:to]
+          Relationship.new(
+            id: "relationship-#{node.location.start_offset}",
+            kind: node.name,
+            from: from == :dynamic ? "dynamic expression" : normalize_name(from),
+            to: to == :dynamic ? "dynamic expression" : normalize_name(to),
+            editable: from != :dynamic && to != :dynamic,
+            start_offset: node.location.start_offset,
+            end_offset: node.location.end_offset,
+            properties:
+          )
+        end
+      end
+
       def relationship_names(node)
         keyword_hash = node.arguments&.arguments&.find { |argument| argument.is_a?(Prism::KeywordHashNode) }
         return [] unless keyword_hash
@@ -195,13 +273,15 @@ module Mobilis
       end
 
       def keyword_properties(node)
-        keyword_hash = node.arguments&.arguments&.find { |argument| argument.is_a?(Prism::KeywordHashNode) }
-        return {} unless keyword_hash
-
-        keyword_hash.elements.to_h do |element|
+        keyword_elements(node).to_h do |element|
           key = keyword_name(element)
           [key, literal_value(element.value)]
         end
+      end
+
+      def keyword_elements(node)
+        keyword_hash = node.arguments&.arguments&.find { |argument| argument.is_a?(Prism::KeywordHashNode) }
+        keyword_hash ? keyword_hash.elements : []
       end
 
       def literal_value(node)
@@ -214,6 +294,14 @@ module Mobilis
         when Prism::ArrayNode
           values = node.elements.map { |element| literal_value(element) }
           values.include?(:dynamic) ? :dynamic : values
+        when Prism::HashNode, Prism::KeywordHashNode
+          values = node.elements.to_h do |element|
+            key = literal_value(element.key)
+            key = element.key.value if key == :dynamic && element.key.respond_to?(:value)
+            [key, literal_value(element.value)]
+          end
+          values.value?(:dynamic) ? :dynamic : values
+        when Prism::SymbolNode then node.unescaped.to_sym
         else :dynamic
         end
       end
@@ -250,6 +338,63 @@ module Mobilis
         raise ArgumentError, "Dynamic service names cannot be safely rewritten" unless declaration&.editable
 
         [declaration, node]
+      end
+
+      def editable_relationship(id)
+        node = relationship_nodes.find { |candidate| "relationship-#{candidate.location.start_offset}" == id.to_s }
+        raise ArgumentError, "Relationship declaration is no longer present" unless node
+
+        relationship = relationships.find { |candidate| candidate.id == id.to_s }
+        raise ArgumentError, "Dynamic relationships cannot be safely rewritten" unless relationship&.editable
+
+        [relationship, node]
+      end
+
+      def relationship_property_source(property, value)
+        case property
+        when :to, :candidate, :shadow then value.to_s.dump
+        when :force_skip_health_checks then value == true || value.to_s == "true" ? "true" : "false"
+        when :mirror_percent, :candidate_percent then Integer(value, 10).to_s
+        when :publish, :subscribe
+          parsed = if value.is_a?(String) && value.lstrip.start_with?("[", "{")
+                     JSON.parse(value)
+                   else
+                     value
+                   end
+          ruby_literal(parsed)
+        else
+          raise ArgumentError, "Unsupported relationship property #{property}"
+        end
+      rescue JSON::ParserError, ArgumentError => error
+        raise ArgumentError, "Invalid #{property}: #{error.message}"
+      end
+
+      def ruby_literal(value)
+        case value
+        when String then value.dump
+        when Symbol then ":#{value}"
+        when Integer, Float then value.to_s
+        when true then "true"
+        when false then "false"
+        when nil then "nil"
+        when Array then "[#{value.map { |item| ruby_literal(item) }.join(", ")}]"
+        when Hash
+          "{#{value.map { |key, item| "#{ruby_literal(key.to_s)} => #{ruby_literal(item)}" }.join(", ")}}"
+        else
+          raise ArgumentError, "Cannot encode #{value.class} as a Ruby literal"
+        end
+      end
+
+      def optional_keyword_range(node, element)
+        elements = keyword_elements(node)
+        index = elements.index(element)
+        raise ArgumentError, "Relationship option is no longer present" unless index
+
+        previous_end = index.zero? ? node.opening_loc.end_offset : elements[index - 1].location.end_offset
+        comma = source.index(",", previous_end)
+        raise ArgumentError, "Cannot safely locate relationship option separator" unless comma && comma < element.location.start_offset
+
+        [comma, element.location.end_offset]
       end
 
       def escape_string(value, string_node)

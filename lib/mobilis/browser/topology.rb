@@ -9,7 +9,7 @@ module Mobilis
         :id, :service_id, :type, :name, :label, :category,
         :source_id, :start_offset, :end_offset
       )
-      Edge = Data.define(:from, :to, :relationship)
+      Edge = Data.define(:from, :to, :relationship, :source_id, :start_offset, :end_offset)
 
       TYPE_METADATA = {
         "Mobilis::Node::Airflow" => ["Airflow", :application],
@@ -41,12 +41,13 @@ module Mobilis
       attr_reader :nodes, :edges
 
       def self.from_analysis(analysis)
-        new(analysis.system, declarations: analysis.declarations)
+        new(analysis.system, declarations: analysis.declarations, relationships: analysis.relationships)
       end
 
-      def initialize(system, declarations: [])
+      def initialize(system, declarations: [], relationships: [])
         @system = system
         @declarations = declarations
+        @relationships = relationships
         @nodes = build_nodes.freeze
         @edges = build_edges.freeze
       end
@@ -59,7 +60,7 @@ module Mobilis
 
       private
 
-      attr_reader :system, :declarations
+      attr_reader :system, :declarations, :relationships
 
       def build_nodes
         declaration_index = declarations.group_by { |declaration| normalize_name(declaration.name) }
@@ -99,11 +100,12 @@ module Mobilis
 
           service.extra_depends_on.each do |dependency|
             target = dependency[:target] || find_service(dependency[:name])
-            add_edge(results, from, nodes_by_service_id[target&.id], explicit_relationship(dependency))
+            relationship = source_relationship(service, target)
+            add_edge(results, from, nodes_by_service_id[target&.id], explicit_relationship(dependency), relationship)
           end
 
           reference_targets(service).each do |slot, target|
-            add_edge(results, from, nodes_by_service_id[target.id], humanize(slot))
+            add_edge(results, from, nodes_by_service_id[target.id], humanize(slot), nil)
           end
         end
 
@@ -121,10 +123,27 @@ module Mobilis
         singular + plural
       end
 
-      def add_edge(results, from, to, relationship)
+      def add_edge(results, from, to, relationship, source_relationship)
         return unless from && to
 
-        results << Edge.new(from: from.id, to: to.id, relationship:)
+        results << Edge.new(
+          from: from.id,
+          to: to.id,
+          relationship:,
+          source_id: source_relationship&.id,
+          start_offset: source_relationship&.start_offset,
+          end_offset: source_relationship&.end_offset
+        )
+      end
+
+      def source_relationship(service, target)
+        return unless target
+
+        relationships.find do |relationship|
+          targets = [relationship.to, relationship.properties[:candidate], relationship.properties[:shadow]]
+            .compact.map { |name| normalize_name(name) }
+          relationship.from == service.name && targets.include?(target.name)
+        end
       end
 
       def explicit_relationship(dependency)

@@ -7,10 +7,11 @@
   - if declarations.empty?
     .rounded.border.border-dashed.border-line.p-6.text-center.text-xs.text-slate-500 No statically mappable service declarations.
   - declarations.each do |service|
-    .service-card.rounded.border.border-line.bg-panel-soft.p-3{data: {service_id: service.id}}
+    - inspected = inspector_services.find { |candidate| candidate.declaration&.id == service.id }
+    .service-card.rounded.border.border-line.bg-panel-soft.p-3{data: {service_id: service.id, topology_id: inspected&.id, source_start: service.start_offset, source_end: service.end_offset}}
       - capability = capabilities[service.name]
       .mb-2.flex.items-center.justify-between.gap-2
-        %span.uppercase.tracking-wide.text-slate-500{class: "text-[10px]"}= service.type
+        %button.select-service.text-left.uppercase.tracking-wide.text-teal-300.hover:text-teal-200{type: "button", class: "text-[10px]", data: {topology_id: inspected&.id}}= service.type
         - if capability&.browser_generation
           %span.rounded.bg-teal-950.px-2.py-1.text-teal-300{class: "text-[10px]"} Browser generation
         - else

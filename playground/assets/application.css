@@ -30,3 +30,11 @@ textarea, pre { tab-size: 2; }
 #architecture-canvas .node {
   cursor: pointer;
 }
+
+#architecture-canvas .edgePath {
+  cursor: pointer;
+}
+
+#architecture-canvas .diagram-node-selected > * {
+  filter: drop-shadow(0 0 5px var(--color-accent));
+}
