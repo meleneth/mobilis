@@ -19,13 +19,14 @@ module Mobilis
         super.merge(port: port, publish_port: publish_port, graphql_subgraph_name: graphql_subgraph_name)
       end
 
-      def graphql_subgraph(name, source:)
+      def graphql_subgraph(name, source: nil)
         raise ArgumentError, "Only one GraphQL subgraph is supported per FastAPI service" if graphql_subgraph_name
         raise ArgumentError, "Invalid GraphQL subgraph name" unless name.to_s.match?(/\A[a-z][a-z0-9_]*\z/)
-        raise ArgumentError, "GraphQL schema source is missing: #{source}" unless File.file?(source)
-
+        if source
+          raise ArgumentError, "GraphQL schema source is missing: #{source}" unless File.file?(source)
+        end
         @graphql_subgraph_name = name.to_s
-        add_model(Mobilis::Model::File.new("src/#{package_name}/graphql_schema.py", File.read(source)))
+        add_model(Mobilis::Model::File.new("src/#{package_name}/graphql_schema.py", File.read(source))) if source
         self
       end
 

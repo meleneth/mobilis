@@ -78,6 +78,22 @@ RSpec.describe "Cassandra generation" do
     end
   end
 
+  it "writes schema content supplied by an embedded archive" do
+    system = build_system
+    node = system.config_nodes.values.find { |candidate| candidate.is_a?(Mobilis::Node::Cassandra) }
+    payload = Mobilis::EmbeddedArchive.pack(files: {
+      "schema.cql" => "CREATE TABLE IF NOT EXISTS records (id uuid PRIMARY KEY);\n"
+    })
+    node.embedded_archive("schema", payload:)
+    env = Mobilis::RealizedEnv.new(system, Mobilis::ExecutionEnvironment.new(:test))
+    realized = env.realized_node_by_name("history")
+
+    Dir.mktmpdir do |dir|
+      Dir.chdir(dir) { realized.service_writer.new(nil, env, realized).write }
+      expect(File.read(File.join(dir, "schema.cql"))).to include("CREATE TABLE IF NOT EXISTS records")
+    end
+  end
+
   it "passes Cassandra variables to other connected service types" do
     system = Mobilis::System.new("rack-cassandra")
     dsl = Mobilis::DSL::DSLContext.new(system)

@@ -46,6 +46,14 @@ bundle exec ruby -Ilib scripts/<demo>.rb
 
 Then inspect or run the generated project under `generate/`.
 
+Demos with authored source files live under a same-named directory, for
+example `scripts/22_cassandra/22_cassandra.rb` and its adjacent Python/CQL
+files. Run `scripts/build_scripts` after editing those sources. It compiles
+deterministic Base64 tar payloads with `Mobilis::EmbeddedArchive` into the
+checked-in, self-contained `scripts/22_cassandra.rb` form. CI-style verification
+is available through `scripts/build_scripts --check`; do not edit the generated
+top-level copies directly.
+
 | Script                                        | Demonstrates                                                                                                                                                                           |
 | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`01_mobilis_initial_system.rb`](https://github.com/meleneth/mobilis/blob/core/scripts/01_mobilis_initial_system.rb)                | Minimal Rails service with PostgreSQL.                                                                                                                                                 |
@@ -75,7 +83,7 @@ Then inspect or run the generated project under `generate/`.
 The [Kubernetes guide](https://meleneth.github.io/mobilis/guide/kubernetes.html) documents deployment,
 project-first hostnames, private services, and end-to-end telemetry verification.
 
-The HTTP demo's [operator guide](https://github.com/meleneth/mobilis/blob/core/scripts/http_migration/README.md) documents environment selection and expected error checks. Its actual Jaeger/OTEL correctness verifier is [scripts/http_migration/operations.py](https://github.com/meleneth/mobilis/blob/core/scripts/http_migration/operations.py), generated as `legacy/demo/operations.py`; start with `verify()`, `await_trace()`, and `check_trace()`.
+The HTTP demo's [operator guide](https://github.com/meleneth/mobilis/blob/core/scripts/20_http_migration/README.md) documents environment selection and expected error checks. Its actual Jaeger/OTEL correctness verifier is [scripts/20_http_migration/operations.py](https://github.com/meleneth/mobilis/blob/core/scripts/20_http_migration/operations.py), generated as `legacy/demo/operations.py`; start with `verify()`, `await_trace()`, and `check_trace()`.
 
 The most complete current smoke demos are [`08_large_iam_system.rb`](https://github.com/meleneth/mobilis/blob/core/scripts/08_large_iam_system.rb) for Rails
 service composition and [`18_mnbme_otel_system.rb`](https://github.com/meleneth/mobilis/blob/core/scripts/18_mnbme_otel_system.rb) for Rack/local-gem/multi-

@@ -10,6 +10,10 @@ module Mobilis
           compose[:build][:dockerfile] = "#{name}/Dockerfile"
         end
         if node.graphql_subgraph_name
+          schema_path = "src/#{node.package_name}/graphql_schema.py"
+          schema = node.models.grep(Mobilis::Model::File).find { |model| model.path == schema_path }
+          raise ArgumentError, "GraphQL schema source is missing for #{node.name}" unless schema
+
           set_healthcheck_command("python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:#{exposed_port_no}/health', timeout=2)\"",
                                   interval: "5s", timeout: "4s", retries: 20, start_period: "10s")
         end

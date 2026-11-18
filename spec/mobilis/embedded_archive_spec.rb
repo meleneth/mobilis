@@ -89,6 +89,17 @@ RSpec.describe Mobilis::EmbeddedArchive do
     expect(file.path).to eq("config/app.txt")
     expect(file.content).to eq("generated\n")
   end
+
+  it "maps safe archive members beneath an explicit generated destination prefix" do
+    payload = described_class.pack(files: {"packages/demo/lib.py" => "value = 1\n"})
+    node = Mobilis::Node::Rack.new("app")
+
+    node.embedded_archive("source", payload:, destination_prefix: "..")
+
+    file = node.models.grep(Mobilis::Model::File).fetch(0)
+    expect(file.path).to eq("../packages/demo/lib.py")
+    expect(file.content).to eq("value = 1\n")
+  end
 end
 
 RSpec.describe Mobilis::Model::File do

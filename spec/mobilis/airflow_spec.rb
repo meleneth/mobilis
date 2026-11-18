@@ -114,7 +114,7 @@ RSpec.describe "Airflow generation" do
     load File.expand_path("../../scripts/23_airflow.rb", __dir__)
     node = system.each_config_node.find { |item| item.is_a?(Mobilis::Node::Airflow) }
     expect(node.models.grep(Mobilis::Model::LocalPythonPackage).map(&:name)).to contain_exactly("mobilis-domain", "mobilis-pipeline")
-    dags = node.models.grep(Mobilis::Model::File)
+    dags = node.models.grep(Mobilis::Model::File).select { |file| file.path.start_with?("dags/") }
     expect(dags.map(&:path)).to contain_exactly("dags/ingest.py", "dags/aggregate.py", "dags/report.py")
     expect(dags.map(&:content).join).to include("@dag", "@task", "persist_report", "persist_sales")
   end

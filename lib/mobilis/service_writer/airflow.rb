@@ -31,7 +31,7 @@ module Mobilis
           bag = DagBag(dag_folder="/opt/airflow/dags", include_examples=False)
           assert not bag.import_errors, bag.import_errors
           assert bag.dags, "no DAGs discovered"
-          if set(#{realized_node.config_node.each_model_of_type(Mobilis::Model::File).map { |file| File.basename(file.path, ".py") }.to_json}) == {"ingest", "aggregate", "report"}:
+          if set(#{realized_node.config_node.each_model_of_type(Mobilis::Model::File).filter_map { |file| File.basename(file.path, ".py") if file.path.start_with?("dags/") }.to_json}) == {"ingest", "aggregate", "report"}:
               assert {"demo_ingest", "demo_aggregate", "demo_report"} <= set(bag.dags)
               ingest = bag.dags["demo_ingest"]
               for upstream in ("normalize_west", "normalize_east"):

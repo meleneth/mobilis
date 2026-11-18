@@ -55,6 +55,24 @@ RSpec.describe "Grafbase federation" do
     expect { Mobilis::RealizedEnv.new(system, Mobilis::ExecutionEnvironment.new(:test)) }.to raise_error(ArgumentError, /at least one/)
   end
 
+  it "accepts GraphQL schema content supplied by an embedded archive" do
+    system = Mobilis::System.new("embedded-schema")
+    dsl = Mobilis::DSL::DSLContext.new(system)
+    service = dsl.fastapi("sites") do |node|
+      node.graphql_subgraph("sites")
+      payload = Mobilis::EmbeddedArchive.pack(files: {
+        "src/service_sites/graphql_schema.py" => "import strawberry\n"
+      })
+      node.embedded_archive("schema", payload:)
+    end
+    gateway = dsl.grafbase("gateway")
+    dsl.connect(from: gateway, to: service)
+
+    env = Mobilis::RealizedEnv.new(system, Mobilis::ExecutionEnvironment.new(:test))
+
+    expect(env.realized_node_by_name("sites").config_node.graphql_subgraph_name).to eq("sites")
+  end
+
   [false, true].each do |telemetry|
     it "generates a local composer, gateway and Strawberry router with telemetry #{telemetry}" do
       Dir.mktmpdir do |dir|

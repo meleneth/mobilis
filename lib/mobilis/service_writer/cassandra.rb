@@ -7,7 +7,8 @@ module Mobilis
     class Cassandra < Mobilis::Base::ServiceWriter
       def write
         node = realized_node.config_node
-        schema = node.schema_path ? File.read(node.schema_path) : ""
+        embedded_schema = node.each_model_of_type(Mobilis::Model::File).find { |model| model.path == "schema.cql" }
+        schema = embedded_schema&.content || (node.schema_path ? File.read(node.schema_path) : "")
         validate_schema!(schema)
         File.write("schema.cql", schema)
         File.write("Dockerfile", <<~DOCKER)
