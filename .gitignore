@@ -80,6 +80,7 @@ __pycache__/
 *.pyc
 /playground/node_modules/
 /playground/build/
+/playground/test-results/
 /playground/public/application.css
 /playground/public/mobilis.wasm
 /playground/public/filesystem.json
