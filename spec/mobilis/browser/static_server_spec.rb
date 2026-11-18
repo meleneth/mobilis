@@ -16,4 +16,8 @@ RSpec.describe "playground static server" do
   it "serves WebAssembly with its registered MIME type" do
     expect(configuration).to include("application/wasm wasm")
   end
+
+  it "serves Mermaid ES modules with a JavaScript MIME type" do
+    expect(configuration).to include("application/javascript mjs")
+  end
 end
