@@ -31,6 +31,11 @@ The production container packages only nginx and static assets; there is no
 runtime Ruby process or generation endpoint. See the repository handoff for
 the clean Docker build result.
 
+Mermaid 12.3 is pinned and rendered through its public `initialize`/`render`
+API. Its supported Node 22.12 runtime is isolated to the Debian build stage;
+the production dependency audit reports no vulnerabilities, and Node is not
+present in the nginx runtime image.
+
 ## Limitations
 
 - Rails and explicit host-command generation require local execution.
