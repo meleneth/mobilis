@@ -4,7 +4,7 @@
   "scripts": {
     "build:css": "tailwindcss -i assets/application.css -o public/application.css --minify",
     "test:browser": "playwright test",
-    "test": "vitest run"
+    "test": "playwright test"
   },
   "dependencies": {
     "@hotwired/turbo": "8.0.21",
@@ -15,7 +15,6 @@
   "devDependencies": {
     "@playwright/test": "1.56.1",
     "@tailwindcss/cli": "4.1.17",
-    "tailwindcss": "4.1.17",
-    "vitest": "4.0.13"
+    "tailwindcss": "4.1.17"
   }
 }

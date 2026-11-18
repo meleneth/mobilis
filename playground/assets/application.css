@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
 @source "../app/**/*.rb";
 @source "../templates/**/*.haml";
 @source "../public/index.html";
