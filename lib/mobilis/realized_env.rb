@@ -14,16 +14,47 @@ module Mobilis
     # One sequence is shared by the three realized environments of a manifest.
     # A standalone RealizedEnv gets its own sequence for deterministic inspection.
     class PortAllocator
-      def initialize(starting_port)
+      def initialize(starting_port, reservation_count: 1)
         @next_port = starting_port
+        @reservation_count = reservation_count
+        @reserved_ports = {}
+        @preferred_sequences = {}
       end
 
-      def reserve
-        raise ArgumentError, "Generated host ports exceed 65535" if @next_port > 65_535
+      def reserve(preferred_port: nil, allocation_key: nil)
+        return reserve_preferred(preferred_port, allocation_key) if preferred_port
+
+        @next_port += 10 while @reserved_ports.key?(@next_port)
+        validate_port!(@next_port)
 
         port = @next_port
+        @reserved_ports[port] = true
         @next_port += 10
         port
+      end
+
+      private
+
+      def reserve_preferred(preferred_port, allocation_key)
+        raise ArgumentError, "Preferred host ports require an allocation key" unless allocation_key
+
+        sequence = @preferred_sequences[allocation_key] ||= begin
+          ports = @reservation_count.times.map { |index| preferred_port + (index * 10) }
+          ports.each do |port|
+            validate_port!(port)
+            raise ArgumentError, "Generated host port #{port} is already reserved" if @reserved_ports.key?(port)
+          end
+          ports.each { |port| @reserved_ports[port] = true }
+          ports
+        end
+        raise ArgumentError, "Preferred host-port sequence is exhausted" if sequence.empty?
+
+        sequence.shift
+      end
+
+      def validate_port!(port)
+        raise ArgumentError, "Generated host ports exceed 65535" if port > 65_535
+        raise ArgumentError, "Generated host ports must be positive" if port < 1
       end
     end
 
@@ -39,8 +70,8 @@ module Mobilis
       build_all_nodes!
     end
 
-    def reserve_external_port
-      @port_allocator.reserve
+    def reserve_external_port(preferred_port: nil, allocation_key: nil)
+      @port_allocator.reserve(preferred_port: preferred_port, allocation_key: allocation_key)
     end
 
     def to_s

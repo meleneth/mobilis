@@ -3,7 +3,11 @@ class TestableHasPorts
   include Mobilis::Mixins::RealizedNode::HasPorts
 
   def realized_env
-    @realized_env ||= Struct.new(:reserve_external_port).new(11_000)
+    @realized_env ||= Struct.new(:next_port) do
+      def reserve_external_port(**)
+        next_port
+      end
+    end.new(11_000)
   end
 end
 

@@ -4,10 +4,10 @@ require "spec_helper"
 require "tmpdir"
 
 RSpec.describe "Grafbase federation" do
-  def topology(source)
-    system = Mobilis::System.new("federation-test")
+  def topology(source, port: nil)
+    system = Mobilis::System.new("federation-test", starting_port: 5050)
     dsl = Mobilis::DSL::DSLContext.new(system)
-    gateway = dsl.grafbase("gateway", port: 5050)
+    gateway = dsl.grafbase("gateway", port: port)
     sites = dsl.fastapi("sites", publish_port: false) do |service|
       service.graphql_subgraph("sites", source: source)
     end
@@ -24,6 +24,25 @@ RSpec.describe "Grafbase federation" do
       service = loaded.config_nodes.values.find { |node| node.name == "sites" }
       expect(service.graphql_subgraph_name).to eq("sites")
       expect(service.models.find { |model| model.path.end_with?("graphql_schema.py") }.content).to include("hello")
+    end
+  end
+
+  it "allocates default and explicitly pinned host-port ranges across environments" do
+    Dir.mktmpdir do |dir|
+      source = "#{dir}/schema.py"
+      File.write(source, "import strawberry\n")
+
+      default_system, = topology(source)
+      default_manifest = Mobilis::Manifest.new(default_system, suppress_plugins: true)
+      expect(default_manifest.realized_envs.map do |env|
+        env.realized_node_by_name("gateway").env_vars_for_env_file.find { |var| var.envfile_name == "GATEWAY_WEB_PORT" }.value
+      end).to eq([5050, 5060, 5070])
+
+      pinned_system, = topology(source, port: 15_000)
+      pinned_manifest = Mobilis::Manifest.new(pinned_system, suppress_plugins: true)
+      expect(pinned_manifest.realized_envs.map do |env|
+        env.realized_node_by_name("gateway").env_vars_for_env_file.find { |var| var.envfile_name == "GATEWAY_WEB_PORT" }.value
+      end).to eq([15_000, 15_010, 15_020])
     end
   end
 

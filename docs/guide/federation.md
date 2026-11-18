@@ -12,7 +12,7 @@ end
 deployments = fastapi("deployments", publish_port: false) do |service|
   service.graphql_subgraph("deployments", source: "schemas/deployments_schema.py")
 end
-gateway = grafbase("gateway", port: 5000)
+gateway = grafbase("gateway")
 connect(from: gateway, to: sites)
 connect(from: gateway, to: deployments)
 ```

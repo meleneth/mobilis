@@ -8,8 +8,8 @@ module Mobilis
       def initialize(env, node)
         super(env, node, Mobilis::ContainerVersions::GRAFBASE_GATEWAY)
         @has_service_dir = true
-        published = add_env_only_var("#{name}_WEB_PORT", node.port)
-        compose_ports.add(Mobilis::Primitives::PortMap.new(published.env_var_ref, 5000, "#{name} federated GraphQL port"))
+        register_external_port(5000, "#{name}_WEB_PORT", "#{name} federated GraphQL port",
+                               preferred_port: node.port, allocation_key: "grafbase:#{node.id}")
         add_volume("./#{name}/gateway.toml", "/etc/grafbase.toml:ro")
         add_volume("#{name}-schema", "/schema:ro")
         compose[:command] = %w[--config /etc/grafbase.toml --schema /schema/supergraph.graphql --listen-address 0.0.0.0:5000]

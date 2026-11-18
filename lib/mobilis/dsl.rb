@@ -211,7 +211,7 @@ module Mobilis
         add_http_service(Mobilis::Node::Envoy, name, port, verification_port: verification_port, &block)
       end
 
-      def grafbase(name, port: 5000, &block)
+      def grafbase(name, port: nil, &block)
         node = Mobilis::Node::Grafbase.new(name, port: port)
         system << node
         @named[name] = node

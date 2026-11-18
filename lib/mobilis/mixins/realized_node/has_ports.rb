@@ -14,8 +14,8 @@ module Mobilis
         #  port_maps << [external_port, internal_port, memo]
         # end
 
-        def register_external_port(internal_port_no, env_var, memo)
-          new_port_no = realized_env.reserve_external_port
+        def register_external_port(internal_port_no, env_var, memo, preferred_port: nil, allocation_key: nil)
+          new_port_no = realized_env.reserve_external_port(preferred_port: preferred_port, allocation_key: allocation_key)
           created_env_var = add_env_only_var(env_var, new_port_no)
           new_port = Mobilis::Primitives::PortMap.new(created_env_var.env_var_ref, internal_port_no, memo)
           compose_ports.add(new_port)

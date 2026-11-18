@@ -46,4 +46,13 @@ RSpec.describe "starting_port" do
     expect { Mobilis::System.new("bad", starting_port: 0) }.to raise_error(ArgumentError)
     expect { ports_for(65_530) }.to raise_error(ArgumentError, /exceed/)
   end
+
+  it "reserves explicit ranges without allowing sequential allocations to collide" do
+    allocator = Mobilis::RealizedEnv::PortAllocator.new(15_000, reservation_count: 3)
+    expect(allocator.reserve(preferred_port: 15_010, allocation_key: "gateway")).to eq(15_010)
+    expect(allocator.reserve).to eq(15_000)
+    expect(allocator.reserve).to eq(15_040)
+    expect(allocator.reserve(preferred_port: 15_010, allocation_key: "gateway")).to eq(15_020)
+    expect(allocator.reserve(preferred_port: 15_010, allocation_key: "gateway")).to eq(15_030)
+  end
 end

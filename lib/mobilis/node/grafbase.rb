@@ -5,15 +5,17 @@ module Mobilis
     class Grafbase < Mobilis::Base::Node
       attr_reader :port
 
-      def initialize(name, port: 5000, **args)
+      def initialize(name, port: nil, **args)
         super(name, **args)
-        raise ArgumentError, "Invalid Grafbase port" unless port.is_a?(Integer) && (1..65535).cover?(port)
+        if port && (!port.is_a?(Integer) || !(1..65_535).cover?(port))
+          raise ArgumentError, "Invalid Grafbase port"
+        end
 
         @port = port
       end
 
       def to_h
-        super.merge(port: port)
+        port ? super.merge(port: port) : super
       end
     end
   end

@@ -100,6 +100,20 @@ Do not assume `instance_eval` style blocks work for service configuration.
 
 Names are normalized on nodes by replacing `_` with `-`. Check raw input names vs normalized node names when touching `DSLContext#named` or `DSLContext#connect`.
 
+## Host Port Allocation
+
+Every generated Docker Compose host-port binding must reserve its port through
+`RealizedEnv#reserve_external_port`, normally via
+`RealizedNode::HasPorts#register_external_port`. This requirement also applies
+to generated replicas, brokers, sidecars, and other additional services. Never
+introduce fixed or independently incremented host ports on realized nodes.
+
+Container-only ports remain fixed and do not use the host-port allocator. If a
+public DSL option explicitly pins a host port, it must still reserve that port
+through the shared realized-environment allocator so collisions and range
+exhaustion are detected. Add regression coverage for allocation across all
+three environments whenever a new published service or replica shape is added.
+
 ## Known Issues To Keep In Mind
 
 - `RefSlot#hydrate_refs!` appears to use literal interpolation strings for lookup keys. Current specs do not fully prove hydration from only serialized IDs.
