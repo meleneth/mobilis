@@ -45,7 +45,8 @@ RSpec.describe MobilisPlayground::Renderer do
     RUBY
     topology = Mobilis::Browser::Topology.from_analysis(analysis)
     services = Mobilis::Browser::ServiceInspector.new(analysis, topology).services
-    html = described_class.new.render(:inspector, services:)
+    documents = Mobilis::Browser::VirtualDocument.new(analysis)
+    html = described_class.new.render(:inspector, services:, documents:, archives: analysis.archives)
 
     expect(html).to include("Semantic outgoing connections")
     expect(html).to include("Operational dependencies")

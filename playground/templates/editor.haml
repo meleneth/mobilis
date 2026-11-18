@@ -1,6 +1,24 @@
-.flex.items-center.justify-between.border-b.border-line.px-3.py-2
-  %div
-    %h2.text-sm.font-semibold.text-white Ruby DSL
-    %p.text-xs.text-slate-500 Editable source of truth. Invalid input is preserved.
-  %span.text-xs.text-slate-500 mobilis.rb
-%textarea#dsl-source.w-full.resize-y.bg-slate-950.p-4.leading-5.text-slate-200.outline-none.spellcheck-false{class: "h-[32rem] text-[13px]", spellcheck: "false", aria: {label: "Mobilis Ruby DSL"}}= source
+#ruby-document-workspace
+  .flex.items-center.justify-between.border-b.border-line.px-3.py-2
+    %div
+      %h2.text-sm.font-semibold.text-white Ruby DSL
+      %p.text-xs.text-slate-500 Editable source of truth. Invalid input is preserved.
+    .flex.items-center.gap-2
+      %button#undo-source.text-xs.text-slate-400.hover:text-white{type: "button", disabled: !history.undo?, title: history.undo_label}= history.undo_label ? "Undo #{history.undo_label}" : "Undo"
+      %button#redo-source.text-xs.text-slate-400.hover:text-white{type: "button", disabled: !history.redo?, title: history.redo_label}= history.redo_label ? "Redo #{history.redo_label}" : "Redo"
+      %span.text-xs.text-slate-500 mobilis.rb
+  %textarea#dsl-source.w-full.resize-y.bg-slate-950.p-4.leading-5.text-slate-200.outline-none.spellcheck-false{class: "h-[32rem] text-[13px]", spellcheck: "false", aria: {label: "Mobilis Ruby DSL"}}= source
+
+#embedded-document-workspace.hidden
+  .flex.items-center.justify-between.gap-2.border-b.border-line.px-3.py-2
+    %div.min-w-0
+      %h2.text-sm.font-semibold.text-white Embedded document
+      %p#embedded-document-path.truncate.text-xs.text-slate-500
+    %button#close-embedded-document.text-xs.text-slate-400.hover:text-white{type: "button"} Return to Ruby
+  .p-3
+    %p#embedded-document-state.mb-2.text-slate-500{class: "text-[10px]"} Clean staged document
+    %textarea#embedded-document-editor.h-96.w-full.resize-y.rounded.border.border-line.bg-slate-950.p-3.text-xs.leading-5.text-slate-200.outline-none{spellcheck: "false", aria: {label: "Embedded document editor"}}
+    #embedded-document-conflict.mt-2.hidden.rounded.border.border-amber-950.bg-amber-950.p-2.text-xs.text-amber-200 Parent Ruby changed; saving will be rejected until this document is reopened.
+    .mt-2.flex.justify-end.gap-2
+      %button#discard-embedded-document.rounded.border.border-line.px-3.py-2.text-xs.text-slate-300.hover:bg-slate-800{type: "button"} Discard changes
+      %button#save-embedded-document.rounded.bg-teal-300.px-3.py-2.text-xs.font-bold.text-slate-950.hover:bg-teal-200{type: "button", disabled: true} Save into Ruby archive

@@ -4,6 +4,8 @@
       %h1.text-base.font-semibold.tracking-tight.text-white Mobilis Browser Playground
       %p.text-xs.text-slate-400 CRuby/WASM · Prism · real Mobilis generators · no backend
     .flex.items-center.gap-2
+      #runtime-metrics-region
+        != runtime_metrics
       %span#runtime-status.rounded-full.border.border-teal-900.bg-teal-950.px-2.py-1.text-xs.text-teal-300 Local runtime ready
       %button#download-dsl.rounded.border.border-line.px-3.py-2.text-xs.text-slate-200.hover:bg-slate-800 Download DSL
       %button#download-authoring-bundle.rounded.border.border-line.px-3.py-2.text-xs.text-slate-200.hover:bg-slate-800 Local bundle

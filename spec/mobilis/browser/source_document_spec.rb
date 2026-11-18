@@ -159,6 +159,62 @@ RSpec.describe Mobilis::Browser::SourceDocument do
       .to raise_error(ArgumentError, /Dynamic relationships/)
   end
 
+  it "locates and atomically commits literal embedded archives" do
+    payload = Mobilis::EmbeddedArchive.pack(files: {"lib/app.rb" => "puts :before\n", "README.md" => "keep\n"})
+    embedded = <<~RUBY
+      # preserve the parent
+      Mobilis::DSL.build("embedded") do
+        rack("app") do |service|
+          service.embedded_archive("source", payload: #{payload.dump}) # preserve this too
+        end
+      end
+    RUBY
+    document = described_class.new(embedded)
+    archive = document.analyze.archives.fetch(0)
+    changed = document.commit_embedded_archive(
+      archive.id,
+      "lib/app.rb",
+      "puts :after\n",
+      parent_revision: archive.parent_revision
+    )
+    reopened = described_class.new(changed).analyze.archives.fetch(0).bundle
+
+    expect(changed).to include("# preserve the parent", "# preserve this too")
+    expect(reopened.entry("lib/app.rb").content).to eq("puts :after\n")
+    expect(reopened.entry("README.md").content).to eq("keep\n")
+    expect(described_class.new(changed).analyze).to be_valid
+  end
+
+  it "rejects an embedded archive commit when the parent revision changed" do
+    payload = Mobilis::EmbeddedArchive.pack(files: {"app.rb" => "before\n"})
+    embedded = <<~RUBY
+      Mobilis::DSL.build("embedded") do
+        rack("app") { |service| service.embedded_archive("source", payload: #{payload.dump}) }
+      end
+    RUBY
+    opened = described_class.new(embedded).analyze.archives.fetch(0)
+    newer = described_class.new("# newer\n#{embedded}")
+
+    expect do
+      newer.commit_embedded_archive(opened.id, "app.rb", "after\n", parent_revision: opened.parent_revision)
+    end.to raise_error(ArgumentError, /parent Ruby source changed/)
+    expect(newer.source).to eq("# newer\n#{embedded}")
+  end
+
+  it "reports malformed embedded payloads without rewriting source" do
+    embedded = <<~RUBY
+      Mobilis::DSL.build("embedded") do
+        rack("app") { |service| service.embedded_archive("source", payload: "broken") }
+      end
+    RUBY
+
+    analysis = described_class.new(embedded).analyze
+
+    expect(analysis).not_to be_valid
+    expect(analysis.errors.join).to match(/Base64|archive/i)
+    expect(analysis.source).to eq(embedded)
+  end
+
   it "authors Rails while evaluating generate declarations without materializing" do
     rails_source = <<~RUBY
       # locally executable definition

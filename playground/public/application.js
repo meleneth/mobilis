@@ -21,6 +21,7 @@ mermaid.initialize({
 
 window.MobilisDiagram = createDiagramRenderer();
 window.MobilisSelection = createSelectionController();
+window.MobilisDocuments = createDocumentController();
 installEventGate();
 window.MobilisDownloads = {
   file(name, base64) {
@@ -170,9 +171,104 @@ function createSelectionController() {
   };
 }
 
+function createDocumentController() {
+  let active = null;
+
+  function decodeText(base64) {
+    const bytes = Uint8Array.from(atob(base64), character => character.charCodeAt(0));
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  }
+
+  function render() {
+    const workspace = document.getElementById("embedded-document-workspace");
+    const rubyWorkspace = document.getElementById("ruby-document-workspace");
+    if (!workspace) return;
+    workspace.classList.toggle("hidden", !active);
+    rubyWorkspace?.classList.toggle("hidden", Boolean(active));
+    if (!active) return;
+
+    const current = document.querySelector(`.open-embedded-member[data-document-id="${CSS.escape(active.documentId)}"]`);
+    const conflicted = active.conflicted || !current || current.dataset.parentRevision !== active.parentRevision;
+    const editor = document.getElementById("embedded-document-editor");
+    editor.value = active.content;
+    document.getElementById("embedded-document-path").textContent = active.path;
+    document.getElementById("embedded-document-conflict").classList.toggle("hidden", !conflicted);
+    updateDirtyState();
+  }
+
+  function updateDirtyState() {
+    if (!active) return;
+    const dirty = active.content !== active.original;
+    const state = document.getElementById("embedded-document-state");
+    const save = document.getElementById("save-embedded-document");
+    if (state) state.textContent = dirty ? "Unsaved staged changes" : "Clean staged document";
+    if (save) save.disabled = !dirty;
+  }
+
+  return {
+    open(button) {
+      const content = decodeText(button.dataset.contentBase64);
+      active = {
+        documentId: button.dataset.documentId,
+        archiveId: button.dataset.archiveId,
+        path: button.dataset.path,
+        parentRevision: button.dataset.parentRevision,
+        original: content,
+        content
+      };
+      render();
+      document.getElementById("embedded-document-editor")?.focus();
+    },
+    edit(content) {
+      if (!active) return;
+      active.content = content;
+      updateDirtyState();
+    },
+    discard() {
+      if (!active) return;
+      active.content = active.original;
+      render();
+    },
+    close() {
+      active = null;
+      render();
+      document.getElementById("dsl-source")?.focus();
+    },
+    save() {
+      if (!active || active.content === active.original) return;
+      document.dispatchEvent(new CustomEvent("mobilis:archive-commit", { detail: {
+        archiveId: active.archiveId,
+        path: active.path,
+        content: active.content,
+        parentRevision: active.parentRevision
+      } }));
+    },
+    committed() {
+      active = null;
+      render();
+    },
+    commitFailed(message) {
+      const state = document.getElementById("embedded-document-state");
+      if (state) state.textContent = `Save failed: ${message}`;
+    },
+    parentChanged() {
+      if (!active) return;
+      active.conflicted = true;
+      render();
+    },
+    refresh: render,
+    activeRevision() { return active?.parentRevision ?? null; }
+  };
+}
+
 function installEventGate() {
   document.addEventListener("input", event => {
+    if (event.target.id === "embedded-document-editor") {
+      window.MobilisDocuments.edit(event.target.value);
+      return;
+    }
     if (event.target.id !== "dsl-source") return;
+    window.MobilisDocuments.parentChanged();
     document.dispatchEvent(new CustomEvent("mobilis:source-input", { detail: { target: event.target } }));
   });
 
@@ -199,11 +295,32 @@ function installEventGate() {
       window.MobilisSelection.focusRange(target.dataset.startOffset, target.dataset.endOffset);
       return;
     }
+    if (target.matches(".open-embedded-member")) {
+      event.preventDefault();
+      window.MobilisDocuments.open(target);
+      return;
+    }
+    if (target.id === "discard-embedded-document") {
+      event.preventDefault();
+      window.MobilisDocuments.discard();
+      return;
+    }
+    if (target.id === "close-embedded-document") {
+      event.preventDefault();
+      window.MobilisDocuments.close();
+      return;
+    }
+    if (target.id === "save-embedded-document") {
+      event.preventDefault();
+      window.MobilisDocuments.save();
+      return;
+    }
 
     const semanticClass = target.matches(".remove-service, .remove-relationship, .add-relationship, .file-link");
     const semanticId = [
-      "add-service", "add-dependency", "generate-button", "download-dsl",
-      "download-authoring-bundle", "download-file", "download-project"
+      "add-service", "add-connection", "generate-button", "download-dsl",
+      "download-authoring-bundle", "download-file", "download-project",
+      "undo-source", "redo-source"
     ].includes(target.id);
     if (!semanticClass && !semanticId) return;
 

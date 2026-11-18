@@ -103,3 +103,26 @@
       %details.rounded.border.border-line.bg-slate-950
         %summary.cursor-pointer.px-3.py-2.text-xs.text-slate-300 Complete validated configuration
         %pre.max-h-80.overflow-auto.whitespace-pre-wrap.border-t.border-line.p-3.text-slate-400{class: "text-[10px]"}= service.configuration
+
+.border-t.border-line
+  .flex.items-center.justify-between.px-3.py-2
+    %div
+      %h3.text-xs.font-semibold.text-white Embedded documents
+      %p.text-slate-500{class: "text-[10px]"} Browse and stage text edits without invoking Ruby.
+    %span.rounded.bg-slate-800.px-2.py-1.text-slate-300{class: "text-[10px]"}= "#{documents.archives.length} archives"
+  #embedded-archive-browser.space-y-2.p-3.pt-0
+    - if documents.archives.empty?
+      %p.rounded.border.border-dashed.border-line.p-3.text-xs.text-slate-500 No literal embedded_archive declarations in the validated source.
+    - documents.archives.each do |archive_document|
+      - declaration = archives.find { |candidate| candidate.id == archive_document.id }
+      %details.embedded-archive.rounded.border.border-line.bg-slate-950{data: {archive_id: archive_document.id}}
+        %summary.cursor-pointer.px-3.py-2.text-xs.text-slate-200
+          = archive_document.name
+          %span.ml-2.text-slate-500= "#{documents.members(archive_document.id).length} files"
+        .space-y-1.border-t.border-line.p-2
+          - documents.members(archive_document.id).each do |member|
+            %button.open-embedded-member.flex.w-full.items-center.justify-between.rounded.px-2.py-2.text-left.text-xs.hover:bg-slate-800{type: "button", disabled: !member.editable, data: {document_id: member.id, archive_id: member.archive_id, path: member.path, content_type: member.content_type, content_base64: member.content_base64, parent_revision: member.parent_revision}}
+              %span.truncate= member.path
+              %span.text-slate-500{class: "text-[10px]"}= member.editable ? "text" : "binary"
+          - if declaration
+            %button.focus-source.mt-1.text-xs.text-teal-300.hover:text-teal-200{type: "button", data: {start_offset: declaration.start_offset, end_offset: declaration.end_offset}} Focus archive declaration

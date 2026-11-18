@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "base64"
 require "fileutils"
 
 module Mobilis
@@ -14,12 +15,18 @@ module Mobilis
       end
 
       def to_h
-        {
+        result = {
           type: self.class.name,
           path: @path,
-          content: @content,
           executable: @executable
         }
+        text = @content.dup.force_encoding(Encoding::UTF_8)
+        if text.valid_encoding?
+          result[:content] = text
+        else
+          result[:content_base64] = Base64.strict_encode64(@content)
+        end
+        result
       end
 
       def write_file
@@ -31,7 +38,8 @@ module Mobilis
       end
 
       def self.from_h(hash)
-        new(hash[:path], hash[:content], executable: hash[:executable] == true)
+        content = hash.key?(:content_base64) ? Base64.strict_decode64(hash[:content_base64]) : hash[:content]
+        new(hash[:path], content, executable: hash[:executable] == true)
       end
 
       def ppx_fields(dsl)

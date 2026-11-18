@@ -39,6 +39,20 @@ module Mobilis
         model
       end
 
+      def embedded_archive(name, payload:)
+        raise ArgumentError, "Embedded archive name cannot be empty" if name.to_s.strip.empty?
+
+        archive = Mobilis::EmbeddedArchive.unpack(payload)
+        existing_paths = models.grep(Mobilis::Model::File).map(&:path)
+        conflict = archive.entries.find { |entry| existing_paths.include?(entry.path) }
+        raise ArgumentError, "Embedded archive member conflicts with existing file #{conflict.path}" if conflict
+
+        archive.entries.each do |entry|
+          add_model(Mobilis::Model::File.new(entry.path, entry.content, executable: entry.executable))
+        end
+        archive
+      end
+
       def to_h
         # @type var h: Hash[Symbol, untyped]
         h = {

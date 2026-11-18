@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
+require "digest"
 require "prism"
 
 module Mobilis
@@ -30,7 +31,11 @@ module Mobilis
       Relationship = Data.define(
         :id, :kind, :from, :to, :editable, :start_offset, :end_offset, :properties
       )
-      Analysis = Data.define(:source, :system, :declarations, :relationships, :errors) do
+      ArchiveDeclaration = Data.define(
+        :id, :name, :editable, :payload, :payload_start_offset, :payload_end_offset,
+        :start_offset, :end_offset, :parent_revision, :bundle
+      )
+      Analysis = Data.define(:source, :system, :declarations, :relationships, :archives, :errors) do
         def valid? = errors.empty?
       end
 
@@ -52,7 +57,7 @@ module Mobilis
           return invalid_analysis(["Source must define a system with Mobilis::DSL.generate or Mobilis::DSL.build"])
         end
 
-        Analysis.new(source:, system:, declarations: declarations, relationships: relationships, errors: [])
+        Analysis.new(source:, system:, declarations: declarations, relationships: relationships, archives: archives, errors: [])
       rescue ArgumentError, KeyError, LoadError, NameError, NotImplementedError,
         RuntimeError, SecurityError, SyntaxError, SystemCallError, TypeError => error
         invalid_analysis(["#{error.class}: #{error.message}"])
@@ -136,8 +141,6 @@ module Mobilis
         replace(insertion, insertion, "  #{kind}(from: #{from.dump}, to: #{to.dump}#{options})\n")
       end
 
-      alias_method :add_dependency, :add_relationship
-
       def update_relationship(id, property, value)
         relationship, node = editable_relationship(id)
         property = property.to_sym
@@ -181,10 +184,29 @@ module Mobilis
         replace(start_offset, end_offset, "")
       end
 
+      def commit_embedded_archive(id, path, content, parent_revision:)
+        raise ArgumentError, "The parent Ruby source changed after this archive was opened" unless parent_revision == revision
+
+        archive = archives.find { |candidate| candidate.id == id.to_s }
+        raise ArgumentError, "Embedded archive declaration is no longer present" unless archive
+        raise ArgumentError, "Dynamic embedded archive payloads cannot be safely rewritten" unless archive.editable
+
+        payload = Mobilis::EmbeddedArchive.replace(archive.payload, path, content)
+        changed = replace(archive.payload_start_offset, archive.payload_end_offset, payload)
+        validation = self.class.new(changed).analyze
+        raise ArgumentError, validation.errors.join("\n") unless validation.valid?
+
+        changed
+      end
+
+      def revision
+        Digest::SHA256.hexdigest(source)
+      end
+
       private
 
       def invalid_analysis(errors)
-        Analysis.new(source:, system: nil, declarations: [], relationships: [], errors:)
+        Analysis.new(source:, system: nil, declarations: [], relationships: [], archives: [], errors:)
       end
 
       def evaluate
@@ -253,6 +275,42 @@ module Mobilis
             properties:
           )
         end
+      end
+
+      def archives
+        archive_nodes.map do |node|
+          name_node = node.arguments&.arguments&.first
+          payload_element = keyword_elements(node).find { |element| keyword_name(element) == :payload }
+          payload_node = payload_element&.value
+          editable = name_node.is_a?(Prism::StringNode) && payload_node.is_a?(Prism::StringNode)
+          payload = payload_node.unescaped if payload_node.is_a?(Prism::StringNode)
+          ArchiveDeclaration.new(
+            id: "archive-#{node.location.start_offset}",
+            name: name_node.is_a?(Prism::StringNode) ? name_node.unescaped : "dynamic archive",
+            editable:,
+            payload:,
+            payload_start_offset: payload_node&.content_loc&.start_offset,
+            payload_end_offset: payload_node&.content_loc&.end_offset,
+            start_offset: node.location.start_offset,
+            end_offset: node.location.end_offset,
+            parent_revision: revision,
+            bundle: payload ? Mobilis::EmbeddedArchive.unpack(payload) : nil
+          )
+        end
+      end
+
+      def archive_nodes
+        each_prism_node(root_call&.block).select do |node|
+          node.is_a?(Prism::CallNode) && node.name == :embedded_archive
+        end
+      end
+
+      def each_prism_node(node, result = [])
+        return result unless node
+
+        result << node
+        node.compact_child_nodes.each { |child| each_prism_node(child, result) }
+        result
       end
 
       def relationship_names(node)

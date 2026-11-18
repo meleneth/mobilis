@@ -18,8 +18,10 @@ module MobilisPlayground
 
     def initialize(renderer: Renderer.new)
       @renderer = renderer
+      @runtime = Mobilis::Browser::SemanticRuntime.new
+      @history = Mobilis::Browser::SourceHistory.new
       @source = INITIAL_SOURCE
-      @analysis = source_document.analyze
+      @analysis = @runtime.measure("initialize") { source_document.analyze }
       @topology = Mobilis::Browser::Topology.from_analysis(@analysis)
       @diagram_stale = false
       @errors = @analysis.errors
@@ -38,6 +40,7 @@ module MobilisPlayground
         builder: render_builder,
         editor: render_editor,
         inspector: render_inspector,
+        runtime_metrics: render_runtime_metrics,
         architecture: render_architecture,
         files: render_files,
         file_content: render_file_content,
@@ -52,13 +55,15 @@ module MobilisPlayground
     private
 
     def bind_events(document)
-      input_handler = proc { |event| handle_input(event) }
-      click_handler = proc { |event| handle_click(event) }
-      change_handler = proc { |event| handle_change(event) }
+      input_handler = proc { |event| semantic_request("validate source") { handle_input(event) } }
+      click_handler = proc { |event| semantic_request("semantic action") { handle_click(event) } }
+      change_handler = proc { |event| semantic_request("structured edit") { handle_change(event) } }
+      archive_handler = proc { |event| semantic_request("embedded document commit") { handle_archive_commit(event) } }
       document.addEventListener("mobilis:source-input", &input_handler)
       document.addEventListener("mobilis:semantic-click", &click_handler)
       document.addEventListener("mobilis:semantic-change", &change_handler)
-      @event_handlers.concat([input_handler, click_handler, change_handler])
+      document.addEventListener("mobilis:archive-commit", &archive_handler)
+      @event_handlers.concat([input_handler, click_handler, change_handler, archive_handler])
     end
 
     def handle_input(event)
@@ -70,6 +75,7 @@ module MobilisPlayground
         @analysis = analysis
         @topology = Mobilis::Browser::Topology.from_analysis(analysis)
         @diagram_stale = false
+        @history.reset
         @errors = []
         @status = "Source is valid. Visual model updated locally."
         replace("builder-region", render_builder)
@@ -144,7 +150,7 @@ module MobilisPlayground
       else
         handle_button(id)
       end
-    rescue StandardError => error
+    rescue ArgumentError, KeyError, RuntimeError, TypeError => error
       report_error(error)
     end
 
@@ -154,22 +160,60 @@ module MobilisPlayground
         type = element("new-service-type")[:value].to_s
         name = element("new-service-name")[:value].to_s
         visual_edit { source_document.add(type, name) }
-      when "add-dependency"
+      when "add-connection"
         from = element("dependency-from")[:value].to_s
         to = element("dependency-to")[:value].to_s
         raise ArgumentError, "A service cannot depend on itself" if from == to
 
-        visual_edit { source_document.add_dependency(from:, to:) }
+        visual_edit { source_document.add_relationship(from:, to:) }
       when "generate-button" then generate
       when "download-dsl" then download_dsl
       when "download-authoring-bundle" then download_authoring_bundle
       when "download-file" then download_file
       when "download-project" then download_project
+      when "undo-source" then restore_history(:undo)
+      when "redo-source" then restore_history(:redo)
       end
     end
 
-    def visual_edit
+    def visual_edit(label: "structured edit")
       changed = yield
+      analysis = self.class.source_document(changed).analyze
+      raise ArgumentError, analysis.errors.join("\n") unless analysis.valid?
+
+      @history.record(@source, changed, label:)
+      @source = changed
+      @analysis = analysis
+      @topology = Mobilis::Browser::Topology.from_analysis(analysis)
+      @diagram_stale = false
+      @errors = []
+      @status = "Visual edit applied surgically to Ruby source."
+      replace("editor-region", render_editor)
+      replace("builder-region", render_builder)
+      replace("inspector-region", render_inspector)
+      replace("architecture-region", render_architecture)
+      render_diagram
+      refresh_selection
+      replace("diagnostics-region", render_diagnostics)
+    end
+
+    def handle_archive_commit(event)
+      detail = event[:detail]
+      changed = source_document.commit_embedded_archive(
+        detail[:archiveId].to_s,
+        detail[:path].to_s,
+        detail[:content].to_s,
+        parent_revision: detail[:parentRevision].to_s
+      )
+      visual_edit(label: "embedded document edit") { changed }
+      JS.global[:MobilisDocuments].call(:committed)
+    rescue ArgumentError, KeyError, RuntimeError, TypeError => error
+      report_error(error)
+      JS.global[:MobilisDocuments].call(:commitFailed, error.message)
+    end
+
+    def restore_history(direction)
+      changed = @history.public_send(direction, @source)
       analysis = self.class.source_document(changed).analyze
       raise ArgumentError, analysis.errors.join("\n") unless analysis.valid?
 
@@ -178,7 +222,7 @@ module MobilisPlayground
       @topology = Mobilis::Browser::Topology.from_analysis(analysis)
       @diagram_stale = false
       @errors = []
-      @status = "Visual edit applied surgically to Ruby source."
+      @status = "Structured source edit #{direction == :undo ? "undone" : "redone"}."
       replace("editor-region", render_editor)
       replace("builder-region", render_builder)
       replace("inspector-region", render_inspector)
@@ -275,7 +319,7 @@ module MobilisPlayground
     end
 
     def render_editor
-      @renderer.render(:editor, source: @source)
+      @renderer.render(:editor, source: @source, history: @history)
     end
 
     def render_architecture
@@ -283,7 +327,12 @@ module MobilisPlayground
     end
 
     def render_inspector
-      @renderer.render(:inspector, services: service_inspector.services)
+      @renderer.render(
+        :inspector,
+        services: service_inspector.services,
+        documents: Mobilis::Browser::VirtualDocument.new(@analysis),
+        archives: @analysis.archives
+      )
     end
 
     def service_inspector
@@ -305,6 +354,7 @@ module MobilisPlayground
 
     def refresh_selection
       JS.global[:MobilisSelection].call(:refresh)
+      JS.global[:MobilisDocuments].call(:refresh)
     end
 
     def render_files
@@ -321,6 +371,16 @@ module MobilisPlayground
 
     def render_diagnostics
       @renderer.render(:diagnostics, errors: @errors, status: @status)
+    end
+
+    def render_runtime_metrics
+      @renderer.render(:runtime_metrics, runtime: @runtime)
+    end
+
+    def semantic_request(label)
+      @runtime.measure(label) { yield }
+    ensure
+      replace("runtime-metrics-region", render_runtime_metrics) if element("runtime-metrics-region")
     end
   end
 end
