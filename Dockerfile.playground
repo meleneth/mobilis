@@ -12,6 +12,7 @@ COPY playground/package.json playground/package-lock.json ./playground/
 RUN cd playground && npm ci
 
 COPY lib ./lib
+COPY spec/fixtures/browser ./spec/fixtures/browser
 COPY playground ./playground
 RUN playground/scripts/build
 
