@@ -19,6 +19,20 @@ For a host build, run `npm ci`, install the isolated `playground/Gemfile`, and
 run `playground/scripts/build`. Serve `playground/public/` over HTTP; browsers
 do not allow the WASM application to boot reliably from `file://` URLs.
 
+## Deploy to Devastation
+
+From a clean, committed working tree, build, push, and roll out the playground
+to the local Devastation Kubernetes cluster with:
+
+```sh
+./deploy-devastation.sh
+```
+
+The script tags the image with the current commit, pushes it to
+`registry.deva.station`, updates only the `mobilis/mobilis` Deployment, and
+waits for the rollout. `REGISTRY`, `KUBE_CONTEXT`, `NAMESPACE`, `DEPLOYMENT`,
+`CONTAINER`, and `ROLLOUT_TIMEOUT` may be overridden through the environment.
+
 ## Authoring and local generation
 
 All DSL service methods discovered in `Mobilis::DSL::DSLContext` appear in the
