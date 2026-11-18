@@ -1,0 +1,17 @@
+@import "tailwindcss";
+@source "../app/**/*.rb";
+@source "../templates/**/*.haml";
+@source "../public/index.html";
+
+@theme {
+  --color-ink: #e4edf4;
+  --color-panel: #111a22;
+  --color-panel-soft: #17232d;
+  --color-line: #2b3b48;
+  --color-accent: #5eead4;
+  --color-warning: #fbbf24;
+}
+
+html { color-scheme: dark; }
+body { background: #091017; color: var(--color-ink); }
+textarea, pre { tab-size: 2; }

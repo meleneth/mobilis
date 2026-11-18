@@ -1,0 +1,8 @@
+- tone = errors.empty? ? "border-teal-950 bg-teal-950/30 text-teal-300" : "border-red-950 bg-red-950/30 text-red-300"
+.rounded-lg.border.p-3.text-xs{class: tone}
+  - if errors.empty?
+    = status
+  - else
+    %strong.block.pb-1 Source or generation error
+    - errors.each do |error|
+      %p.whitespace-pre-wrap= error

@@ -1,0 +1,55 @@
+.flex.items-center.justify-between.border-b.border-line.px-3.py-2
+  %div
+    %h2.text-sm.font-semibold.text-white Service builder
+    %p.text-xs.text-slate-500 Visual controls update exact Ruby source ranges.
+  %span.rounded.bg-slate-800.px-2.py-1.text-xs.text-slate-300= "#{declarations.length} services"
+.space-y-2.p-3
+  - if declarations.empty?
+    .rounded.border.border-dashed.border-line.p-6.text-center.text-xs.text-slate-500 No statically mappable service declarations.
+  - declarations.each do |service|
+    .service-card.rounded.border.border-line.bg-panel-soft.p-3{data: {service_id: service.id}}
+      - capability = capabilities[service.name]
+      .mb-2.flex.items-center.justify-between.gap-2
+        %span.uppercase.tracking-wide.text-slate-500{class: "text-[10px]"}= service.type
+        - if capability&.browser_generation
+          %span.rounded.bg-teal-950.px-2.py-1.text-teal-300{class: "text-[10px]"} Browser generation
+        - else
+          %span.rounded.bg-amber-950.px-2.py-1.text-amber-300{class: "text-[10px]", title: capability&.reason} Local generation
+      .grid.gap-2{class: "sm:grid-cols-[9rem_1fr_auto]"}
+        %select.service-type.rounded.border.border-line.bg-slate-950.px-2.py-2.text-xs{disabled: !service.editable}
+          - service_types.each do |type|
+            %option{value: type, selected: type == service.type}= type
+        %input.service-name.min-w-0.rounded.border.border-line.bg-slate-950.px-2.py-2.text-xs.text-white{value: service.name, disabled: !service.editable, aria: {label: "Service name"}}
+        %button.remove-service.rounded.border.border-red-950.px-2.py-2.text-xs.text-red-300.hover:bg-red-950{disabled: !service.editable} Remove
+      - unless service.editable
+        %p.mt-2.text-xs.text-warning Dynamic expression preserved; visual rewriting is disabled.
+      - unless service.properties.empty?
+        .mt-2.flex.flex-wrap.gap-2.text-xs.text-slate-400
+          - service.properties.each do |key, value|
+            %span.rounded.bg-slate-950.px-2.py-1= "#{key}: #{value}"
+      - schema = property_schemas.fetch(service.type, {})
+      - unless schema.empty?
+        .mt-3.grid.gap-2.border-t.border-line.pt-3.sm:grid-cols-2
+          - schema.each do |property, details|
+            - value = service.properties.fetch(property, details[:default])
+            %label.text-slate-400{class: "text-[11px]"}
+              %span.mb-1.block= property
+              - if details[:kind] == :boolean
+                %input.service-property.h-4.w-4.accent-teal-300{type: "checkbox", checked: value == true, disabled: value == :dynamic, data: {property: property}}
+              - else
+                %input.service-property.w-full.rounded.border.border-line.bg-slate-950.px-2.py-2.text-xs.text-white{value: value.is_a?(Array) ? value.join(", ") : value, disabled: value == :dynamic, data: {property: property}}
+  .grid.gap-2.border-t.border-line.pt-3{class: "sm:grid-cols-[9rem_1fr_auto]"}
+    %select#new-service-type.rounded.border.border-line.bg-slate-950.px-2.py-2.text-xs
+      - service_types.each do |type|
+        %option{value: type}= type
+    %input#new-service-name.min-w-0.rounded.border.border-line.bg-slate-950.px-2.py-2.text-xs{placeholder: "service-name", aria: {label: "New service name"}}
+    %button#add-service.rounded.border.border-teal-900.px-3.py-2.text-xs.text-teal-300.hover:bg-teal-950 Add service
+  - if declarations.length > 1
+    .grid.gap-2{class: "sm:grid-cols-[1fr_1fr_auto]"}
+      %select#dependency-from.rounded.border.border-line.bg-slate-950.px-2.py-2.text-xs
+        - declarations.each do |service|
+          %option{value: service.name}= service.name
+      %select#dependency-to.rounded.border.border-line.bg-slate-950.px-2.py-2.text-xs
+        - declarations.each do |service|
+          %option{value: service.name}= service.name
+      %button#add-dependency.rounded.border.border-line.px-3.py-2.text-xs.text-slate-300.hover:bg-slate-800 Connect

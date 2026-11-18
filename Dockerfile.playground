@@ -1,0 +1,23 @@
+FROM ruby:4.0.9-trixie AS build
+
+RUN apt-get update \
+  && apt-get install --no-install-recommends -y nodejs npm \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+COPY playground/Gemfile playground/Gemfile.lock ./playground/
+RUN cd playground && bundle install
+
+COPY playground/package.json playground/package-lock.json ./playground/
+RUN cd playground && npm ci
+
+COPY lib ./lib
+COPY playground ./playground
+RUN playground/scripts/build
+
+FROM nginx:1.30.6-trixie
+
+COPY playground/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /build/playground/public /usr/share/nginx/html
+
+EXPOSE 80

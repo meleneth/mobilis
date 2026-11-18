@@ -1,0 +1,7 @@
+services:
+  playground:
+    build:
+      context: .
+      dockerfile: Dockerfile.playground
+    ports:
+      - "8080:80"

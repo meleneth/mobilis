@@ -81,6 +81,18 @@ The most complete current smoke demos are [`08_large_iam_system.rb`](https://git
 service composition and [`18_mnbme_otel_system.rb`](https://github.com/meleneth/mobilis/blob/core/scripts/18_mnbme_otel_system.rb) for Rack/local-gem/multi-
 instance behavior.
 
+## Browser playground
+
+The zero-backend playground runs Mobilis in CRuby/WASM and is available locally
+at <http://localhost:8080>:
+
+```sh
+docker compose up --build
+```
+
+See [playground/README.md](playground/README.md) for architecture, generator
+capabilities, local export instructions, security boundaries, and limitations.
+
 ## Contributing
 
 See the [contributor guide](https://meleneth.github.io/mobilis/contributing.html)

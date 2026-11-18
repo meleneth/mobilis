@@ -78,3 +78,10 @@ build-iPhoneSimulator/
 /docs/.vitepress/dist/
 __pycache__/
 *.pyc
+/playground/node_modules/
+/playground/build/
+/playground/public/application.css
+/playground/public/mobilis.wasm
+/playground/public/filesystem.json
+/playground/public/parity/
+/playground/public/vendor/

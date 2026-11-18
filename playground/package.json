@@ -1,0 +1,21 @@
+{
+  "name": "mobilis-browser-playground",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i assets/application.css -o public/application.css --minify",
+    "test:browser": "playwright test",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hotwired/turbo": "8.0.21",
+    "@ruby/4.0-wasm-wasi": "2.10.1",
+    "@ruby/wasm-wasi": "2.10.1",
+    "@zip.js/zip.js": "2.8.18"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "@tailwindcss/cli": "4.1.17",
+    "tailwindcss": "4.1.17",
+    "vitest": "4.0.13"
+  }
+}

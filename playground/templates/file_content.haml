@@ -1,0 +1,9 @@
+.flex.items-center.justify-between.border-b.border-line.px-3.py-2
+  %span.truncate.text-xs.text-slate-300= selected_file || "No generated file selected"
+  - if selected_file
+    %button#download-file.text-xs.text-teal-300.hover:text-teal-200 Download file
+- if selected_file
+  %pre.overflow-auto.whitespace-pre.p-4.text-xs.leading-5.text-slate-300{class: "max-h-[32rem]"}
+    %code= file_content
+- else
+  .grid.min-h-64.place-items-center.text-xs.text-slate-600 Generated output never overwrites the DSL editor.

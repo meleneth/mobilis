@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+playground_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+repository_dir="$(cd "${playground_dir}/.." && pwd)"
+
+cd "${playground_dir}"
+mkdir -p public/vendor/ruby-wasm-wasi public/vendor/wasi public/vendor/zip public/parity
+
+npm run build:css
+cp node_modules/@hotwired/turbo/dist/turbo.es2017-esm.js public/vendor/
+cp node_modules/@ruby/wasm-wasi/dist/browser.umd.js public/vendor/ruby-wasm-wasi.umd.js
+cp -R node_modules/@ruby/wasm-wasi/dist/esm/. public/vendor/ruby-wasm-wasi/
+cp -R node_modules/@bjorn3/browser_wasi_shim/dist/. public/vendor/wasi/
+cp -R node_modules/@zip.js/zip.js/. public/vendor/zip/
+cp "${repository_dir}/spec/fixtures/browser/postgres-compose.yml" public/parity/
+cp node_modules/@ruby/4.0-wasm-wasi/dist/ruby+stdlib.wasm public/mobilis.wasm
+
+haml_path="$(BUNDLE_GEMFILE="${playground_dir}/Gemfile" bundle show haml)"
+temple_path="$(BUNDLE_GEMFILE="${playground_dir}/Gemfile" bundle show temple)"
+thor_path="$(BUNDLE_GEMFILE="${playground_dir}/Gemfile" bundle show thor)"
+tilt_path="$(BUNDLE_GEMFILE="${playground_dir}/Gemfile" bundle show tilt)"
+staging_dir="$(mktemp -d)"
+trap 'rm -rf "${staging_dir}"' EXIT
+mkdir -p "${staging_dir}/src/playground" "${staging_dir}/gems"
+cp -R "${repository_dir}/lib" "${staging_dir}/src/lib"
+cp -R "${playground_dir}/app" "${staging_dir}/src/playground/app"
+cp -R "${playground_dir}/templates" "${staging_dir}/src/playground/templates"
+cp -R "${haml_path}/lib" "${staging_dir}/gems/haml"
+cp -R "${temple_path}/lib" "${staging_dir}/gems/temple"
+cp -R "${thor_path}/lib" "${staging_dir}/gems/thor"
+cp -R "${tilt_path}/lib" "${staging_dir}/gems/tilt"
+
+ruby scripts/build_filesystem.rb "${staging_dir}" public/filesystem.json

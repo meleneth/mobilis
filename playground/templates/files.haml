@@ -1,0 +1,11 @@
+.flex.items-center.justify-between.border-b.border-line.px-3.py-2
+  %div
+    %h2.text-sm.font-semibold.text-white Generated files
+    %p.text-xs.text-slate-500 Read-only artifacts from Mobilis.
+  - unless files.empty?
+    %button#download-project.text-xs.text-teal-300.hover:text-teal-200 Download ZIP
+.max-h-80.overflow-auto.p-2
+  - if files.empty?
+    .p-5.text-center.text-xs.text-slate-500 Generate to inspect project artifacts.
+  - files.each_key do |path|
+    %button.file-link.block.w-full.truncate.rounded.px-2.py-2.text-left.text-xs.hover:bg-slate-800{class: path == selected_file ? "bg-slate-800 text-teal-300" : "text-slate-300", data: {path: path}, title: path}= path

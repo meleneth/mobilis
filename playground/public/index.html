@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Build and generate Mobilis projects entirely in your browser.">
+    <title>Mobilis Browser Playground</title>
+    <link rel="stylesheet" href="/application.css">
+  </head>
+  <body class="min-h-screen font-mono antialiased">
+    <div id="boot" class="grid min-h-screen place-items-center text-sm text-slate-400">
+      <div class="space-y-3 text-center">
+        <div class="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-700 border-t-teal-300"></div>
+        <p>Loading CRuby / WebAssembly…</p>
+      </div>
+    </div>
+    <main id="app"></main>
+    <script type="module" src="/application.js"></script>
+  </body>
+</html>
