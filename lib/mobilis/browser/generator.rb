@@ -7,7 +7,7 @@ module Mobilis
     class Generator
       Result = Data.define(:root, :files)
 
-      def initialize(workspace: "/tmp/mobilis-playground")
+      def initialize(workspace: "mobilis-playground")
         @workspace = workspace
       end
 
@@ -17,7 +17,9 @@ module Mobilis
         FileUtils.mkdir_p(@workspace)
 
         directory = Mobilis::Services::Directory.new(@workspace)
-        root = Mobilis::Manifest.new(system, directory_service: directory).materialize_static
+        root = Mobilis::Browser::FileSystemCompatibility.without_posix_permissions do
+          Mobilis::Manifest.new(system, directory_service: directory).materialize_static
+        end
         files = Dir.glob("**/*", File::FNM_DOTMATCH, base: root)
           .reject { |path| path == "." || path == ".." || File.directory?(File.join(root, path)) }
           .sort

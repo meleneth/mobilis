@@ -8,6 +8,10 @@ module Mobilis
 
       attr_reader :manifest, :realized_env, :realized_node
 
+      def self.generator_capabilities
+        Mobilis::GeneratorCapabilities.browser
+      end
+
       def_delegators :@manifest, :directory_service, :username, :commit_all
 
       def initialize(manifest, realized_env, realized_node)

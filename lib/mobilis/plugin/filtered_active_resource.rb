@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "active_support/inflector"
 require "fileutils"
 
 module Mobilis
@@ -240,6 +239,7 @@ module Mobilis
       end
 
       def singular_name(resource)
+        require "active_support/inflector"
         resource.name.underscore
       end
 

@@ -94,10 +94,9 @@ module Mobilis
     # realized nodes, plugins, service writers, and compose emitters as the
     # native materializer.
     def materialize_static
-      unsupported = system.config_nodes.values.select { |node| node.is_a?(Mobilis::Node::Rails) }
-      unless unsupported.empty?
-        names = unsupported.map(&:name).join(", ")
-        raise ArgumentError, "Static generation cannot scaffold Rails services (#{names}); the native Rails writer requires Docker"
+      capabilities = Mobilis::Browser::Capabilities.project(system)
+      unless capabilities.browser_generation
+        raise ArgumentError, "This project requires local generation. #{capabilities.reason}"
       end
 
       @static_generation = true

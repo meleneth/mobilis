@@ -1,6 +1,12 @@
 module Mobilis
   module ServiceWriter
     class Rails < Mobilis::Base::ServiceWriter
+      def self.generator_capabilities
+        Mobilis::GeneratorCapabilities.local_only(
+          "The Rails writer invokes Docker to run rails new, Bundler, and framework generators."
+        )
+      end
+
       def write
         Dir.chdir("..")
         rails_builder.container_run(realized_node.rails_new_command)

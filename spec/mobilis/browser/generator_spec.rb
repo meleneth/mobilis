@@ -13,7 +13,17 @@ RSpec.describe Mobilis::Browser::Generator do
         "development-compose.yml",
         "mobilis-system.json"
       )
-      expect(result.files.fetch("compose/database.yml")).to include("postgres")
+      expected = File.read(File.expand_path("../../fixtures/browser/postgres-compose.yml", __dir__))
+      expect(result.files.fetch("compose/database.yml")).to eq(expected)
+    end
+  end
+
+  it "produces stable files when generation is repeated" do
+    Dir.mktmpdir do |directory|
+      system = Mobilis::DSL.build("browser-demo") { postgres("database") }
+      generator = described_class.new(workspace: directory)
+
+      expect(generator.call(system).files).to eq(generator.call(system).files)
     end
   end
 
@@ -22,7 +32,7 @@ RSpec.describe Mobilis::Browser::Generator do
       system = Mobilis::DSL.build("browser-demo") { rails("app") }
 
       expect { described_class.new(workspace: directory).call(system) }
-        .to raise_error(ArgumentError, /requires Docker/)
+        .to raise_error(ArgumentError, /requires local generation.*Rails writer invokes Docker/)
     end
   end
 end
