@@ -20,4 +20,18 @@ RSpec.describe MobilisPlayground::Renderer do
 
     expect(stream).to eq('<turbo-stream action="replace" target="diagnostics-region"><template><p>ok</p></template></turbo-stream>')
   end
+
+  it "renders a first-class stale state without changing the retained topology" do
+    analysis = Mobilis::Browser::SourceDocument.new(<<~RUBY).analyze
+      Mobilis::DSL.build("diagram") do
+        postgres("database")
+      end
+    RUBY
+    topology = Mobilis::Browser::Topology.from_analysis(analysis)
+    html = described_class.new.render(:architecture, topology:, stale: true)
+
+    expect(html).to include("Stale — source is invalid")
+    expect(html).to include("1 nodes · 0 edges")
+    expect(html).to include("id='architecture-canvas'")
+  end
 end

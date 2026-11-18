@@ -1,0 +1,15 @@
+.flex.items-center.justify-between.gap-3.border-b.border-line.px-3.py-2
+  %div
+    .flex.items-center.gap-2
+      %h2.text-sm.font-semibold.text-white Architecture
+      - if stale
+        %span.rounded.bg-amber-950.px-2.py-1.text-amber-300{class: "text-[10px]"} Stale — source is invalid
+      - else
+        %span.rounded.bg-teal-950.px-2.py-1.text-teal-300{class: "text-[10px]"} Live from validated DSL
+    %p.text-xs.text-slate-500 Select a service to focus its builder card and Ruby declaration.
+  %span.rounded.bg-slate-800.px-2.py-1.text-xs.text-slate-300= "#{topology.nodes.length} nodes · #{topology.edges.length} edges"
+#architecture-canvas.relative.flex.min-h-64.items-center.justify-center.overflow-auto.p-3{aria: {label: "Mobilis architecture diagram"}}
+  - if topology.empty?
+    .rounded.border.border-dashed.border-line.p-6.text-center.text-xs.text-slate-500 Add a service to visualize the architecture.
+  - else
+    .text-xs.text-slate-500 Rendering architecture…

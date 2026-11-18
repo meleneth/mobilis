@@ -12,6 +12,9 @@
 - Capability-based, all-or-nothing browser generation using real Mobilis
   realized nodes, plugins, writers, compose emitters, and filesystem output.
 - Generated file tree, read-only contents, per-file download, and ZIP export.
+- Live Mermaid architecture derived from the validated `Mobilis::System`, with
+  explicit dependencies, reference relationships, stale-state recovery, and
+  source/builder navigation.
 
 ## Verified
 
@@ -37,3 +40,6 @@ the clean Docker build result.
   JavaScript editor framework is included.
 - Generation remains synchronous in the main VM pending evidence that a worker
   protocol is needed.
+- Diagram navigation is available for direct, statically located service calls.
+  Services produced by nested calls or metaprogramming are still shown from the
+  evaluated model but do not have an independently safe source range to focus.

@@ -3,7 +3,8 @@
 The playground is a static browser application. CRuby runs through ruby.wasm;
 Ruby owns application state, Prism analysis, Haml rendering, DOM event handling,
 and Mobilis execution. Turbo Streams apply targeted updates. JavaScript only
-boots WASM and Turbo and provides browser download/ZIP primitives.
+boots WASM and Turbo, renders Ruby-derived architecture through Mermaid, and
+provides browser download/ZIP primitives.
 
 ## Run
 
@@ -72,6 +73,23 @@ possible plugin/model combination has been exhaustively tested in WASM.
 Mixed projects are all-or-nothing. If any realized writer is local-only, the UI
 keeps full authoring and export support but refuses browser generation. It does
 not omit the incompatible service or display a partial project as complete.
+
+## Live architecture
+
+The architecture panel is derived from the last successfully evaluated
+`Mobilis::System`. It includes explicit `connect` and `route` dependencies plus
+Mobilis reference slots such as a Rails primary database, Alloy's Loki target,
+and pgAdmin databases. Ruby assigns deterministic safe diagram identifiers and
+escapes labels; Mermaid is only the SVG renderer and never parses or changes
+the DSL.
+
+Valid source edits and visual edits replace the diagram through the same
+Turbo-driven application state. Invalid Ruby stays byte-for-byte intact while
+the last valid diagram remains visible with a stale marker. Selecting a node
+focuses the corresponding direct builder declaration when one exists and
+selects its Prism-located Ruby source range. Services created through nested or
+dynamic Ruby expressions remain visible in the diagram but may not have a
+safe source declaration to navigate to.
 
 ## Source invariants
 

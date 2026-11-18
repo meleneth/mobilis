@@ -10,7 +10,8 @@
     "@hotwired/turbo": "8.0.21",
     "@ruby/4.0-wasm-wasi": "2.10.1",
     "@ruby/wasm-wasi": "2.10.1",
-    "@zip.js/zip.js": "2.8.18"
+    "@zip.js/zip.js": "2.8.18",
+    "mermaid": "12.3.0"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",

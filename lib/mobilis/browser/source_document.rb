@@ -72,10 +72,13 @@ module Mobilis
 
       def remove(id)
         declaration, = editable_declaration(id)
-        line_start = source.rindex("\n", declaration.start_offset - 1)&.+(1) || 0
-        line_end = source.index("\n", declaration.end_offset) || declaration.end_offset
-        line_end += 1 if line_end < source.length
-        replace(line_start, line_end, "")
+        ranges = [line_range(declaration.start_offset, declaration.end_offset)]
+        ranges.concat(relationship_nodes.filter_map do |node|
+          line_range(node.location.start_offset, node.location.end_offset) if relationship_names(node).include?(normalize_name(declaration.name))
+        end)
+        ranges.uniq.sort_by(&:first).reverse_each.reduce(source) do |changed, (start_offset, end_offset)|
+          replace_in(changed, start_offset, end_offset, "")
+        end
       end
 
       def update_property(id, property, value)
@@ -165,6 +168,27 @@ module Mobilis
         end
       end
 
+      def relationship_nodes
+        body = root_call&.block&.body
+        return [] unless body.is_a?(Prism::StatementsNode)
+
+        body.body.select do |node|
+          node.is_a?(Prism::CallNode) && node.receiver.nil? && %i[connect route].include?(node.name)
+        end
+      end
+
+      def relationship_names(node)
+        keyword_hash = node.arguments&.arguments&.find { |argument| argument.is_a?(Prism::KeywordHashNode) }
+        return [] unless keyword_hash
+
+        keyword_hash.elements.filter_map do |element|
+          next unless %i[from to candidate shadow].include?(keyword_name(element))
+
+          value = literal_value(element.value)
+          normalize_name(value) unless value == :dynamic
+        end
+      end
+
       def name_node(node)
         argument = node.arguments&.arguments&.first
         argument if argument.is_a?(Prism::StringNode)
@@ -237,8 +261,23 @@ module Mobilis
         source.rindex("\n", offset - 1)&.+(1) || 0
       end
 
+      def line_range(start_offset, end_offset)
+        start_offset = line_start(start_offset)
+        end_offset = source.index("\n", end_offset) || end_offset
+        end_offset += 1 if end_offset < source.length
+        [start_offset, end_offset]
+      end
+
+      def normalize_name(name)
+        name.to_s.tr("_", "-")
+      end
+
       def replace(start_offset, end_offset, replacement)
-        source.byteslice(0, start_offset) + replacement + source.byteslice(end_offset, source.bytesize - end_offset).to_s
+        replace_in(source, start_offset, end_offset, replacement)
+      end
+
+      def replace_in(content, start_offset, end_offset, replacement)
+        content.byteslice(0, start_offset) + replacement + content.byteslice(end_offset, content.bytesize - end_offset).to_s
       end
     end
   end

@@ -1,10 +1,25 @@
 import * as Turbo from "/vendor/turbo.es2017-esm.js";
+import mermaid from "/vendor/mermaid/mermaid.esm.min.mjs";
 import { BlobReader, BlobWriter, ZipWriter } from "/vendor/zip/index.js";
 import { RubyVM } from "/vendor/ruby-wasm-wasi/vm.js";
 import { consolePrinter } from "/vendor/ruby-wasm-wasi/console.js";
 import { Directory, File, OpenFile, PreopenDirectory, WASI } from "/vendor/wasi/index.js";
 
 window.Turbo = Turbo;
+mermaid.initialize({
+  startOnLoad: false,
+  securityLevel: "strict",
+  theme: "base",
+  flowchart: { htmlLabels: false, useMaxWidth: true, curve: "basis" },
+  themeVariables: {
+    background: "#111a22",
+    primaryTextColor: "#e4edf4",
+    lineColor: "#64748b",
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+  }
+});
+
+window.MobilisDiagram = createDiagramRenderer();
 window.MobilisDownloads = {
   file(name, base64) {
     const bytes = Uint8Array.from(atob(base64), character => character.charCodeAt(0));
@@ -19,6 +34,68 @@ window.MobilisDownloads = {
     download(filename, await writer.close());
   }
 };
+
+function createDiagramRenderer() {
+  let generation = 0;
+  let lastSuccessful = null;
+
+  return {
+    async render(source, serializedSelection) {
+      const currentGeneration = ++generation;
+      const selection = JSON.parse(serializedSelection);
+
+      try {
+        const result = await mermaid.render(`mobilis-architecture-${currentGeneration}`, source);
+        if (currentGeneration !== generation) return;
+
+        const target = document.getElementById("architecture-canvas");
+        if (!target) return;
+
+        target.innerHTML = result.svg;
+        result.bindFunctions?.(target);
+        bindDiagramSelection(target, selection);
+        lastSuccessful = { svg: result.svg, selection };
+      } catch (error) {
+        if (currentGeneration !== generation) return;
+
+        const target = document.getElementById("architecture-canvas");
+        if (!target) return;
+
+        target.replaceChildren();
+        if (lastSuccessful) {
+          target.innerHTML = lastSuccessful.svg;
+          bindDiagramSelection(target, lastSuccessful.selection);
+        }
+        const message = document.createElement("p");
+        message.className = "diagram-render-error m-3 rounded border border-red-950 bg-red-950/40 p-3 text-xs text-red-300";
+        message.textContent = `Architecture rendering failed: ${error.message || String(error)}`;
+        target.append(message);
+        console.error("Mermaid architecture rendering failed", error);
+      }
+    }
+  };
+}
+
+function bindDiagramSelection(target, selection) {
+  const renderedNodes = Array.from(target.querySelectorAll(".node"));
+  for (const topologyId of Object.keys(selection)) {
+    const node = renderedNodes.find(candidate => candidate.id.includes(topologyId));
+    if (!node) continue;
+
+    node.setAttribute("role", "button");
+    node.setAttribute("tabindex", "0");
+    node.setAttribute("aria-label", `Focus ${node.textContent.trim()}`);
+    const select = () => document.dispatchEvent(new CustomEvent("mobilis:service-select", {
+      detail: { topologyId }
+    }));
+    node.addEventListener("click", select);
+    node.addEventListener("keydown", event => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      select();
+    });
+  }
+}
 
 function download(name, blob) {
   const url = URL.createObjectURL(blob);

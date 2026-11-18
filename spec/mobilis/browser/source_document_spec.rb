@@ -74,6 +74,27 @@ RSpec.describe Mobilis::Browser::SourceDocument do
     expect(changed).to start_with("# project heading")
   end
 
+  it "removes static connections associated with a visually removed service" do
+    connected = <<~RUBY
+      Mobilis::DSL.build("demo") do
+        rack("api")
+        redis("cache")
+        postgres("database")
+        connect(from: "api", to: "cache")
+        connect(from: "cache", to: "database") # removed with cache
+      end
+    RUBY
+    document = described_class.new(connected)
+    cache = document.analyze.declarations.find { |declaration| declaration.name == "cache" }
+    changed = document.remove(cache.id)
+
+    expect(changed).to include('rack("api")')
+    expect(changed).to include('postgres("database")')
+    expect(changed).not_to include('redis("cache")')
+    expect(changed).not_to include("connect(")
+    expect(described_class.new(changed).analyze).to be_valid
+  end
+
   it "authors Rails while evaluating generate declarations without materializing" do
     rails_source = <<~RUBY
       # locally executable definition

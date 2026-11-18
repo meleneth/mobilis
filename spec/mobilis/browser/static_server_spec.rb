@@ -9,6 +9,10 @@ RSpec.describe "playground static server" do
     expect(configuration).to include("script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'")
   end
 
+  it "allows Mermaid's generated SVG styles" do
+    expect(configuration).to include("style-src 'self' 'unsafe-inline'")
+  end
+
   it "serves WebAssembly with its registered MIME type" do
     expect(configuration).to include("application/wasm wasm")
   end

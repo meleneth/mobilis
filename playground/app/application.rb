@@ -20,6 +20,8 @@ module MobilisPlayground
       @renderer = renderer
       @source = INITIAL_SOURCE
       @analysis = source_document.analyze
+      @topology = Mobilis::Browser::Topology.from_analysis(@analysis)
+      @diagram_stale = false
       @errors = @analysis.errors
       @files = {}
       @selected_file = nil
@@ -35,11 +37,13 @@ module MobilisPlayground
         :layout,
         builder: render_builder,
         editor: render_editor,
+        architecture: render_architecture,
         files: render_files,
         file_content: render_file_content,
         diagnostics: render_diagnostics
       )
       bind_events(document)
+      render_diagram
       self
     end
 
@@ -49,10 +53,12 @@ module MobilisPlayground
       input_handler = proc { |event| handle_input(event) }
       click_handler = proc { |event| handle_click(event) }
       change_handler = proc { |event| handle_change(event) }
+      diagram_handler = proc { |event| handle_diagram_selection(event) }
       document.addEventListener("input", &input_handler)
       document.addEventListener("click", &click_handler)
       document.addEventListener("change", &change_handler)
-      @event_handlers.concat([input_handler, click_handler, change_handler])
+      document.addEventListener("mobilis:service-select", &diagram_handler)
+      @event_handlers.concat([input_handler, click_handler, change_handler, diagram_handler])
     end
 
     def handle_input(event)
@@ -63,13 +69,18 @@ module MobilisPlayground
       analysis = source_document.analyze
       if analysis.valid?
         @analysis = analysis
+        @topology = Mobilis::Browser::Topology.from_analysis(analysis)
+        @diagram_stale = false
         @errors = []
         @status = "Source is valid. Visual model updated locally."
         replace("builder-region", render_builder)
       else
+        @diagram_stale = true
         @errors = analysis.errors
         @status = "Source is invalid. The last valid visual model is preserved."
       end
+      replace("architecture-region", render_architecture)
+      render_diagram
       replace("diagnostics-region", render_diagnostics)
     end
 
@@ -140,10 +151,14 @@ module MobilisPlayground
 
       @source = changed
       @analysis = analysis
+      @topology = Mobilis::Browser::Topology.from_analysis(analysis)
+      @diagram_stale = false
       @errors = []
       @status = "Visual edit applied surgically to Ruby source."
       replace("editor-region", render_editor)
       replace("builder-region", render_builder)
+      replace("architecture-region", render_architecture)
+      render_diagram
       replace("diagnostics-region", render_diagnostics)
     end
 
@@ -212,6 +227,32 @@ module MobilisPlayground
       class_list.contains(name).to_s == "true"
     end
 
+    def handle_diagram_selection(event)
+      topology_id = event[:detail][:topologyId].to_s
+      node = @topology.node(topology_id)
+      return unless node
+
+      document = JS.global[:document]
+      selected = document.call(:querySelectorAll, ".diagram-selected")
+      selected[:length].to_i.times do |index|
+        selected[index][:classList].remove("diagram-selected")
+      end
+
+      if node.source_id
+        card = document.call(:querySelector, %(.service-card[data-service-id="#{node.source_id}"]))
+        if card
+          card[:classList].add("diagram-selected")
+          card.call(:scrollIntoView, JS.eval("return {block: 'nearest', behavior: 'smooth'}"))
+        end
+      end
+
+      return unless node.start_offset && node.end_offset
+
+      editor = element("dsl-source")
+      editor.call(:focus, JS.eval("return {preventScroll: true}"))
+      editor.call(:setSelectionRange, node.start_offset, node.end_offset)
+    end
+
     def source_document
       self.class.source_document(@source)
     end
@@ -233,6 +274,20 @@ module MobilisPlayground
 
     def render_editor
       @renderer.render(:editor, source: @source)
+    end
+
+    def render_architecture
+      @renderer.render(:architecture, topology: @topology, stale: @diagram_stale)
+    end
+
+    def render_diagram
+      return if @topology.empty?
+
+      selection = @topology.nodes.to_h do |node|
+        [node.id, {sourceId: node.source_id, startOffset: node.start_offset, endOffset: node.end_offset}]
+      end
+      diagram = Mobilis::Browser::MermaidDiagram.new(@topology).source
+      JS.global[:MobilisDiagram].call(:render, diagram, JSON.generate(selection))
     end
 
     def render_files

@@ -16,9 +16,12 @@ test("synchronizes visual and Ruby editing, including Rails authoring", async ({
   await expect(editor).toHaveValue(/rails\("web"\)/);
   const railsCard = page.locator(".service-card").filter({ has: page.locator('.service-name[value="web"]') });
   await expect(railsCard).toContainText("Local generation");
+  await expect(page.locator("#architecture-region")).toContainText("3 nodes · 1 edges");
+  await expect(page.locator("#architecture-canvas .node").filter({ hasText: "Rails: web" })).toBeVisible();
 
   await editor.fill((await editor.inputValue()).replaceAll('"cache"', '"session-cache"'));
   await expect(page.locator(".service-name").nth(1)).toHaveValue("session-cache");
+  await expect(page.locator("#architecture-canvas")).toContainText("Redis: session-cache");
 });
 
 test("preserves the last visual model while invalid Ruby is repaired", async ({ page }) => {
@@ -29,9 +32,32 @@ test("preserves the last visual model while invalid Ruby is repaired", async ({ 
   await editor.fill("Mobilis::DSL.generate(");
   await expect(page.locator("#diagnostics-region")).toContainText("Source or generation error");
   await expect(page.locator(".service-card")).toHaveCount(cardCount);
+  await expect(page.locator("#architecture-region")).toContainText("Stale — source is invalid");
+  await expect(page.locator("#architecture-canvas")).toContainText("Redis: cache");
 
   await editor.fill(valid);
   await expect(page.locator("#diagnostics-region")).toContainText("Source is valid");
+  await expect(page.locator("#architecture-region")).toContainText("Live from validated DSL");
+});
+
+test("removes connected nodes and edges through the visual builder", async ({ page }) => {
+  const cacheCard = page.locator(".service-card").filter({ has: page.locator('.service-name[value="cache"]') });
+  await cacheCard.getByRole("button", { name: "Remove" }).click();
+
+  await expect(page.locator("#architecture-region")).toContainText("1 nodes · 0 edges");
+  await expect(page.locator("#architecture-canvas")).not.toContainText("Redis: cache");
+  await expect(page.getByLabel("Mobilis Ruby DSL")).not.toHaveValue(/connect\(/);
+});
+
+test("selects a diagram node without mutating source", async ({ page }) => {
+  const editor = page.getByLabel("Mobilis Ruby DSL");
+  const original = await editor.inputValue();
+  await page.locator("#architecture-canvas .node").filter({ hasText: "PostgreSQL: database" }).click();
+
+  const databaseCard = page.locator(".service-card").filter({ has: page.locator('.service-name[value="database"]') });
+  await expect(databaseCard).toHaveClass(/diagram-selected/);
+  expect(await editor.evaluate(element => element.value.slice(element.selectionStart, element.selectionEnd))).toContain('postgres("database")');
+  await expect(editor).toHaveValue(original);
 });
 
 test("generates real files and navigates the read-only browser", async ({ page }) => {
@@ -49,6 +75,14 @@ test("generates real files and navigates the read-only browser", async ({ page }
   const bytes = await readDownload(download);
   expect(bytes.includes(Buffer.from("compose/database.yml"))).toBe(true);
   expect(bytes.includes(Buffer.from("development-compose.yml"))).toBe(true);
+});
+
+test("isolates Mermaid failures from project generation", async ({ page }) => {
+  await page.evaluate(() => window.MobilisDiagram.render("not a diagram", "{}"));
+  await expect(page.locator(".diagram-render-error")).toContainText("Architecture rendering failed");
+
+  await page.getByRole("button", { name: "Generate project" }).click();
+  await expect(page.locator("#diagnostics-region")).toContainText(/Generated \d+ files locally with Mobilis/);
 });
 
 async function readDownload(download) {
