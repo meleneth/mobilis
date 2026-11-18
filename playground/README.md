@@ -79,6 +79,12 @@ APIs, but it is not a complete security boundary: code can consume CPU/memory
 and interact with browser APIs exposed by the application. Do not paste
 untrusted source. There is no telemetry and source is never submitted.
 
+The static server's Content Security Policy permits both `unsafe-eval` and
+`wasm-unsafe-eval`. The ruby.wasm `js` bridge uses JavaScript evaluation during
+initialization; allowing only WebAssembly evaluation prevents the runtime from
+booting. This CSP is another reason the playground must not be treated as a
+security boundary for untrusted Ruby.
+
 Generation currently runs in the main Ruby VM. The existing writers are short,
 synchronous filesystem emitters, and keeping one VM avoids duplicating the
 semantic model across a worker protocol. A worker becomes appropriate if
