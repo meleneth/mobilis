@@ -2,10 +2,15 @@
 
 module Mobilis
   module DSL
-    def self.generate(name, starting_port: 11_000, &block)
+    def self.build(name, starting_port: 11_000, &block)
       system = Mobilis::System.new(name, starting_port: starting_port)
       ctx = DSLContext.new(system)
       ctx.instance_exec(&block)
+      system
+    end
+
+    def self.generate(name, starting_port: 11_000, &block)
+      system = build(name, starting_port: starting_port, &block)
       Manifest.new(system).materialize
     end
 

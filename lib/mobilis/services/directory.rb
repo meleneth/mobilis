@@ -3,8 +3,8 @@ module Mobilis
     class Directory
       include PrettyPrint::PrettyPrintable
 
-      def initialize
-        @start_position = Dir.pwd
+      def initialize(start_position = Dir.pwd)
+        @start_position = File.expand_path(start_position)
       end
 
       def chdir_start

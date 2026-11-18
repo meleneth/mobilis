@@ -48,3 +48,12 @@ RSpec.describe Mobilis::DSL::DSLContext do
     expect(context.named("playerservice")).to eq(node)
   end
 end
+
+RSpec.describe Mobilis::DSL do
+  it "builds a system without materializing it" do
+    system = described_class.build("example") { postgres("database") }
+
+    expect(system).to be_a(Mobilis::System)
+    expect(system.config_nodes.values.map(&:name)).to eq(["database"])
+  end
+end

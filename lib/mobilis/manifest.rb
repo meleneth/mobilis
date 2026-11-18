@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "fileutils"
-require "git"
 
 module Mobilis
   # here it is, the main class that actually orchestratest the entire
@@ -10,7 +9,7 @@ module Mobilis
     include Mobilis::PrettyPrint::PrettyPrintable
     attr_reader :system, :realized_envs, :directory_service, :git_repo, :plugins
 
-    def initialize(system, suppress_plugins: false)
+    def initialize(system, suppress_plugins: false, directory_service: Mobilis::Services::Directory.new)
       @system = system
       generated_broker_names = system.config_nodes.values.flat_map do |node|
         next [] unless node.is_a?(Mobilis::Node::Kafka)
@@ -25,7 +24,7 @@ module Mobilis
       if system.kubernetes_deployment && system.config_nodes.values.any? { |node| node.is_a?(Mobilis::Node::Kafka) && node.brokers > 1 }
         raise ArgumentError, "Multi-broker Kafka generation currently supports Docker Compose, not Kubernetes"
       end
-      @directory_service = Mobilis::Services::Directory.new
+      @directory_service = directory_service
       port_allocator = Mobilis::RealizedEnv::PortAllocator.new(system.starting_port, reservation_count: environments.length)
       @realized_envs = environments.map do |env|
         Mobilis::RealizedEnv.new(system, env, port_allocator: port_allocator)
@@ -55,6 +54,7 @@ module Mobilis
     end
 
     def materialize
+      require "git"
       directory_service.chdir_start
       directory_service.mkdir_generate
       directory_service.mkdir_compose
@@ -86,6 +86,47 @@ module Mobilis
       run_plugin_hooks :hook_after_rails_models_created
       run_plugin_hooks :hook_run_commands
       write_kubernetes if system.kubernetes_deployment
+    end
+
+    # Write every artifact that Mobilis can produce without invoking Git,
+    # Docker, or generated-project commands. This is the generation path used
+    # by constrained runtimes such as ruby.wasm; it deliberately uses the same
+    # realized nodes, plugins, service writers, and compose emitters as the
+    # native materializer.
+    def materialize_static
+      unsupported = system.config_nodes.values.select { |node| node.is_a?(Mobilis::Node::Rails) }
+      unless unsupported.empty?
+        names = unsupported.map(&:name).join(", ")
+        raise ArgumentError, "Static generation cannot scaffold Rails services (#{names}); the native Rails writer requires Docker"
+      end
+
+      @static_generation = true
+      directory_service.chdir_start
+      directory_service.mkdir_generate
+      directory_service.mkdir_compose
+      directory_service.chdir_generate
+      write_gitignore
+      write_readme
+      run_plugin_hooks :create_builder_images
+      run_plugin_hooks :hook_before_services_written
+      emit_all_services
+      run_plugin_hooks :hook_after_services_written
+      emit_compose_wrappers
+      emit_env_files
+      write_overrides_for(:test)
+      write_overrides_for(:development)
+      write_overrides_for(:production)
+      write_commands_file
+      write_mobilis_system
+      write_dc_helpers
+      write_devcontainer
+      run_plugin_hooks :hook_after_dc_helpers
+      write_kubernetes if system.kubernetes_deployment
+      directory_service.chdir_generate
+      Dir.pwd
+    ensure
+      directory_service.chdir_start
+      @static_generation = false
     end
 
     def kubernetes_universes
@@ -332,6 +373,9 @@ module Mobilis
     end
 
     def commit_all(message)
+      return if @static_generation
+
+      require "git"
       puts " -- git commit: #{message} --"
       @git_repo.add(all: true)
       @git_repo.commit("[mobilis] #{message}")

@@ -17,6 +17,11 @@ gem "state_machines-graphviz", group: :development
 gem "super_diff", "~> 0.15.0"
 gem "webrick", "~> 1.9.1"
 
+group :playground do
+  gem "haml", "~> 6.4"
+  gem "ruby_wasm", "~> 2.10"
+end
+
 group :development do
   gem "steep"
 end
