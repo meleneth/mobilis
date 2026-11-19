@@ -4,4 +4,5 @@ verify/fix Compose::Volume base merging for overrides
 tighten AutoVivify#merge! deep behavior or document its limits
 fix RefSlot#hydrate_refs! and add a spec that hydrates from IDs only
 implement the browser inspector/archive plan in notes/2026-11-18-playground-service-inspector-embedded-documents.md
+complete the browser workspace and generator compatibility slices in notes/2026-11-18-browser-workspace-generator-compatibility.md
 prevent a second materialization from recursively deleting an existing generated project's runtime data; fail before modifying output when `generate/` exists (PostgreSQL 18 creates root-owned files under `data/<environment>/<db>/18/docker`), and test the failure path without touching the data
