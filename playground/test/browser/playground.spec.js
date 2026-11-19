@@ -198,3 +198,61 @@ test("downloads the exact DSL definition", async ({ page }) => {
     return content;
   })).toBe(editorSource);
 });
+
+test("persists the authoritative DSL and generated files in the browser workspace", async ({ page }) => {
+  await expect(page.locator("#workspace-summary")).toHaveText("Clean working tree");
+  const editor = page.getByLabel("Mobilis Ruby DSL");
+  const changed = (await editor.inputValue()).replaceAll('"cache"', '"persistent-cache"');
+  await editor.fill(changed);
+  await expect(page.locator("#workspace-summary")).toContainText("changed file");
+
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Mobilis Browser Playground" })).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(changed);
+  await expect(page.locator("#architecture-canvas")).toContainText("Redis: persistent-cache");
+
+  await page.getByRole("button", { name: "Generate project" }).click();
+  await expect(page.locator("#workspace-files")).toContainText("generate/development-compose.yml");
+});
+
+test("persists invalid source while recovering the last valid projection after reload", async ({ page }) => {
+  const editor = page.getByLabel("Mobilis Ruby DSL");
+  const original = await editor.inputValue();
+  await editor.fill(original);
+  await expect(page.locator("#workspace-summary")).toHaveText("Clean working tree");
+
+  const invalid = "Mobilis::DSL.generate(";
+  await editor.fill(invalid);
+  await expect(page.locator("#workspace-summary")).toContainText("changed file");
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Mobilis Browser Playground" })).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(invalid);
+  await expect(page.locator("#architecture-region")).toContainText("Stale — source is invalid");
+  await expect(page.locator("#architecture-canvas")).toContainText("Redis: cache");
+});
+
+test("stages, commits, diffs, protects dirty work, and restores a revision", async ({ page }) => {
+  const editor = page.getByLabel("Mobilis Ruby DSL");
+  const initial = await editor.inputValue();
+  await editor.fill(initial.replace('redis("cache")', 'redis("committed-cache")'));
+  await expect(page.locator("#workspace-diff")).toContainText('+  redis("committed-cache")');
+
+  await page.getByRole("button", { name: "Stage all" }).click();
+  await page.getByLabel("Git commit message").fill("Rename cache service");
+  await page.getByRole("button", { name: "Commit staged changes" }).click();
+  await expect(page.locator("#workspace-summary")).toHaveText("Clean working tree");
+  await expect(page.locator("#workspace-history")).toContainText("Rename cache service");
+
+  await editor.fill((await editor.inputValue()).replace("committed-cache", "dirty-cache"));
+  await page.locator("#workspace-history button", { hasText: "Restore" }).last().click();
+  await expect(page.locator("#workspace-error")).toContainText("Commit or discard working-tree changes");
+  await expect(editor).toHaveValue(/dirty-cache/);
+
+  await page.getByRole("button", { name: "Stage all" }).click();
+  await page.getByLabel("Git commit message").fill("Keep dirty cache rename");
+  await page.getByRole("button", { name: "Commit staged changes" }).click();
+  await page.locator("#workspace-history button", { hasText: "Restore" }).last().click();
+  await expect(editor).toHaveValue(initial);
+  await expect(page.locator("#architecture-canvas")).toContainText("Redis: cache");
+  await expect(page.locator("#workspace-summary")).toContainText("changed file");
+});

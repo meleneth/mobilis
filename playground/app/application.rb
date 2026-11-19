@@ -20,14 +20,22 @@ module MobilisPlayground
       @renderer = renderer
       @runtime = Mobilis::Browser::SemanticRuntime.new
       @history = Mobilis::Browser::SourceHistory.new
-      @source = INITIAL_SOURCE
-      @analysis = @runtime.measure("initialize") { source_document.analyze }
+      bootstrap_source = workspace_property(:bootstrapSource)
+      bootstrap_valid_source = workspace_property(:bootstrapValidSource)
+      @source = bootstrap_source.empty? ? INITIAL_SOURCE : bootstrap_source
+      current = @runtime.measure("initialize") { source_document.analyze }
+      fallback = bootstrap_valid_source.empty? ? INITIAL_SOURCE : bootstrap_valid_source
+      @analysis = current.valid? ? current : self.class.source_document(fallback).analyze
       @topology = Mobilis::Browser::Topology.from_analysis(@analysis)
-      @diagram_stale = false
-      @errors = @analysis.errors
+      @diagram_stale = !current.valid?
+      @errors = current.errors
       @files = {}
       @selected_file = nil
-      @status = "Runtime initialized. Source is valid and has not been transmitted."
+      @status = if current.valid?
+                  "Runtime initialized. Source is valid and persisted locally."
+                else
+                  "Persisted source is invalid. The last valid visual model is preserved."
+                end
       @generation = 0
       @event_handlers = []
     end
@@ -42,11 +50,13 @@ module MobilisPlayground
         inspector: render_inspector,
         runtime_metrics: render_runtime_metrics,
         architecture: render_architecture,
+        workspace: render_workspace,
         files: render_files,
         file_content: render_file_content,
         diagnostics: render_diagnostics
       )
       bind_events(document)
+      persist_source(valid: current_source_valid?)
       render_diagram
       refresh_selection
       self
@@ -59,11 +69,13 @@ module MobilisPlayground
       click_handler = proc { |event| semantic_request("semantic action") { handle_click(event) } }
       change_handler = proc { |event| semantic_request("structured edit") { handle_change(event) } }
       archive_handler = proc { |event| semantic_request("embedded document commit") { handle_archive_commit(event) } }
+      checkout_handler = proc { |event| semantic_request("workspace checkout") { handle_workspace_checkout(event) } }
       document.addEventListener("mobilis:source-input", &input_handler)
       document.addEventListener("mobilis:semantic-click", &click_handler)
       document.addEventListener("mobilis:semantic-change", &change_handler)
       document.addEventListener("mobilis:archive-commit", &archive_handler)
-      @event_handlers.concat([input_handler, click_handler, change_handler, archive_handler])
+      document.addEventListener("mobilis:workspace-checkout", &checkout_handler)
+      @event_handlers.concat([input_handler, click_handler, change_handler, archive_handler, checkout_handler])
     end
 
     def handle_input(event)
@@ -78,6 +90,7 @@ module MobilisPlayground
         @history.reset
         @errors = []
         @status = "Source is valid. Visual model updated locally."
+        persist_source(valid: true)
         replace("builder-region", render_builder)
         replace("inspector-region", render_inspector)
       else
@@ -89,6 +102,33 @@ module MobilisPlayground
       render_diagram
       refresh_selection
       replace("diagnostics-region", render_diagnostics)
+    end
+
+    def handle_workspace_checkout(event)
+      detail = event[:detail]
+      changed = detail[:source].to_s
+      analysis = self.class.source_document(changed).analyze
+      raise ArgumentError, analysis.errors.join("\n") unless analysis.valid?
+
+      @source = changed
+      @analysis = analysis
+      @topology = Mobilis::Browser::Topology.from_analysis(analysis)
+      @history.reset
+      @diagram_stale = false
+      @errors = []
+      @status = "Checked out Git revision and refreshed the validated project."
+      replace("editor-region", render_editor)
+      replace("builder-region", render_builder)
+      replace("inspector-region", render_inspector)
+      replace("architecture-region", render_architecture)
+      replace("diagnostics-region", render_diagnostics)
+      render_diagram
+      refresh_selection
+      detail[:accepted] = true
+      detail[:valid] = true
+    rescue ArgumentError, KeyError, RuntimeError, TypeError => error
+      detail[:accepted] = false if detail
+      detail[:error] = "#{error.class}: #{error.message}" if detail
     end
 
     def handle_change(event)
@@ -190,6 +230,7 @@ module MobilisPlayground
       @diagram_stale = false
       @errors = []
       @status = "Visual edit applied surgically to Ruby source."
+      persist_source(valid: true)
       replace("editor-region", render_editor)
       replace("builder-region", render_builder)
       replace("inspector-region", render_inspector)
@@ -225,6 +266,7 @@ module MobilisPlayground
       @diagram_stale = false
       @errors = []
       @status = "Structured source edit #{direction == :undo ? "undone" : "redone"}."
+      persist_source(valid: true)
       replace("editor-region", render_editor)
       replace("builder-region", render_builder)
       replace("inspector-region", render_inspector)
@@ -249,6 +291,7 @@ module MobilisPlayground
       @files = result.files
       @selected_file = @files.keys.first
       @status = "Generated #{@files.length} files locally with Mobilis."
+      persist_generated_files
       replace("files-region", render_files)
       replace("file-content-region", render_file_content)
       replace("diagnostics-region", render_diagnostics)
@@ -328,6 +371,10 @@ module MobilisPlayground
       @renderer.render(:architecture, topology: @topology, stale: @diagram_stale)
     end
 
+    def render_workspace
+      @renderer.render(:workspace)
+    end
+
     def render_inspector
       @renderer.render(
         :inspector,
@@ -383,6 +430,24 @@ module MobilisPlayground
       @runtime.measure(label) { yield }
     ensure
       replace("runtime-metrics-region", render_runtime_metrics) if element("runtime-metrics-region")
+    end
+
+    def persist_source(valid:)
+      JS.global[:MobilisWorkspace].call(:persistSource, @source, valid)
+    end
+
+    def persist_generated_files
+      encoded = @files.transform_values { |content| encode64(content) }
+      JS.global[:MobilisWorkspace].call(:persistGenerated, JSON.generate(encoded))
+    end
+
+    def workspace_property(name)
+      value = JS.global[:MobilisWorkspace][name]
+      value.nil? ? "" : value.to_s
+    end
+
+    def current_source_valid?
+      self.class.source_document(@source).analyze.valid?
     end
   end
 end

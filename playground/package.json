@@ -8,14 +8,18 @@
   },
   "dependencies": {
     "@hotwired/turbo": "8.0.21",
+    "@isomorphic-git/lightning-fs": "4.10.5",
     "@ruby/4.0-wasm-wasi": "2.10.1",
     "@ruby/wasm-wasi": "2.10.1",
     "@zip.js/zip.js": "2.8.18",
+    "buffer": "6.0.3",
+    "isomorphic-git": "1.44.17",
     "mermaid": "12.3.0"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",
     "@tailwindcss/cli": "4.1.17",
+    "esbuild": "0.28.2",
     "tailwindcss": "4.1.17"
   }
 }

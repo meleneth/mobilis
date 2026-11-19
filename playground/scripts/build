@@ -5,9 +5,11 @@ playground_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 repository_dir="$(cd "${playground_dir}/.." && pwd)"
 
 cd "${playground_dir}"
-mkdir -p public/vendor/ruby-wasm-wasi public/vendor/wasi public/vendor/zip public/vendor/mermaid/chunks public/parity
+mkdir -p public/vendor/ruby-wasm-wasi public/vendor/wasi public/vendor/zip public/vendor/mermaid/chunks public/vendor/buffer public/vendor/isomorphic-git public/vendor/lightning-fs public/parity
 
 npm run build:css
+npx esbuild assets/buffer-polyfill.js --bundle --minify --platform=browser --format=iife --outfile=public/vendor/buffer/buffer.min.js
+cp node_modules/buffer/LICENSE public/vendor/buffer/
 cp node_modules/@hotwired/turbo/dist/turbo.es2017-esm.js public/vendor/
 cp node_modules/@ruby/wasm-wasi/dist/browser.umd.js public/vendor/ruby-wasm-wasi.umd.js
 cp -R node_modules/@ruby/wasm-wasi/dist/esm/. public/vendor/ruby-wasm-wasi/
@@ -15,6 +17,10 @@ cp -R node_modules/@bjorn3/browser_wasi_shim/dist/. public/vendor/wasi/
 cp -R node_modules/@zip.js/zip.js/. public/vendor/zip/
 cp node_modules/mermaid/dist/mermaid.esm.min.mjs public/vendor/mermaid/
 cp -R node_modules/mermaid/dist/chunks/mermaid.esm.min public/vendor/mermaid/chunks/
+cp node_modules/isomorphic-git/index.umd.min.js public/vendor/isomorphic-git/
+cp node_modules/isomorphic-git/LICENSE.md public/vendor/isomorphic-git/
+cp node_modules/@isomorphic-git/lightning-fs/dist/lightning-fs.min.js public/vendor/lightning-fs/
+cp node_modules/@isomorphic-git/lightning-fs/LICENSE public/vendor/lightning-fs/
 cp "${repository_dir}/spec/fixtures/browser/postgres-compose.yml" public/parity/
 ruby scripts/build_embedded_fixture.rb public/parity/embedded-source.rb
 

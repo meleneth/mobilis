@@ -56,17 +56,20 @@ projection. Visual and embedded edits first pass the existing atomic Ruby
 transaction, then update `mobilis.rb`. No-op writes compare bytes and do not
 touch the working tree.
 
-Checkout is guarded by staged/unstaged status and staged embedded edits. It
-flushes pending writes, snapshots the prior revision, checks out the requested
-commit, refreshes Ruby/UI from the checked-out DSL, and rolls back to the prior
-revision if the filesystem or refresh transaction fails.
+Revision restore is guarded by staged/unstaged status and staged embedded edits.
+It flushes pending writes, snapshots the prior revision, restores the requested
+tree without moving the branch head, refreshes Ruby/UI from the restored DSL,
+and rolls back to the prior tree if the filesystem or refresh transaction
+fails. The restored tree remains visible as ordinary changes that can be
+reviewed and committed.
 
 ## Git slice
 
-The first browser slice supports local initialization, status matrix, textual
-diff, stage-all, commit, log, and safe detached checkout. Remote operations are
-deliberately absent. Git operations run only on explicit browser actions and
-flush LightningFS before reporting success.
+The first browser slice now supports local initialization, status matrix,
+textual diff, stage-all, commit, log, and safe revision restore. Source and real
+generator output persist across reloads. Remote operations are deliberately
+absent. Git operations run only on explicit browser actions and flush
+LightningFS before reporting success.
 
 The Git UI is a Haml-rendered workspace shell with a small JavaScript controller
 because the Git library and IndexedDB filesystem are asynchronous browser APIs.
@@ -101,11 +104,10 @@ capture corpus. Real generators remain preferred wherever supported.
 
 ## Verification plan
 
-1. Persistent reload, no-op writes, source/embedded fidelity, generated-file
-   persistence, and one-VM lifecycle in Playwright.
-2. Git init/status/stage/commit/log/diff/dirty protection/checkout and Ruby UI
-   refresh in Playwright, plus deterministic controller unit coverage where
-   practical.
+1. Persistent valid and invalid reload, no-op writes, generated-file
+   persistence, and one-VM lifecycle are covered in Playwright.
+2. Git init/status/stage/commit/log/diff/dirty protection/revision restore and
+   Ruby UI refresh are covered in Playwright.
 3. Direct native and actual WASM Rails generator probes with matched versions,
    structured file comparison, and an explicit compatibility matrix.
 4. Reproducible real baseline/variation captures and isolated temporary roots.

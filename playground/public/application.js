@@ -4,6 +4,7 @@ import { BlobReader, BlobWriter, ZipWriter } from "/vendor/zip/index.js";
 import { RubyVM } from "/vendor/ruby-wasm-wasi/vm.js";
 import { consolePrinter } from "/vendor/ruby-wasm-wasi/console.js";
 import { Directory, File, OpenFile, PreopenDirectory, WASI } from "/vendor/wasi/index.js";
+import { createWorkspaceController } from "/workspace.js";
 
 window.Turbo = Turbo;
 mermaid.initialize({
@@ -22,6 +23,7 @@ mermaid.initialize({
 window.MobilisDiagram = createDiagramRenderer();
 window.MobilisSelection = createSelectionController();
 window.MobilisDocuments = createDocumentController();
+window.MobilisWorkspace = createWorkspaceController();
 window.MobilisRuntimeDiagnostics = {
   phase: "loading",
   vmInstances: 0,
@@ -264,7 +266,8 @@ function createDocumentController() {
       render();
     },
     refresh: render,
-    activeRevision() { return active?.parentRevision ?? null; }
+    activeRevision() { return active?.parentRevision ?? null; },
+    hasUnsavedChanges() { return Boolean(active && active.content !== active.original); }
   };
 }
 
@@ -276,6 +279,7 @@ function installEventGate() {
     }
     if (event.target.id !== "dsl-source") return;
     window.MobilisDocuments.parentChanged();
+    window.MobilisWorkspace.persistSource(event.target.value, false);
     document.dispatchEvent(new CustomEvent("mobilis:source-input", { detail: { target: event.target } }));
   });
 
@@ -349,6 +353,7 @@ async function boot() {
   const diagnostics = window.MobilisRuntimeDiagnostics;
   const totalStarted = performance.now();
   try {
+    const workspacePromise = window.MobilisWorkspace.initialize();
     const configStarted = performance.now();
     const config = validateRuntimeConfig(await fetchJson("/runtime-config.json", "runtime configuration", { cache: "no-store" }));
     diagnostics.timings.configurationMs = elapsed(configStarted);
@@ -369,6 +374,7 @@ async function boot() {
     diagnostics.timings.runtimeCompileMs = elapsed(compileStarted);
 
     const application = await applicationPromise;
+    await workspacePromise;
     diagnostics.application = {
       version: application.manifest.application_version,
       files: application.files.size,
@@ -401,6 +407,7 @@ async function boot() {
     const loadPaths = application.manifest.filesystem.load_paths.map(path => JSON.stringify(path)).join(", ");
     const bootFeature = JSON.stringify(application.manifest.filesystem.boot_feature);
     vm.eval(`$LOAD_PATH.unshift(${loadPaths}); require ${bootFeature}`);
+    window.MobilisWorkspace.attach();
     diagnostics.timings.rubyApplicationLoadMs = elapsed(rubyStarted);
     diagnostics.timings.totalInitializationMs = elapsed(totalStarted);
     diagnostics.phase = "ready";

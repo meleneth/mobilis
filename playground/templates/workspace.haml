@@ -1,0 +1,22 @@
+.flex.flex-wrap.items-center.justify-between.gap-3.border-b.border-line.px-3.py-2
+  %div
+    %h2.text-sm.font-semibold.text-white Local Git workspace
+    %p.text-xs.text-slate-500 IndexedDB-backed files and history stay in this browser.
+  .flex.flex-wrap.items-center.gap-2
+    %span#workspace-summary.rounded.bg-slate-800.px-2.py-1.text-xs.text-slate-300 Initializing…
+    %button#workspace-refresh.rounded.border.border-line.px-3.py-2.text-xs.text-slate-300.hover:bg-slate-800{type: "button"} Refresh
+    %button#workspace-stage.rounded.border.border-line.px-3.py-2.text-xs.text-slate-300.hover:bg-slate-800{type: "button"} Stage all
+.grid.gap-3.p-3{class: "lg:grid-cols-[18rem_1fr_20rem]"}
+  %div
+    %h3.mb-2.text-xs.font-semibold.text-white Changed files
+    #workspace-files.space-y-1.text-xs.text-slate-400
+    .mt-3.space-y-2
+      %input#workspace-commit-message.w-full.rounded.border.border-line.bg-slate-950.px-2.py-2.text-xs.text-white{placeholder: "Commit message", aria: {label: "Git commit message"}}
+      %button#workspace-commit.w-full.rounded.bg-teal-300.px-3.py-2.text-xs.font-bold.text-slate-950.hover:bg-teal-200{type: "button"} Commit staged changes
+  %div.min-w-0
+    %h3.mb-2.text-xs.font-semibold.text-white Working-tree diff
+    %pre#workspace-diff.max-h-80.overflow-auto.whitespace-pre-wrap.rounded.bg-slate-950.p-3.text-xs.leading-5.text-slate-300 Select a changed file to inspect it.
+  %div
+    %h3.mb-2.text-xs.font-semibold.text-white Commit history
+    #workspace-history.space-y-2.text-xs.text-slate-400
+#workspace-error.hidden.border-t.border-red-950.bg-red-950.px-3.py-2.text-xs.text-red-200
