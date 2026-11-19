@@ -62,6 +62,25 @@ test("selects a diagram node without mutating source", async ({ page }) => {
   await page.mouse.wheel(0, 300);
   await page.waitForTimeout(250);
   expect(await rubyInvocationCount(page)).toBe(invocationCount);
+  expect(await page.evaluate(() => window.MobilisRuntimeDiagnostics.vmInstances)).toBe(1);
+});
+
+test("boots a verified application artifact once and exposes initialization diagnostics", async ({ page }) => {
+  const diagnostics = await page.evaluate(() => window.MobilisRuntimeDiagnostics);
+  expect(diagnostics.phase).toBe("ready");
+  expect(diagnostics.vmInstances).toBe(1);
+  expect(diagnostics.runtime.package).toBe("@ruby/4.0-wasm-wasi");
+  expect(diagnostics.runtime.package_version).toBe("2.10.1");
+  expect(diagnostics.application.files).toBeGreaterThan(300);
+  expect(diagnostics.application.version).toMatch(/^[a-f0-9]{64}$/);
+  expect(diagnostics.timings.runtimeCompileMs).toBeGreaterThan(0);
+  expect(diagnostics.timings.rubyApplicationLoadMs).toBeGreaterThan(0);
+
+  await page.getByLabel("New service name").fill("metrics-cache");
+  await page.locator("#new-service-type").selectOption("redis");
+  await page.getByRole("button", { name: "Add service" }).click();
+  await expect(page.locator(".service-name")).toHaveCount(3);
+  expect(await page.evaluate(() => window.MobilisRuntimeDiagnostics.vmInstances)).toBe(1);
 });
 
 test("edits relationships through the selected service inspector", async ({ page }) => {
@@ -159,7 +178,9 @@ async function rubyInvocationCount(page) {
 }
 
 async function openEmbeddedMember(page, name) {
-  const archive = page.locator("details.embedded-archive");
+  const apiCard = page.locator(".service-card").filter({ has: page.locator('.service-name[value="api"]') });
+  await apiCard.locator(".select-service").click();
+  const archive = page.locator("details.embedded-archive:visible");
   await archive.evaluate(element => { element.open = true; });
   await page.getByRole("button", { name }).click();
 }

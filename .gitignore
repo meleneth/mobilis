@@ -84,5 +84,8 @@ __pycache__/
 /playground/public/application.css
 /playground/public/mobilis.wasm
 /playground/public/filesystem.json
+/playground/public/mobilis-app-*.tar
+/playground/public/mobilis-app-manifest.json
+/playground/public/runtime-config.json
 /playground/public/parity/
 /playground/public/vendor/

@@ -17,6 +17,19 @@ RSpec.describe "playground static server" do
     expect(configuration).to include("application/wasm wasm")
   end
 
+  it "permits only the pinned production CDN used by the runtime configuration" do
+    expect(configuration).to include("connect-src 'self' https://cdn.jsdelivr.net")
+  end
+
+  it "does not cache mutable manifests and caches content-addressed application archives" do
+    expect(configuration).to include("location = /runtime-config.json")
+    expect(configuration).to include("location = /mobilis-app-manifest.json")
+    expect(configuration.scan('add_header Cache-Control "no-store"')).to have_attributes(length: 2)
+    expect(configuration).to include('location ~* "^/mobilis-app-[a-f0-9]{64}\\.tar$"')
+    expect(configuration).to include("application/x-tar tar")
+    expect(configuration).to include("gzip_types application/javascript application/json application/wasm application/x-tar text/css")
+  end
+
   it "serves Mermaid ES modules with a JavaScript MIME type" do
     expect(configuration).to include("application/javascript mjs")
   end

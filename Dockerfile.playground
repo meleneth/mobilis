@@ -19,7 +19,11 @@ RUN cd playground && npm ci
 COPY lib ./lib
 COPY spec/fixtures/browser ./spec/fixtures/browser
 COPY playground ./playground
-RUN playground/scripts/build
+ARG RUBY_WASM_RUNTIME_URL="https://cdn.jsdelivr.net/npm/@ruby/4.0-wasm-wasi@2.10.1/dist/ruby+stdlib.wasm"
+ARG MOBILIS_APPLICATION_MANIFEST_URL="/mobilis-app-manifest.json"
+RUN RUBY_WASM_RUNTIME_URL="${RUBY_WASM_RUNTIME_URL}" \
+  MOBILIS_APPLICATION_MANIFEST_URL="${MOBILIS_APPLICATION_MANIFEST_URL}" \
+  playground/scripts/build
 
 FROM nginx:1.30.6-trixie
 
