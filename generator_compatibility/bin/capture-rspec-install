@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+compatibility_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+repository_dir="$(cd "${compatibility_dir}/.." && pwd)"
+
+cd "${repository_dir}"
+BUNDLE_GEMFILE="${compatibility_dir}/Gemfile" bundle exec ruby \
+  -I "${repository_dir}/lib" \
+  "${compatibility_dir}/capture_rspec_install.rb"

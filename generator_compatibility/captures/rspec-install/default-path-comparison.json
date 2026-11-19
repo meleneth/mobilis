@@ -1,0 +1,58 @@
+{
+  "format_version": 1,
+  "generator": "rspec:install",
+  "version": "8.1.0",
+  "baseline_capture": "rspec-install-default",
+  "baseline_arguments": [],
+  "variant_capture": "rspec-install-default-path",
+  "variant_arguments": [
+    "--default-path",
+    "test/specs"
+  ],
+  "fixture_sha256": "14470aedbd0ed452d273e0780a4953c3011481a3b66a768d7f2ad92091d52636",
+  "only_in_baseline": [
+    {
+      "operation": "create",
+      "path": "spec/rails_helper.rb",
+      "mode": "0644",
+      "sha256": "faac9ae6e6f06eda34328be0de65f50f68135a32ffd423bc453dd15f32d68ed9"
+    },
+    {
+      "operation": "create",
+      "path": "spec/spec_helper.rb",
+      "mode": "0644",
+      "sha256": "69cdf4b562b0f3e7ba57385c1e8e90b60ed5fe7faab07671253770605bd04ac7"
+    }
+  ],
+  "only_in_variant": [
+    {
+      "operation": "create",
+      "path": "test/specs/rails_helper.rb",
+      "mode": "0644",
+      "sha256": "faac9ae6e6f06eda34328be0de65f50f68135a32ffd423bc453dd15f32d68ed9"
+    },
+    {
+      "operation": "create",
+      "path": "test/specs/spec_helper.rb",
+      "mode": "0644",
+      "sha256": "69cdf4b562b0f3e7ba57385c1e8e90b60ed5fe7faab07671253770605bd04ac7"
+    }
+  ],
+  "changed_in_both": [
+    {
+      "path": ".rspec",
+      "baseline": {
+        "operation": "create",
+        "path": ".rspec",
+        "mode": "0644",
+        "sha256": "59cb44b82275dbbbe102e09ad72aaafa8a3b1f15ec35682f21c6741ca9d2c7b2"
+      },
+      "variant": {
+        "operation": "create",
+        "path": ".rspec",
+        "mode": "0644",
+        "sha256": "895506568f21c7bf5325556ace6a6c77319404830ce6674e22d316d81e65b880"
+      }
+    }
+  ]
+}

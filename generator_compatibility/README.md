@@ -32,6 +32,26 @@ and Rails stays authorable/local-only in the browser until this probe completes.
 Run the regression cases with:
 
 ```sh
-BUNDLE_GEMFILE=generator_compatibility/Gemfile \
-  bundle exec rspec generator_compatibility/spec
+cd generator_compatibility
+bundle exec rspec spec
 ```
+
+## Captured generator behavior
+
+`bin/capture-rspec-install` executes the real `rspec-rails` 8.1.0 install
+generator through its Rails generator class against a freshly copied minimal
+Rails fixture. It records the exact logical invocation, pinned runtime and gem
+versions, normalized fixture state, diagnostics, exit status, and sorted file
+delta in `captures/rspec-install/`.
+
+The corpus contains both the default invocation and a
+`--default-path test/specs` variation. The checked comparison records that the
+option relocates both helper files and appends `--default-path` to `.rspec`.
+Every run starts from the same fixture digest, and the compatibility specs
+reproduce all three JSON records byte-for-structure.
+
+The `Mobilis::GeneratorCompatibility` registry consumes capture evidence only
+for exact generator versions and argument lists. The initial `rspec:install`
+transformation is intentionally creation-only: it verifies Rails application
+prerequisites, refuses conflicting files, treats byte-identical files as an
+idempotent no-op, and never interprets a failed capture as executable evidence.

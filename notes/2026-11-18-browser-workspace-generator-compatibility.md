@@ -98,20 +98,27 @@ templates are copied or approximated for the browser.
 
 ## Capture and shim slices
 
-Introduce a separate `Mobilis::GeneratorCapture` entry point. Each definition
+The separate `Mobilis::GeneratorCapture` entry point keeps empirical generator
+work out of the infrastructure DSL. Each definition
 names a fixture and exact argv/environment, clones the fixture into a fresh
 temporary directory, executes once, and records provenance plus created,
 modified, deleted, and mode changes in deterministic JSON. Failed commands are
 captured as failures and rejected as compatibility evidence.
 
 Argument variations always restore the same baseline and compare capture
-deltas. The initial corpus targets the real `rspec:install` Rails ecosystem
-generator. Evidence is separate from `GeneratorCompatibility` shim code.
+deltas. The checked corpus runs the real `rspec:install` generator from
+`rspec-rails` 8.1.0 with its default arguments and with
+`--default-path test/specs`. Both records have the identical normalized fixture
+digest. The comparison proves that the option moves both helper files and
+appends the default-path setting to `.rspec`. Evidence is separate from
+`GeneratorCompatibility` shim code.
 
 The first shim declares exact generator/gem versions and accepted arguments,
-validates expected files before changes, applies through a small filesystem
-interface, refuses unexpected existing content, and is tested against the
-capture corpus. Real generators remain preferred wherever supported.
+validates that the Rails application entry files exist before changes, applies
+through a small filesystem interface, refuses unexpected existing content,
+and is tested against the capture corpus. Since this capture only creates
+files, applying it again is a byte-identical no-op; a user-modified target is a
+hard conflict. Real generators remain preferred wherever supported.
 
 ## Verification plan
 
@@ -119,8 +126,9 @@ capture corpus. Real generators remain preferred wherever supported.
    persistence, and one-VM lifecycle are covered in Playwright.
 2. Git init/status/stage/commit/log/diff/dirty protection/revision restore and
    Ruby UI refresh are covered in Playwright.
-3. Direct native and actual WASM Rails generator probes with matched versions,
-   structured file comparison, and an explicit compatibility matrix.
+3. Direct native and actual WASM Rails generator probes with matched versions.
+   Output parity is not claimed because the WASM run stops at the documented
+   `bigdecimal` blocker and its partial tree is rejected.
 4. Reproducible real baseline/variation captures and isolated temporary roots.
 5. Corpus-derived shim success, unsupported arguments, input conflicts, and
    repeated application behavior.
