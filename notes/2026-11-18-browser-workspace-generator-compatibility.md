@@ -78,12 +78,23 @@ semantic authority.
 
 ## Rails generator investigation
 
-Use Rails' public generator class/API directly with matched, pinned railties and
-options that disable subprocess-only post steps. Preserve the native writer.
-Package only dependencies demonstrated to load in the standard WASM runtime.
-If a native extension or unsupported host operation prevents generation, keep
-the minimal reproduction and capability report instead of substituting
-templates.
+The isolated probe pins railties 8.1.4.1 and invokes the public
+`Rails::Generators::AppGenerator.start` API with matched options. Native CRuby
+produces the complete 44-file minimal application without a Rails executable,
+Bundler, Git, or Docker. The same gem sources load far enough in the official
+`@ruby/4.0-wasm-wasi` 2.10.1 runtime to create the initial application tree.
+
+Two platform findings are explicit:
+
+- Rails/Thor calls `chmod`; the existing Mobilis WASI adapter safely ignores
+  only `ENOSYS`/`ENOTSUP`, allowing generation to continue.
+- ActiveSupport then requires `bigdecimal` while generating the master key and
+  encrypted credentials. The standard runtime does not contain that native
+  extension, and a host `.so` cannot be loaded by WASM. The probe exits nonzero
+  at this exact point and partial files are not treated as success.
+
+The native Rails writer is unchanged and remains the production path. No Rails
+templates are copied or approximated for the browser.
 
 ## Capture and shim slices
 

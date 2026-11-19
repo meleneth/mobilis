@@ -1,0 +1,10 @@
+[
+  "probe",
+  "--minimal",
+  "--skip-bundle",
+  "--skip-git",
+  "--skip-docker",
+  "--skip-ci",
+  "--skip-decrypted-diffs",
+  "--skip-keeps"
+]

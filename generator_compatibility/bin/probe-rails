@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+compatibility_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+manifest="$(mktemp)"
+output="$(mktemp -d)"
+trap 'rm -f "${manifest}"; rm -rf "${output}"' EXIT
+
+cd "${compatibility_dir}"
+bundle exec ruby build_probe_manifest.rb > "${manifest}"
+node --no-warnings probe_rails_wasm.mjs "${manifest}" "${output}"
