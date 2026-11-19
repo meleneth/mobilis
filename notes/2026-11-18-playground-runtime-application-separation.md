@@ -1,5 +1,9 @@
 # Playground runtime and application separation
 
+Status: implemented and browser-validated on 2026-11-18. The production path
+uses the pinned official CDN runtime and an independently hosted,
+content-addressed Mobilis application tar.
+
 ## Problem
 
 The playground build currently publishes the official ruby.wasm interpreter as

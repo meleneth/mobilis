@@ -13,12 +13,67 @@ docker compose up --build
 ```
 
 Open <http://localhost:8080>. The runtime image is nginx; it does not contain a
-Ruby server or generation API. Once the page assets load, authored source stays
-local and generation requires no outbound requests.
+Ruby server, Ruby interpreter, or generation API. At startup the browser loads
+the pinned official Ruby WASM interpreter from jsDelivr and the independently
+hosted Mobilis application artifact from nginx. Once those assets load,
+authored source stays local and generation requires no outbound requests.
 
 For a host build, run `npm ci`, install the isolated `playground/Gemfile`, and
 run `playground/scripts/build`. Serve `playground/public/` over HTTP; browsers
 do not allow the WASM application to boot reliably from `file://` URLs.
+
+For development without a CDN request, explicitly publish the package's exact
+pinned interpreter beside the other static assets:
+
+```sh
+RUBY_WASM_RUNTIME_URL=/vendor/ruby+stdlib.wasm \
+COPY_LOCAL_RUBY_WASM=1 \
+playground/scripts/build
+```
+
+`LOCAL_RUBY_WASM_PUBLIC_PATH` changes the copied public path when needed.
+`MOBILIS_APPLICATION_MANIFEST_URL` can point at another compatible manifest.
+There is no automatic fallback between CDN, local, or stale versions.
+
+## Runtime and application delivery
+
+The interpreter and Ruby application have independent ownership:
+
+- `@ruby/4.0-wasm-wasi` 2.10.1 supplies the official CRuby 4.0 full runtime.
+  Production configuration names the version-pinned jsDelivr URL and records
+  the expected byte size, SHA-256, and Fetch integrity value. The browser
+  verifies the bytes before compilation.
+- The build stages Mobilis, the playground Ruby/Haml source, templates, and the
+  pure-Ruby Haml, Temple, Thor, and Tilt libraries into a deterministic ustar
+  archive. It preserves the normal filesystem layout and `$LOAD_PATH`; Ruby
+  continues to use ordinary `require` calls.
+- `mobilis-app-manifest.json` records the content-addressed artifact URL,
+  application identity, compatible runtime package/version, load paths, boot
+  feature, and every member's size and SHA-256. The browser validates the tar
+  header, safe paths, archive integrity, exact member set, and member hashes
+  before mounting it in the writable WASI filesystem.
+- The mutable runtime configuration and application manifest use `no-store`.
+  The pinned runtime and content-addressed application archive are immutable
+  cache entries. nginx compresses the application archive in transit.
+
+JavaScript instantiates exactly one `RubyVM` per page session. Repeated editor
+operations invoke the already loaded Ruby application; they do not reload
+Mobilis or recreate the VM. `window.MobilisRuntimeDiagnostics` reports phase,
+VM count, artifact identities, and fetch/verification, compilation, hydration,
+instantiation, and Ruby load timings. The existing on-screen Ruby counter
+continues to report semantic operation latency.
+
+The runtime remains on the main browser thread because the current Ruby
+application intentionally renders Haml/Turbo updates and binds DOM events
+through the `js` bridge. Moving it to a Worker would require a new DOM protocol,
+not an artifact-delivery change. The VM is resident but idle: there is no Ruby
+polling or scheduled workload.
+
+CDN availability is required for a cold production load. Offline behavior is
+not claimed, and no service worker or silent stale-version fallback is used.
+The CDN executable is version-pinned and integrity-checked, but user-authored
+Ruby still has every browser capability explicitly exposed through the JS
+bridge; WASM is not a complete sandbox.
 
 ## Deploy to Devastation
 
@@ -175,9 +230,10 @@ render protocol without improving idle behavior.
 ## Compatibility findings
 
 - The pinned official CRuby 4.0/WASI full runtime loads Mobilis and its
-  standard-library dependencies. Mobilis, Haml, Temple, and Tilt sources are
-  assembled into a deterministic asset and loaded into a writable in-memory
-  WASI filesystem; no custom CRuby compilation is required.
+  standard-library dependencies. Mobilis, Haml, Temple, Thor, and Tilt sources
+  are assembled into a deterministic, independently versioned application
+  archive and loaded into a writable in-memory WASI filesystem; no custom
+  CRuby compilation is required.
 - Prism is a CRuby 4.0 default extension in that runtime; parsing and source
   locations execute inside WASM.
 - Haml 6.4, Temple, and Tilt are pure Ruby and render components in WASM.
@@ -193,6 +249,10 @@ render protocol without improving idle behavior.
 - WASI does not preserve POSIX executable bits. The browser filesystem adapter
   ignores only unsupported `chmod` calls while retaining the exact generated
   file bytes; native generation continues to set executable permissions.
+- Application artifacts can contain only Ruby and ordinary data assets. A new
+  dependency with a native extension must already be provided by the pinned
+  interpreter or requires an explicit runtime compatibility decision; it
+  cannot be added to the application tar as if it were pure Ruby.
 
 The detailed implementation/test status is in
 [`IMPLEMENTATION_REPORT.md`](IMPLEMENTATION_REPORT.md).
