@@ -45,7 +45,6 @@ printf '%s  %s\n' "${expected_sha256}" "${archive}" | sha256sum --check --status
 if [[ ! -d "${source}" ]]; then
   tar -xzf "${archive}" -C "${build_dir}"
 fi
-python3 "${root}/native_wasm/patch-libiconv-wasi.py" "${source}"
 if [[ -f "${prefix}/lib/libiconv.a" && -f "${prefix}/include/iconv.h" ]]; then
   printf '%s\n' "${prefix}"
   exit 0
@@ -68,9 +67,14 @@ build_triplet="$(gcc -dumpmachine)"
       --disable-nls >&2
   # An earlier build used different CPPFLAGS. GNU make does not necessarily
   # rebuild C objects just because the command-line flags changed.
-  make clean >&2
-  make -j"$(nproc)" >&2
-  make install >&2
+  # Nokogiri only needs the conversion library. Avoid the top-level
+  # 'all' and 'install' targets: they also build GNU Gnulib's srclib and
+  # CLI, whose POSIX fcntl/signal replacements conflict with WASI.
+  make -C lib clean >&2
+  make lib/localcharset.h >&2
+  make -j"$(nproc)" -C lib all >&2
+  make -C lib install-lib libdir="${prefix}/lib" includedir="${prefix}/include" >&2
+  install -Dm644 include/iconv.h.inst "${prefix}/include/iconv.h"
 )
 test -s "${prefix}/lib/libiconv.a" || {
   echo "libiconv was not compiled into the expected WASI static archive" >&2
