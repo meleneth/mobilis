@@ -57,6 +57,20 @@ module MobilisEarlyRubyArchive
         raise "ruby.wasm failed to build real cross-target archive: #{archive}"
       end
       super
+
+      # Third-party mkmf checks are complete. Before Ruby's final static link,
+      # discard the dummy init members from the original cross-Ruby archive.
+      # Ruby's final make supplies the actual ext/extinit.o and enc/encinit.o.
+      ar = toolchain.ar
+      ranlib = toolchain.ranlib
+      members, error, status = Open3.capture3(ar, "t", archive)
+      raise "Cannot inspect WASI Ruby archive: #{error}" unless status.success?
+      names = members.lines.map(&:strip)
+      placeholders = %w[dmyext.o dmyenc.o] & names
+      unless placeholders.empty?
+        executor.system(ar, "d", archive, *placeholders)
+        executor.system(ranlib, archive)
+      end
     end
   end
 
