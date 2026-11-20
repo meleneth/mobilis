@@ -1,0 +1,9 @@
+# frozen_string_literal: true
+
+# Isolated compatibility probe; not part of the production browser bundle.
+source "https://rubygems.org"
+
+# Match the proven Datawires renderer version and its Rails family.
+gem "view_component", "4.5.0"
+gem "actionview", "8.1.2"
+gem "railties", "8.1.2"
