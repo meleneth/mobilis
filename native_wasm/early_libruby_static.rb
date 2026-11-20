@@ -74,6 +74,60 @@ module MobilisEarlyRubyArchive
     end
   end
 
+  module LinkNokogiriStaticDependencies
+    def build(executor, crossruby, extra_mkargs = [])
+      super
+      return unless name.include?("nokogiri-")
+
+      # ruby.wasm records only the extension directory's *.a archives.
+      # Nokogiri's packed static dependencies live under ports/ instead,
+      # so they must be explicitly supplied to the final Ruby link.
+      objdir = product_build_dir(crossruby)
+      ports = File.join(objdir, "ports")
+      required = {
+        "exslt" => "libxslt/*/lib/libexslt.a",
+        "xslt"  => "libxslt/*/lib/libxslt.a",
+        "xml2"  => "libxml2/*/lib/libxml2.a",
+        "gumbo" => "libgumbo/*/lib/libgumbo.a"
+      }
+      archives = required.map do |name, pattern|
+        matches = Dir.glob(File.join(ports, "*", pattern))
+        unless matches.size == 1 && File.size?(matches.first)
+          raise "Expected exactly one WASI #{name} archive under #{ports}: #{matches.inspect}"
+        end
+        matches.first
+      end
+
+      prefix = File.expand_path("../wasi-dependencies", crossruby.build_dir)
+      zlib = File.join(
+        File.dirname(crossruby.build_dir), "zlib-1.3.1",
+        "opt/usr/local/lib/libz.a"
+      )
+      extras = [
+        File.join(prefix, "lib/liblzma.a"),
+        zlib,
+        File.join(prefix, "lib/libiconv.a")
+      ]
+      extras.each do |file|
+        raise "Missing WASI static dependency: #{file}" unless File.size?(file)
+      end
+
+      # Static archives can refer to one another (especially libxslt and
+      # libxml2). A linker group resolves those references without depending
+      # on a fragile single left-to-right scan.
+      list = linklist(crossruby)
+      existing = File.readlines(list, chomp: true).reject(&:empty?)
+      probe = File.join(objdir, "libruby-static.a")
+      if existing.include?(probe) || existing.any? { |entry| File.basename(entry) == "libruby-static.a" }
+        raise "Ruby probe archive unexpectedly entered Nokogiri final link list"
+      end
+      File.write(list, (
+        existing + ["-Wl,--start-group"] + archives + extras +
+        ["-Wl,--end-group"]
+      ).join("\n") + "\n")
+    end
+  end
+
   module LinkRealArchiveInMkmfProbes
     def do_legacy_extconf(executor, crossruby)
       archive = File.join(crossruby.build_dir, "libruby-static.a")
@@ -114,10 +168,17 @@ module MobilisEarlyRubyArchive
       # ruby.wasm clears RUBYOPT for the baseruby extconf invocation.
       # Scope a preload to Nokogiri's extconf only so MiniPortile can apply
       # our WASI libxml2 source patch immediately after extraction.
-      if name.include?("nokogiri-")
-        super(MobilisEarlyRubyArchive::NokogiriExecutor.new(executor), crossruby)
-      else
-        super
+      begin
+        if name.include?("nokogiri-")
+          super(MobilisEarlyRubyArchive::NokogiriExecutor.new(executor), crossruby)
+        else
+          super
+        end
+      ensure
+        # Required only for mkmf's configure-time link probes. Leaving this
+        # archive in objdir would cause ruby.wasm's *.a glob to include it in
+        # the final extension link list.
+        FileUtils.rm_f(link)
       end
     end
   end
@@ -128,4 +189,8 @@ RubyWasm::CrossRubyProduct.prepend(
 )
 RubyWasm::CrossRubyExtProduct.prepend(
   MobilisEarlyRubyArchive::LinkRealArchiveInMkmfProbes
+)
+
+RubyWasm::CrossRubyExtProduct.prepend(
+  MobilisEarlyRubyArchive::LinkNokogiriStaticDependencies
 )
