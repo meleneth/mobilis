@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "${root}/native_wasm"
+
+if [[ "${1:-}" != "build" ]]; then
+  echo "usage: native_wasm/bin/build build" >&2
+  exit 2
+fi
+
+command -v bundle >/dev/null || { echo "Bundler required" >&2; exit 1; }
+bundle check || { echo "Run bundle install in native_wasm/" >&2; exit 1; }
+
+mkdir -p "${root}/native_wasm/dist"
+# Full Ruby source build with statically linked gem extensions.
+# No host .so copying and no monkeypatching the sanitizer.
+bundle exec rbwasm --log-level debug build \
+  --ruby-version 4.0 \
+  --target wasm32-unknown-wasip1 \
+  --build-profile full \
+  --save-temps \
+  -o "${root}/native_wasm/dist/ruby+stdlib.wasm"
+
+test -s "${root}/native_wasm/dist/ruby+stdlib.wasm"
+file "${root}/native_wasm/dist/ruby+stdlib.wasm"

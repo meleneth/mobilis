@@ -23,7 +23,9 @@ for (const gem of manifest.gems) {
   for (const requirePath of gem.require_paths) loadPaths.push(`${guest}/${requirePath}`);
 }
 
-const runtimePath = new URL("../playground/node_modules/@ruby/4.0-wasm-wasi/dist/ruby+stdlib.wasm", import.meta.url);
+const runtimePath = process.env.RUBY_WASM_RUNTIME_PATH
+  ? path.resolve(process.env.RUBY_WASM_RUNTIME_PATH)
+  : new URL("../playground/node_modules/@ruby/4.0-wasm-wasi/dist/ruby+stdlib.wasm", import.meta.url);
 const module = await WebAssembly.compile(await fs.readFile(runtimePath));
 const wasi = new WASI({
   version: "preview1",

@@ -1,0 +1,10 @@
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+# Build against the same ruby.wasm toolchain family as the playground.
+gem "ruby_wasm", "2.10.1"
+# Ruby 4 no longer includes bigdecimal as a prebuilt WASI stdlib extension.
+gem "bigdecimal", "4.0.1"
+# Force the source-platform gem: precompiled Linux extension binaries are not WASI.
+gem "nokogiri", "1.18.10", force_ruby_platform: true
