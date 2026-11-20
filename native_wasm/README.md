@@ -39,6 +39,16 @@ playground is deliberately unchanged. Passing extension tests is not
 enough to adopt a new WASM runtime: it must also preserve JS interop,
 generation behavior, and browser startup/integrity assumptions.
 
+
+## WASI libiconv build scope
+
+The checked GNU libiconv 1.18 source includes a CLI and a GNU Gnulib
+`srclib` portability layer. Its POSIX-specific signal and `fcntl` fallbacks
+conflict with WASI SDK 24. The native build intentionally builds the
+`libcharset` prerequisite and `lib/libiconv.a` alone, using `make -C lib`
+and `make -C lib install-lib`. Nokogiri requires the library, not the
+command-line utility. This avoids patching `fcntl` or signal semantics.
+
 ## Expected failure points and next steps
 
 - BigDecimal on Ruby 4 is a gem extension, not one of ruby.wasm's default
