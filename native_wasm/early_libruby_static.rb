@@ -11,6 +11,7 @@
 require "ruby_wasm"
 require "fileutils"
 require "open3"
+require "shellwords"
 
 module MobilisEarlyRubyArchive
   class NokogiriExecutor
@@ -83,22 +84,28 @@ module MobilisEarlyRubyArchive
       # Nokogiri's packed static dependencies live under ports/ instead,
       # so they must be explicitly supplied to the final Ruby link.
       objdir = product_build_dir(crossruby)
-      ports = File.join(objdir, "ports")
-      required = {
-        "exslt" => "libxslt/*/lib/libexslt.a",
-        "xslt"  => "libxslt/*/lib/libxslt.a",
-        "xml2"  => "libxml2/*/lib/libxml2.a",
-        "gumbo" => "libgumbo/*/lib/libgumbo.a"
-      }
-      archives = required.map do |name, pattern|
-        matches = Dir.glob(File.join(ports, "*", pattern))
+      # Nokogiri's extconf explicitly embeds its bundled static archives in
+      # the generated Makefile LIBS. The library ports are NOT necessarily
+      # under objdir: cached libxml2/libxslt archives live under the gem's
+      # PACKAGE_ROOT_DIR/ports. Read the generated paths rather than guessing
+      # their locations or host/target directory names.
+      makefile = File.join(objdir, "Makefile")
+      raise "Nokogiri Makefile missing: #{makefile}" unless File.file?(makefile)
+      libs_line = File.readlines(makefile).find { |line| line.start_with?("LIBS = ") }
+      raise "Nokogiri Makefile missing LIBS declaration" unless libs_line
+      static_archives = Shellwords.split(libs_line.delete_prefix("LIBS = ").strip)
+        .select { |token| token.end_with?(".a") && token.start_with?("/") }
+      required = %w[libexslt.a libxslt.a libxml2.a libgumbo.a]
+      archives = required.map do |basename|
+        matches = static_archives.select { |archive| File.basename(archive) == basename }
         unless matches.size == 1 && File.size?(matches.first)
-          raise "Expected exactly one WASI #{name} archive under #{ports}: #{matches.inspect}"
+          raise "Nokogiri LIBS must contain exactly one built #{basename}: #{matches.inspect}"
         end
         matches.first
       end
 
-      prefix = File.expand_path("../wasi-dependencies", crossruby.build_dir)
+      # The build root is independent of the Nokogiri gem source location.
+      prefix = File.expand_path("wasi-dependencies", File.dirname(File.dirname(crossruby.build_dir)))
       zlib = File.join(
         File.dirname(crossruby.build_dir), "zlib-1.3.1",
         "opt/usr/local/lib/libz.a"
