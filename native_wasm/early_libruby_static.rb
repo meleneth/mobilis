@@ -19,6 +19,16 @@ module MobilisEarlyRubyArchive
 
     def system(*args, **kwargs)
       if args.join(" ").include?("ext/nokogiri/extconf.rb")
+        # ruby.wasm's legacy extconf runner sets $extout and $static, but
+        # omits $extmk. Ruby mkmf uses BOTH $extmk and $extout when routing
+        # install directories to the cross-Ruby extension build tree.
+        # Without $extmk, Nokogiri's generated Makefile tries /usr/local.
+        static_arg = '$static = true; trace_var(:$static) {|v| $static = true }'
+        index = args.index(static_arg)
+        raise "ruby.wasm extconf invocation changed: missing static setup" unless index
+        args = args.dup
+        args[index] = '$extmk = true; ' + static_arg
+
         kwargs = kwargs.dup
         kwargs[:env] = (kwargs[:env] || {}).merge(
           "RUBYOPT" => "-r#{File.expand_path("nokogiri_wasi_patch", __dir__)}"
