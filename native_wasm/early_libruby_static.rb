@@ -146,7 +146,8 @@ module MobilisEarlyRubyArchive
       # This file survives failed builds. Replace our previous linker group
       # rather than appending another copy every time bin/build is retried.
       if (start = existing.index("-Wl,--start-group"))
-        finish = existing.index("-Wl,--end-group", start)
+        finish_offset = existing[(start + 1)..].index("-Wl,--end-group")
+        finish = start + 1 + finish_offset if finish_offset
         raise "Unterminated Nokogiri static link group" unless finish
         existing.slice!(start..finish)
       end
