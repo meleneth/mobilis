@@ -45,14 +45,11 @@ printf '%s  %s\n' "${expected_sha256}" "${archive}" | sha256sum --check --status
 if [[ ! -d "${source}" ]]; then
   tar -xzf "${archive}" -C "${build_dir}"
 fi
-if [[ -f "${prefix}/lib/libiconv.a" && -f "${prefix}/include/iconv.h" ]]; then
-  printf '%s\n' "${prefix}"
-  exit 0
-fi
+if [[ ! -s "${prefix}/lib/libiconv.a" || ! -f "${prefix}/include/iconv.h" ]]; then
 
-# GNU autotools requires host and build triplets for a cross compilation.
-build_triplet="$(gcc -dumpmachine)"
-(
+  # GNU autotools requires host and build triplets for cross compilation.
+  build_triplet="$(gcc -dumpmachine)"
+  (
   cd "${source}"
   # Configure probes MUST see the WASI signal feature macro, otherwise
   # gnulib generates a replacement sigset_t that conflicts with wasi-libc.
@@ -75,10 +72,54 @@ build_triplet="$(gcc -dumpmachine)"
   make -j"$(nproc)" -C lib all >&2
   make -C lib install-lib libdir="${prefix}/lib" includedir="${prefix}/include" >&2
   install -Dm644 include/iconv.h.inst "${prefix}/include/iconv.h"
-)
+  )
+fi
 test -s "${prefix}/lib/libiconv.a" || {
   echo "libiconv was not compiled into the expected WASI static archive" >&2
   exit 1
 }
 test -f "${prefix}/include/iconv.h"
+
+# Nokogiri's extconf.rb specifically calls pkg_config("libiconv") when
+# its bare iconv link test fails. The GNU libiconv archive does not ship
+# a libiconv.pc; publish one for the *cross-target* archive.
+mkdir -p "${prefix}/lib/pkgconfig"
+cat > "${prefix}/lib/pkgconfig/libiconv.pc" <<EOF
+prefix=${prefix}
+exec_prefix=\${prefix}
+libdir=\${prefix}/lib
+includedir=\${prefix}/include
+
+Name: libiconv
+Description: GNU libiconv for wasm32-wasi (static)
+Version: 1.18
+Libs: -L\${libdir} -liconv
+Cflags: -I\${includedir}
+EOF
+
+# Fail here, not in Nokogiri's opaque mkmf probe, if we cannot *actually*
+# link this static archive with the same WASI toolchain.
+command -v pkg-config >/dev/null || { echo "pkg-config is required" >&2; exit 1; }
+PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" pkg-config --exists libiconv || {
+  echo "libiconv pkg-config entry is not discoverable" >&2
+  exit 1
+}
+cat > "${build_dir}/check-iconv.c" <<'EOF'
+#include <iconv.h>
+int main(void) {
+  iconv_t cd = iconv_open("UTF-8", "UTF-8");
+  if (cd == (iconv_t)-1) return 1;
+  return iconv_close(cd);
+}
+EOF
+"${toolchain}/clang" \
+  -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_PROCESS_CLOCKS \
+  "${build_dir}/check-iconv.c" \
+  $(PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" pkg-config --cflags --libs libiconv) \
+  -lwasi-emulated-signal -lwasi-emulated-process-clocks \
+  -o "${build_dir}/check-iconv.wasm" || {
+    echo "WASI libiconv compile/link smoke test failed" >&2
+    exit 1
+  }
+test -s "${build_dir}/check-iconv.wasm"
 printf '%s\n' "${prefix}"
