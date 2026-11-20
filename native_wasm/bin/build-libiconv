@@ -44,9 +44,9 @@ build_triplet="$(gcc -dumpmachine)"
     AR="${toolchain}/llvm-ar" RANLIB="${toolchain}/llvm-ranlib" \
     ./configure --host=wasm32-wasi --build="${build_triplet}" \
       --prefix="${prefix}" --disable-shared --enable-static \
-      --disable-nls
-  make -j"$(nproc)"
-  make install
+      --disable-nls >&2
+  make -j"$(nproc)" >&2
+  make install >&2
 )
 test -s "${prefix}/lib/libiconv.a" || {
   echo "libiconv was not compiled into the expected WASI static archive" >&2
