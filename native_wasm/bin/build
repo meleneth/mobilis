@@ -48,9 +48,12 @@ fi
 # Nokogiri needs an iconv implementation for the cross target, not a host
 # libiconv package. Its default Unix path does not build the vendored recipe.
 iconv_prefix="$(bin/build-libiconv)"
-export CPPFLAGS="-I${iconv_prefix}/include ${CPPFLAGS:-}"
+# Ruby itself includes <signal.h> while cross-compiling raise.c. WASI's
+# signal API requires an explicit opt-in and a corresponding emulation archive.
+# Keep the define and link dependency together (WASI SDK 24).
+export CPPFLAGS="-D_WASI_EMULATED_SIGNAL -I${iconv_prefix}/include ${CPPFLAGS:-}"
 export LDFLAGS="-L${iconv_prefix}/lib ${LDFLAGS:-}"
-export LIBS="-liconv ${LIBS:-}"
+export LIBS="-liconv -lwasi-emulated-signal ${LIBS:-}"
 export PKG_CONFIG_PATH="${iconv_prefix}/lib/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}"
 
 mkdir -p "${root}/native_wasm/dist"
