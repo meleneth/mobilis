@@ -10,6 +10,15 @@ module MobilisWasiLibxml2Patch
     super
     return unless name == "libxml2" && version == "2.13.9"
 
+    # Legacy mode enables libxml2's own HTTP/FTP transports by default.
+    # WASI SDK 24 lacks POSIX sockets, so these cannot compile or run.
+    # Keep zlib, LZMA, HTML, XML and memory-backed parsing enabled.
+    # MiniPortile caches configure options, so changed options trigger
+    # reconfiguration instead of reusing the old Makefile.
+    ["--without-http", "--without-ftp"].each do |option|
+      configure_options << option unless configure_options.include?(option)
+    end
+
     file = File.join(send(:work_path), "xmlIO.c")
     raise "Missing expected libxml2 source: #{file}" unless File.file?(file)
     source = File.binread(file)
