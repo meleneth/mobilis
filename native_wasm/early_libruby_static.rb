@@ -143,6 +143,13 @@ module MobilisEarlyRubyArchive
       # on a fragile single left-to-right scan.
       list = linklist(crossruby)
       existing = File.readlines(list, chomp: true).reject(&:empty?)
+      # This file survives failed builds. Replace our previous linker group
+      # rather than appending another copy every time bin/build is retried.
+      if (start = existing.index("-Wl,--start-group"))
+        finish = existing.index("-Wl,--end-group", start)
+        raise "Unterminated Nokogiri static link group" unless finish
+        existing.slice!(start..finish)
+      end
       probe = File.join(objdir, "libruby-static.a")
       if existing.include?(probe) || existing.any? { |entry| File.basename(entry) == "libruby-static.a" }
         raise "Ruby probe archive unexpectedly entered Nokogiri final link list"
