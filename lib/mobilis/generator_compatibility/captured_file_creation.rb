@@ -8,6 +8,8 @@ module Mobilis
     class WorkspaceConflictError < StandardError; end
 
     class CapturedFileCreation
+      attr_reader :required_paths
+
       def initialize(capture, required_paths: [])
         @capture = capture
         @required_paths = required_paths.map(&:to_s).freeze
@@ -43,6 +45,14 @@ module Mobilis
           created: planned.filter_map { |path, _content, _mode, write| path if write },
           unchanged: planned.filter_map { |path, _content, _mode, write| path unless write }
         }
+      end
+
+      private
+
+      public
+
+      def target_paths
+        entries.map { |entry| entry.fetch("path") }.freeze
       end
 
       private
