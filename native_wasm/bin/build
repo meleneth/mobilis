@@ -12,10 +12,23 @@ fi
 command -v bundle >/dev/null || { echo "Bundler required" >&2; exit 1; }
 bundle check || { echo "Run bundle install in native_wasm/" >&2; exit 1; }
 
+# ruby.wasm builds the extension with an independently compiled host Ruby
+# outside Bundler's environment. Make Nokogiri's pure-Ruby build helper visible
+# to that interpreter. A Gemfile declaration alone does not provide its load path.
+mini_portile_root="$(bundle show mini_portile2)"
+mini_portile_lib="${mini_portile_root}/lib"
+test -f "${mini_portile_lib}/mini_portile2.rb" || {
+  echo "mini_portile2 was not found at ${mini_portile_lib}" >&2
+  exit 1
+}
+RUBYLIB="${mini_portile_lib}${RUBYLIB:+:${RUBYLIB}}" \
+  ruby -rmini_portile2 -e 'puts "Host mini_portile2 load OK"'
+
 mkdir -p "${root}/native_wasm/dist"
 # Full Ruby source build with statically linked gem extensions.
 # No host .so copying and no monkeypatching the sanitizer.
-bundle exec rbwasm --log-level debug build \
+RUBYLIB="${mini_portile_lib}${RUBYLIB:+:${RUBYLIB}}" \
+  bundle exec rbwasm --log-level debug build \
   --ruby-version 4.0 \
   --target wasm32-unknown-wasip1 \
   --build-profile full \
