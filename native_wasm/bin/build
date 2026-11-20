@@ -21,14 +21,34 @@ test -f "${mini_portile_lib}/mini_portile2.rb" || {
   echo "mini_portile2 was not found at ${mini_portile_lib}" >&2
   exit 1
 }
-RUBYLIB="${mini_portile_lib}${RUBYLIB:+:${RUBYLIB}}" \
-  ruby -rmini_portile2 -e 'puts "Host mini_portile2 load OK"'
+# Nokogiri's extconf.rb calls `gem("mini_portile2", "~> 2.8.2")` before
+# requiring the library. RUBYLIB alone cannot satisfy RubyGems activation.
+# ruby.wasm executes extconf.rb using its independently built host Ruby,
+# whose default GEM_PATH does not include the invoking rbenv installation.
+mini_portile_gem_home="$(dirname "$(dirname "${mini_portile_root}")")"
+mini_portile_spec="${mini_portile_gem_home}/specifications/mini_portile2-2.8.9.gemspec"
+test -f "${mini_portile_spec}" || {
+  echo "RubyGems specification missing at ${mini_portile_spec}" >&2
+  exit 1
+}
+
+host_gem_paths="$(ruby -rrubygems -e 'print Gem.path.join(File::PATH_SEPARATOR)')"
+export GEM_PATH="${mini_portile_gem_home}:${host_gem_paths}"
+export RUBYLIB="${mini_portile_lib}${RUBYLIB:+:${RUBYLIB}}"
+
+ruby -e 'gem "mini_portile2", "~> 2.8.2"; require "mini_portile2"; puts "Host RubyGems mini_portile2 activation OK"'
+
+# On retries the baseruby already exists; verify against the *same* Ruby
+# interpreter ruby.wasm uses for Nokogiri's extconf.rb.
+baseruby="${root}/native_wasm/build/x86_64-pc-linux/baseruby-4.0/opt/bin/ruby"
+if [[ -x "${baseruby}" ]]; then
+  "${baseruby}" -e 'gem "mini_portile2", "~> 2.8.2"; require "mini_portile2"; puts "ruby.wasm baseruby mini_portile2 activation OK"'
+fi
 
 mkdir -p "${root}/native_wasm/dist"
 # Full Ruby source build with statically linked gem extensions.
 # No host .so copying and no monkeypatching the sanitizer.
-RUBYLIB="${mini_portile_lib}${RUBYLIB:+:${RUBYLIB}}" \
-  bundle exec rbwasm --log-level debug build \
+bundle exec rbwasm --log-level debug build \
   --ruby-version 4.0 \
   --target wasm32-unknown-wasip1 \
   --build-profile full \
