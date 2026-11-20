@@ -101,11 +101,11 @@ module MobilisEarlyRubyArchive
       raise "Cannot inspect WASI Ruby archive: #{error}" unless status.success?
       names = members.lines.map(&:strip)
       placeholders = %w[dmyext.o dmyenc.o]
-      unless (placeholders - names).empty?
-        raise "Ruby archive layout changed, missing placeholders: #{(placeholders - names).join(', ')}"
+      present = placeholders & names
+      unless present.empty?
+        executor.system(ar, "d", link, *present)
+        executor.system(ranlib, link)
       end
-      executor.system(ar, "d", link, *placeholders)
-      executor.system(ranlib, link)
       remaining, error, status = Open3.capture3(ar, "t", link)
       unless status.success? && (placeholders & remaining.lines.map(&:strip)).empty?
         raise "Could not remove Ruby placeholder init objects: #{error}"
