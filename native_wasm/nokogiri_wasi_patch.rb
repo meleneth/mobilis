@@ -6,6 +6,30 @@
 require "mini_portile2"
 
 module MobilisWasiLibxml2Patch
+  def compile
+    return super unless name == "libxml2" && version == "2.13.9"
+
+    # Old objects may still reference HTTP functions even after a reconfigure
+    # disables nanohttp.c. Reset those objects once per port worktree.
+    stamp = File.join(send(:tmp_path), "mobilis-wasi-libxml2-no-cli-v1")
+    unless File.file?(stamp)
+      execute("reset-stale-objects", "#{make_cmd} clean")
+      File.write(stamp, "libxml2 2.13.9; no HTTP/FTP; library only\n")
+    end
+
+    # Nokogiri needs libxml2.a, not the xmllint/xmlcatalog binaries.
+    # Automake's bin_PROGRAMS override avoids linking WASI executables
+    # against unsupported network entry points.
+    execute("compile", "#{make_cmd} bin_PROGRAMS= all")
+  end
+
+  def install
+    return super unless name == "libxml2" && version == "2.13.9"
+    return if installed?
+
+    execute("install", "#{make_cmd} bin_PROGRAMS= install")
+  end
+
   def patch
     super
     return unless name == "libxml2" && version == "2.13.9"
