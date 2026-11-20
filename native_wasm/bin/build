@@ -45,6 +45,14 @@ if [[ -x "${baseruby}" ]]; then
   "${baseruby}" -e 'gem "mini_portile2", "~> 2.8.2"; require "mini_portile2"; puts "ruby.wasm baseruby mini_portile2 activation OK"'
 fi
 
+# Nokogiri needs an iconv implementation for the cross target, not a host
+# libiconv package. Its default Unix path does not build the vendored recipe.
+iconv_prefix="$(bin/build-libiconv)"
+export CPPFLAGS="-I${iconv_prefix}/include ${CPPFLAGS:-}"
+export LDFLAGS="-L${iconv_prefix}/lib ${LDFLAGS:-}"
+export LIBS="-liconv ${LIBS:-}"
+export PKG_CONFIG_PATH="${iconv_prefix}/lib/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}"
+
 mkdir -p "${root}/native_wasm/dist"
 # Full Ruby source build with statically linked gem extensions.
 # No host .so copying and no monkeypatching the sanitizer.

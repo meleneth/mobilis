@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+build_dir="${root}/native_wasm/build/dependencies"
+prefix="${root}/native_wasm/build/wasi-dependencies"
+archive="${build_dir}/libiconv-1.18.tar.gz"
+source="${build_dir}/libiconv-1.18"
+expected_sha256="3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8"
+
+: "${WASI_SDK_PATH:?Set WASI_SDK_PATH to the WASI SDK root used for the ruby.wasm build}"
+toolchain="${WASI_SDK_PATH}/bin"
+for tool in clang clang++ llvm-ar llvm-ranlib; do
+  test -x "${toolchain}/${tool}" || {
+    echo "Missing WASI tool ${toolchain}/${tool}" >&2
+    exit 1
+  }
+done
+
+mkdir -p "${build_dir}" "${prefix}"
+if [[ ! -f "${archive}" ]]; then
+  curl --fail --location --retry 3 \
+    "https://ftpmirror.gnu.org/gnu/libiconv/libiconv-1.18.tar.gz" \
+    --output "${archive}"
+fi
+printf '%s  %s\n' "${expected_sha256}" "${archive}" | sha256sum --check --status || {
+  echo "libiconv source archive failed SHA-256 verification" >&2
+  exit 1
+}
+
+if [[ ! -d "${source}" ]]; then
+  tar -xzf "${archive}" -C "${build_dir}"
+fi
+if [[ -f "${prefix}/lib/libiconv.a" && -f "${prefix}/include/iconv.h" ]]; then
+  printf '%s\n' "${prefix}"
+  exit 0
+fi
+
+# GNU autotools requires host and build triplets for a cross compilation.
+build_triplet="$(gcc -dumpmachine)"
+(
+  cd "${source}"
+  env CC="${toolchain}/clang" CXX="${toolchain}/clang++" \
+    AR="${toolchain}/llvm-ar" RANLIB="${toolchain}/llvm-ranlib" \
+    ./configure --host=wasm32-wasi --build="${build_triplet}" \
+      --prefix="${prefix}" --disable-shared --enable-static \
+      --disable-nls
+  make -j"$(nproc)"
+  make install
+)
+test -s "${prefix}/lib/libiconv.a" || {
+  echo "libiconv was not compiled into the expected WASI static archive" >&2
+  exit 1
+}
+test -f "${prefix}/include/iconv.h"
+printf '%s\n' "${prefix}"

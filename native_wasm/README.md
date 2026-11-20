@@ -14,7 +14,7 @@ resulting Gemfile.lock after the first successful resolution.
 
 Prerequisites: a working Ruby 4.0 host, Bundler, standard C toolchain, Git,
 Node 22, `playground/node_modules` (`cd playground && npm ci`), and
-the WASI SDK/build prerequisites required by ruby.wasm. Builds download
+the WASI SDK/build prerequisites required by ruby.wasm. Set `WASI_SDK_PATH`\nto the WASI SDK installation used for the native cross-build. The local\n`bin/build-libiconv` step builds GNU libiconv 1.18 for WASI using Nokogiri's\npinned SHA-256, not a host libiconv library. Builds download
 Ruby source and native dependencies; the output is **not** checked into git.
 
 ```sh
@@ -43,7 +43,7 @@ generation behavior, and browser startup/integrity assumptions.
 
 - BigDecimal on Ruby 4 is a gem extension, not one of ruby.wasm's default
   Ruby 4 static extensions. `rbwasm build` must compile and link it.
-- Nokogiri includes C bindings to libxml2, libxslt and vendored libraries.
+- Nokogiri includes C bindings to libxml2, libxslt and vendored libraries.\n  The build first cross-compiles libiconv for WASI. Even with iconv available,
   These may require further WASI portability patches. Do **not** silently
   skip the extension or substitute a JavaScript parser.
 - ruby.wasm's `--save-temps` preserves compiler logs and failed build
