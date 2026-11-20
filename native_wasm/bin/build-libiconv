@@ -65,6 +65,9 @@ build_triplet="$(gcc -dumpmachine)"
     ./configure --host=wasm32-wasi --build="${build_triplet}" \
       --prefix="${prefix}" --disable-shared --enable-static \
       --disable-nls >&2
+  # An earlier build used different CPPFLAGS. GNU make does not necessarily
+  # rebuild C objects just because the command-line flags changed.
+  make clean >&2
   make -j"$(nproc)" >&2
   make install >&2
 )
