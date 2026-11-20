@@ -77,11 +77,12 @@ export PKG_CONFIG_PATH="${lzma_prefix}/lib/pkgconfig:${iconv_prefix}/lib/pkgconf
 # outputs: if it predates the zlib include-path fix, invalidate only that
 # libxml2 port so its configure checks run again with the current flags.
 while IFS= read -r -d '' libxml2_makefile; do
-  if ! grep -Fq -- "${zlib_prefix}/include" "${libxml2_makefile}"; then
+  if ! grep -Fq -- "${zlib_prefix}/include" "${libxml2_makefile}" ||
+     ! grep -Fq -- "${lzma_prefix}/include" "${libxml2_makefile}"; then
     libxml2_ports_dir="$(dirname "$(dirname "${libxml2_makefile}")")"
     case "${libxml2_ports_dir}" in
       "${root}"/native_wasm/build/wasm32-unknown-wasip1/*-ext/nokogiri-*/ext/nokogiri/tmp/*/ports/libxml2/2.13.9)
-        echo "Invalidating stale libxml2 configuration (missing WASI zlib include path): ${libxml2_ports_dir}" >&2
+        echo "Invalidating stale libxml2 configuration (missing WASI zlib/liblzma include path): ${libxml2_ports_dir}" >&2
         rm -rf -- "${libxml2_ports_dir}"
         ;;
       *) echo "Unexpected libxml2 build location: ${libxml2_makefile}" >&2; exit 1 ;;
