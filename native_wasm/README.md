@@ -40,6 +40,18 @@ enough to adopt a new WASM runtime: it must also preserve JS interop,
 generation behavior, and browser startup/integrity assumptions.
 
 
+## WASI liblzma build scope
+
+Nokogiri's bundled libxml2 2.13.9 also uses XZ Utils' liblzma to support
+compressed XML. The local `bin/build-liblzma` compiles only the static WASI
+liblzma library from verified XZ Utils 5.8.4 source (SHA-256 pinned). It
+installs into the same WASI-dependencies prefix as libiconv and link-tests
+the result using the WASI SDK. Both `CPPFLAGS` and `CFLAGS` include its
+headers because Nokogiri's nested MiniPortile libxml2 configure rebuilds
+those flags independently. No features are disabled in libxml2 itself.
+If a libxml2 build cache predates these new include flags, its configured
+port must be invalidated and rerun.
+
 ## WASI libiconv build scope
 
 The checked GNU libiconv 1.18 source includes a CLI and a GNU Gnulib
