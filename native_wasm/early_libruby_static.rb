@@ -10,6 +10,7 @@
 # owned by ruby.wasm.
 require "ruby_wasm"
 require "fileutils"
+require "open3"
 
 module MobilisEarlyRubyArchive
   class NokogiriExecutor
@@ -70,7 +71,32 @@ module MobilisEarlyRubyArchive
       FileUtils.mkdir_p(objdir)
       link = File.join(objdir, "libruby-static.a")
       FileUtils.rm_f(link)
-      File.symlink(archive, link)
+
+      # mkmf probes need the real Ruby symbols, but the early cross-Ruby
+      # archive still contains dmyext.o and dmyenc.o. These provide
+      # placeholder Init_ext/Init_enc symbols, which collide with Ruby's
+      # genuine ext/extinit.o and enc/encinit.o during the final link.
+      #
+      # Never mutate the upstream archive: install a separate target-native
+      # probe copy with ONLY those placeholder objects removed. The final
+      # cross-build can then see the real init objects.
+      FileUtils.cp(archive, link)
+      ar = crossruby.toolchain.ar
+      ranlib = crossruby.toolchain.ranlib
+      members, error, status = Open3.capture3(ar, "t", link)
+      raise "Cannot inspect WASI Ruby archive: #{error}" unless status.success?
+      names = members.lines.map(&:strip)
+      placeholders = %w[dmyext.o dmyenc.o]
+      unless (placeholders - names).empty?
+        raise "Ruby archive layout changed, missing placeholders: #{(placeholders - names).join(', ')}"
+      end
+      executor.system(ar, "d", link, *placeholders)
+      executor.system(ranlib, link)
+      remaining, error, status = Open3.capture3(ar, "t", link)
+      unless status.success? && (placeholders & remaining.lines.map(&:strip)).empty?
+        raise "Could not remove Ruby placeholder init objects: #{error}"
+      end
+
       # ruby.wasm clears RUBYOPT for the baseruby extconf invocation.
       # Scope a preload to Nokogiri's extconf only so MiniPortile can apply
       # our WASI libxml2 source patch immediately after extraction.
