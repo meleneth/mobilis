@@ -95,13 +95,32 @@ module MobilisEarlyRubyArchive
       raise "Nokogiri Makefile missing LIBS declaration" unless libs_line
       static_archives = Shellwords.split(libs_line.delete_prefix("LIBS = ").strip)
         .select { |token| token.end_with?(".a") && token.start_with?("/") }
+        .uniq
       required = %w[libexslt.a libxslt.a libxml2.a libgumbo.a]
       archives = required.map do |basename|
         matches = static_archives.select { |archive| File.basename(archive) == basename }
         unless matches.size == 1 && File.size?(matches.first)
-          raise "Nokogiri LIBS must contain exactly one built #{basename}: #{matches.inspect}"
+          raise "Nokogiri LIBS must identify one built #{basename}: #{matches.inspect}"
         end
         matches.first
+      end
+
+      # Nokogiri's MiniPortile port naming may say x86_64-linux because
+      # extconf runs under the host baseruby. Verify the *contents*, not
+      # the directory name: every archive member must be WASM or LLVM
+      # bitcode. Refuse to combine native ELF objects into the WASI link.
+      ar = crossruby.toolchain.ar
+      archives.each do |archive|
+        members, error, status = Open3.capture3(ar, "t", archive)
+        raise "Cannot inspect #{archive}: #{error}" unless status.success?
+        members.lines.map(&:strip).reject(&:empty?).each do |member|
+          bytes, error, status = Open3.capture3(ar, "p", archive, member)
+          raise "Cannot read #{member} from #{archive}: #{error}" unless status.success?
+          magic = bytes.b.bytes.first(4)
+          unless magic == [0, 97, 115, 109] || magic == [66, 67, 192, 222]
+            raise "Non-WASM object #{member} (magic #{magic.inspect}) in #{archive}"
+          end
+        end
       end
 
       # The build root is independent of the Nokogiri gem source location.
