@@ -8,6 +8,15 @@ if (!runtimePath) throw new Error("usage: node native_wasm/probe_extensions.mjs 
 
 const bytes = await fs.readFile(runtimePath);
 const module = await WebAssembly.compile(bytes);
+const exportedNames = new Set(WebAssembly.Module.exports(module).map(({ name }) => name));
+const jsBridgeExport = "canonical_abi_drop_rb-abi-value";
+if (!exportedNames.has(jsBridgeExport)) {
+  throw new Error(
+    `Runtime is missing Ruby's JS bridge export ${jsBridgeExport}. ` +
+    'Add gem "js", "2.10.1" to native_wasm/Gemfile, run bundle install, ' +
+    "and rebuild the runtime before running this probe."
+  );
+}
 const wasi = new WASI({
   version: "preview1",
   returnOnExit: true,
