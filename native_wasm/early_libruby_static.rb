@@ -12,6 +12,30 @@ require "ruby_wasm"
 require "fileutils"
 
 module MobilisEarlyRubyArchive
+  class NokogiriExecutor
+    def initialize(delegate)
+      @delegate = delegate
+    end
+
+    def system(*args, **kwargs)
+      if args.join(" ").include?("ext/nokogiri/extconf.rb")
+        kwargs = kwargs.dup
+        kwargs[:env] = (kwargs[:env] || {}).merge(
+          "RUBYOPT" => "-r#{File.expand_path("nokogiri_wasi_patch", __dir__)}"
+        )
+      end
+      @delegate.system(*args, **kwargs)
+    end
+
+    def method_missing(method, *args, **kwargs, &block)
+      @delegate.public_send(method, *args, **kwargs, &block)
+    end
+
+    def respond_to_missing?(method, include_private = false)
+      @delegate.respond_to?(method, include_private) || super
+    end
+  end
+
   module CoreBeforeGemExtensions
     def build_exts(executor)
       archive = File.join(build_dir, "libruby-static.a")
@@ -37,7 +61,14 @@ module MobilisEarlyRubyArchive
       link = File.join(objdir, "libruby-static.a")
       FileUtils.rm_f(link)
       File.symlink(archive, link)
-      super
+      # ruby.wasm clears RUBYOPT for the baseruby extconf invocation.
+      # Scope a preload to Nokogiri's extconf only so MiniPortile can apply
+      # our WASI libxml2 source patch immediately after extraction.
+      if name.include?("nokogiri-")
+        super(MobilisEarlyRubyArchive::NokogiriExecutor.new(executor), crossruby)
+      else
+        super
+      end
     end
   end
 end
