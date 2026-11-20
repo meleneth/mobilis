@@ -17,8 +17,10 @@ if [[ -z "${WASI_SDK_PATH:-}" ]]; then
       build_dir: File.expand_path("build"),
       version: "24.0"
     )
+    # The installer logs to stdout; keep command substitution path-only.
+    $stdout = $stderr
     sdk.install(RubyWasm::BuildExecutor.new(verbose: false))
-    puts sdk.wasi_sdk_path
+    STDOUT.puts sdk.wasi_sdk_path
   ')"
 fi
 toolchain="${WASI_SDK_PATH}/bin"
