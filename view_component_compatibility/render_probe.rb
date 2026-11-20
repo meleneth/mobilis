@@ -36,7 +36,7 @@ elapsed_ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1_000
 
 JSON.generate(
   ruby: RUBY_VERSION,
-  view_component: Gem.loaded_specs.fetch("view_component").version.to_s,
+  component_base: ViewComponent::Base.name,
   nested_html: html,
   render_ms: elapsed_ms
 )
