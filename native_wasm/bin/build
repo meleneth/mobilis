@@ -48,12 +48,27 @@ fi
 # Nokogiri needs an iconv implementation for the cross target, not a host
 # libiconv package. Its default Unix path does not build the vendored recipe.
 iconv_prefix="$(bin/build-libiconv)"
-# Ruby itself includes <signal.h> while cross-compiling raise.c. WASI's
-# signal API requires an explicit opt-in and a corresponding emulation archive.
-# Keep the define and link dependency together (WASI SDK 24).
-export CPPFLAGS="-D_WASI_EMULATED_SIGNAL -I${iconv_prefix}/include ${CPPFLAGS:-}"
-export LDFLAGS="-L${iconv_prefix}/lib ${LDFLAGS:-}"
-export LIBS="-liconv -lwasi-emulated-signal ${LIBS:-}"
+
+# ruby.wasm already builds zlib for the same wasm32-wasip1 target.
+# Nokogiri's MiniPortile libxml2 recipe explicitly reconstructs CPPFLAGS
+# and CFLAGS from the process environment; Ruby's mkmf -I/-L settings do
+# not propagate into that nested autotools compilation.
+zlib_prefix="${root}/native_wasm/build/wasm32-unknown-wasip1/zlib-1.3.1/opt/usr/local"
+test -f "${zlib_prefix}/include/zlib.h" || {
+  echo "Missing WASI zlib header: ${zlib_prefix}/include/zlib.h" >&2
+  exit 1
+}
+test -s "${zlib_prefix}/lib/libz.a" || {
+  echo "Missing WASI zlib archive: ${zlib_prefix}/lib/libz.a" >&2
+  exit 1
+}
+
+# Keep all native dependency include paths in *both* environments used
+# by the nested recipe and the target Ruby extension checks.
+export CPPFLAGS="-D_WASI_EMULATED_SIGNAL -I${zlib_prefix}/include -I${iconv_prefix}/include ${CPPFLAGS:-}"
+export CFLAGS="-I${zlib_prefix}/include -I${iconv_prefix}/include ${CFLAGS:-}"
+export LDFLAGS="-L${zlib_prefix}/lib -L${iconv_prefix}/lib ${LDFLAGS:-}"
+export LIBS="-lz -liconv -lwasi-emulated-signal ${LIBS:-}"
 export PKG_CONFIG_PATH="${iconv_prefix}/lib/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}"
 
 mkdir -p "${root}/native_wasm/dist"
