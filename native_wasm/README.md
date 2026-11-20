@@ -49,6 +49,18 @@ conflict with WASI SDK 24. The native build intentionally builds the
 and `make -C lib install-lib`. Nokogiri requires the library, not the
 command-line utility. This avoids patching `fcntl` or signal semantics.
 
+## Static Ruby archive and Nokogiri configure checks
+
+ruby.wasm 2.10.1 normally invokes third-party `extconf.rb` before building
+`libruby-static.a`. Nokogiri's `mkmf` links test binaries with `-lruby-static`
+and thus reports libiconv as unavailable even when `pkg-config` resolves the
+correct WASI archive. The local `early_libruby_static.rb` adapter builds the
+**actual cross-target Ruby archive** before third-party extension probes, and
+links that archive into each probe directory as `libruby-static.a` (matching
+`mkmf`'s `-L.`). This is not a fake symbol provider or a bypass of the link
+test. The extension's generated Makefile still uses Ruby's normal linking
+rules. Keep this adapter narrowly scoped to the pinned ruby.wasm version.
+
 ## Expected failure points and next steps
 
 - BigDecimal on Ruby 4 is a gem extension, not one of ruby.wasm's default

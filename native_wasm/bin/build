@@ -59,7 +59,7 @@ export PKG_CONFIG_PATH="${iconv_prefix}/lib/pkgconfig${PKG_CONFIG_PATH:+:${PKG_C
 mkdir -p "${root}/native_wasm/dist"
 # Full Ruby source build with statically linked gem extensions.
 # No host .so copying and no monkeypatching the sanitizer.
-bundle exec rbwasm --log-level debug build \
+bundle exec ruby -r "${root}/native_wasm/early_libruby_static" -S rbwasm --log-level debug build \
   --ruby-version 4.0 \
   --target wasm32-unknown-wasip1 \
   --build-profile full \
