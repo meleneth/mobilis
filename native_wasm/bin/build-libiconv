@@ -54,8 +54,14 @@ fi
 build_triplet="$(gcc -dumpmachine)"
 (
   cd "${source}"
+  # Configure probes MUST see the WASI signal feature macro, otherwise
+  # gnulib generates a replacement sigset_t that conflicts with wasi-libc.
+  # Pass the matching emulation library to link tests as well.
   env CC="${toolchain}/clang" CXX="${toolchain}/clang++" \
     AR="${toolchain}/llvm-ar" RANLIB="${toolchain}/llvm-ranlib" \
+    CPPFLAGS="-D_WASI_EMULATED_SIGNAL" \
+    CFLAGS="-O2 -D_WASI_EMULATED_SIGNAL" \
+    LIBS="-lwasi-emulated-signal" \
     ./configure --host=wasm32-wasi --build="${build_triplet}" \
       --prefix="${prefix}" --disable-shared --enable-static \
       --disable-nls >&2
