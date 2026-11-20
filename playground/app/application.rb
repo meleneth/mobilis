@@ -18,6 +18,7 @@ module MobilisPlayground
 
     def initialize(renderer: Renderer.new)
       @renderer = renderer
+      @projections = ProjectionInvalidator.new
       @runtime = Mobilis::Browser::SemanticRuntime.new
       @history = Mobilis::Browser::SourceHistory.new
       bootstrap_source = workspace_property(:bootstrapSource)
@@ -91,17 +92,14 @@ module MobilisPlayground
         @errors = []
         @status = "Source is valid. Visual model updated locally."
         persist_source(valid: true)
-        replace("builder-region", render_builder)
-        replace("inspector-region", render_inspector)
       else
         @diagram_stale = true
         @errors = analysis.errors
         @status = "Source is invalid. The last valid visual model is preserved."
       end
-      replace("architecture-region", render_architecture)
+      update_regions(*(analysis.valid? ? %i[system validation] : %i[validation]))
       render_diagram
       refresh_selection
-      replace("diagnostics-region", render_diagnostics)
     end
 
     def handle_workspace_checkout(event)
@@ -117,11 +115,7 @@ module MobilisPlayground
       @diagram_stale = false
       @errors = []
       @status = "Checked out Git revision and refreshed the validated project."
-      replace("editor-region", render_editor)
-      replace("builder-region", render_builder)
-      replace("inspector-region", render_inspector)
-      replace("architecture-region", render_architecture)
-      replace("diagnostics-region", render_diagnostics)
+      update_regions(:source, :system, :validation)
       render_diagram
       refresh_selection
       detail[:accepted] = true
@@ -187,8 +181,7 @@ module MobilisPlayground
         visual_edit { source_document.add_relationship(from:, to:, kind:) }
       elsif class_member?(target[:classList], "file-link")
         @selected_file = target[:dataset][:path].to_s
-        replace("files-region", render_files)
-        replace("file-content-region", render_file_content)
+        update_regions(:selected_file)
       else
         handle_button(id)
       end
@@ -231,13 +224,9 @@ module MobilisPlayground
       @errors = []
       @status = "Visual edit applied surgically to Ruby source."
       persist_source(valid: true)
-      replace("editor-region", render_editor)
-      replace("builder-region", render_builder)
-      replace("inspector-region", render_inspector)
-      replace("architecture-region", render_architecture)
+      update_regions(:source, :system, :validation)
       render_diagram
       refresh_selection
-      replace("diagnostics-region", render_diagnostics)
     end
 
     def handle_archive_commit(event)
@@ -267,13 +256,9 @@ module MobilisPlayground
       @errors = []
       @status = "Structured source edit #{direction == :undo ? "undone" : "redone"}."
       persist_source(valid: true)
-      replace("editor-region", render_editor)
-      replace("builder-region", render_builder)
-      replace("inspector-region", render_inspector)
-      replace("architecture-region", render_architecture)
+      update_regions(:source, :system, :validation)
       render_diagram
       refresh_selection
-      replace("diagnostics-region", render_diagnostics)
     end
 
     def generate
@@ -283,7 +268,7 @@ module MobilisPlayground
       generation = @generation += 1
       @status = "Generating with Mobilis…"
       @errors = []
-      replace("diagnostics-region", render_diagnostics)
+      update_regions(:generation)
 
       result = Mobilis::Browser::Generator.new.call(current.system)
       return unless generation == @generation
@@ -292,9 +277,7 @@ module MobilisPlayground
       @selected_file = @files.keys.first
       @status = "Generated #{@files.length} files locally with Mobilis."
       persist_generated_files
-      replace("files-region", render_files)
-      replace("file-content-region", render_file_content)
-      replace("diagnostics-region", render_diagnostics)
+      update_regions(:generated_files, :generation)
     end
 
     def download_file
@@ -327,7 +310,13 @@ module MobilisPlayground
     def report_error(error)
       @errors = ["#{error.class}: #{error.message}"]
       @status = "The requested action failed."
-      replace("diagnostics-region", render_diagnostics)
+      update_regions(:validation)
+    end
+
+    def update_regions(*changes)
+      @projections.affected(*changes).each do |region, method_name|
+        replace(region, public_send(method_name))
+      end
     end
 
     def replace(target, html)
