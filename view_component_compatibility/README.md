@@ -26,11 +26,24 @@ rendering and correct HTML escaping. Runtime compilation and component render
 timings are printed on success. It fails nonzero and preserves the Ruby/JS
 exception on any missing dependency or render failure.
 
-**Status:** Not executed by GitHub connector. The missing native `bigdecimal`
-extension in the standard Ruby WASM runtime is already known from the Rails
-generator probe. The probe must not be reported as passing before an actual
-run. Do not replace production Haml rendering with a mock component or copy
-native .so files into the WASM runtime.
+**Status: FAILED on the user's actual Ruby WASM runtime (2026-11-20).**
+The failure trace reaches `ViewComponent::Base` → `ActionView::Base` →
+`ActionView::Helpers::SanitizeHelper` → `rails-html-sanitizer` → `loofah`
+→ `nokogiri`. Nokogiri is intentionally omitted by the gem manifest
+because its native extension is built for the host machine, not wasm32-wasi.
+The probe does **not** establish working ViewComponent compatibility.
+
+This is distinct from the earlier missing `bigdecimal` extension on the
+Rails generator path. Adding Nokogiri's Ruby-platform source gem alone
+would not help: its C extension still must be compiled for the WASI target
+and integrated with the Ruby interpreter. Do not copy native host `.so`
+files into WASM or monkeypatch away HTML sanitization.
+
+Next investigate a reproducible WASI-compatible native build of Nokogiri
+(and its dependencies), recording cold-start size and performance before
+shipping. Keep the existing Haml implementation operational, and proceed
+with renderer-independent affordance projections without coupling them to
+ViewComponent until this gate genuinely passes.
 
 ## Extraction target
 
