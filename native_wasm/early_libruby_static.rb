@@ -151,8 +151,16 @@ module MobilisEarlyRubyArchive
         existing.slice!(start..finish)
       end
       probe = File.join(objdir, "libruby-static.a")
-      if existing.include?(probe) || existing.any? { |entry| File.basename(entry) == "libruby-static.a" }
-        raise "Ruby probe archive unexpectedly entered Nokogiri final link list"
+      # Old ruby.wasm runs persisted this temporary mkmf archive in
+      # link.filelist. It is removed after extconf today, but the filelist
+      # itself survives failed/retried builds. Drop ONLY this exact known
+      # probe path, and continue rejecting unexpected Ruby archives.
+      existing.delete(probe)
+      if existing.any? { |entry| File.basename(entry) == "libruby-static.a" }
+        raise "Unexpected Ruby static archive in Nokogiri final link list"
+      end
+      unless existing.any? { |entry| File.basename(entry) == "nokogiri.a" }
+        raise "Nokogiri extension archive missing from final link list: #{existing.inspect}"
       end
       File.write(list, (
         existing + ["-Wl,--start-group"] + archives + extras +
