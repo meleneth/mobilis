@@ -45,6 +45,7 @@ printf '%s  %s\n' "${expected_sha256}" "${archive}" | sha256sum --check --status
 if [[ ! -d "${source}" ]]; then
   tar -xzf "${archive}" -C "${build_dir}"
 fi
+python3 "${root}/native_wasm/patch-libiconv-wasi.py" "${source}"
 if [[ -f "${prefix}/lib/libiconv.a" && -f "${prefix}/include/iconv.h" ]]; then
   printf '%s\n' "${prefix}"
   exit 0
@@ -59,9 +60,9 @@ build_triplet="$(gcc -dumpmachine)"
   # Pass the matching emulation library to link tests as well.
   env CC="${toolchain}/clang" CXX="${toolchain}/clang++" \
     AR="${toolchain}/llvm-ar" RANLIB="${toolchain}/llvm-ranlib" \
-    CPPFLAGS="-D_WASI_EMULATED_SIGNAL" \
-    CFLAGS="-O2 -D_WASI_EMULATED_SIGNAL" \
-    LIBS="-lwasi-emulated-signal" \
+    CPPFLAGS="-D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_PROCESS_CLOCKS" \
+    CFLAGS="-O2 -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_PROCESS_CLOCKS" \
+    LIBS="-lwasi-emulated-signal -lwasi-emulated-process-clocks" \
     ./configure --host=wasm32-wasi --build="${build_triplet}" \
       --prefix="${prefix}" --disable-shared --enable-static \
       --disable-nls >&2
