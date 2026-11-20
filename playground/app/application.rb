@@ -315,7 +315,7 @@ module MobilisPlayground
 
     def update_regions(*changes)
       @projections.affected(*changes).each do |region, method_name|
-        replace(region, public_send(method_name))
+        replace(region, __send__(method_name))
       end
     end
 
