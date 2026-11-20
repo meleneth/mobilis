@@ -138,13 +138,14 @@ module MobilisEarlyRubyArchive
         raise "Missing WASI static dependency: #{file}" unless File.size?(file)
       end
 
-      # Static archives can refer to one another (especially libxslt and
-      # libxml2). A linker group resolves those references without depending
-      # on a fragile single left-to-right scan.
+      # Supply the real WASI dependencies as normal static archives.
+      # wasm-ld does not accept GNU --start-group/--end-group flags.
+      # Keep the precise dependency ordering (exslt, xslt, xml2, gumbo,
+      # lzma, zlib, iconv) rather than injecting unsupported linker options.
       list = linklist(crossruby)
       existing = File.readlines(list, chomp: true).reject(&:empty?)
-      # This file survives failed builds. Replace our previous linker group
-      # rather than appending another copy every time bin/build is retried.
+      # Remove the linker-group block produced by older versions of this
+      # adapter. Its contents are regenerated from the verified archives.
       if (start = existing.index("-Wl,--start-group"))
         finish_offset = existing[(start + 1)..].index("-Wl,--end-group")
         finish = start + 1 + finish_offset if finish_offset
@@ -163,10 +164,11 @@ module MobilisEarlyRubyArchive
       unless existing.any? { |entry| File.basename(entry) == "nokogiri.a" }
         raise "Nokogiri extension archive missing from final link list: #{existing.inspect}"
       end
-      File.write(list, (
-        existing + ["-Wl,--start-group"] + archives + extras +
-        ["-Wl,--end-group"]
-      ).join("\n") + "\n")
+      # Nokogiri's link.filelist persists across failed local builds.
+      # Remove exactly the entries we manage before adding them back.
+      managed = (archives + extras)
+      existing.reject! { |entry| managed.include?(entry) }
+      File.write(list, (existing + managed).join("\n") + "\n")
     end
   end
 
