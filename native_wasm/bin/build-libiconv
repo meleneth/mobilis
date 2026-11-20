@@ -8,7 +8,19 @@ archive="${build_dir}/libiconv-1.18.tar.gz"
 source="${build_dir}/libiconv-1.18"
 expected_sha256="3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8"
 
-: "${WASI_SDK_PATH:?Set WASI_SDK_PATH to the WASI SDK root used for the ruby.wasm build}"
+# Let ruby.wasm resolve and install its own SDK. It normally lives under
+# native_wasm/build/toolchain/wasi-sdk-24.0. Do not require an extra shell
+# variable when the build system already owns toolchain installation.
+if [[ -z "${WASI_SDK_PATH:-}" ]]; then
+  WASI_SDK_PATH="$(cd "${root}/native_wasm" && bundle exec ruby -rruby_wasm -e '
+    sdk = RubyWasm::WASISDK.new(
+      build_dir: File.expand_path("build"),
+      version: "24.0"
+    )
+    sdk.install(RubyWasm::BuildExecutor.new(verbose: false))
+    puts sdk.wasi_sdk_path
+  ')"
+fi
 toolchain="${WASI_SDK_PATH}/bin"
 for tool in clang clang++ llvm-ar llvm-ranlib; do
   test -x "${toolchain}/${tool}" || {
