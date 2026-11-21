@@ -5,7 +5,7 @@ require "fileutils"
 module Mobilis
   module Browser
     class Generator
-      Result = Data.define(:root, :files)
+      Result = Data.define(:root, :files, :steps)
 
       def initialize(workspace: "mobilis-playground")
         @workspace = workspace
@@ -17,14 +17,17 @@ module Mobilis
         FileUtils.mkdir_p(@workspace)
 
         directory = Mobilis::Services::Directory.new(@workspace)
+        steps = []
         root = Mobilis::Browser::FileSystemCompatibility.without_posix_permissions do
-          Mobilis::Manifest.new(system, directory_service: directory).materialize_static
+          Mobilis::Manifest.new(system, directory_service: directory).materialize_browser(
+            on_checkpoint: ->(message, files) { steps << {message:, files:} }
+          )
         end
         files = Dir.glob("**/*", File::FNM_DOTMATCH, base: root)
           .reject { |path| path == "." || path == ".." || File.directory?(File.join(root, path)) }
           .sort
           .to_h { |path| [path, File.binread(File.join(root, path))] }
-        Result.new(root:, files:)
+        Result.new(root:, files:, steps:)
       ensure
         Dir.chdir(caller_directory) if caller_directory
       end
