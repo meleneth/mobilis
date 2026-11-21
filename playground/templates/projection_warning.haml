@@ -1,0 +1,6 @@
+-# The last valid topology remains available, but must never masquerade as current.
+.rounded.border.border-amber-800.bg-amber-950.p-3.text-xs.text-amber-200{role: "alert", data: {projection_state: "stale"}}
+  %strong.block Projections are stale. Current DSL is invalid.
+  %p.mt-1 Fix the source error below to refresh the builder, inspector, and diagram.
+  - errors.each do |error|
+    %p.mt-1.break-words.font-mono= error

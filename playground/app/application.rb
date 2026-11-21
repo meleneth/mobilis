@@ -122,7 +122,7 @@ module MobilisPlayground
         @errors = analysis.errors
         @status = "Source is invalid. The last valid visual model is preserved."
       end
-      update_regions(*(analysis.valid? ? %i[system validation] : %i[validation]))
+      update_regions(:system, :validation)
       render_diagram
       refresh_selection
     end
@@ -367,7 +367,7 @@ module MobilisPlayground
     def render_builder
       capabilities = Mobilis::Browser::Capabilities.for_system(@analysis.system)
       inspector_services = service_inspector.services
-      @renderer.render(
+      html = @renderer.render(
         :builder,
         declarations: @analysis.declarations,
         service_types: Mobilis::Browser::SourceDocument::SERVICE_TYPES,
@@ -375,6 +375,7 @@ module MobilisPlayground
         inspector_services:,
         capabilities:
       )
+      projection_warning + html
     end
 
     def render_editor
@@ -390,12 +391,19 @@ module MobilisPlayground
     end
 
     def render_inspector
-      @renderer.render(
+      html = @renderer.render(
         :inspector,
         services: service_inspector.services,
         documents: Mobilis::Browser::VirtualDocument.new(@analysis),
         archives: @analysis.archives
       )
+      projection_warning + html
+    end
+
+    def projection_warning
+      return "" unless @diagram_stale
+
+      @renderer.render(:projection_warning, errors: @errors)
     end
 
     def service_inspector

@@ -40,6 +40,29 @@ test("preserves the last visual model while invalid Ruby is repaired", async ({ 
   await expect(page.locator("#architecture-region")).toContainText("Live from validated DSL");
 });
 
+test("a one-character service rename exposes stale projections until references agree", async ({ page }) => {
+  const editor = page.getByLabel("Mobilis Ruby DSL");
+  const original = await editor.inputValue();
+  // A valid Ruby string edit is not necessarily a valid Mobilis system.
+  // The connection still references 'cache' after the declaration becomes 'cach'.
+  const inconsistent = original.replace('redis("cache")', 'redis("cach")');
+  await editor.fill(inconsistent);
+
+  await expect(page.locator("#diagnostics-region")).toContainText("Source or generation error");
+  await expect(page.locator("#builder-region [data-projection-state=stale]")).toBeVisible();
+  await expect(page.locator("#inspector-region [data-projection-state=stale]")).toBeVisible();
+  await expect(page.locator("#architecture-region")).toContainText("Stale");
+  await expect(page.locator("#architecture-canvas")).toContainText("Redis: cache");
+
+  // Once both source references agree, every projection must catch up.
+  await editor.fill(inconsistent.replace('from: "cache"', 'from: "cach"'));
+  await expect(page.locator("#builder-region [data-projection-state=stale]")).toHaveCount(0);
+  await expect(page.locator("#inspector-region [data-projection-state=stale]")).toHaveCount(0);
+  await expect(page.locator(".service-name").nth(1)).toHaveValue("cach");
+  await expect(page.locator("#service-inspector-panels")).toContainText("cach");
+  await expect(page.locator("#architecture-canvas")).toContainText("Redis: cach");
+});
+
 test("removes connected nodes and edges through the visual builder", async ({ page }) => {
   const cacheCard = page.locator(".service-card").filter({ has: page.locator('.service-name[value="cache"]') });
   await cacheCard.getByRole("button", { name: "Remove" }).click();
