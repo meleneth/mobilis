@@ -71,6 +71,44 @@ module Mobilis
         replace(string.content_loc.start_offset, string.content_loc.end_offset, escape_string(name, string))
       end
 
+      # Form edits already carry the declaration identity. Never infer a
+      # service rename from a diff when we have that identity: rewrite the
+      # declaration and its Prism-resolved literal bindings in one transaction.
+      def rename_with_references(id, name)
+        declaration, node = editable_declaration(id)
+        raise ArgumentError, "Service name cannot be empty" if name.strip.empty?
+
+        old_name = declaration.name
+        return source if name == old_name
+        if declarations.any? { |candidate|
+          candidate.id != declaration.id && normalize_name(candidate.name) == normalize_name(name)
+        }
+          raise ArgumentError, "Service name #{name.inspect} is already declared"
+        end
+        unless declarations.count { |candidate| normalize_name(candidate.name) == normalize_name(old_name) } == 1
+          raise ArgumentError, "Service identity #{old_name.inspect} is ambiguous"
+        end
+
+        replacements = service_name_literals(old_name).map do |literal|
+          [literal.content_loc.start_offset, literal.content_loc.end_offset, escape_string(name, literal)]
+        end
+        # The declaration must itself be a member of the indexed occurrences.
+        declaration_range = name_node(node).content_loc
+        unless replacements.any? { |start_offset, end_offset,|
+          start_offset == declaration_range.start_offset && end_offset == declaration_range.end_offset
+        }
+          raise ArgumentError, "Service declaration is missing from the reference index"
+        end
+
+        changed = replacements.sort_by { |start_offset,| -start_offset }.reduce(source) do |current, (start_offset, end_offset, replacement)|
+          replace_in(current, start_offset, end_offset, replacement)
+        end
+        analysis = self.class.new(changed).analyze
+        raise ArgumentError, analysis.errors.join("\n") unless analysis.valid?
+
+        changed
+      end
+
       # Returns the synchronously renamed source, or nil when the edit is
       # ambiguous. All references are selected from the *previous* Prism AST.
       def propagate_service_rename(edited_source)

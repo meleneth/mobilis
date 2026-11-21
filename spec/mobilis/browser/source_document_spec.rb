@@ -77,6 +77,40 @@ RSpec.describe Mobilis::Browser::SourceDocument do
     expect(document.propagate_service_rename(edited)).to be_nil
   end
 
+  it "atomically renames a service and every bound literal using its declaration ID" do
+    connected = <<~RUBY
+      Mobilis::DSL.build("browser-demo") do
+        postgres("database")
+        redis("casz")
+        connect(from: "casz", to: "database")
+      end
+    RUBY
+    document = described_class.new(connected)
+    declaration = document.analyze.declarations.find { |candidate| candidate.name == "casz" }
+
+    changed = document.rename_with_references(declaration.id, "cas2")
+
+    expect(changed).to include('redis("cas2")')
+    expect(changed).to include('connect(from: "cas2", to: "database")')
+    expect(changed).not_to include('"casz"')
+    expect(described_class.new(changed).analyze).to be_valid
+  end
+
+  it "refuses a duplicate identity rather than changing unrelated declarations" do
+    connected = <<~RUBY
+      Mobilis::DSL.build("demo") do
+        redis("cache")
+        postgres("database")
+        connect(from: "cache", to: "database")
+      end
+    RUBY
+    document = described_class.new(connected)
+    declaration = document.analyze.declarations.find { |candidate| candidate.name == "cache" }
+
+    expect { document.rename_with_references(declaration.id, "database") }
+      .to raise_error(ArgumentError, /already declared/)
+  end
+
   it "changes only the service call when changing type" do
     document = described_class.new(source)
     changed = document.change_type(document.analyze.declarations.first.id, :redis)

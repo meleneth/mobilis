@@ -197,8 +197,8 @@ module MobilisPlayground
            end
       if class_member?(classes, "service-name")
         visual_edit do
-          renamed = source_document.rename(id, target[:value].to_s)
-          @sync_service_renames ? (source_document.propagate_service_rename(renamed) || renamed) : renamed
+          @sync_service_renames ? source_document.rename_with_references(id, target[:value].to_s) :
+                                  source_document.rename(id, target[:value].to_s)
         end
       elsif class_member?(classes, "service-type")
         visual_edit { source_document.change_type(id, target[:value].to_s) }

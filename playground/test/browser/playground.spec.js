@@ -22,6 +22,22 @@ test("form typing updates the Ruby source, inspector and Mermaid without blurrin
   await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(/redis\("cachexy"\)/);
 });
 
+test("the left service field never diverges from DSL after an in-place rename", async ({ page }) => {
+  const editor = page.getByLabel("Mobilis Ruby DSL");
+  const initial = await editor.inputValue();
+  await editor.fill(initial.replaceAll('"cache"', '"casz"'));
+  const name = page.locator(".service-card .service-name").nth(1);
+  await expect(name).toHaveValue("casz");
+
+  await name.fill("cas2");
+  await expect(editor).toHaveValue(/redis\\("cas2"\\)/);
+  await expect(editor).toHaveValue(/connect\\(from: "cas2", to: "database"\\)/);
+  await expect(page.locator(".service-card .service-name").nth(1)).toHaveValue("cas2");
+  await expect(page.locator("#service-inspector-panels")).toContainText("cas2");
+  await expect(page.locator("#architecture-canvas")).toContainText("Redis: cas2");
+  await expect(page.locator("#diagnostics-region")).toContainText("Visual edit applied");
+});
+
 test("inspector property editing updates the DSL before blur", async ({ page }) => {
   await page.getByLabel("New service name").fill("api");
   await page.locator("#new-service-type").selectOption("rails");
