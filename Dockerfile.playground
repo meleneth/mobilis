@@ -14,7 +14,8 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 
 WORKDIR /build
 COPY playground/Gemfile playground/Gemfile.lock ./playground/
-RUN cd playground && bundle install
+RUN ruby -rbundler -e 'abort "Expected Bundler 4.0.20, got #{Bundler::VERSION}" unless Bundler::VERSION == "4.0.20"'
+RUN cd playground && bundle _4.0.20_ install --frozen
 
 COPY playground/package.json playground/package-lock.json ./playground/
 RUN cd playground && npm ci

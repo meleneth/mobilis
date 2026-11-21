@@ -28,7 +28,8 @@ RUN apt-get update \
 
 WORKDIR /runtime-build
 COPY native_wasm/Gemfile native_wasm/Gemfile.lock ./native_wasm/
-RUN cd native_wasm && bundle install
+RUN ruby -rbundler -e 'abort "Expected Bundler 4.0.20, got #{Bundler::VERSION}" unless Bundler::VERSION == "4.0.20"'
+RUN cd native_wasm && bundle _4.0.20_ install --frozen
 COPY native_wasm ./native_wasm
 
 # Build the complete Ruby 4.0.10 WASI runtime and its native gem extensions.
