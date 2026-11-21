@@ -29,12 +29,10 @@ COPY --from=ruby_runtime /runtime/ruby+stdlib.wasm ./playground/runtime/ruby+std
 COPY --from=ruby_runtime /runtime/runtime.json ./playground/runtime/runtime.json
 ARG RUBY_WASM_RUNTIME_PACKAGE="mobilis-ruby-wasm"
 ARG RUBY_WASM_RUNTIME_VERSION="2.10.1-ruby-4.0.10-rails-8.1.4.1-json-3.1.0"
-ARG RUBY_WASM_RUNTIME_URL="/vendor/ruby+stdlib.wasm"
 ARG MOBILIS_APPLICATION_MANIFEST_URL="/mobilis-app-manifest.json"
 RUN RUBY_WASM_RUNTIME_PACKAGE="${RUBY_WASM_RUNTIME_PACKAGE}" \
   RUBY_WASM_RUNTIME_VERSION="${RUBY_WASM_RUNTIME_VERSION}" \
   RUBY_WASM_RUNTIME_SOURCE="runtime/ruby+stdlib.wasm" \
-  RUBY_WASM_RUNTIME_URL="${RUBY_WASM_RUNTIME_URL}" \
   COPY_LOCAL_RUBY_WASM=1 \
   MOBILIS_APPLICATION_MANIFEST_URL="${MOBILIS_APPLICATION_MANIFEST_URL}" \
   playground/scripts/build
