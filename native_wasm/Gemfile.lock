@@ -149,12 +149,12 @@ PLATFORMS
 
 DEPENDENCIES
   bigdecimal (= 4.1.3)
-  json (= 3.1.0)
   js (= 2.10.1)
+  json (= 3.1.0)
   mini_portile2 (= 2.8.9)
   nokogiri (= 1.19.7)
   railties (= 8.1.4.1)
   ruby_wasm (= 2.10.1)
 
 BUNDLED WITH
-   4.0.20
+  4.0.20
