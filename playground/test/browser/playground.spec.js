@@ -13,13 +13,13 @@ test("form typing updates the Ruby source, inspector and Mermaid without blurrin
   await name.press("End");
   await name.press("x");
   await expect(name).toBeFocused();
-  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(/redis\\("cachex"\\)/);
-  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(/connect\\(from: "cachex", to: "database"\\)/);
+  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(/redis\("cachex"\)/);
+  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(/connect\(from: "cachex", to: "database"\)/);
   await expect(page.locator("#service-inspector-panels")).toContainText("cachex");
   await expect(page.locator("#architecture-canvas")).toContainText("Redis: cachex");
   await name.press("y");
   await expect(name).toBeFocused();
-  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(/redis\\("cachexy"\\)/);
+  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(/redis\("cachexy"\)/);
 });
 
 test("inspector property editing updates the DSL before blur", async ({ page }) => {
@@ -31,7 +31,7 @@ test("inspector property editing updates the DSL before blur", async ({ page }) 
   const inspector = page.locator(".service-inspector:not(.hidden)");
   const control = inspector.locator('.inspector-service-property[data-property="api"]');
   await control.check();
-  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(/rails\\("api", api: true\\)/);
+  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(/rails\("api", api: true\)/);
 });
 
 test("synchronizes visual and Ruby editing, including Rails authoring", async ({ page }) => {
