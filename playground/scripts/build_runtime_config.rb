@@ -11,6 +11,11 @@ runtime_package = ENV.fetch("RUBY_WASM_RUNTIME_PACKAGE", "@ruby/4.0-wasm-wasi")
 runtime_version = ENV.fetch("RUBY_WASM_RUNTIME_VERSION", "2.10.1")
 default_url = "https://cdn.jsdelivr.net/npm/#{runtime_package}@#{runtime_version}/dist/ruby+stdlib.wasm"
 runtime_url = ENV.fetch("RUBY_WASM_RUNTIME_URL", default_url)
+if runtime_url.start_with?("/vendor/ruby-") && runtime_url.end_with?(".wasm")
+  expected = runtime_url.delete_prefix("/vendor/ruby-").delete_suffix(".wasm")
+  actual = Digest::SHA256.file(runtime_path).hexdigest
+  abort "Runtime asset URL digest does not match runtime bytes" unless expected == actual
+end
 runtime = File.binread(runtime_path)
 digest = Digest::SHA256.digest(runtime)
 config = {

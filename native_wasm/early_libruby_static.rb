@@ -12,6 +12,35 @@ require "ruby_wasm"
 require "fileutils"
 require "open3"
 require "shellwords"
+require "ruby_wasm/cli"
+
+# RubyWasm's full profile statically builds the JSON extension from Ruby's
+# bundled source even when the application bundle supplies a newer JSON gem.
+# Those two independent native implementations export the same extension
+# features, and the bundled one may win at runtime despite json-3.1.0 Ruby
+# files loading from /bundle/gems. Build JSON from the pinned gem exclusively.
+module MobilisJsonGemExtensionPolicy
+  JSON_DEFAULT_EXTENSIONS = %w[json json/generator json/parser].freeze
+
+  private
+
+  def build_config(options)
+    config = super
+    unless options[:profile] == "full"
+      raise "Mobilis requires the full ruby.wasm build profile"
+    end
+    extensions = config.fetch(:default_exts).split(",")
+    missing = JSON_DEFAULT_EXTENSIONS - extensions
+    raise "ruby.wasm changed default JSON extensions: #{missing.inspect}" unless missing.empty?
+
+    filtered = extensions - JSON_DEFAULT_EXTENSIONS
+    raise "Bundled JSON extension still configured" unless (filtered & JSON_DEFAULT_EXTENSIONS).empty?
+    config[:default_exts] = filtered.join(",")
+    config
+  end
+end
+
+RubyWasm::CLI.prepend(MobilisJsonGemExtensionPolicy)
 
 module MobilisEarlyRubyArchive
   class ExtconfExecutor

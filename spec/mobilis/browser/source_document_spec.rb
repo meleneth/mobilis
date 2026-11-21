@@ -36,6 +36,113 @@ RSpec.describe Mobilis::Browser::SourceDocument do
     expect(changed).to include("helper = 40 + 2")
   end
 
+  it "implicitly binds repeated literals in DSL content during an AST service rename" do
+    connected = <<~RUBY
+      # cache remains a comment
+      outside = "cache"
+      Mobilis::DSL.build("cache") do
+        redis("cache")
+        postgres("database")
+        display_name = "cache"
+        aliases = ["cache", "unrelated"]
+        connect(from: "cache", to: "database")
+      end
+    RUBY
+    document = described_class.new(connected)
+    changed = connected.sub('redis("cache")', 'redis("canhe")')
+    synchronized = document.propagate_service_rename(changed)
+
+    expect(synchronized).to include('redis("canhe")')
+    expect(synchronized).to include('display_name = "canhe"')
+    expect(synchronized).to include('aliases = ["canhe", "unrelated"]')
+    expect(synchronized).to include('connect(from: "canhe", to: "database")')
+    expect(synchronized).to include('outside = "cache"')
+    expect(synchronized).to include('Mobilis::DSL.build("cache")')
+    expect(synchronized).to include('# cache remains a comment')
+    expect(described_class.new(synchronized).analyze).to be_valid
+  end
+
+  it "returns nil instead of guessing when an edit is outside a service-name literal" do
+    connected = <<~RUBY
+      Mobilis::DSL.build("demo") do
+        redis("cache")
+        postgres("database")
+        alias_name = "cache"
+        connect(from: "cache", to: "database")
+      end
+    RUBY
+    document = described_class.new(connected)
+    edited = connected.sub('alias_name = "cache"', 'alias_name = "cache2"')
+
+    expect(document.propagate_service_rename(edited)).to be_nil
+  end
+
+  it "atomically renames a service and every bound literal using its declaration ID" do
+    connected = <<~RUBY
+      Mobilis::DSL.build("browser-demo") do
+        postgres("database")
+        redis("casz")
+        connect(from: "casz", to: "database")
+      end
+    RUBY
+    document = described_class.new(connected)
+    declaration = document.analyze.declarations.find { |candidate| candidate.name == "casz" }
+
+    changed = document.rename_with_references(declaration.id, "cas2")
+
+    expect(changed).to include('redis("cas2")')
+    expect(changed).to include('connect(from: "cas2", to: "database")')
+    expect(changed).not_to include('"casz"')
+    expect(described_class.new(changed).analyze).to be_valid
+  end
+
+  it "refuses a duplicate identity rather than changing unrelated declarations" do
+    connected = <<~RUBY
+      Mobilis::DSL.build("demo") do
+        redis("cache")
+        postgres("database")
+        connect(from: "cache", to: "database")
+      end
+    RUBY
+    document = described_class.new(connected)
+    declaration = document.analyze.declarations.find { |candidate| candidate.name == "cache" }
+
+    expect { document.rename_with_references(declaration.id, "database") }
+      .to raise_error(ArgumentError, /already declared/)
+  end
+
+  it "propagates a single DSL keystroke through the same atomic rename as the builder" do
+    original = <<~RUBY
+      Mobilis::DSL.build("browser-demo") do
+        postgres("database")
+        redis("casz")
+        connect(from: "casz", to: "database")
+      end
+    RUBY
+    document = described_class.new(original)
+    edited = original.sub('redis("casz")', 'redis("cas2z")')
+
+    synchronized = document.propagate_service_rename(edited)
+
+    expect(synchronized).to include('redis("cas2z")')
+    expect(synchronized).to include('connect(from: "cas2z", to: "database")')
+    expect(described_class.new(synchronized).analyze).to be_valid
+  end
+
+  it "does not infer a rename when a paste changes anything outside the declaration" do
+    original = <<~RUBY
+      Mobilis::DSL.build("demo") do
+        postgres("database")
+        redis("cache")
+        connect(from: "cache", to: "database")
+      end
+    RUBY
+    edited = original.sub('redis("cache")', 'redis("cache2")')
+      .sub('connect(from: "cache"', 'connect(from: "cache2"')
+
+    expect(described_class.new(original).propagate_service_rename(edited)).to be_nil
+  end
+
   it "changes only the service call when changing type" do
     document = described_class.new(source)
     changed = document.change_type(document.analyze.declarations.first.id, :redis)

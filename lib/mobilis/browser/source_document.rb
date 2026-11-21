@@ -71,6 +71,114 @@ module Mobilis
         replace(string.content_loc.start_offset, string.content_loc.end_offset, escape_string(name, string))
       end
 
+      # Form edits already carry the declaration identity. Never infer a
+      # service rename from a diff when we have that identity: rewrite the
+      # declaration and its Prism-resolved literal bindings in one transaction.
+      def rename_with_references(id, name)
+        declaration, node = editable_declaration(id)
+        raise ArgumentError, "Service name cannot be empty" if name.strip.empty?
+
+        old_name = declaration.name
+        return source if name == old_name
+        if declarations.any? { |candidate|
+          candidate.id != declaration.id && normalize_name(candidate.name) == normalize_name(name)
+        }
+          raise ArgumentError, "Service name #{name.inspect} is already declared"
+        end
+        unless declarations.count { |candidate| normalize_name(candidate.name) == normalize_name(old_name) } == 1
+          raise ArgumentError, "Service identity #{old_name.inspect} is ambiguous"
+        end
+
+        replacements = service_name_literals(old_name).map do |literal|
+          [literal.content_loc.start_offset, literal.content_loc.end_offset, escape_string(name, literal)]
+        end
+        # The declaration must itself be a member of the indexed occurrences.
+        declaration_range = name_node(node).content_loc
+        unless replacements.any? { |start_offset, end_offset,|
+          start_offset == declaration_range.start_offset && end_offset == declaration_range.end_offset
+        }
+          raise ArgumentError, "Service declaration is missing from the reference index"
+        end
+
+        changed = replacements.sort_by { |start_offset,| -start_offset }.reduce(source) do |current, (start_offset, end_offset, replacement)|
+          replace_in(current, start_offset, end_offset, replacement)
+        end
+        analysis = self.class.new(changed).analyze
+        raise ArgumentError, analysis.errors.join("\n") unless analysis.valid?
+
+        changed
+      end
+
+      # Compare successive Prism ASTs to find an isolated edit of one service
+      # declaration. Reuse the same atomic identity-aware rename used by the
+      # visual builder, rather than guessing dependent offsets from a text diff.
+      #
+      # A paste with unrelated changes is not an implicit refactor. Keeping
+      # that distinction protects deliberate DSL edits from accidental rewrites.
+      def propagate_service_rename(edited_source)
+        return nil unless parse_result.errors.empty?
+        return nil if edited_source == source
+
+        updated_document = self.class.new(edited_source)
+        return nil unless updated_document.parse_result.errors.empty?
+
+        old_nodes = declaration_nodes
+        new_nodes = updated_document.send(:declaration_nodes)
+        return nil unless old_nodes.length == new_nodes.length
+
+        candidates = old_nodes.zip(new_nodes).filter_map do |original, updated|
+          next unless original.name == updated.name
+
+          old_literal = name_node(original)
+          new_literal = updated_document.send(:name_node, updated)
+          next unless old_literal && new_literal
+          next if old_literal.unescaped == new_literal.unescaped
+
+          [original, old_literal, new_literal]
+        end
+        return nil unless candidates.length == 1
+
+        original_node, old_literal, new_literal = candidates.first
+        old_start = old_literal.content_loc.start_offset
+        old_end = old_literal.content_loc.end_offset
+        new_start = new_literal.content_loc.start_offset
+        new_end = new_literal.content_loc.end_offset
+
+        # Excluding the edited string's contents must leave the exact same
+        # source bytes. This distinguishes a single keystroke from a paste
+        # that modifies multiple independent expressions.
+        return nil unless source.byteslice(0, old_start) == edited_source.byteslice(0, new_start)
+        return nil unless source.byteslice(old_end..) == edited_source.byteslice(new_end..)
+
+        rename_with_references(original_node.location.start_offset.to_s, new_literal.unescaped)
+      rescue ArgumentError
+        nil
+      end
+
+      # Collect literal occurrences, not textual matches. Their exact source
+      # ranges come from Prism, and an embedded archive is opaque even when
+      # its encoded payload happens to resemble a service name.
+      def service_name_literals(name)
+        block = root_call&.block
+        return [] unless block
+
+        result = []
+        visit = lambda do |node|
+          next unless node
+
+          if node.is_a?(Prism::CallNode) && node.name == :embedded_archive
+            next
+          end
+
+          if node.is_a?(Prism::StringNode) && normalize_name(node.unescaped) == normalize_name(name)
+            result << node
+          end
+          node.compact_child_nodes.each { |child| visit.call(child) }
+        end
+        visit.call(block.body)
+        result
+      end
+
       def change_type(id, type)
         _declaration, node = editable_declaration(id)
         type = type.to_sym

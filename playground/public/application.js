@@ -271,21 +271,71 @@ function createDocumentController() {
   };
 }
 
+// Turbo replaces form regions after semantic edits. Preserve the active form
+// control across those replacements, including its caret and selection.
+const formFocus = {
+  capture(target) {
+    const container = target.closest(".service-card, .service-inspector, .relationship-editor");
+    const parent = container?.parentElement;
+    if (!container || !parent) return null;
+    const category = container.classList.contains("service-card") ? "service-card" :
+      container.classList.contains("service-inspector") ? "service-inspector" : "relationship-editor";
+    const candidates = Array.from(document.querySelectorAll(`.${category}`));
+    const containerIndex = candidates.indexOf(container);
+    const controlIndex = Array.from(container.querySelectorAll("input, select, textarea")).indexOf(target);
+    if (containerIndex < 0 || controlIndex < 0) return null;
+    return {
+      category, containerIndex, controlIndex,
+      start: typeof target.selectionStart === "number" ? target.selectionStart : null,
+      end: typeof target.selectionEnd === "number" ? target.selectionEnd : null
+    };
+  },
+  restore(snapshot) {
+    if (!snapshot) return;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const container = document.querySelectorAll(`.${snapshot.category}`)[snapshot.containerIndex];
+      const control = container?.querySelectorAll("input, select, textarea")[snapshot.controlIndex];
+      if (!control || control.disabled) return;
+      control.focus({ preventScroll: true });
+      if (snapshot.start !== null && typeof control.setSelectionRange === "function") {
+        const position = Math.min(snapshot.start, control.value.length);
+        const end = Math.min(snapshot.end, control.value.length);
+        try { control.setSelectionRange(position, end); } catch { /* non-text input */ }
+      }
+    }));
+  }
+};
+
 function installEventGate() {
   document.addEventListener("input", event => {
     if (event.target.id === "embedded-document-editor") {
       window.MobilisDocuments.edit(event.target.value);
       return;
     }
-    if (event.target.id !== "dsl-source") return;
-    window.MobilisDocuments.parentChanged();
-    window.MobilisWorkspace.persistSource(event.target.value, false);
-    document.dispatchEvent(new CustomEvent("mobilis:source-input", { detail: { target: event.target } }));
+    if (event.target.id === "dsl-source") {
+      window.MobilisDocuments.parentChanged();
+      document.dispatchEvent(new CustomEvent("mobilis:source-input", { detail: { target: event.target } }));
+      return;
+    }
+    if (!event.target.matches(".service-name, .service-property, .inspector-service-property, .relationship-property")) return;
+    if (event.target.matches('input[type="checkbox"], select')) return;
+    const snapshot = formFocus.capture(event.target);
+    document.dispatchEvent(new CustomEvent("mobilis:semantic-change", { detail: { target: event.target } }));
+    formFocus.restore(snapshot);
   });
 
   document.addEventListener("change", event => {
+    if (event.target.id === "sync-service-renames") {
+      document.dispatchEvent(new CustomEvent("mobilis:rename-sync-toggle", { detail: { enabled: event.target.checked } }));
+      return;
+    }
     if (!event.target.matches(".service-name, .service-type, .service-property, .inspector-service-property, .relationship-kind, .relationship-target, .relationship-property")) return;
+    // Text input already synchronizes on every input event. Do not dispatch
+    // a second edit at blur, which can target an already replaced DOM element.
+    if (event.target.matches("input:not([type=checkbox]), textarea")) return;
+    const snapshot = formFocus.capture(event.target);
     document.dispatchEvent(new CustomEvent("mobilis:semantic-change", { detail: { target: event.target } }));
+    formFocus.restore(snapshot);
   });
 
   document.addEventListener("click", event => {
@@ -474,7 +524,7 @@ function validateRuntimeConfig(config) {
     throw new Error("Unsupported or malformed Mobilis runtime configuration");
   }
   const runtime = config.runtime;
-  if (!runtime || runtime.package !== "@ruby/4.0-wasm-wasi" || runtime.package_version !== "2.10.1" || runtime.ruby_version !== "4.0") {
+  if (!runtime || runtime.package !== "mobilis-ruby-wasm" || runtime.package_version !== "2.10.1-ruby-4.0.10-rails-8.1.4.1-json-3.1.0-single-ext" || runtime.ruby_version !== "4.0") {
     throw new Error("Runtime configuration is not compatible with Mobilis's pinned Ruby 4.0 WASM runtime");
   }
   validateIntegrityRecord(runtime, "Ruby WASM runtime");

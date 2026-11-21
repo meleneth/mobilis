@@ -22,6 +22,7 @@ module MobilisPlayground
       @runtime = Mobilis::Browser::SemanticRuntime.new
       @generator_compatibility = Mobilis::Browser::GeneratorCompatibility.new
       @history = Mobilis::Browser::SourceHistory.new
+      @sync_service_renames = true
       bootstrap_source = workspace_property(:bootstrapSource)
       bootstrap_valid_source = workspace_property(:bootstrapValidSource)
       @source = bootstrap_source.empty? ? INITIAL_SOURCE : bootstrap_source
@@ -72,17 +73,19 @@ module MobilisPlayground
       change_handler = proc { |event| semantic_request("structured edit") { handle_change(event) } }
       archive_handler = proc { |event| semantic_request("embedded document commit") { handle_archive_commit(event) } }
       checkout_handler = proc { |event| semantic_request("workspace checkout") { handle_workspace_checkout(event) } }
+      rename_sync_handler = proc { |event| @sync_service_renames = event[:detail][:enabled].to_s == "true" }
       compatibility_handler = proc do |event|
         semantic_request("generator compatibility shim") { handle_generator_compatibility(event) }
       end
       document.addEventListener("mobilis:source-input", &input_handler)
+      document.addEventListener("mobilis:rename-sync-toggle", &rename_sync_handler)
       document.addEventListener("mobilis:semantic-click", &click_handler)
       document.addEventListener("mobilis:semantic-change", &change_handler)
       document.addEventListener("mobilis:archive-commit", &archive_handler)
       document.addEventListener("mobilis:workspace-checkout", &checkout_handler)
       document.addEventListener("mobilis:generator-compatibility", &compatibility_handler)
       @event_handlers.concat(
-        [input_handler, click_handler, change_handler, archive_handler, checkout_handler, compatibility_handler]
+        [input_handler, rename_sync_handler, click_handler, change_handler, archive_handler, checkout_handler, compatibility_handler]
       )
     end
 
@@ -107,7 +110,19 @@ module MobilisPlayground
     def handle_input(event)
       target = event[:detail][:target]
 
-      @source = target[:value].to_s
+      edited = target[:value].to_s
+      if @sync_service_renames && !@diagram_stale
+        synchronized = source_document.propagate_service_rename(edited)
+        if synchronized && synchronized != edited
+          selection_start = target[:selectionStart].to_i
+          selection_end = target[:selectionEnd].to_i
+          target[:value] = synchronized
+          target.call(:setSelectionRange, selection_start, selection_end)
+          edited = synchronized
+        end
+      end
+
+      @source = edited
       analysis = source_document.analyze
       if analysis.valid?
         @analysis = analysis
@@ -121,8 +136,9 @@ module MobilisPlayground
         @diagram_stale = true
         @errors = analysis.errors
         @status = "Source is invalid. The last valid visual model is preserved."
+        persist_source(valid: false)
       end
-      update_regions(*(analysis.valid? ? %i[system validation] : %i[validation]))
+      update_regions(:system, :validation)
       render_diagram
       refresh_selection
     end
@@ -174,9 +190,16 @@ module MobilisPlayground
 
       container = target.call(:closest, ".service-card") || target.call(:closest, ".service-inspector")
 
-      id = (container[:dataset][:serviceId] || container[:dataset][:sourceId]).to_s
+      id = if class_member?(container[:classList], "service-card")
+             container[:dataset][:serviceId].to_s
+           else
+             container[:dataset][:sourceId].to_s
+           end
       if class_member?(classes, "service-name")
-        visual_edit { source_document.rename(id, target[:value].to_s) }
+        visual_edit do
+          @sync_service_renames ? source_document.rename_with_references(id, target[:value].to_s) :
+                                  source_document.rename(id, target[:value].to_s)
+        end
       elsif class_member?(classes, "service-type")
         visual_edit { source_document.change_type(id, target[:value].to_s) }
       elsif class_member?(classes, "service-property") || class_member?(classes, "inspector-service-property")
@@ -367,7 +390,7 @@ module MobilisPlayground
     def render_builder
       capabilities = Mobilis::Browser::Capabilities.for_system(@analysis.system)
       inspector_services = service_inspector.services
-      @renderer.render(
+      html = @renderer.render(
         :builder,
         declarations: @analysis.declarations,
         service_types: Mobilis::Browser::SourceDocument::SERVICE_TYPES,
@@ -375,10 +398,11 @@ module MobilisPlayground
         inspector_services:,
         capabilities:
       )
+      projection_warning + html
     end
 
     def render_editor
-      @renderer.render(:editor, source: @source, history: @history)
+      @renderer.render(:editor, source: @source, history: @history, sync_service_renames: @sync_service_renames)
     end
 
     def render_architecture
@@ -390,12 +414,19 @@ module MobilisPlayground
     end
 
     def render_inspector
-      @renderer.render(
+      html = @renderer.render(
         :inspector,
         services: service_inspector.services,
         documents: Mobilis::Browser::VirtualDocument.new(@analysis),
         archives: @analysis.archives
       )
+      projection_warning + html
+    end
+
+    def projection_warning
+      return "" unless @diagram_stale
+
+      @renderer.render(:projection_warning, errors: @errors)
     end
 
     def service_inspector

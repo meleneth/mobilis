@@ -30,10 +30,16 @@ if [[ ! -f "${runtime_path}" ]]; then
   exit 1
 fi
 rm -f public/mobilis.wasm public/filesystem.json
+# Immutable URLs must identify immutable bytes. A stable /vendor/*.wasm path
+# previously allowed force-cache to reuse an older runtime after a rebuild;
+# the browser then rejected its stale body against the new SRI digest.
 if [[ "${COPY_LOCAL_RUBY_WASM:-0}" == "1" ]]; then
-  local_runtime_path="${LOCAL_RUBY_WASM_PUBLIC_PATH:-vendor/ruby+stdlib.wasm}"
-  mkdir -p "public/$(dirname "${local_runtime_path}")"
-  cp "${runtime_path}" "public/${local_runtime_path}"
+  runtime_sha256="$(sha256sum "${runtime_path}" | cut -d' ' -f1)"
+  runtime_url="/vendor/ruby-${runtime_sha256}.wasm"
+  mkdir -p public/vendor
+  cp "${runtime_path}" "public${runtime_url}"
+  test -s "public${runtime_url}"
+  export RUBY_WASM_RUNTIME_URL="${runtime_url}"
 fi
 ruby scripts/build_runtime_config.rb "${runtime_path}" public/runtime-config.json
 
@@ -52,5 +58,5 @@ cp -R "${haml_path}/lib" "${staging_dir}/gems/haml"
 cp -R "${temple_path}/lib" "${staging_dir}/gems/temple"
 cp -R "${thor_path}/lib" "${staging_dir}/gems/thor"
 cp -R "${tilt_path}/lib" "${staging_dir}/gems/tilt"
-
 ruby scripts/build_application.rb "${staging_dir}" public
+ruby scripts/verify_runtime_compatibility.rb public/runtime-config.json public/mobilis-app-manifest.json
