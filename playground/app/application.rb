@@ -328,8 +328,8 @@ module MobilisPlayground
 
       @files = result.files
       @selected_file = @files.keys.first
-      @status = "Generated #{@files.length} files locally with Mobilis."
-      persist_generated_files
+      @status = "Generated #{@files.length} files locally with Mobilis (#{result.steps.length} source checkpoints)."
+      persist_generated_history(result.steps)
       update_regions(:generated_files, :generation)
     end
 
@@ -339,8 +339,7 @@ module MobilisPlayground
     end
 
     def download_project
-      encoded = @files.transform_values { |content| encode64(content) }
-      JS.eval("return window.MobilisDownloads.project(#{JSON.generate(encoded)})")
+      JS.global[:MobilisWorkspace].call(:downloadWorkspace)
     end
 
     def download_dsl
@@ -486,6 +485,16 @@ module MobilisPlayground
 
     def persist_source(valid:)
       JS.global[:MobilisWorkspace].call(:persistSource, @source, valid)
+    end
+
+    def persist_generated_history(steps)
+      records = steps.map do |step|
+        {
+          message: step.fetch(:message),
+          files: step.fetch(:files).transform_values { |content| encode64(content) }
+        }
+      end
+      JS.global[:MobilisWorkspace].call(:persistGeneratedHistory, JSON.generate(records))
     end
 
     def persist_generated_files
