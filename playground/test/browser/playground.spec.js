@@ -69,8 +69,8 @@ test("boots a verified application artifact once and exposes initialization diag
   const diagnostics = await page.evaluate(() => window.MobilisRuntimeDiagnostics);
   expect(diagnostics.phase).toBe("ready");
   expect(diagnostics.vmInstances).toBe(1);
-  expect(diagnostics.runtime.package).toBe("@ruby/4.0-wasm-wasi");
-  expect(diagnostics.runtime.package_version).toBe("2.10.1");
+  expect(diagnostics.runtime.package).toBe("mobilis-ruby-wasm");
+  expect(diagnostics.runtime.package_version).toBe("2.10.1-ruby-4.0.10-rails-8.1.4.1");
   expect(diagnostics.application.files).toBeGreaterThan(300);
   expect(diagnostics.application.version).toMatch(/^[a-f0-9]{64}$/);
   expect(diagnostics.timings.runtimeCompileMs).toBeGreaterThan(0);
