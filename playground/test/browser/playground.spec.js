@@ -82,13 +82,16 @@ test("syncs a single character inserted into a service declaration and its refer
   await expect(page.locator("#architecture-region")).toContainText("Stale");
 });
 
-test("does not cascade edits to unrelated strings or ambiguous declarations", async ({ page }) => {
+test("does not rewrite unrelated equal strings during service rename", async ({ page }) => {
   const editor = page.getByLabel("Mobilis Ruby DSL");
   const source = await editor.inputValue();
-  await editor.fill(source.replace('redis("cache")', 'redis("cache2")').replace('"browser-demo"', '"cache"'));
-  await expect(editor).toHaveValue(/generate\("cache"/);
-  await expect(editor).toHaveValue(/connect\(from: "cache2", to: "database"\)/);
+  await editor.fill(source.replace('"browser-demo"', '"cache"'));
+  await expect(page.locator("#diagnostics-region")).toContainText("Source is valid");
+  await editor.fill((await editor.inputValue()).replace('redis("cache")', 'redis("cache2")'));
+  await expect(editor).toHaveValue(/generate\\("cache"/);
+  await expect(editor).toHaveValue(/connect\\(from: "cache2", to: "database"\\)/);
 });
+
 
 test("removes connected nodes and edges through the visual builder", async ({ page }) => {
   const cacheCard = page.locator(".service-card").filter({ has: page.locator('.service-name[value="cache"]') });
