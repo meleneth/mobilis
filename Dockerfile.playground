@@ -27,6 +27,7 @@ COPY spec/fixtures/browser ./spec/fixtures/browser
 COPY playground ./playground
 COPY --from=ruby_runtime /runtime/ruby+stdlib.wasm ./playground/runtime/ruby+stdlib.wasm
 COPY --from=ruby_runtime /runtime/runtime.json ./playground/runtime/runtime.json
+RUN node playground/scripts/probe-wasm-json.mjs playground/runtime/ruby+stdlib.wasm
 ARG RUBY_WASM_RUNTIME_PACKAGE="mobilis-ruby-wasm"
 ARG RUBY_WASM_RUNTIME_VERSION="2.10.1-ruby-4.0.10-rails-8.1.4.1-json-3.1.0-single-ext"
 ARG MOBILIS_APPLICATION_MANIFEST_URL="/mobilis-app-manifest.json"
