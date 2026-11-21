@@ -22,6 +22,27 @@ test("form typing updates the Ruby source, inspector and Mermaid without blurrin
   await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(/redis\("cachexy"\)/);
 });
 
+test("one typed DSL character renames all bound service literals and updates projections", async ({ page }) => {
+  const editor = page.getByLabel("Mobilis Ruby DSL");
+  await expect(editor).toHaveValue(/redis\("cache"\)/);
+
+  // Unlike fill(), this fires a real keystroke input event with a caret
+  // inside the declaration while preserving all other source bytes.
+  await editor.evaluate(element => {
+    const start = element.value.indexOf('redis("cache")') + 'redis("ca'.length;
+    element.focus();
+    element.setSelectionRange(start, start);
+  });
+  await editor.press("n");
+
+  await expect(editor).toHaveValue(/redis\("canche"\)/);
+  await expect(editor).toHaveValue(/connect\(from: "canche", to: "database"\)/);
+  await expect(page.locator(".service-card .service-name").nth(1)).toHaveValue("canche");
+  await expect(page.locator("#service-inspector-panels")).toContainText("canche");
+  await expect(page.locator("#architecture-canvas")).toContainText("Redis: canche");
+  await expect(page.locator("#architecture-region")).toContainText("Live from validated DSL");
+});
+
 test("the left service field never diverges from DSL after an in-place rename", async ({ page }) => {
   const editor = page.getByLabel("Mobilis Ruby DSL");
   const initial = await editor.inputValue();
