@@ -77,6 +77,68 @@ export function createWorkspaceController() {
       });
     },
 
+    // Replay the real Mobilis filesystem checkpoints as genuine Git commits.
+    // Each checkpoint was emitted at the same Manifest#commit_all boundary as
+    // the CLI. A stage is not committed unless it changes tracked bytes.
+    persistGeneratedHistory(serializedSteps) {
+      return enqueue(async () => {
+        const steps = JSON.parse(serializedSteps);
+        if (!Array.isArray(steps) || steps.length === 0) {
+          throw new Error("Generator supplied no commit checkpoints.");
+        }
+        const existingStage = await statusMatrix();
+        if (existingStage.some(([filepath, head, , stage]) =>
+          head !== stage && !filepath.startsWith("generate/")
+        )) {
+          throw new Error("Commit or unstage existing changes before generating.");
+        }
+        await ensureInitialCommit();
+        // Capture the DSL version used for this generation, before its
+        // generated history begins.
+        await window.git.add({ fs, dir: WORKSPACE_DIRECTORY, filepath: SOURCE_PATH });
+        let matrix = await statusMatrix();
+        if (matrix.some(([filepath, head, , stage]) => filepath === SOURCE_PATH && head !== stage)) {
+          await window.git.commit({
+            fs, dir: WORKSPACE_DIRECTORY,
+            message: "[mobilis] Source definition for generation", author: AUTHOR
+          });
+        }
+
+        const directory = `${WORKSPACE_DIRECTORY}/generate`;
+        // Each checkpoint replaces exactly the generated tree represented by
+        // that phase. Never mix in unrelated worktree files.
+        for (const [index, step] of steps.entries()) {
+          if (typeof step.message !== "string" || !step.message.startsWith("[mobilis] ")) {
+            throw new Error(`Invalid generator checkpoint #${index} message`);
+          }
+          const files = step.files || {};
+          for (const name of Object.keys(files)) validateRelativePath(name);
+          await removeTree(directory);
+          await mkdirp(directory);
+          for (const name of Object.keys(files).sort()) {
+            const target = `${directory}/${name}`;
+            await mkdirp(parent(target));
+            await pfs.writeFile(target, decodeBase64(files[name]));
+          }
+          matrix = await statusMatrix();
+          for (const [filepath, , worktree] of matrix) {
+            if (!filepath.startsWith("generate/")) continue;
+            if (worktree === 0) {
+              await window.git.remove({ fs, dir: WORKSPACE_DIRECTORY, filepath });
+            } else {
+              await window.git.add({ fs, dir: WORKSPACE_DIRECTORY, filepath });
+            }
+          }
+          matrix = await statusMatrix();
+          if (matrix.some(([filepath, head, , stage]) => filepath.startsWith("generate/") && head !== stage)) {
+            await window.git.commit({ fs, dir: WORKSPACE_DIRECTORY, message: step.message, author: AUTHOR });
+          }
+        }
+        await flush();
+        if (attached) await refreshView();
+      });
+    },
+
     applyCompatibility(root, button = document.getElementById("apply-generator-compatibility")) {
       return enqueue(() => applyCompatibility(root, button));
     },
