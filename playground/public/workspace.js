@@ -87,6 +87,30 @@ export function createWorkspaceController() {
 
     flushPending() {
       return queue.then(flush);
+    },
+
+    downloadWorkspace() {
+      return enqueue(async () => {
+        await flush();
+        if (!(await hasHead())) throw new Error("Workspace has no Git history.");
+        const entries = {};
+        async function collect(directory, relative = "") {
+          for (const name of (await pfs.readdir(directory)).sort()) {
+            const absolute = `${directory}/${name}`;
+            const filepath = relative ? `${relative}/${name}` : name;
+            const stat = await pfs.stat(absolute);
+            if (stat.isDirectory()) {
+              await collect(absolute, filepath);
+            } else {
+              entries[filepath] = encodeBase64(new Uint8Array(await pfs.readFile(absolute)));
+            }
+          }
+        }
+        await collect(WORKSPACE_DIRECTORY);
+        if (!entries[".git/HEAD"]) throw new Error("Git HEAD is missing from workspace archive.");
+        if (!entries[SOURCE_PATH]) throw new Error("Workspace source is missing from archive.");
+        await window.MobilisDownloads.project(entries, "mobilis-workspace.zip");
+      });
     }
   };
 
@@ -108,6 +132,7 @@ export function createWorkspaceController() {
     const runUiOperation = operation => { void enqueue(operation).catch(() => {}); };
     document.getElementById("workspace-refresh")?.addEventListener("click", () => runUiOperation(refreshView));
     document.getElementById("workspace-stage")?.addEventListener("click", () => runUiOperation(stageAll));
+    document.getElementById("workspace-download")?.addEventListener("click", () => runUiOperation(() => controller.downloadWorkspace()));
     document.getElementById("workspace-commit")?.addEventListener("click", () => runUiOperation(commit));
     document.getElementById("apply-generator-compatibility")?.addEventListener("click", event => {
       const root = document.getElementById("compatibility-root")?.value.trim() || "";
