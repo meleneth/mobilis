@@ -15,6 +15,9 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 WORKDIR /build
 COPY playground/Gemfile playground/Gemfile.lock ./playground/
 RUN cd playground && bundle install
+# JSON 3.1.0 Ruby wrappers are incompatible with the JSON C extension in the
+# prebuilt WASM runtime. Stage an explicitly pinned pure-Ruby JSON backend.
+RUN gem install json_pure --version 2.7.6 --no-document
 
 COPY playground/package.json playground/package-lock.json ./playground/
 RUN cd playground && npm ci

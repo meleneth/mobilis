@@ -13,7 +13,7 @@ result = MobilisPlayground::ApplicationArtifact.build(
   root:,
   runtime_package:,
   runtime_version:,
-  load_paths: ["/gems/haml", "/gems/temple", "/gems/thor", "/gems/tilt", "/src/lib", "/src/playground/app"],
+  load_paths: ["/gems/json_pure", "/gems/haml", "/gems/temple", "/gems/thor", "/gems/tilt", "/src/lib", "/src/playground/app"],
   boot_feature: "boot"
 )
 
