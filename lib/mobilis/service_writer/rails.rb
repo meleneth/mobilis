@@ -21,6 +21,32 @@ module Mobilis
         @manifest.commit_all("add Rails project #{@realized_node.name}")
       end
 
+      # Run the real Rails AppGenerator in CRuby/WASM rather than copying an
+      # approximation of a Rails skeleton. The browser owns Git, so Rails
+      # itself must not create a nested repository.
+      def write_browser
+        require "rails/generators/rails/app/app_generator"
+
+        args = [realized_node.name]
+        args << "--api" if realized_node.api_mode
+        if realized_node.primary_database
+          case realized_node.primary_database
+          when Mobilis::Realized::PostgreSQL then args << "--database=postgresql"
+          when Mobilis::Realized::MySQL then args << "--database=mysql"
+          else raise ArgumentError, "Unsupported Rails database #{realized_node.primary_database.class}"
+          end
+        end
+        args.concat(%w[--skip-bundle --skip-git])
+        destination = File.expand_path("..", Dir.pwd)
+        Mobilis::Browser::FileSystemCompatibility.without_posix_permissions do
+          ::Rails::Generators::AppGenerator.start(args, destination_root: destination)
+        end
+        raise "Rails generator did not write config/application.rb" unless File.file?("config/application.rb")
+        raise "Rails generator did not write Gemfile" unless File.file?("Gemfile")
+
+        normalize_rails_runtime
+      end
+
       def rails_builder
         builder = @manifest.plugin_for Mobilis::Plugin::RailsBuilder
         raise "RailsBuilder plugin is required to generate Rails services" unless builder.is_a?(Mobilis::Plugin::RailsBuilder)
