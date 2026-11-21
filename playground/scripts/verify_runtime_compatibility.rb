@@ -10,7 +10,7 @@ runtime = JSON.parse(File.read(runtime_file)).fetch("runtime")
 application = JSON.parse(File.read(application_file)).fetch("compatible_runtime")
 expected = {
   "package" => "mobilis-ruby-wasm",
-  "package_version" => "2.10.1-ruby-4.0.10-rails-8.1.4.1"
+  "package_version" => "2.10.1-ruby-4.0.10-rails-8.1.4.1-json-3.1.0"
 }
 
 expected.each do |field, value|
