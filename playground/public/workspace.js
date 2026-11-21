@@ -1,4 +1,5 @@
 const WORKSPACE_DIRECTORY = "/workspace";
+const GENERATED_DIRECTORY = "/generated-project";
 const SOURCE_PATH = "mobilis.rb";
 const LAST_VALID_PATH = ".mobilis/last-valid.rb";
 const GITIGNORE = ".mobilis/\n";
@@ -77,65 +78,88 @@ export function createWorkspaceController() {
       });
     },
 
-    // Replay the real Mobilis filesystem checkpoints as genuine Git commits.
-    // Each checkpoint was emitted at the same Manifest#commit_all boundary as
-    // the CLI. A stage is not committed unless it changes tracked bytes.
+    // The CLI initializes Git inside generate/, not in the authoring DSL
+    // repository. Maintain the same separation here: the generated ZIP's
+    // root is a genuine Git repository with Mobilis's actual phase history.
     persistGeneratedHistory(serializedSteps) {
       return enqueue(async () => {
         const steps = JSON.parse(serializedSteps);
         if (!Array.isArray(steps) || steps.length === 0) {
           throw new Error("Generator supplied no commit checkpoints.");
         }
-        const existingStage = await statusMatrix();
-        if (existingStage.some(([filepath, head, , stage]) =>
-          head !== stage && !filepath.startsWith("generate/")
-        )) {
-          throw new Error("Commit or unstage existing changes before generating.");
-        }
-        await ensureInitialCommit();
-        // Capture the DSL version used for this generation, before its
-        // generated history begins.
-        await window.git.add({ fs, dir: WORKSPACE_DIRECTORY, filepath: SOURCE_PATH });
-        let matrix = await statusMatrix();
-        if (matrix.some(([filepath, head, , stage]) => filepath === SOURCE_PATH && head !== stage)) {
-          await window.git.commit({
-            fs, dir: WORKSPACE_DIRECTORY,
-            message: "[mobilis] Source definition for generation", author: AUTHOR
-          });
-        }
+        await removeTree(GENERATED_DIRECTORY);
+        await mkdirp(GENERATED_DIRECTORY);
+        await window.git.init({ fs, dir: GENERATED_DIRECTORY, defaultBranch: "main" });
 
-        const directory = `${WORKSPACE_DIRECTORY}/generate`;
-        // Each checkpoint replaces exactly the generated tree represented by
-        // that phase. Never mix in unrelated worktree files.
+        let previous = new Set();
         for (const [index, step] of steps.entries()) {
           if (typeof step.message !== "string" || !step.message.startsWith("[mobilis] ")) {
             throw new Error(`Invalid generator checkpoint #${index} message`);
           }
           const files = step.files || {};
-          for (const name of Object.keys(files)) validateRelativePath(name);
-          await removeTree(directory);
-          await mkdirp(directory);
-          for (const name of Object.keys(files).sort()) {
-            const target = `${directory}/${name}`;
-            await mkdirp(parent(target));
-            await pfs.writeFile(target, decodeBase64(files[name]));
+          const next = new Set(Object.keys(files));
+          for (const name of next) validateRelativePath(name);
+          for (const name of previous) {
+            if (next.has(name)) continue;
+            await pfs.unlink(`${GENERATED_DIRECTORY}/${name}`);
+            await window.git.remove({ fs, dir: GENERATED_DIRECTORY, filepath: name });
           }
-          matrix = await statusMatrix();
-          for (const [filepath, , worktree] of matrix) {
-            if (!filepath.startsWith("generate/")) continue;
-            if (worktree === 0) {
-              await window.git.remove({ fs, dir: WORKSPACE_DIRECTORY, filepath });
-            } else {
-              await window.git.add({ fs, dir: WORKSPACE_DIRECTORY, filepath });
+          for (const name of [...next].sort()) {
+            const target = `${GENERATED_DIRECTORY}/${name}`;
+            await mkdirp(parent(target));
+            const bytes = decodeBase64(files[name]);
+            let existing = null;
+            try { existing = new Uint8Array(await pfs.readFile(target)); } catch (error) {
+              if (error.code !== "ENOENT") throw error;
+            }
+            if (!existing || !bytesEqual(existing, bytes)) {
+              await pfs.writeFile(target, bytes);
+              await window.git.add({ fs, dir: GENERATED_DIRECTORY, filepath: name });
             }
           }
-          matrix = await statusMatrix();
-          if (matrix.some(([filepath, head, , stage]) => filepath.startsWith("generate/") && head !== stage)) {
-            await window.git.commit({ fs, dir: WORKSPACE_DIRECTORY, message: step.message, author: AUTHOR });
+          const matrix = await window.git.statusMatrix({ fs, dir: GENERATED_DIRECTORY });
+          if (matrix.some(([, head, , stage]) => head !== stage)) {
+            await window.git.commit({ fs, dir: GENERATED_DIRECTORY, message: step.message, author: AUTHOR });
           }
+          previous = next;
         }
+
+        // Also expose the final artifacts as changes in the DSL author's
+        // independent workspace, without contaminating generated Git history.
+        const finalFiles = steps.at(-1).files;
+        const destination = `${WORKSPACE_DIRECTORY}/generate`;
+        await removeTree(destination);
+        await mkdirp(destination);
+        for (const name of Object.keys(finalFiles).sort()) {
+          validateRelativePath(name);
+          const target = `${destination}/${name}`;
+          await mkdirp(parent(target));
+          await pfs.writeFile(target, decodeBase64(finalFiles[name]));
+        }
+
         await flush();
         if (attached) await refreshView();
+      });
+    },
+
+    downloadGeneratedProject() {
+      return enqueue(async () => {
+        await flush();
+        const log = await window.git.log({ fs, dir: GENERATED_DIRECTORY });
+        if (log.length < 2) throw new Error("Generated project lacks incremental Git history.");
+        const entries = {};
+        async function collect(directory, relative = "") {
+          for (const name of (await pfs.readdir(directory)).sort()) {
+            const absolute = `${directory}/${name}`;
+            const filename = relative ? `${relative}/${name}` : name;
+            const stat = await pfs.stat(absolute);
+            if (stat.isDirectory()) await collect(absolute, filename);
+            else entries[filename] = encodeBase64(new Uint8Array(await pfs.readFile(absolute)));
+          }
+        }
+        await collect(GENERATED_DIRECTORY);
+        if (!entries[".git/HEAD"]) throw new Error("Generated Git metadata missing.");
+        await window.MobilisDownloads.project(entries, "mobilis-project.zip");
       });
     },
 
