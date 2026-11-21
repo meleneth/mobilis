@@ -325,6 +325,10 @@ function installEventGate() {
   });
 
   document.addEventListener("change", event => {
+    if (event.target.id === "system-starting-port") {
+      document.dispatchEvent(new CustomEvent("mobilis:semantic-change", { detail: { target: event.target } }));
+      return;
+    }
     if (event.target.id === "sync-service-renames") {
       document.dispatchEvent(new CustomEvent("mobilis:rename-sync-toggle", { detail: { enabled: event.target.checked } }));
       return;

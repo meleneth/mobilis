@@ -7,6 +7,33 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Mobilis Browser Playground" })).toBeVisible({ timeout: 120_000 });
 });
 
+test("system starting port round-trips through the builder and DSL", async ({ page }) => {
+  const port = page.getByRole("spinbutton", { name: "Starting port" });
+  const editor = page.getByLabel("Mobilis Ruby DSL");
+
+  await expect(port).toHaveValue("11000");
+  await port.fill("12000");
+  await port.blur();
+  await expect(editor).toHaveValue(/starting_port: 12000/);
+  await expect(page.getByRole("spinbutton", { name: "Starting port" })).toHaveValue("12000");
+  await expect(page.locator("#diagnostics-region")).toContainText("Visual edit applied");
+
+  await editor.fill((await editor.inputValue()).replace("starting_port: 12000", "starting_port: 13000"));
+  await expect(page.getByRole("spinbutton", { name: "Starting port" })).toHaveValue("13000");
+});
+
+test("system port control inserts an omitted default and refuses to rewrite dynamic Ruby", async ({ page }) => {
+  const editor = page.getByLabel("Mobilis Ruby DSL");
+  await editor.fill((await editor.inputValue()).replace(", starting_port: 11_000", ""));
+  await expect(page.getByRole("spinbutton", { name: "Starting port" })).toHaveValue("11000");
+  await page.getByRole("spinbutton", { name: "Starting port" }).fill("14500");
+  await page.getByRole("spinbutton", { name: "Starting port" }).blur();
+  await expect(editor).toHaveValue(/generate\("browser-demo", starting_port: 14500\)/);
+
+  await editor.fill((await editor.inputValue()).replace("starting_port: 14500", "starting_port: 14_000 + 500"));
+  await expect(page.getByRole("spinbutton", { name: "Starting port" })).toBeDisabled();
+});
+
 test("form typing updates the Ruby source, inspector and Mermaid without blurring", async ({ page }) => {
   const name = page.locator(".service-card .service-name").nth(1);
   await name.click();

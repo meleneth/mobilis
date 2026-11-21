@@ -179,6 +179,42 @@ module Mobilis
         result
       end
 
+      # System-wide root arguments have their own editing affordances.
+      # Do not rewrite a dynamic Ruby expression simply because evaluation
+      # happened to yield an integer.
+      def starting_port_editable?
+        call = root_call
+        return false unless call&.closing_loc && parse_result.errors.empty?
+
+        element = keyword_elements(call).find { |entry| keyword_name(entry) == :starting_port }
+        element.nil? || element.value.is_a?(Prism::IntegerNode)
+      end
+
+      def update_starting_port(value)
+        raw = value.to_s.strip
+        raise ArgumentError, "Starting port must be an integer between 1 and 65535" unless /\\A[0-9]+\\z/.match?(raw)
+
+        number = Integer(raw, 10)
+        raise ArgumentError, "Starting port must be an integer between 1 and 65535" unless (1..65_535).cover?(number)
+
+        call = root_call
+        raise ArgumentError, "System definition must use a parenthesized build/generate call" unless call&.closing_loc
+
+        entry = keyword_elements(call).find { |candidate| keyword_name(candidate) == :starting_port }
+        if entry
+          unless entry.value.is_a?(Prism::IntegerNode)
+            raise ArgumentError, "Cannot safely rewrite a computed starting_port expression"
+          end
+
+          node = entry.value
+          return replace(node.location.start_offset, node.location.end_offset, number.to_s)
+        end
+
+        separator = call.arguments&.arguments&.empty? == false ? ", " : ""
+        position = call.closing_loc.start_offset
+        replace(position, position, "#{separator}starting_port: #{number}")
+      end
+
       def change_type(id, type)
         _declaration, node = editable_declaration(id)
         type = type.to_sym

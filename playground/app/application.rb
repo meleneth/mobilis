@@ -168,6 +168,11 @@ module MobilisPlayground
 
     def handle_change(event)
       target = event[:detail][:target]
+      if target[:id].to_s == "system-starting-port"
+        visual_edit(label: "starting port") { source_document.update_starting_port(target[:value].to_s) }
+        return
+      end
+
       classes = target[:classList]
       visual_control = %w[service-name service-type service-property inspector-service-property relationship-kind relationship-target relationship-property]
         .any? { |name| class_member?(classes, name) }
@@ -396,7 +401,9 @@ module MobilisPlayground
         service_types: Mobilis::Browser::SourceDocument::SERVICE_TYPES,
         property_schemas: Mobilis::Browser::SourceDocument::PROPERTY_SCHEMAS,
         inspector_services:,
-        capabilities:
+        capabilities:,
+        starting_port: @analysis.system.starting_port,
+        starting_port_editable: !@diagram_stale && source_document.starting_port_editable?
       )
       projection_warning + html
     end

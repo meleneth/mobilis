@@ -143,6 +143,47 @@ RSpec.describe Mobilis::Browser::SourceDocument do
     expect(described_class.new(original).propagate_service_rename(edited)).to be_nil
   end
 
+  it "replaces only the explicit starting port literal without changing its surrounding source" do
+    source = <<~RUBY
+      # preserve this header
+      Mobilis::DSL.generate("demo", starting_port: 11_000) do
+        redis("cache")
+      end
+    RUBY
+    document = described_class.new(source)
+
+    expect(document.starting_port_editable?).to be(true)
+    updated = document.update_starting_port("12000")
+    expect(updated).to include('Mobilis::DSL.generate("demo", starting_port: 12000) do')
+    expect(updated).to include("# preserve this header")
+    expect(described_class.new(updated).analyze.system.starting_port).to eq(12_000)
+  end
+
+  it "adds a starting port keyword when the root uses the default" do
+    document = described_class.new(source)
+    updated = document.update_starting_port("12500")
+
+    expect(updated).to include('Mobilis::DSL.build("demo", starting_port: 12500) do')
+    expect(described_class.new(updated).analyze.system.starting_port).to eq(12_500)
+  end
+
+  it "blocks invalid port values and dynamic port expressions" do
+    document = described_class.new(source)
+    %w[0 65536 3.5 abc].each do |value|
+      expect { document.update_starting_port(value) }.to raise_error(ArgumentError, /Starting port/)
+    end
+
+    dynamic = <<~RUBY
+      port = 12_000
+      Mobilis::DSL.build("demo", starting_port: port) do
+        redis("cache")
+      end
+    RUBY
+    document = described_class.new(dynamic)
+    expect(document.starting_port_editable?).to be(false)
+    expect { document.update_starting_port("13000") }.to raise_error(ArgumentError, /computed/)
+  end
+
   it "changes only the service call when changing type" do
     document = described_class.new(source)
     changed = document.change_type(document.analyze.declarations.first.id, :redis)
