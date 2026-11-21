@@ -36,6 +36,47 @@ RSpec.describe Mobilis::Browser::SourceDocument do
     expect(changed).to include("helper = 40 + 2")
   end
 
+  it "implicitly binds repeated literals in DSL content during an AST service rename" do
+    connected = <<~RUBY
+      # cache remains a comment
+      outside = "cache"
+      Mobilis::DSL.build("cache") do
+        redis("cache")
+        postgres("database")
+        display_name = "cache"
+        aliases = ["cache", "unrelated"]
+        connect(from: "cache", to: "database")
+      end
+    RUBY
+    document = described_class.new(connected)
+    changed = connected.sub('redis("cache")', 'redis("canhe")')
+    synchronized = document.propagate_service_rename(changed)
+
+    expect(synchronized).to include('redis("canhe")')
+    expect(synchronized).to include('display_name = "canhe"')
+    expect(synchronized).to include('aliases = ["canhe", "unrelated"]')
+    expect(synchronized).to include('connect(from: "canhe", to: "database")')
+    expect(synchronized).to include('outside = "cache"')
+    expect(synchronized).to include('Mobilis::DSL.build("cache")')
+    expect(synchronized).to include('# cache remains a comment')
+    expect(described_class.new(synchronized).analyze).to be_valid
+  end
+
+  it "returns nil instead of guessing when an edit is outside a service-name literal" do
+    connected = <<~RUBY
+      Mobilis::DSL.build("demo") do
+        redis("cache")
+        postgres("database")
+        alias_name = "cache"
+        connect(from: "cache", to: "database")
+      end
+    RUBY
+    document = described_class.new(connected)
+    edited = connected.sub('alias_name = "cache"', 'alias_name = "cache2"')
+
+    expect(document.propagate_service_rename(edited)).to be_nil
+  end
+
   it "changes only the service call when changing type" do
     document = described_class.new(source)
     changed = document.change_type(document.analyze.declarations.first.id, :redis)

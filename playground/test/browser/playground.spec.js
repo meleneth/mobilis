@@ -34,6 +34,22 @@ test("inspector property editing updates the DSL before blur", async ({ page }) 
   await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(/rails\("api", api: true\)/);
 });
 
+test("keeps repeated DSL string literals synchronized without requiring a Ruby variable", async ({ page }) => {
+  const editor = page.getByLabel("Mobilis Ruby DSL");
+  const initial = await editor.inputValue();
+  // An independent literal in the DSL body is an implicit reference, but
+  // strings outside the block and the project identifier are not.
+  const withAlias = initial.replace('redis("cache")', 'redis("cache")\\n  label = "cache"');
+  await editor.fill(withAlias);
+  await expect(page.locator("#diagnostics-region")).toContainText("Source is valid");
+
+  await editor.fill(withAlias.replace('redis("cache")', 'redis("canhe")'));
+  await expect(editor).toHaveValue(/redis\\("canhe"\\)/);
+  await expect(editor).toHaveValue(/label = "canhe"/);
+  await expect(editor).toHaveValue(/connect\\(from: "canhe", to: "database"\\)/);
+  await expect(page.locator("#architecture-canvas")).toContainText("Redis: canhe");
+});
+
 test("synchronizes visual and Ruby editing, including Rails authoring", async ({ page }) => {
   await page.getByLabel("New service name").fill("web");
   await page.locator("#new-service-type").selectOption("rails");

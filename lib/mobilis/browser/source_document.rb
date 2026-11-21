@@ -117,21 +117,18 @@ module Mobilis
             normalize_name(declaration.name) == normalize_name(new_name)
         }
 
-        reference_names = %i[from to candidate shadow]
-        edits = relationship_nodes.flat_map do |relationship_node|
-          keyword_elements(relationship_node).filter_map do |keyword|
-            next unless reference_names.include?(keyword_name(keyword))
-            literal = keyword.value
-            next unless literal.is_a?(Prism::StringNode)
-            next unless normalize_name(literal.unescaped) == normalize_name(old_name)
+        # String literals inside the DSL body are implicit bindings when
+        # they have the same value as a unique service declaration. This
+        # includes custom DSL calls and local aliases, not only the four
+        # built-in relationship keywords. Never rewrite comments, source
+        # outside the DSL body, or encoded embedded document payloads.
+        edits = service_name_literals(old_name).filter_map do |literal|
+          start_offset = literal.content_loc.start_offset
+          end_offset = literal.content_loc.end_offset
+          next unless end_offset <= prefix || start_offset >= original_end
 
-            start_offset = literal.content_loc.start_offset
-            end_offset = literal.content_loc.end_offset
-            next unless end_offset <= prefix || start_offset >= original_end
-
-            shift = start_offset >= original_end ? delta : 0
-            [start_offset + shift, end_offset + shift, escape_string(new_name, literal)]
-          end
+          shift = start_offset >= original_end ? delta : 0
+          [start_offset + shift, end_offset + shift, escape_string(new_name, literal)]
         end
 
         result = edits.sort_by { |offset,| -offset }.reduce(edited_source) do |current, (start_offset, end_offset, replacement)|
@@ -139,6 +136,30 @@ module Mobilis
         end
         return nil unless self.class.new(result).analyze.valid?
 
+        result
+      end
+
+      # Collect literal occurrences, not textual matches. Their exact source
+      # ranges come from Prism, and an embedded archive is opaque even when
+      # its encoded payload happens to resemble a service name.
+      def service_name_literals(name)
+        block = root_call&.block
+        return [] unless block
+
+        result = []
+        visit = lambda do |node|
+          next unless node
+
+          if node.is_a?(Prism::CallNode) && node.name == :embedded_archive
+            next
+          end
+
+          if node.is_a?(Prism::StringNode) && normalize_name(node.unescaped) == normalize_name(name)
+            result << node
+          end
+          node.compact_child_nodes.each { |child| visit.call(child) }
+        end
+        visit.call(block.body)
         result
       end
 
