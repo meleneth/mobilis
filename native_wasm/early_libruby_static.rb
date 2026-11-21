@@ -33,7 +33,8 @@ module MobilisEarlyRubyArchive
 
         kwargs = kwargs.dup
         kwargs[:env] = (kwargs[:env] || {}).merge(
-          "RUBYOPT" => "-r#{File.expand_path("nokogiri_wasi_patch", __dir__)}"
+          "RUBYOPT" => "-r#{File.expand_path("nokogiri_wasi_patch", __dir__)}",
+          "LIBS" => ENV.fetch("MOBILIS_NOKOGIRI_WASI_LIBS")
         )
       end
       @delegate.system(*args, **kwargs)

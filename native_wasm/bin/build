@@ -69,7 +69,10 @@ test -s "${zlib_prefix}/lib/libz.a" || {
 export CPPFLAGS="-D_WASI_EMULATED_SIGNAL -I${lzma_prefix}/include -I${zlib_prefix}/include -I${iconv_prefix}/include ${CPPFLAGS:-}"
 export CFLAGS="-I${lzma_prefix}/include -I${zlib_prefix}/include -I${iconv_prefix}/include ${CFLAGS:-}"
 export LDFLAGS="-L${lzma_prefix}/lib -L${zlib_prefix}/lib -L${iconv_prefix}/lib ${LDFLAGS:-}"
-export LIBS="-llzma -lz -liconv -lwasi-emulated-signal ${LIBS:-}"
+# Avoid poisoning Ruby's own configure compiler tests with Nokogiri-only
+# libraries. The Nokogiri extconf runner forwards this to its nested builds.
+export MOBILIS_NOKOGIRI_WASI_LIBS="-llzma -lz -liconv -lwasi-emulated-signal ${LIBS:-}"
+unset LIBS
 export PKG_CONFIG_PATH="${lzma_prefix}/lib/pkgconfig:${iconv_prefix}/lib/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}"
 
 # MiniPortile may reuse a configured libxml2 build from an earlier failed
