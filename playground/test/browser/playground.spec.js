@@ -71,7 +71,7 @@ test("boots a verified application artifact once and exposes initialization diag
   // Ruby boot fails before declaring ready unless native JSON ABI matches.
   expect(diagnostics.vmInstances).toBe(1);
   expect(diagnostics.runtime.package).toBe("mobilis-ruby-wasm");
-  expect(diagnostics.runtime.package_version).toBe("2.10.1-ruby-4.0.10-rails-8.1.4.1-json-3.1.0");
+  expect(diagnostics.runtime.package_version).toBe("2.10.1-ruby-4.0.10-rails-8.1.4.1-json-3.1.0-single-ext");
   expect(diagnostics.application.files).toBeGreaterThan(300);
   expect(diagnostics.application.version).toMatch(/^[a-f0-9]{64}$/);
   expect(diagnostics.timings.runtimeCompileMs).toBeGreaterThan(0);

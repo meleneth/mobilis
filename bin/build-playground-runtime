@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repository_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-runtime_image="${MOBILIS_RUBY_RUNTIME_IMAGE:-mobilis-playground-ruby-runtime:2.10.1-ruby-4.0.10-rails-8.1.4.1-json-3.1.0}"
+runtime_image="${MOBILIS_RUBY_RUNTIME_IMAGE:-mobilis-playground-ruby-runtime:2.10.1-ruby-4.0.10-rails-8.1.4.1-json-3.1.0-single-ext}"
 
 cd "${repository_dir}"
 if [[ -n "$(git status --porcelain)" ]]; then

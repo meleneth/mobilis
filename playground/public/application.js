@@ -474,7 +474,7 @@ function validateRuntimeConfig(config) {
     throw new Error("Unsupported or malformed Mobilis runtime configuration");
   }
   const runtime = config.runtime;
-  if (!runtime || runtime.package !== "mobilis-ruby-wasm" || runtime.package_version !== "2.10.1-ruby-4.0.10-rails-8.1.4.1-json-3.1.0" || runtime.ruby_version !== "4.0") {
+  if (!runtime || runtime.package !== "mobilis-ruby-wasm" || runtime.package_version !== "2.10.1-ruby-4.0.10-rails-8.1.4.1-json-3.1.0-single-ext" || runtime.ruby_version !== "4.0") {
     throw new Error("Runtime configuration is not compatible with Mobilis's pinned Ruby 4.0 WASM runtime");
   }
   validateIntegrityRecord(runtime, "Ruby WASM runtime");

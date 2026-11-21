@@ -36,7 +36,7 @@ COPY native_wasm ./native_wasm
 # Build the complete Ruby 4.0.10 WASI runtime and its native gem extensions.
 # The JSON ABI change deliberately uses a fresh cache namespace so no old
 # json parser/generator object or static archive can survive the rebuild.
-RUN --mount=type=cache,id=mobilis-native-wasm-build-v4-json-3.1.0,target=/runtime-build/native_wasm/build \
+RUN --mount=type=cache,id=mobilis-native-wasm-build-v5-json-single-ext,target=/runtime-build/native_wasm/build \
   mkdir -p /runtime \
   && SSL_CERT_FILE="$(if [ -f /etc/devastation/ca-certificates.crt ]; then printf %s /etc/devastation/ca-certificates.crt; else printf %s /usr/lib/ssl/cert.pem; fi)" \
     RUBY_WASM_RUBY_VERSION="${RUBY_WASM_RUBY_VERSION}" \
