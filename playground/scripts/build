@@ -54,3 +54,4 @@ cp -R "${thor_path}/lib" "${staging_dir}/gems/thor"
 cp -R "${tilt_path}/lib" "${staging_dir}/gems/tilt"
 
 ruby scripts/build_application.rb "${staging_dir}" public
+ruby scripts/verify_runtime_compatibility.rb public/runtime-config.json public/mobilis-app-manifest.json
