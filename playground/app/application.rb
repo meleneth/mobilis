@@ -19,6 +19,7 @@ module MobilisPlayground
     def initialize(renderer: Renderer.new)
       @renderer = renderer
       @runtime = Mobilis::Browser::SemanticRuntime.new
+      @generator_compatibility = Mobilis::Browser::GeneratorCompatibility.new
       @history = Mobilis::Browser::SourceHistory.new
       bootstrap_source = workspace_property(:bootstrapSource)
       bootstrap_valid_source = workspace_property(:bootstrapValidSource)
@@ -70,12 +71,36 @@ module MobilisPlayground
       change_handler = proc { |event| semantic_request("structured edit") { handle_change(event) } }
       archive_handler = proc { |event| semantic_request("embedded document commit") { handle_archive_commit(event) } }
       checkout_handler = proc { |event| semantic_request("workspace checkout") { handle_workspace_checkout(event) } }
+      compatibility_handler = proc do |event|
+        semantic_request("generator compatibility shim") { handle_generator_compatibility(event) }
+      end
       document.addEventListener("mobilis:source-input", &input_handler)
       document.addEventListener("mobilis:semantic-click", &click_handler)
       document.addEventListener("mobilis:semantic-change", &change_handler)
       document.addEventListener("mobilis:archive-commit", &archive_handler)
       document.addEventListener("mobilis:workspace-checkout", &checkout_handler)
-      @event_handlers.concat([input_handler, click_handler, change_handler, archive_handler, checkout_handler])
+      document.addEventListener("mobilis:generator-compatibility", &compatibility_handler)
+      @event_handlers.concat(
+        [input_handler, click_handler, change_handler, archive_handler, checkout_handler, compatibility_handler]
+      )
+    end
+
+    def handle_generator_compatibility(event)
+      detail = event[:detail]
+      request = JSON.parse(detail[:request].to_s, symbolize_names: true)
+      plan = @generator_compatibility.plan(
+        generator: request.fetch(:generator),
+        version: request.fetch(:version),
+        arguments: request.fetch(:arguments),
+        encoded_files: request.fetch(:files)
+      )
+      detail[:response] = JSON.generate(plan)
+      detail[:accepted] = true
+    rescue ArgumentError, KeyError, JSON::ParserError, TypeError,
+           Mobilis::GeneratorCompatibility::UnsupportedInvocationError,
+           Mobilis::GeneratorCompatibility::WorkspaceConflictError => error
+      detail[:accepted] = false if detail
+      detail[:error] = "#{error.class}: #{error.message}" if detail
     end
 
     def handle_input(event)
@@ -372,7 +397,7 @@ module MobilisPlayground
     end
 
     def render_workspace
-      @renderer.render(:workspace)
+      @renderer.render(:workspace, compatibility_invocations: @generator_compatibility.manifests)
     end
 
     def render_inspector

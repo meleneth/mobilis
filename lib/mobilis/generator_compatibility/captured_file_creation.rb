@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "base64"
-
 module Mobilis
   module GeneratorCompatibility
     class InvalidCaptureError < ArgumentError; end
@@ -47,10 +45,6 @@ module Mobilis
         }
       end
 
-      private
-
-      public
-
       def target_paths
         entries.map { |entry| entry.fetch("path") }.freeze
       end
@@ -71,7 +65,7 @@ module Mobilis
       def decode(record)
         case record.fetch("encoding")
         when "utf-8" then record.fetch("content").b
-        when "base64" then Base64.strict_decode64(record.fetch("content"))
+        when "base64" then record.fetch("content").unpack1("m0")
         else raise InvalidCaptureError, "Unsupported captured content encoding: #{record.fetch("encoding")}"
         end
       end

@@ -6,6 +6,25 @@
     %span#workspace-summary.rounded.bg-slate-800.px-2.py-1.text-xs.text-slate-300 Initializing…
     %button#workspace-refresh.rounded.border.border-line.px-3.py-2.text-xs.text-slate-300.hover:bg-slate-800{type: "button"} Refresh
     %button#workspace-stage.rounded.border.border-line.px-3.py-2.text-xs.text-slate-300.hover:bg-slate-800{type: "button"} Stage all
+.grid.gap-3.border-b.border-line.p-3{class: "md:grid-cols-[1fr_auto]"}
+  %div
+    %h3.text-xs.font-semibold.text-white Generator compatibility
+    %p.mt-1.text-xs.text-slate-500 Apply version-pinned captured behavior to an existing generated application. Real generators remain preferred.
+  - compatibility_invocations.each do |invocation|
+    .flex.flex-wrap.items-end.gap-2
+      %label.text-xs.text-slate-400
+        Rails application root
+        %input#compatibility-root.mt-1.w-56.rounded.border.border-line.bg-slate-950.px-2.py-2.text-xs.text-white{value: "generate/rails-app", aria: {label: "Compatibility application root"}}
+      %button#apply-generator-compatibility.rounded.border.border-amber-800.bg-amber-950.px-3.py-2.text-xs.font-semibold.text-amber-200.hover:bg-amber-900{
+        type: "button",
+        data: {
+          generator: invocation.fetch(:generator),
+          version: invocation.fetch(:version),
+          arguments: JSON.generate(invocation.fetch(:arguments)),
+          input_paths: JSON.generate(invocation.fetch(:input_paths))
+        }
+      } Apply #{invocation.fetch(:generator)} #{invocation.fetch(:version)} capture
+  #compatibility-status.text-xs.text-slate-400
 .grid.gap-3.p-3{class: "lg:grid-cols-[18rem_1fr_20rem]"}
   %div
     %h3.mb-2.text-xs.font-semibold.text-white Changed files

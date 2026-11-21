@@ -215,6 +215,33 @@ test("persists the authoritative DSL and generated files in the browser workspac
   await expect(page.locator("#workspace-files")).toContainText("generate/development-compose.yml");
 });
 
+test("applies captured generator behavior through the persistent Ruby VM and workspace", async ({ page }) => {
+  await page.evaluate(async () => {
+    const encode = value => btoa(unescape(encodeURIComponent(value)));
+    await window.MobilisWorkspace.persistGenerated(JSON.stringify({
+      "rails-app/config/application.rb": encode("class Application; end\n"),
+      "rails-app/config/environment.rb": encode("require_relative \"application\"\n")
+    }));
+  });
+
+  const source = await page.getByLabel("Mobilis Ruby DSL").inputValue();
+  const invocationCount = await rubyInvocationCount(page);
+  await page.getByLabel("Compatibility application root").fill("generate/rails-app");
+  await page.getByRole("button", { name: /Apply rspec:install 8\.1\.0 capture/ }).click();
+
+  await expect(page.locator("#compatibility-status")).toContainText("3 created, 0 unchanged");
+  await expect(page.locator("#workspace-files")).toContainText("generate/rails-app/.rspec");
+  await page.locator("#workspace-files button", { hasText: "generate/rails-app/.rspec" }).click();
+  await expect(page.locator("#workspace-diff")).toContainText("+--require spec_helper");
+  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(source);
+  expect(await rubyInvocationCount(page)).toBe(invocationCount + 1);
+  expect(await page.evaluate(() => window.MobilisRuntimeDiagnostics.vmInstances)).toBe(1);
+
+  await page.getByRole("button", { name: /Apply rspec:install 8\.1\.0 capture/ }).click();
+  await expect(page.locator("#compatibility-status")).toContainText("0 created, 3 unchanged");
+  expect(await page.evaluate(() => window.MobilisRuntimeDiagnostics.vmInstances)).toBe(1);
+});
+
 test("persists invalid source while recovering the last valid projection after reload", async ({ page }) => {
   const editor = page.getByLabel("Mobilis Ruby DSL");
   const original = await editor.inputValue();

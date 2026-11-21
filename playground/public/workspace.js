@@ -77,6 +77,10 @@ export function createWorkspaceController() {
       });
     },
 
+    applyCompatibility(root, button = document.getElementById("apply-generator-compatibility")) {
+      return enqueue(() => applyCompatibility(root, button));
+    },
+
     refresh() {
       return enqueue(refreshView);
     },
@@ -105,6 +109,10 @@ export function createWorkspaceController() {
     document.getElementById("workspace-refresh")?.addEventListener("click", () => runUiOperation(refreshView));
     document.getElementById("workspace-stage")?.addEventListener("click", () => runUiOperation(stageAll));
     document.getElementById("workspace-commit")?.addEventListener("click", () => runUiOperation(commit));
+    document.getElementById("apply-generator-compatibility")?.addEventListener("click", event => {
+      const root = document.getElementById("compatibility-root")?.value.trim() || "";
+      runUiOperation(() => applyCompatibility(root, event.currentTarget));
+    });
     document.getElementById("workspace-files")?.addEventListener("click", event => {
       const button = event.target.closest("button[data-path]");
       if (!button) return;
@@ -180,6 +188,73 @@ export function createWorkspaceController() {
       throw new Error(`Checkout was rolled back: ${error.message || String(error)}`);
     }
     await flush();
+    await refreshView();
+  }
+
+  async function applyCompatibility(root, button) {
+    validateRelativePath(root);
+    if (!button) throw new Error("Generator compatibility control is unavailable.");
+
+    const inputPaths = JSON.parse(button.dataset.inputPaths || "[]");
+    const argumentsList = JSON.parse(button.dataset.arguments || "[]");
+    const files = {};
+    for (const relative of inputPaths) {
+      validateRelativePath(relative);
+      const bytes = await readBytesIfPresent(`${root}/${relative}`);
+      files[relative] = bytes ? encodeBase64(bytes) : null;
+    }
+
+    const detail = {
+      request: JSON.stringify({
+        generator: button.dataset.generator,
+        version: button.dataset.version,
+        arguments: argumentsList,
+        files
+      }),
+      accepted: false,
+      response: null,
+      error: null
+    };
+    document.dispatchEvent(new CustomEvent("mobilis:generator-compatibility", { detail }));
+    if (!detail.accepted) throw new Error(detail.error || "Ruby rejected the generator compatibility request.");
+
+    const plan = JSON.parse(detail.response);
+    for (const relative of inputPaths) {
+      const current = await readBytesIfPresent(`${root}/${relative}`);
+      const encoded = current ? encodeBase64(current) : null;
+      if (encoded !== files[relative]) {
+        throw new Error(`Workspace changed while preparing compatibility operation: ${relative}`);
+      }
+    }
+
+    const writes = Object.entries(plan.writes || {}).sort(([left], [right]) => left.localeCompare(right));
+    const backups = new Map();
+    try {
+      for (const [relative, record] of writes) {
+        validateRelativePath(relative);
+        const target = `${root}/${relative}`;
+        backups.set(target, await readBytesIfPresent(target));
+        await mkdirp(parent(`${WORKSPACE_DIRECTORY}/${target}`));
+        await pfs.writeFile(`${WORKSPACE_DIRECTORY}/${target}`, decodeBase64(record.content));
+      }
+    } catch (error) {
+      for (const [target, previous] of [...backups.entries()].reverse()) {
+        if (previous) {
+          await pfs.writeFile(`${WORKSPACE_DIRECTORY}/${target}`, previous);
+        } else if (await exists(`${WORKSPACE_DIRECTORY}/${target}`)) {
+          await pfs.unlink(`${WORKSPACE_DIRECTORY}/${target}`);
+        }
+      }
+      throw error;
+    }
+
+    await flush();
+    const status = document.getElementById("compatibility-status");
+    if (status) {
+      const created = plan.created?.length || 0;
+      const unchanged = plan.unchanged?.length || 0;
+      status.textContent = `Applied ${button.dataset.generator} ${button.dataset.version}: ${created} created, ${unchanged} unchanged.`;
+    }
     await refreshView();
   }
 
@@ -406,6 +481,15 @@ function validateRelativePath(value) {
 
 function decodeBase64(value) {
   return Uint8Array.from(atob(value), character => character.charCodeAt(0));
+}
+
+function encodeBase64(bytes) {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+  }
+  return btoa(binary);
 }
 
 function bytesEqual(left, right) {

@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "base64"
 require "json"
 
 module Mobilis
@@ -25,7 +24,7 @@ module Mobilis
 
       def plan(generator:, version:, arguments:, encoded_files:)
         files = encoded_files.filter_map do |path, encoded|
-          [path, Base64.strict_decode64(encoded)] if encoded
+          [path, encoded.unpack1("m0")] if encoded
         end.to_h
         workspace = Mobilis::GeneratorCompatibility::MemoryWorkspace.new(files)
         result = @catalog.apply(generator:, version:, arguments:, workspace:)
@@ -33,7 +32,7 @@ module Mobilis
           created: result.fetch(:created),
           unchanged: result.fetch(:unchanged),
           writes: workspace.writes.sort.to_h do |path, record|
-            [path, {content: Base64.strict_encode64(record.fetch(:content)), mode: record.fetch(:mode)}]
+            [path, {content: [record.fetch(:content)].pack("m0"), mode: record.fetch(:mode)}]
           end
         }
       end
