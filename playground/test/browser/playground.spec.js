@@ -40,8 +40,9 @@ test("preserves the last visual model while invalid Ruby is repaired", async ({ 
   await expect(page.locator("#architecture-region")).toContainText("Live from validated DSL");
 });
 
-test("a one-character service rename exposes stale projections until references agree", async ({ page }) => {
+test("with reference synchronization disabled, a partial rename exposes stale projections", async ({ page }) => {
   const editor = page.getByLabel("Mobilis Ruby DSL");
+  await page.locator("#sync-service-renames").uncheck();
   const original = await editor.inputValue();
   // A valid Ruby string edit is not necessarily a valid Mobilis system.
   // The connection still references 'cache' after the declaration becomes 'cach'.
