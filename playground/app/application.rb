@@ -339,7 +339,7 @@ module MobilisPlayground
     end
 
     def download_project
-      JS.global[:MobilisWorkspace].call(:downloadWorkspace)
+      JS.global[:MobilisWorkspace].call(:downloadGeneratedProject)
     end
 
     def download_dsl
