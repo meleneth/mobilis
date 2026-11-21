@@ -63,6 +63,33 @@ test("a one-character service rename exposes stale projections until references 
   await expect(page.locator("#architecture-canvas")).toContainText("Redis: cach");
 });
 
+test("syncs a single character inserted into a service declaration and its references", async ({ page }) => {
+  const editor = page.getByLabel("Mobilis Ruby DSL");
+  const initial = await editor.inputValue();
+  expect(await page.locator("#sync-service-renames").isChecked()).toBe(true);
+  const renamed = initial.replace('redis("cache")', 'redis("canche")');
+  await editor.fill(renamed);
+  await expect(editor).toHaveValue(/redis\("canche"\)/);
+  await expect(editor).toHaveValue(/connect\(from: "canche", to: "database"\)/);
+  await expect(page.locator(".service-name").nth(1)).toHaveValue("canche");
+  await expect(page.locator("#service-inspector-panels")).toContainText("canche");
+  await expect(page.locator("#architecture-canvas")).toContainText("Redis: canche");
+  await expect(page.locator("#architecture-region")).toContainText("Live from validated DSL");
+
+  await page.locator("#sync-service-renames").uncheck();
+  await editor.fill((await editor.inputValue()).replace('redis("canche")', 'redis("canche2")'));
+  await expect(editor).toHaveValue(/connect\(from: "canche", to: "database"\)/);
+  await expect(page.locator("#architecture-region")).toContainText("Stale");
+});
+
+test("does not cascade edits to unrelated strings or ambiguous declarations", async ({ page }) => {
+  const editor = page.getByLabel("Mobilis Ruby DSL");
+  const source = await editor.inputValue();
+  await editor.fill(source.replace('redis("cache")', 'redis("cache2")').replace('"browser-demo"', '"cache"'));
+  await expect(editor).toHaveValue(/generate\("cache"/);
+  await expect(editor).toHaveValue(/connect\(from: "cache2", to: "database"\)/);
+});
+
 test("removes connected nodes and edges through the visual builder", async ({ page }) => {
   const cacheCard = page.locator(".service-card").filter({ has: page.locator('.service-name[value="cache"]') });
   await cacheCard.getByRole("button", { name: "Remove" }).click();

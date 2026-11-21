@@ -279,11 +279,14 @@ function installEventGate() {
     }
     if (event.target.id !== "dsl-source") return;
     window.MobilisDocuments.parentChanged();
-    window.MobilisWorkspace.persistSource(event.target.value, false);
     document.dispatchEvent(new CustomEvent("mobilis:source-input", { detail: { target: event.target } }));
   });
 
   document.addEventListener("change", event => {
+    if (event.target.id === "sync-service-renames") {
+      document.dispatchEvent(new CustomEvent("mobilis:rename-sync-toggle", { detail: { enabled: event.target.checked } }));
+      return;
+    }
     if (!event.target.matches(".service-name, .service-type, .service-property, .inspector-service-property, .relationship-kind, .relationship-target, .relationship-property")) return;
     document.dispatchEvent(new CustomEvent("mobilis:semantic-change", { detail: { target: event.target } }));
   });

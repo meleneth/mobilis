@@ -71,6 +71,77 @@ module Mobilis
         replace(string.content_loc.start_offset, string.content_loc.end_offset, escape_string(name, string))
       end
 
+      # Returns the synchronously renamed source, or nil when the edit is
+      # ambiguous. All references are selected from the *previous* Prism AST.
+      def propagate_service_rename(edited_source)
+        return nil unless parse_result.errors.empty?
+        return nil if edited_source == source
+
+        before, after = source.b, edited_source.b
+        prefix = 0
+        limit = [before.bytesize, after.bytesize].min
+        prefix += 1 while prefix < limit && before.getbyte(prefix) == after.getbyte(prefix)
+        suffix = 0
+        while suffix < limit - prefix &&
+              before.getbyte(before.bytesize - suffix - 1) == after.getbyte(after.bytesize - suffix - 1)
+          suffix += 1
+        end
+        original_end = before.bytesize - suffix
+        delta = after.bytesize - before.bytesize
+        old_nodes = declaration_nodes
+        matches = old_nodes.each_with_index.filter_map do |node, index|
+          literal = name_node(node)
+          next unless literal
+          range = literal.content_loc
+          index if prefix >= range.start_offset && original_end <= range.end_offset
+        end
+        return nil unless matches.length == 1
+
+        index = matches.first
+        original_node = old_nodes[index]
+        old_name = name_node(original_node).unescaped
+        updated_document = self.class.new(edited_source)
+        return nil unless updated_document.parse_result.errors.empty?
+
+        updated_node = updated_document.send(:declaration_nodes)[index]
+        return nil unless updated_node && original_node.name == updated_node.name
+
+        updated_literal = updated_document.send(:name_node, updated_node)
+        return nil unless updated_literal
+
+        new_name = updated_literal.unescaped
+        return nil if new_name.empty? || new_name == old_name
+        return nil unless declarations.count { |declaration| normalize_name(declaration.name) == normalize_name(old_name) } == 1
+        return nil if updated_document.declarations.any? { |declaration|
+          declaration.id != updated_node.location.start_offset.to_s &&
+            normalize_name(declaration.name) == normalize_name(new_name)
+        }
+
+        reference_names = %i[from to candidate shadow]
+        edits = relationship_nodes.flat_map do |relationship_node|
+          keyword_elements(relationship_node).filter_map do |keyword|
+            next unless reference_names.include?(keyword_name(keyword))
+            literal = keyword.value
+            next unless literal.is_a?(Prism::StringNode)
+            next unless normalize_name(literal.unescaped) == normalize_name(old_name)
+
+            start_offset = literal.content_loc.start_offset
+            end_offset = literal.content_loc.end_offset
+            next unless end_offset <= prefix || start_offset >= original_end
+
+            shift = start_offset >= original_end ? delta : 0
+            [start_offset + shift, end_offset + shift, escape_string(new_name, literal)]
+          end
+        end
+
+        result = edits.sort_by { |offset,| -offset }.reduce(edited_source) do |current, (start_offset, end_offset, replacement)|
+          replace_in(current, start_offset, end_offset, replacement)
+        end
+        return nil unless self.class.new(result).analyze.valid?
+
+        result
+      end
+
       def change_type(id, type)
         _declaration, node = editable_declaration(id)
         type = type.to_sym
