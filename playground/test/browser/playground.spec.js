@@ -388,19 +388,73 @@ test("exports a generated Redis/PostgreSQL workspace with inspectable piecemeal 
   }
 });
 
-test.fixme("generates a complete Rails/Redis/PostgreSQL app and exports native incremental Git history", async ({ page }) => {
-  // Acceptance contract: rails("web", api: true), redis("cache"),
-  // postgres("database"), connect web to both dependencies; execute Rails
-  // generator and hooks; download a complete source ZIP containing .git;
-  // validate Rails files and meaningful commit-by-commit content transitions.
-  // Browser materialize_static currently refuses Rails local generation and
-  // does not invoke native Manifest#materialize hooks or its Git commits.
+test("generates Rails, Redis and PostgreSQL with real per-phase Git history in the downloaded project", async ({ page }) => {
+  const source = [
+    'require "mobilis"',
+    '',
+    'Mobilis::DSL.generate("rails-stack", starting_port: 11_000) do',
+    '  rails("web", primary_database: postgres("database"), api: true)',
+    '  redis("cache")',
+    '  connect(from: "web", to: "cache")',
+    'end',
+    ''
+  ].join("\n");
   const editor = page.getByLabel("Mobilis Ruby DSL");
-  await editor.fill((await editor.inputValue()).replace('redis("cache")', 'redis("cache")\\n  rails("web", api: true)\\n  connect(from: "web", to: "cache")\\n  connect(from: "web", to: "database")'));
+  await editor.fill(source);
+  await expect(page.locator("#diagnostics-region")).toContainText("Source is valid");
   await expect(page.locator("#architecture-canvas")).toContainText("Rails: web");
+  await expect(page.locator("#architecture-canvas")).toContainText("Redis: cache");
+  await expect(page.locator("#architecture-canvas")).toContainText("PostgreSQL: database");
+
   await page.getByRole("button", { name: "Generate project" }).click();
-  // Future: confirm complete Rails application, download ZIP, and validate
-  // the embedded Git tree and incremental history (not only file presence).
+  await expect(page.locator("#diagnostics-region")).toContainText(/Generated \d+ files locally with Mobilis/);
+  await expect(page.locator("#files-region")).toContainText("web/config/application.rb");
+  await expect(page.locator("#files-region")).toContainText("web/Gemfile");
+  await expect(page.locator("#files-region")).toContainText("compose/database.yml");
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download ZIP" }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe("mobilis-project.zip");
+
+  const root = await mkdtemp(join(tmpdir(), "mobilis-rails-git-"));
+  const zip = new ZipReader(new BlobReader(new Blob([await readDownload(download)])));
+  try {
+    const entries = await zip.getEntries();
+    const names = new Set(entries.map(entry => entry.filename));
+    for (const expected of [
+      ".git/HEAD", "README.md", "web/Gemfile", "web/config/application.rb",
+      "web/config/database.yml", "compose/database.yml",
+      "compose/cache.yml", "compose/web.yml", "development-compose.yml"
+    ]) expect(names.has(expected)).toBe(true);
+
+    for (const entry of entries) {
+      if (entry.directory) continue;
+      expect(entry.filename.split("/")).not.toContain("..");
+      const filename = join(root, entry.filename);
+      await mkdir(dirname(filename), { recursive: true });
+      await writeFile(filename, Buffer.from(await entry.getData(new Uint8ArrayWriter())));
+    }
+    const git = (...args) => execFileSync("git", ["-C", root, ...args], { encoding: "utf8" }).trim();
+    const messages = git("log", "--format=%s").split("\n");
+    expect(messages[0]).toMatch(/^\[mobilis\] /);
+    expect(messages).toContain("[mobilis] Basic project files");
+    expect(messages).toContain("[mobilis] add Rails project web");
+    expect(messages).toContain("[mobilis] Compose overrides");
+    expect(messages).toContain("[mobilis] Mobilis system config");
+    expect(messages.length).toBeGreaterThan(5);
+    expect(git("status", "--porcelain")).toBe("");
+    expect(git("ls-tree", "-r", "--name-only", "HEAD").split("\n")).toContain("web/config/application.rb");
+    const railsCommit = messages.indexOf("[mobilis] add Rails project web");
+    const railsRevision = `HEAD~${railsCommit}`;
+    expect(git("ls-tree", "-r", "--name-only", railsRevision)).toContain("web/config/application.rb");
+    expect(git("ls-tree", "-r", "--name-only", "HEAD")).toContain("compose/database.yml");
+    const earliest = `HEAD~${messages.length - 1}`;
+    expect(git("ls-tree", "-r", "--name-only", earliest)).not.toContain("web/config/application.rb");
+  } finally {
+    await zip.close();
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 test("isolates Mermaid failures from project generation", async ({ page }) => {
