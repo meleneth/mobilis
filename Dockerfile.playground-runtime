@@ -1,0 +1,46 @@
+# syntax=docker/dockerfile:1.7
+
+FROM ruby:4.0.9-trixie AS build
+
+ARG RUBY_WASM_RUBY_VERSION="4.0"
+ARG RUBY_WASM_RUBY_RELEASE="4.0.0"
+ARG RUBY_WASM_VERSION="2.10.1"
+
+RUN apt-get update \
+  && apt-get install --yes --no-install-recommends \
+    autoconf \
+    bison \
+    build-essential \
+    ca-certificates \
+    clang \
+    cmake \
+    curl \
+    git \
+    make \
+    ninja-build \
+    patch \
+    pkg-config \
+    python3 \
+    xz-utils \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /runtime-build
+COPY playground/runtime/Gemfile playground/runtime/Gemfile.lock ./
+RUN bundle install
+
+# BuildKit cache mounts retain the Ruby checkout, WASI SDK, Binaryen, and
+# compiled extension trees across the deliberately infrequent runtime builds.
+RUN --mount=type=cache,id=mobilis-ruby-wasm-build,target=/runtime-build/build \
+  mkdir -p /runtime \
+  && bundle exec rbwasm build \
+    --ruby-version "${RUBY_WASM_RUBY_VERSION}" \
+    --target wasm32-unknown-wasip1 \
+    --build-profile full \
+    --save-temps \
+    --output /runtime/ruby+stdlib.wasm
+
+RUN RUBY_WASM_VERSION="${RUBY_WASM_VERSION}" RUBY_WASM_RUBY_RELEASE="${RUBY_WASM_RUBY_RELEASE}" \
+  ruby -rdigest -rjson -e 'path = "/runtime/ruby+stdlib.wasm"; bytes = File.binread(path); File.write("/runtime/runtime.json", JSON.generate({format: "mobilis-ruby-wasm-runtime", version: 1, ruby_wasm: ENV.fetch("RUBY_WASM_VERSION"), ruby: ENV.fetch("RUBY_WASM_RUBY_RELEASE"), size: bytes.bytesize, sha256: Digest::SHA256.hexdigest(bytes)}) + "\n")'
+
+FROM scratch
+COPY --from=build /runtime /runtime

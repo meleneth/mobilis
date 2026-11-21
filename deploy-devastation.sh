@@ -9,6 +9,7 @@ NAMESPACE="${NAMESPACE:-mobilis}"
 DEPLOYMENT="${DEPLOYMENT:-mobilis}"
 CONTAINER="${CONTAINER:-mobilis}"
 ROLLOUT_TIMEOUT="${ROLLOUT_TIMEOUT:-300s}"
+RUBY_RUNTIME_IMAGE="${MOBILIS_RUBY_RUNTIME_IMAGE:-mobilis-playground-ruby-runtime:2.10.1-ruby-4.0.0-rails-8.1.4.1}"
 
 for command in git docker kubectl; do
   if ! command -v "$command" >/dev/null 2>&1; then
@@ -27,8 +28,18 @@ fi
 revision="$(git rev-parse --short=7 HEAD)"
 image="${REGISTRY}/${IMAGE_NAME}:${revision}"
 
+if ! docker image inspect "$RUBY_RUNTIME_IMAGE" >/dev/null 2>&1; then
+  printf 'Required Ruby WASM runtime image is missing: %s\nRun bin/build-playground-runtime after committing runtime dependency changes.\n' \
+    "$RUBY_RUNTIME_IMAGE" >&2
+  exit 1
+fi
+
 printf 'Building %s\n' "$image"
-docker build --file Dockerfile.playground --tag "$image" .
+docker build \
+  --build-arg "RUBY_WASM_RUNTIME_IMAGE=${RUBY_RUNTIME_IMAGE}" \
+  --file Dockerfile.playground \
+  --tag "$image" \
+  .
 
 printf 'Pushing %s\n' "$image"
 docker push "$image"

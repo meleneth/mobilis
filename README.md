@@ -95,6 +95,7 @@ The zero-backend playground runs Mobilis in CRuby/WASM and is available locally
 at <http://localhost:8080>:
 
 ```sh
+bin/build-playground-runtime # only when the pinned Ruby/native dependency image changes
 docker compose up --build
 ```
 

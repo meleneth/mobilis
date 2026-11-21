@@ -1,5 +1,12 @@
 # Playground runtime and application separation
 
+> Update (2026-11-20): the measurements and CDN path below describe the first
+> decoupled production slice. Rails/Nokogiri compatibility now requires a
+> custom native-extension runtime. `Dockerfile.playground-runtime` owns that
+> expensive build and emits a pinned artifact image; ordinary application and
+> nginx builds consume it without invoking `rbwasm`. Mobilis source remains in
+> the independent application artifact.
+
 Status: implemented and browser-validated on 2026-11-18. The production path
 uses the pinned official CDN runtime and an independently hosted,
 content-addressed Mobilis application tar.

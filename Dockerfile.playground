@@ -1,3 +1,6 @@
+ARG RUBY_WASM_RUNTIME_IMAGE="mobilis-playground-ruby-runtime:2.10.1-ruby-4.0.0-rails-8.1.4.1"
+FROM ${RUBY_WASM_RUNTIME_IMAGE} AS ruby_runtime
+
 FROM node:22.12.0-bookworm-slim AS node
 
 FROM ruby:4.0.9-trixie AS build
@@ -17,11 +20,20 @@ COPY playground/package.json playground/package-lock.json ./playground/
 RUN cd playground && npm ci
 
 COPY lib ./lib
+COPY generator_compatibility/captures ./generator_compatibility/captures
 COPY spec/fixtures/browser ./spec/fixtures/browser
 COPY playground ./playground
-ARG RUBY_WASM_RUNTIME_URL="https://cdn.jsdelivr.net/npm/@ruby/4.0-wasm-wasi@2.10.1/dist/ruby+stdlib.wasm"
+COPY --from=ruby_runtime /runtime/ruby+stdlib.wasm ./playground/runtime/ruby+stdlib.wasm
+COPY --from=ruby_runtime /runtime/runtime.json ./playground/runtime/runtime.json
+ARG RUBY_WASM_RUNTIME_PACKAGE="mobilis-ruby-wasm"
+ARG RUBY_WASM_RUNTIME_VERSION="2.10.1-ruby-4.0.0-rails-8.1.4.1"
+ARG RUBY_WASM_RUNTIME_URL="/vendor/ruby+stdlib.wasm"
 ARG MOBILIS_APPLICATION_MANIFEST_URL="/mobilis-app-manifest.json"
-RUN RUBY_WASM_RUNTIME_URL="${RUBY_WASM_RUNTIME_URL}" \
+RUN RUBY_WASM_RUNTIME_PACKAGE="${RUBY_WASM_RUNTIME_PACKAGE}" \
+  RUBY_WASM_RUNTIME_VERSION="${RUBY_WASM_RUNTIME_VERSION}" \
+  RUBY_WASM_RUNTIME_SOURCE="runtime/ruby+stdlib.wasm" \
+  RUBY_WASM_RUNTIME_URL="${RUBY_WASM_RUNTIME_URL}" \
+  COPY_LOCAL_RUBY_WASM=1 \
   MOBILIS_APPLICATION_MANIFEST_URL="${MOBILIS_APPLICATION_MANIFEST_URL}" \
   playground/scripts/build
 

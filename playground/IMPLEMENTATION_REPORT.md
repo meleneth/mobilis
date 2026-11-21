@@ -1,5 +1,12 @@
 # Implementation report
 
+> Runtime packaging update (2026-11-20): the CDN measurements in this report
+> remain the verified baseline. Rails/Nokogiri work introduced a separately
+> built custom Ruby/native-extension artifact image. Normal playground builds
+> consume that image and do not compile Ruby; performance for the finished
+> custom runtime must be remeasured once its intentionally infrequent build is
+> completed.
+
 ## Works
 
 - Static nginx-hosted CRuby/WASM application with Ruby-owned state and events.
@@ -103,12 +110,12 @@ CDN transfer time, rather than interpreter compilation, dominated that run.
   JavaScript editor framework is included.
 - Generation remains synchronous in the main VM pending evidence that a worker
   protocol is needed.
-- A cold production load requires the pinned public CDN. There is no service
-  worker or claimed offline support; an explicit same-origin runtime override
-  is available for development and controlled deployments.
-- Native extensions cannot be delivered in the application tar. Prism and
-  `js` work because they are already included in the official runtime; all
-  independently packaged gems are pure Ruby.
+- The CDN timing above is the verified baseline, not a measurement of the new
+  custom runtime. The containerized path serves its pinned runtime from nginx;
+  no service worker or silent stale-version fallback exists.
+- Native extensions cannot be delivered in the application tar. They must be
+  pinned in the separate runtime bundle; ordinary Mobilis source changes do
+  not rebuild that interpreter/native-extension image.
 - Embedded archive editing supports regular text members. Binary members are
   byte-preserved but intentionally read-only, and archive entrypoint/dependency
   metadata is currently authored through the codec rather than a visual form.

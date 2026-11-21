@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repository_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+runtime_image="${MOBILIS_RUBY_RUNTIME_IMAGE:-mobilis-playground-ruby-runtime:2.10.1-ruby-4.0.0-rails-8.1.4.1}"
+
+cd "${repository_dir}"
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "Refusing to build the Ruby WASM runtime from a dirty working tree." >&2
+  exit 1
+fi
+
+docker build \
+  --file Dockerfile.playground-runtime \
+  --tag "${runtime_image}" \
+  .
+
+echo "Built ${runtime_image}"

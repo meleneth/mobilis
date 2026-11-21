@@ -23,9 +23,11 @@
   and post-generation commands. The browser application artifact currently
   contains no Rails gems; `rails/generators` cannot be required. Rails remains
   authorable but its writer is correctly marked local-only.
-- The production app is static nginx. The official Ruby runtime and the
-  independently packaged Ruby application are integrity-checked before the VM
-  is instantiated. No backend or continuously running Ruby work exists.
+- The production app is static nginx. The Rails/native-extension-capable Ruby
+  runtime is compiled in a separate, infrequently rebuilt artifact image; the
+  ordinary nginx build only copies its pinned WASM output. That runtime and the
+  independently packaged Mobilis application are integrity-checked before the
+  VM is instantiated. No backend or continuously running Ruby work exists.
 
 ## Filesystem boundary
 

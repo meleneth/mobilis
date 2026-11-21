@@ -1,7 +1,16 @@
 services:
+  ruby-runtime:
+    profiles: ["runtime-build"]
+    image: ${MOBILIS_RUBY_RUNTIME_IMAGE:-mobilis-playground-ruby-runtime:2.10.1-ruby-4.0.0-rails-8.1.4.1}
+    build:
+      context: .
+      dockerfile: Dockerfile.playground-runtime
+
   playground:
     build:
       context: .
       dockerfile: Dockerfile.playground
+      args:
+        RUBY_WASM_RUNTIME_IMAGE: ${MOBILIS_RUBY_RUNTIME_IMAGE:-mobilis-playground-ruby-runtime:2.10.1-ruby-4.0.0-rails-8.1.4.1}
     ports:
       - "8080:80"
