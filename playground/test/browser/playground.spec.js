@@ -68,6 +68,7 @@ test("selects a diagram node without mutating source", async ({ page }) => {
 test("boots a verified application artifact once and exposes initialization diagnostics", async ({ page }) => {
   const diagnostics = await page.evaluate(() => window.MobilisRuntimeDiagnostics);
   expect(diagnostics.phase).toBe("ready");
+  // Ruby boot fails before declaring ready unless native JSON ABI matches.
   expect(diagnostics.vmInstances).toBe(1);
   expect(diagnostics.runtime.package).toBe("mobilis-ruby-wasm");
   expect(diagnostics.runtime.package_version).toBe("2.10.1-ruby-4.0.10-rails-8.1.4.1");

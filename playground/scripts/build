@@ -52,14 +52,5 @@ cp -R "${haml_path}/lib" "${staging_dir}/gems/haml"
 cp -R "${temple_path}/lib" "${staging_dir}/gems/temple"
 cp -R "${thor_path}/lib" "${staging_dir}/gems/thor"
 cp -R "${tilt_path}/lib" "${staging_dir}/gems/tilt"
-# The runtime's JSON native extension does not match its json-3.1.0 Ruby sources.
-# Always load the same pinned pure-Ruby backend used by the Diesl WASM browser.
-json_pure_path="$(ruby -rrubygems -e 'print Gem::Specification.find_by_name("json_pure", "= 2.7.6").full_gem_path')"
-test -f "${json_pure_path}/lib/json/pure.rb"
-mkdir -p "${staging_dir}/gems/json_pure"
-cp -R "${json_pure_path}/lib/." "${staging_dir}/gems/json_pure/"
-test -f "${staging_dir}/gems/json_pure/json/pure.rb"
-
-
 ruby scripts/build_application.rb "${staging_dir}" public
 ruby scripts/verify_runtime_compatibility.rb public/runtime-config.json public/mobilis-app-manifest.json

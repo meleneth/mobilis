@@ -11,6 +11,9 @@ fi
 
 command -v bundle >/dev/null || { echo "Bundler required" >&2; exit 1; }
 bundle check || { echo "Run bundle install in native_wasm/" >&2; exit 1; }
+# Do not let an implicit JSON default gem or stale transitive resolution decide the ABI.
+json_version="$(bundle exec ruby -rbundler/setup -e 'print Gem.loaded_specs.fetch("json").version')"
+[[ "${json_version}" == "3.1.0" ]] || { echo "Unexpected native JSON version: ${json_version}" >&2; exit 1; }
 
 # ruby.wasm builds the extension with an independently compiled host Ruby
 # outside Bundler's environment. Make Nokogiri's pure-Ruby build helper visible
