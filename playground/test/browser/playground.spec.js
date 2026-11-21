@@ -30,8 +30,8 @@ test("the left service field never diverges from DSL after an in-place rename", 
   await expect(name).toHaveValue("casz");
 
   await name.fill("cas2");
-  await expect(editor).toHaveValue(/redis\\("cas2"\\)/);
-  await expect(editor).toHaveValue(/connect\\(from: "cas2", to: "database"\\)/);
+  await expect(editor).toHaveValue(/redis\("cas2"\)/);
+  await expect(editor).toHaveValue(/connect\(from: "cas2", to: "database"\)/);
   await expect(page.locator(".service-card .service-name").nth(1)).toHaveValue("cas2");
   await expect(page.locator("#service-inspector-panels")).toContainText("cas2");
   await expect(page.locator("#architecture-canvas")).toContainText("Redis: cas2");
