@@ -45,8 +45,14 @@ RSpec.describe "Diesl/Mobilis source adapter parity" do
     id = document(source).analyze.declarations.first.id
     changed = apply(source, :update_service_property, id:, property: :api, value: true)
     expect(changed).to eq(document(source).update_property(id, :api, true))
-    changed = apply(source, :change_service_type, id:, type: :rack)
-    expect(changed).to eq(document(source).change_type(id, :rack))
+    compatible_source = <<~RUBY
+      Mobilis::DSL.build("compatible") do
+        redis("cache")
+      end
+    RUBY
+    compatible_id = document(compatible_source).analyze.declarations.first.id
+    changed = apply(compatible_source, :change_service_type, id: compatible_id, type: :postgres)
+    expect(changed).to eq(document(compatible_source).change_type(compatible_id, :postgres))
     changed = apply(source, :remove_service, id:)
     expect(changed).to eq(document(source).remove(id))
     expect(document(changed).analyze).to be_valid
