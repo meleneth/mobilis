@@ -88,6 +88,70 @@ module Mobilis
       write_kubernetes if system.kubernetes_deployment
     end
 
+    # Run the actual Mobilis generation steps, including Rails AppGenerator,
+    # while delegating commit objects to the browser's Git implementation.
+    # Each checkpoint carries the actual filesystem at that point in time.
+    # Unsupported host-command hooks are rejected, never silently omitted.
+    def materialize_browser(on_checkpoint:)
+      raise ArgumentError, "Checkpoint callback required" unless on_checkpoint
+
+      incompatible = system.config_nodes.values.flat_map do |node|
+        node.models.filter_map do |model|
+          "#{node.name}: #{model.class}" if model.is_a?(Mobilis::Model::RunCommand) ||
+            model.is_a?(Mobilis::Model::RubyGem) || model.is_a?(Mobilis::Model::Rails::Model)
+        end
+      end
+      unless incompatible.empty?
+        raise ArgumentError, "Browser generation cannot run host-dependent models: #{incompatible.join(', ')}"
+      end
+
+      @browser_generation = true
+      @browser_checkpoint = on_checkpoint
+      directory_service.chdir_start
+      directory_service.mkdir_generate
+      directory_service.mkdir_compose
+      directory_service.chdir_generate
+      write_gitignore
+      write_readme
+      commit_all("Basic project files")
+
+      # Unlike native generation, create the Rails builder definition without
+      # running Docker. The Rails writer runs the real generator in CRuby/WASM.
+      @plugins.each do |plugin|
+        next unless plugin.is_a?(Mobilis::Plugin::RailsBuilder)
+
+        directory_service.mkdir_rails_builder
+        directory_service.chdir_rails_builder
+        plugin.create_rails_builder_dockerfile
+        directory_service.chdir_generate
+        commit_all("Add rails builder Dockerfile")
+      end
+      run_plugin_hooks :hook_before_services_written
+      emit_all_services
+      run_plugin_hooks :hook_after_services_written
+      emit_compose_wrappers
+      emit_env_files
+      write_overrides_for(:test)
+      write_overrides_for(:development)
+      write_overrides_for(:production)
+      commit_all("Compose overrides")
+      write_commands_file
+      commit_all("Commands file")
+      write_mobilis_system
+      commit_all("Mobilis system config")
+      write_dc_helpers
+      commit_all("docker compose helper scripts")
+      commit_all("devcontainer configuration") if write_devcontainer
+      run_plugin_hooks :hook_after_dc_helpers
+      write_kubernetes if system.kubernetes_deployment
+      directory_service.chdir_generate
+      Dir.pwd
+    ensure
+      directory_service.chdir_start
+      @browser_generation = false
+      @browser_checkpoint = nil
+    end
+
     # Write every artifact that Mobilis can produce without invoking Git,
     # Docker, or generated-project commands. This is the generation path used
     # by constrained runtimes such as ruby.wasm; it deliberately uses the same
@@ -372,6 +436,14 @@ module Mobilis
     end
 
     def commit_all(message)
+      if @browser_generation
+        root = File.join(directory_service.instance_variable_get(:@start_position), "generate")
+        files = Dir.glob("**/*", File::FNM_DOTMATCH, base: root)
+          .reject { |path| path == "." || path == ".." || File.directory?(File.join(root, path)) }
+          .sort.to_h { |path| [path, File.binread(File.join(root, path))] }
+        @browser_checkpoint.call("[mobilis] #{message}", files)
+        return
+      end
       return if @static_generation
 
       require "git"
@@ -516,7 +588,12 @@ module Mobilis
             directory_service.mkdir_project(realized_node)
             directory_service.chdir_project(realized_node)
             writer = realized_node.service_writer.new(self, realized_env, realized_node)
-            writer.write
+            if @browser_generation && writer.is_a?(Mobilis::ServiceWriter::Rails)
+              writer.write_browser
+              commit_all("add Rails project #{realized_node.name}")
+            else
+              writer.write
+            end
             writer.write_image_ownership
             directory_service.chdir_generate
             service_dirs_written[name] = true
