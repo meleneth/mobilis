@@ -2,6 +2,8 @@
 coverage
 generate
 node_modules
+native_wasm/build
+native_wasm/dist
 playground/node_modules
 playground/build
 playground/rubies

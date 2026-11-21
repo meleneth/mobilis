@@ -2,8 +2,10 @@
 
 FROM ruby:4.0.10-trixie AS build
 
-ARG RUBY_WASM_RUBY_VERSION="4.0"
-ARG RUBY_WASM_RUBY_RELEASE="4.0.0"
+ARG RUBY_WASM_RUBY_VERSION="4.0.10"
+ARG RUBY_WASM_RUBY_URL="https://cache.ruby-lang.org/pub/ruby/4.0/ruby-4.0.10.tar.xz"
+ARG RUBY_WASM_RUBY_SHA256="1537f7a6003c436546ecab6b48b6e7725a9af2328f45a8af7f42f41c5df90ab8"
+ARG RUBY_WASM_RUBY_RELEASE="4.0.10"
 ARG RUBY_WASM_VERSION="2.10.1"
 
 RUN apt-get update \
@@ -25,19 +27,21 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /runtime-build
-COPY playground/runtime/Gemfile playground/runtime/Gemfile.lock ./
-RUN bundle install
+COPY native_wasm/Gemfile native_wasm/Gemfile.lock ./native_wasm/
+RUN cd native_wasm && bundle install
+COPY native_wasm ./native_wasm
 
-# BuildKit cache mounts retain the Ruby checkout, WASI SDK, Binaryen, and
-# compiled extension trees across the deliberately infrequent runtime builds.
-RUN --mount=type=cache,id=mobilis-ruby-wasm-build,target=/runtime-build/build \
+# Reuse the verified native_wasm pipeline. BuildKit retains Ruby, the WASI SDK,
+# Binaryen, libiconv, liblzma, libxml2, and compiled extension trees across the
+# deliberately infrequent runtime-image builds.
+RUN --mount=type=cache,id=mobilis-native-wasm-build-v3,target=/runtime-build/native_wasm/build \
   mkdir -p /runtime \
-  && bundle exec rbwasm build \
-  --ruby-version "${RUBY_WASM_RUBY_VERSION}" \
-  --target wasm32-unknown-wasip1 \
-  --build-profile full \
-  --save-temps \
-  --output /runtime/ruby+stdlib.wasm
+  && SSL_CERT_FILE="$(if [ -f /etc/devastation/ca-certificates.crt ]; then printf %s /etc/devastation/ca-certificates.crt; else printf %s /usr/lib/ssl/cert.pem; fi)" \
+    RUBY_WASM_RUBY_VERSION="${RUBY_WASM_RUBY_VERSION}" \
+    RUBY_WASM_RUBY_URL="${RUBY_WASM_RUBY_URL}" \
+    RUBY_WASM_RUBY_SHA256="${RUBY_WASM_RUBY_SHA256}" \
+    native_wasm/bin/build build \
+  && cp native_wasm/dist/ruby+stdlib.wasm /runtime/ruby+stdlib.wasm
 
 RUN RUBY_WASM_VERSION="${RUBY_WASM_VERSION}" RUBY_WASM_RUBY_RELEASE="${RUBY_WASM_RUBY_RELEASE}" \
   ruby -rdigest -rjson -e 'path = "/runtime/ruby+stdlib.wasm"; bytes = File.binread(path); File.write("/runtime/runtime.json", JSON.generate({format: "mobilis-ruby-wasm-runtime", version: 1, ruby_wasm: ENV.fetch("RUBY_WASM_VERSION"), ruby: ENV.fetch("RUBY_WASM_RUBY_RELEASE"), size: bytes.bytesize, sha256: Digest::SHA256.hexdigest(bytes)}) + "\n")'

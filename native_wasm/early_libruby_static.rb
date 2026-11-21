@@ -14,28 +14,30 @@ require "open3"
 require "shellwords"
 
 module MobilisEarlyRubyArchive
-  class NokogiriExecutor
+  class ExtconfExecutor
     def initialize(delegate)
       @delegate = delegate
     end
 
     def system(*args, **kwargs)
-      if args.join(" ").include?("ext/nokogiri/extconf.rb")
+      if args.join(" ").include?("/extconf.rb")
         # ruby.wasm's legacy extconf runner sets $extout and $static, but
         # omits $extmk. Ruby mkmf uses BOTH $extmk and $extout when routing
-        # install directories to the cross-Ruby extension build tree.
-        # Without $extmk, Nokogiri's generated Makefile tries /usr/local.
+        # include and install directories to the cross-Ruby extension tree.
+        # Without $extmk, extension Makefiles reference the host /usr/local.
         static_arg = '$static = true; trace_var(:$static) {|v| $static = true }'
         index = args.index(static_arg)
         raise "ruby.wasm extconf invocation changed: missing static setup" unless index
         args = args.dup
         args[index] = '$extmk = true; ' + static_arg
 
-        kwargs = kwargs.dup
-        kwargs[:env] = (kwargs[:env] || {}).merge(
-          "RUBYOPT" => "-r#{File.expand_path("nokogiri_wasi_patch", __dir__)}",
-          "LIBS" => ENV.fetch("MOBILIS_NOKOGIRI_WASI_LIBS")
-        )
+        if args.join(" ").include?("ext/nokogiri/extconf.rb")
+          kwargs = kwargs.dup
+          kwargs[:env] = (kwargs[:env] || {}).merge(
+            "RUBYOPT" => "-r#{File.expand_path("nokogiri_wasi_patch", __dir__)}",
+            "LIBS" => ENV.fetch("MOBILIS_NOKOGIRI_WASI_LIBS")
+          )
+        end
       end
       @delegate.system(*args, **kwargs)
     end
@@ -58,21 +60,37 @@ module MobilisEarlyRubyArchive
       unless File.file?(archive) && File.size?(archive)
         raise "ruby.wasm failed to build real cross-target archive: #{archive}"
       end
-      super
-
-      # Third-party mkmf checks are complete. Before Ruby's final static link,
-      # discard the dummy init members from the original cross-Ruby archive.
-      # Ruby's final make supplies the actual ext/extinit.o and enc/encinit.o.
       ar = toolchain.ar
       ranlib = toolchain.ranlib
       members, error, status = Open3.capture3(ar, "t", archive)
       raise "Cannot inspect WASI Ruby archive: #{error}" unless status.success?
       names = members.lines.map(&:strip)
-      placeholders = %w[dmyext.o dmyenc.o] & names
-      unless placeholders.empty?
-        executor.system(ar, "d", archive, *placeholders)
+      placeholders = %w[dmyext.o dmyenc.o]
+      missing = placeholders - names
+      unless missing.empty?
+        objects = missing.map { |name| File.join(build_dir, name) }
+        absent = objects.reject { |path| File.size?(path) }
+        raise "Ruby init objects missing: #{absent.inspect}" unless absent.empty?
+        executor.system(ar, "r", archive, *objects)
         executor.system(ranlib, archive)
       end
+      # Keep placeholder init members available for every mkmf link probe,
+      # including Ruby's built-in extensions configured by the later install
+      # target. The final extinit.o/encinit.o objects satisfy these symbols
+      # before the static archive is searched, so the dummy members are not
+      # extracted into the final interpreter.
+      FileUtils.rm_f(File.join(build_dir, "ext", "configure-ext.mk"))
+      FileUtils.rm_f(File.join(build_dir, "exts.mk"))
+      FileUtils.rm_f(File.join(build_dir, "ext", "json", "parser", "Makefile"))
+      FileUtils.rm_f(File.join(build_dir, "ext", "strscan", "Makefile"))
+      super
+
+      empty_features = user_exts.select { |extension| extension.feature_name(self).to_s.empty? }
+      unexpected = empty_features.reject { |extension| extension.name.include?("io-console-") }
+      unless unexpected.empty?
+        raise "Unexpected WASI extensions with empty init targets: #{unexpected.map(&:name).inspect}"
+      end
+      self.user_exts -= empty_features
     end
   end
 
@@ -185,40 +203,26 @@ module MobilisEarlyRubyArchive
       link = File.join(objdir, "libruby-static.a")
       FileUtils.rm_f(link)
 
-      # mkmf probes need the real Ruby symbols, but the early cross-Ruby
-      # archive still contains dmyext.o and dmyenc.o. These provide
-      # placeholder Init_ext/Init_enc symbols, which collide with Ruby's
-      # genuine ext/extinit.o and enc/encinit.o during the final link.
-      #
-      # Never mutate the upstream archive: install a separate target-native
-      # probe copy with ONLY those placeholder objects removed. The final
-      # cross-build can then see the real init objects.
+      # mkmf probes link a temporary executable against the Ruby archive, so
+      # they require the archive's placeholder Init_ext/Init_enc symbols.
+      # This probe copy is deleted immediately after extconf and therefore
+      # cannot collide with the genuine init objects during Ruby's final link.
+      # CoreBeforeGemExtensions also keeps the authoritative archive retry-safe
+      # so later built-in extension probes retain these required symbols.
       FileUtils.cp(archive, link)
-      ar = crossruby.toolchain.ar
-      ranlib = crossruby.toolchain.ranlib
-      members, error, status = Open3.capture3(ar, "t", link)
-      raise "Cannot inspect WASI Ruby archive: #{error}" unless status.success?
-      names = members.lines.map(&:strip)
-      placeholders = %w[dmyext.o dmyenc.o]
-      present = placeholders & names
-      unless present.empty?
-        executor.system(ar, "d", link, *present)
-        executor.system(ranlib, link)
+      placeholder_objects = %w[dmyext.o dmyenc.o].map { |name| File.join(crossruby.build_dir, name) }
+      unless placeholder_objects.all? { |path| File.size?(path) }
+        executor.system("make", "-C", crossruby.build_dir, *placeholder_objects.map { |path| File.basename(path) })
       end
-      remaining, error, status = Open3.capture3(ar, "t", link)
-      unless status.success? && (placeholders & remaining.lines.map(&:strip)).empty?
-        raise "Could not remove Ruby placeholder init objects: #{error}"
-      end
+      missing = placeholder_objects.reject { |path| File.size?(path) }
+      raise "Ruby probe init objects missing: #{missing.inspect}" unless missing.empty?
+      executor.system(crossruby.toolchain.ar, "r", link, *placeholder_objects)
+      executor.system(crossruby.toolchain.ranlib, link)
 
-      # ruby.wasm clears RUBYOPT for the baseruby extconf invocation.
-      # Scope a preload to Nokogiri's extconf only so MiniPortile can apply
-      # our WASI libxml2 source patch immediately after extraction.
+      # Route every third-party extension into the cross-build tree. The
+      # wrapper scopes Nokogiri's preload and link flags to Nokogiri only.
       begin
-        if name.include?("nokogiri-")
-          super(MobilisEarlyRubyArchive::NokogiriExecutor.new(executor), crossruby)
-        else
-          super
-        end
+        super(MobilisEarlyRubyArchive::ExtconfExecutor.new(executor), crossruby)
       ensure
         # Required only for mkmf's configure-time link probes. Leaving this
         # archive in objdir would cause ruby.wasm's *.a glob to include it in

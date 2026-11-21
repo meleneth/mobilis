@@ -12,7 +12,7 @@ expected_sha256="3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e
 # native_wasm/build/toolchain/wasi-sdk-24.0. Do not require an extra shell
 # variable when the build system already owns toolchain installation.
 if [[ -z "${WASI_SDK_PATH:-}" ]]; then
-  WASI_SDK_PATH="$(cd "${root}/native_wasm" && bundle exec ruby -rruby_wasm -e '
+  WASI_SDK_PATH="$(cd "${root}/native_wasm" && bundle exec ruby -rfileutils -rruby_wasm -e '
     sdk = RubyWasm::WASISDK.new(
       build_dir: File.expand_path("build"),
       version: "24.0"

@@ -9,7 +9,7 @@ NAMESPACE="${NAMESPACE:-mobilis}"
 DEPLOYMENT="${DEPLOYMENT:-mobilis}"
 CONTAINER="${CONTAINER:-mobilis}"
 ROLLOUT_TIMEOUT="${ROLLOUT_TIMEOUT:-300s}"
-RUBY_RUNTIME_IMAGE="${MOBILIS_RUBY_RUNTIME_IMAGE:-mobilis-playground-ruby-runtime:2.10.1-ruby-4.0.0-rails-8.1.4.1}"
+RUBY_RUNTIME_IMAGE="${MOBILIS_RUBY_RUNTIME_IMAGE:-mobilis-playground-ruby-runtime:2.10.1-ruby-4.0.10-rails-8.1.4.1}"
 
 for command in git docker kubectl; do
   if ! command -v "$command" >/dev/null 2>&1; then

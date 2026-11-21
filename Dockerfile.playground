@@ -1,9 +1,9 @@
-ARG RUBY_WASM_RUNTIME_IMAGE="mobilis-playground-ruby-runtime:2.10.1-ruby-4.0.0-rails-8.1.4.1"
+ARG RUBY_WASM_RUNTIME_IMAGE="mobilis-playground-ruby-runtime:2.10.1-ruby-4.0.10-rails-8.1.4.1"
 FROM ${RUBY_WASM_RUNTIME_IMAGE} AS ruby_runtime
 
-FROM node:22.12.0-bookworm-slim AS node
+FROM node:22.12.0-trixie AS node
 
-FROM ruby:4.0.9-trixie AS build
+FROM ruby:4.0.10-trixie AS build
 
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
 COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
@@ -26,7 +26,7 @@ COPY playground ./playground
 COPY --from=ruby_runtime /runtime/ruby+stdlib.wasm ./playground/runtime/ruby+stdlib.wasm
 COPY --from=ruby_runtime /runtime/runtime.json ./playground/runtime/runtime.json
 ARG RUBY_WASM_RUNTIME_PACKAGE="mobilis-ruby-wasm"
-ARG RUBY_WASM_RUNTIME_VERSION="2.10.1-ruby-4.0.0-rails-8.1.4.1"
+ARG RUBY_WASM_RUNTIME_VERSION="2.10.1-ruby-4.0.10-rails-8.1.4.1"
 ARG RUBY_WASM_RUNTIME_URL="/vendor/ruby+stdlib.wasm"
 ARG MOBILIS_APPLICATION_MANIFEST_URL="/mobilis-app-manifest.json"
 RUN RUBY_WASM_RUNTIME_PACKAGE="${RUBY_WASM_RUNTIME_PACKAGE}" \

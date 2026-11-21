@@ -42,7 +42,7 @@ ruby -e 'gem "mini_portile2", "~> 2.8.2"; require "mini_portile2"; puts "Host Ru
 # interpreter ruby.wasm uses for Nokogiri's extconf.rb.
 baseruby="${root}/native_wasm/build/x86_64-pc-linux/baseruby-4.0/opt/bin/ruby"
 if [[ -x "${baseruby}" ]]; then
-  "${baseruby}" -e 'gem "mini_portile2", "~> 2.8.2"; require "mini_portile2"; puts "ruby.wasm baseruby mini_portile2 activation OK"'
+  "${baseruby}" -rrubygems -e 'gem "mini_portile2", "~> 2.8.2"; require "mini_portile2"; puts "ruby.wasm baseruby mini_portile2 activation OK"'
 fi
 
 # Nokogiri needs an iconv implementation for the cross target, not a host
@@ -51,6 +51,16 @@ iconv_prefix="$(bin/build-libiconv)"
 lzma_prefix="$(bin/build-liblzma)"
 
 # ruby.wasm already builds zlib for the same wasm32-wasip1 target.
+# Build that product explicitly so a clean build does not depend on artifacts
+# left behind by an earlier rbwasm attempt.
+bundle exec ruby -rfileutils -rruby_wasm -e '
+  build_dir = File.expand_path("build")
+  target = RubyWasm::Target.new("wasm32-unknown-wasip1")
+  toolchain = RubyWasm::WASISDK.new(build_dir: build_dir, version: "24.0")
+  executor = RubyWasm::BuildExecutor.new(verbose: false)
+  toolchain.install(executor)
+  RubyWasm::ZlibProduct.new(build_dir, target, toolchain).build(executor)
+'
 # Nokogiri's MiniPortile libxml2 recipe explicitly reconstructs CPPFLAGS
 # and CFLAGS from the process environment; Ruby's mkmf -I/-L settings do
 # not propagate into that nested autotools compilation.
@@ -96,10 +106,23 @@ done < <(find "${root}/native_wasm/build/wasm32-unknown-wasip1" \
   -type f -print0 2>/dev/null || true)
 
 mkdir -p "${root}/native_wasm/dist"
+ruby_wasm_ruby_version="${RUBY_WASM_RUBY_VERSION:-4.0.10}"
+ruby_wasm_ruby_url="${RUBY_WASM_RUBY_URL:-https://cache.ruby-lang.org/pub/ruby/4.0/ruby-4.0.10.tar.xz}"
+ruby_wasm_ruby_sha256="${RUBY_WASM_RUBY_SHA256:-1537f7a6003c436546ecab6b48b6e7725a9af2328f45a8af7f42f41c5df90ab8}"
+ruby_source="${root}/native_wasm/build/ruby-${ruby_wasm_ruby_version}"
+if [[ ! -d "${ruby_source}" ]]; then
+  ruby_archive="${root}/native_wasm/build/ruby-${ruby_wasm_ruby_version}.tar.xz"
+  if [[ ! -s "${ruby_archive}" ]]; then
+    curl --fail --location --retry 3 --output "${ruby_archive}" "${ruby_wasm_ruby_url}"
+  fi
+  printf '%s  %s\n' "${ruby_wasm_ruby_sha256}" "${ruby_archive}" | sha256sum --check
+  mkdir -p "${ruby_source}"
+  tar --extract --xz --file "${ruby_archive}" --directory "${ruby_source}" --strip-components 1
+fi
 # Full Ruby source build with statically linked gem extensions.
 # No host .so copying and no monkeypatching the sanitizer.
 bundle exec ruby -r "${root}/native_wasm/early_libruby_static" -S rbwasm --log-level debug build \
-  --ruby-version 4.0 \
+  --ruby-version "${ruby_source}" \
   --target wasm32-unknown-wasip1 \
   --build-profile full \
   --save-temps \

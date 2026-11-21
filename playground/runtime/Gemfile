@@ -1,9 +1,0 @@
-# frozen_string_literal: true
-
-source "https://rubygems.org"
-
-# This bundle is the native-extension boundary for the browser runtime. It is
-# rebuilt independently from the playground application.
-gem "js", "2.10.1"
-gem "railties", "8.1.4.1"
-gem "ruby_wasm", "2.10.1"

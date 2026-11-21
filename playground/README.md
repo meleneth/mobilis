@@ -9,8 +9,8 @@ provides browser filesystem, local Git, download, and ZIP primitives.
 ## Run
 
 The Rails-capable Ruby WASM runtime is deliberately a separate, expensive
-artifact. Build it once (or whenever `playground/runtime/Gemfile.lock` or
-`Dockerfile.playground-runtime` changes), then ordinary playground builds only
+artifact. Build it once (or whenever `native_wasm/Gemfile.lock`, the
+`native_wasm/` pipeline, or `Dockerfile.playground-runtime` changes), then ordinary playground builds only
 consume the tagged image:
 
 ```sh
@@ -48,7 +48,8 @@ There is no automatic fallback between CDN, local, or stale versions.
 The interpreter/native-extension layer and Mobilis application have independent
 ownership:
 
-- `Dockerfile.playground-runtime` pins ruby.wasm 2.10.1, Ruby 4.0.0, Railties
+- `Dockerfile.playground-runtime` runs the verified `native_wasm` build in a
+  Ruby 4.0.10 Trixie build container and pins ruby.wasm 2.10.1, Ruby 4.0.10, Railties
   8.1.4.1, and the resulting native dependency graph, including BigDecimal and
   Nokogiri 1.19.7. It owns the multi-gigabyte compiler/toolchain cache and emits
   a small artifact image containing only `ruby+stdlib.wasm` and integrity
@@ -266,7 +267,7 @@ render protocol without improving idle behavior.
 ## Compatibility findings
 
 - Host development can use the pinned official CRuby 4.0/WASI runtime. The
-  containerized path consumes a separately built CRuby 4.0.0 runtime with the
+  containerized path consumes a separately built CRuby 4.0.10 runtime with the
   pinned Rails native dependency graph. Mobilis, Haml, Temple, Thor, and Tilt
   remain in the deterministic, independently versioned application archive.
 - Prism is a CRuby 4.0 default extension in that runtime; parsing and source

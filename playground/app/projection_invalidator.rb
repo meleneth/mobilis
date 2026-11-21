@@ -16,7 +16,7 @@ module MobilisPlayground
 
     def affected(*changes)
       unknown = changes.uniq - INPUTS
-      raise ArgumentError, "Unknown projection inputs: #{'#{unknown.inspect}'}" unless unknown.empty?
+      raise ArgumentError, "Unknown projection inputs: #{unknown.inspect}" unless unknown.empty?
 
       REGIONS.filter_map do |region, (renderer, dependencies)|
         [region, renderer] unless (dependencies & changes).empty?
