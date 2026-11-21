@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "${root}/native_wasm"
+
+if [[ "${1:-}" != "build" ]]; then
+  echo "usage: native_wasm/bin/build build" >&2
+  exit 2
+fi
+
+command -v bundle >/dev/null || { echo "Bundler required" >&2; exit 1; }
+bundle check || { echo "Run bundle install in native_wasm/" >&2; exit 1; }
+
+# ruby.wasm builds the extension with an independently compiled host Ruby
+# outside Bundler's environment. Make Nokogiri's pure-Ruby build helper visible
+# to that interpreter. A Gemfile declaration alone does not provide its load path.
+mini_portile_root="$(bundle show mini_portile2)"
+mini_portile_lib="${mini_portile_root}/lib"
+test -f "${mini_portile_lib}/mini_portile2.rb" || {
+  echo "mini_portile2 was not found at ${mini_portile_lib}" >&2
+  exit 1
+}
+# Nokogiri's extconf.rb calls `gem("mini_portile2", "~> 2.8.2")` before
+# requiring the library. RUBYLIB alone cannot satisfy RubyGems activation.
+# ruby.wasm executes extconf.rb using its independently built host Ruby,
+# whose default GEM_PATH does not include the invoking rbenv installation.
+mini_portile_gem_home="$(dirname "$(dirname "${mini_portile_root}")")"
+mini_portile_spec="${mini_portile_gem_home}/specifications/mini_portile2-2.8.9.gemspec"
+test -f "${mini_portile_spec}" || {
+  echo "RubyGems specification missing at ${mini_portile_spec}" >&2
+  exit 1
+}
+
+host_gem_paths="$(ruby -rrubygems -e 'print Gem.path.join(File::PATH_SEPARATOR)')"
+export GEM_PATH="${mini_portile_gem_home}:${host_gem_paths}"
+export RUBYLIB="${mini_portile_lib}${RUBYLIB:+:${RUBYLIB}}"
+
+ruby -e 'gem "mini_portile2", "~> 2.8.2"; require "mini_portile2"; puts "Host RubyGems mini_portile2 activation OK"'
+
+# On retries the baseruby already exists; verify against the *same* Ruby
+# interpreter ruby.wasm uses for Nokogiri's extconf.rb.
+baseruby="${root}/native_wasm/build/x86_64-pc-linux/baseruby-4.0/opt/bin/ruby"
+if [[ -x "${baseruby}" ]]; then
+  "${baseruby}" -e 'gem "mini_portile2", "~> 2.8.2"; require "mini_portile2"; puts "ruby.wasm baseruby mini_portile2 activation OK"'
+fi
+
+# Nokogiri needs an iconv implementation for the cross target, not a host
+# libiconv package. Its default Unix path does not build the vendored recipe.
+iconv_prefix="$(bin/build-libiconv)"
+lzma_prefix="$(bin/build-liblzma)"
+
+# ruby.wasm already builds zlib for the same wasm32-wasip1 target.
+# Nokogiri's MiniPortile libxml2 recipe explicitly reconstructs CPPFLAGS
+# and CFLAGS from the process environment; Ruby's mkmf -I/-L settings do
+# not propagate into that nested autotools compilation.
+zlib_prefix="${root}/native_wasm/build/wasm32-unknown-wasip1/zlib-1.3.1/opt/usr/local"
+test -f "${zlib_prefix}/include/zlib.h" || {
+  echo "Missing WASI zlib header: ${zlib_prefix}/include/zlib.h" >&2
+  exit 1
+}
+test -s "${zlib_prefix}/lib/libz.a" || {
+  echo "Missing WASI zlib archive: ${zlib_prefix}/lib/libz.a" >&2
+  exit 1
+}
+
+# Keep all native dependency include paths in *both* environments used
+# by the nested recipe and the target Ruby extension checks.
+export CPPFLAGS="-D_WASI_EMULATED_SIGNAL -I${lzma_prefix}/include -I${zlib_prefix}/include -I${iconv_prefix}/include ${CPPFLAGS:-}"
+export CFLAGS="-I${lzma_prefix}/include -I${zlib_prefix}/include -I${iconv_prefix}/include ${CFLAGS:-}"
+export LDFLAGS="-L${lzma_prefix}/lib -L${zlib_prefix}/lib -L${iconv_prefix}/lib ${LDFLAGS:-}"
+# Avoid poisoning Ruby's own configure compiler tests with Nokogiri-only
+# libraries. The Nokogiri extconf runner forwards this to its nested builds.
+export MOBILIS_NOKOGIRI_WASI_LIBS="-llzma -lz -liconv -lwasi-emulated-signal ${LIBS:-}"
+unset LIBS
+export PKG_CONFIG_PATH="${lzma_prefix}/lib/pkgconfig:${iconv_prefix}/lib/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}"
+
+# MiniPortile may reuse a configured libxml2 build from an earlier failed
+# attempt. Inspect the generated Makefile rather than blindly deleting build
+# outputs: if it predates the zlib include-path fix, invalidate only that
+# libxml2 port so its configure checks run again with the current flags.
+while IFS= read -r -d '' libxml2_makefile; do
+  if ! grep -Fq -- "${zlib_prefix}/include" "${libxml2_makefile}" ||
+     ! grep -Fq -- "${lzma_prefix}/include" "${libxml2_makefile}"; then
+    libxml2_ports_dir="$(dirname "$(dirname "${libxml2_makefile}")")"
+    case "${libxml2_ports_dir}" in
+      "${root}"/native_wasm/build/wasm32-unknown-wasip1/*-ext/nokogiri-*/ext/nokogiri/tmp/*/ports/libxml2/2.13.9)
+        echo "Invalidating stale libxml2 configuration (missing WASI zlib/liblzma include path): ${libxml2_ports_dir}" >&2
+        rm -rf -- "${libxml2_ports_dir}"
+        ;;
+      *) echo "Unexpected libxml2 build location: ${libxml2_makefile}" >&2; exit 1 ;;
+    esac
+  fi
+done < <(find "${root}/native_wasm/build/wasm32-unknown-wasip1" \
+  -path '*/nokogiri-*/ext/nokogiri/tmp/*/ports/libxml2/2.13.9/libxml2-2.13.9/Makefile' \
+  -type f -print0 2>/dev/null || true)
+
+mkdir -p "${root}/native_wasm/dist"
+# Full Ruby source build with statically linked gem extensions.
+# No host .so copying and no monkeypatching the sanitizer.
+bundle exec ruby -r "${root}/native_wasm/early_libruby_static" -S rbwasm --log-level debug build \
+  --ruby-version 4.0 \
+  --target wasm32-unknown-wasip1 \
+  --build-profile full \
+  --save-temps \
+  -o "${root}/native_wasm/dist/ruby+stdlib.wasm"
+
+test -s "${root}/native_wasm/dist/ruby+stdlib.wasm"
+file "${root}/native_wasm/dist/ruby+stdlib.wasm"

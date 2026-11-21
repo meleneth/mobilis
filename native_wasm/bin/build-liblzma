@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+build_dir="${root}/native_wasm/build/dependencies"
+prefix="${root}/native_wasm/build/wasi-dependencies"
+version="5.8.4"
+archive="${build_dir}/xz-${version}.tar.xz"
+source="${build_dir}/xz-${version}"
+expected_sha256="4ce24038fd4221e0d13bc1a2de7a4db56e90b92b3bf75321f6c14be73f65de4b"
+
+# Reuse the SDK that ruby.wasm manages; no host liblzma is ever linked.
+if [[ -z "${WASI_SDK_PATH:-}" ]]; then
+  WASI_SDK_PATH="$(cd "${root}/native_wasm" && bundle exec ruby -rruby_wasm -e '
+    sdk = RubyWasm::WASISDK.new(
+      build_dir: File.expand_path("build"),
+      version: "24.0"
+    )
+    $stdout = $stderr
+    sdk.install(RubyWasm::BuildExecutor.new(verbose: false))
+    STDOUT.puts sdk.wasi_sdk_path
+  ')"
+fi
+toolchain="${WASI_SDK_PATH}/bin"
+for tool in clang clang++ llvm-ar llvm-ranlib; do
+  test -x "${toolchain}/${tool}" || {
+    echo "Missing WASI tool ${toolchain}/${tool}" >&2
+    exit 1
+  }
+done
+
+mkdir -p "${build_dir}" "${prefix}"
+if [[ ! -f "${archive}" ]]; then
+  curl --fail --location --retry 3 \
+    "https://github.com/tukaani-project/xz/releases/download/v${version}/xz-${version}.tar.xz" \
+    --output "${archive}"
+fi
+printf '%s  %s\n' "${expected_sha256}" "${archive}" | sha256sum --check --status || {
+  echo "XZ source archive failed SHA-256 verification" >&2
+  exit 1
+}
+
+if [[ ! -d "${source}" ]]; then
+  tar -xJf "${archive}" -C "${build_dir}"
+fi
+if [[ ! -s "${prefix}/lib/liblzma.a" || ! -f "${prefix}/include/lzma.h" ]]; then
+  (
+    cd "${source}"
+    env CC="${toolchain}/clang" CXX="${toolchain}/clang++" \
+      AR="${toolchain}/llvm-ar" RANLIB="${toolchain}/llvm-ranlib" \
+      CPPFLAGS="-D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_PROCESS_CLOCKS" \
+      CFLAGS="-O2 -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_PROCESS_CLOCKS" \
+      ./configure --host=wasm32-wasi --build="$(gcc -dumpmachine)" \
+        --prefix="${prefix}" --disable-shared --enable-static \
+        --disable-nls --disable-doc --disable-scripts \
+        --disable-xz --disable-xzdec --disable-lzmadec \
+        --disable-lzmainfo --disable-threads >&2
+    # Only build/install liblzma. No host tools or executable dependencies.
+    make -C src/liblzma clean >&2
+    make -j"$(nproc)" -C src/liblzma all >&2
+    make -C src/liblzma install >&2
+  )
+fi
+
+test -s "${prefix}/lib/liblzma.a" || {
+  echo "Missing WASI liblzma archive: ${prefix}/lib/liblzma.a" >&2
+  exit 1
+}
+test -f "${prefix}/include/lzma.h" || {
+  echo "Missing WASI liblzma header: ${prefix}/include/lzma.h" >&2
+  exit 1
+}
+
+cat > "${build_dir}/check-lzma.c" <<'EOF'
+#include <lzma.h>
+int main(void) {
+  return lzma_version_number() == 0;
+}
+EOF
+"${toolchain}/clang" \
+  -I"${prefix}/include" "${build_dir}/check-lzma.c" \
+  -L"${prefix}/lib" -llzma \
+  -o "${build_dir}/check-lzma.wasm" || {
+    echo "WASI liblzma compile/link check failed" >&2
+    exit 1
+  }
+test -s "${build_dir}/check-lzma.wasm"
+printf '%s\n' "${prefix}"

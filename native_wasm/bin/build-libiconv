@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+build_dir="${root}/native_wasm/build/dependencies"
+prefix="${root}/native_wasm/build/wasi-dependencies"
+archive="${build_dir}/libiconv-1.18.tar.gz"
+source="${build_dir}/libiconv-1.18"
+expected_sha256="3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8"
+
+# Let ruby.wasm resolve and install its own SDK. It normally lives under
+# native_wasm/build/toolchain/wasi-sdk-24.0. Do not require an extra shell
+# variable when the build system already owns toolchain installation.
+if [[ -z "${WASI_SDK_PATH:-}" ]]; then
+  WASI_SDK_PATH="$(cd "${root}/native_wasm" && bundle exec ruby -rruby_wasm -e '
+    sdk = RubyWasm::WASISDK.new(
+      build_dir: File.expand_path("build"),
+      version: "24.0"
+    )
+    # The installer logs to stdout; keep command substitution path-only.
+    $stdout = $stderr
+    sdk.install(RubyWasm::BuildExecutor.new(verbose: false))
+    STDOUT.puts sdk.wasi_sdk_path
+  ')"
+fi
+toolchain="${WASI_SDK_PATH}/bin"
+for tool in clang clang++ llvm-ar llvm-ranlib; do
+  test -x "${toolchain}/${tool}" || {
+    echo "Missing WASI tool ${toolchain}/${tool}" >&2
+    exit 1
+  }
+done
+
+mkdir -p "${build_dir}" "${prefix}"
+if [[ ! -f "${archive}" ]]; then
+  curl --fail --location --retry 3 \
+    "https://ftpmirror.gnu.org/gnu/libiconv/libiconv-1.18.tar.gz" \
+    --output "${archive}"
+fi
+printf '%s  %s\n' "${expected_sha256}" "${archive}" | sha256sum --check --status || {
+  echo "libiconv source archive failed SHA-256 verification" >&2
+  exit 1
+}
+
+if [[ ! -d "${source}" ]]; then
+  tar -xzf "${archive}" -C "${build_dir}"
+fi
+if [[ ! -s "${prefix}/lib/libiconv.a" || ! -f "${prefix}/include/iconv.h" ]]; then
+
+  # GNU autotools requires host and build triplets for cross compilation.
+  build_triplet="$(gcc -dumpmachine)"
+  (
+  cd "${source}"
+  # Configure probes MUST see the WASI signal feature macro, otherwise
+  # gnulib generates a replacement sigset_t that conflicts with wasi-libc.
+  # Pass the matching emulation library to link tests as well.
+  env CC="${toolchain}/clang" CXX="${toolchain}/clang++" \
+    AR="${toolchain}/llvm-ar" RANLIB="${toolchain}/llvm-ranlib" \
+    CPPFLAGS="-D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_PROCESS_CLOCKS" \
+    CFLAGS="-O2 -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_PROCESS_CLOCKS" \
+    LIBS="-lwasi-emulated-signal -lwasi-emulated-process-clocks" \
+    ./configure --host=wasm32-wasi --build="${build_triplet}" \
+      --prefix="${prefix}" --disable-shared --enable-static \
+      --disable-nls >&2
+  # An earlier build used different CPPFLAGS. GNU make does not necessarily
+  # rebuild C objects just because the command-line flags changed.
+  # Nokogiri only needs the conversion library. Avoid the top-level
+  # 'all' and 'install' targets: they also build GNU Gnulib's srclib and
+  # CLI, whose POSIX fcntl/signal replacements conflict with WASI.
+  make -C lib clean >&2
+  make lib/localcharset.h >&2
+  make -j"$(nproc)" -C lib all >&2
+  make -C lib install-lib libdir="${prefix}/lib" includedir="${prefix}/include" >&2
+  install -Dm644 include/iconv.h.inst "${prefix}/include/iconv.h"
+  )
+fi
+test -s "${prefix}/lib/libiconv.a" || {
+  echo "libiconv was not compiled into the expected WASI static archive" >&2
+  exit 1
+}
+test -f "${prefix}/include/iconv.h"
+
+# Nokogiri's extconf.rb specifically calls pkg_config("libiconv") when
+# its bare iconv link test fails. The GNU libiconv archive does not ship
+# a libiconv.pc; publish one for the *cross-target* archive.
+mkdir -p "${prefix}/lib/pkgconfig"
+cat > "${prefix}/lib/pkgconfig/libiconv.pc" <<EOF
+prefix=${prefix}
+exec_prefix=\${prefix}
+libdir=\${prefix}/lib
+includedir=\${prefix}/include
+
+Name: libiconv
+Description: GNU libiconv for wasm32-wasi (static)
+Version: 1.18
+Libs: -L\${libdir} -liconv
+Cflags: -I\${includedir}
+EOF
+
+# Fail here, not in Nokogiri's opaque mkmf probe, if we cannot *actually*
+# link this static archive with the same WASI toolchain.
+command -v pkg-config >/dev/null || { echo "pkg-config is required" >&2; exit 1; }
+PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" pkg-config --exists libiconv || {
+  echo "libiconv pkg-config entry is not discoverable" >&2
+  exit 1
+}
+cat > "${build_dir}/check-iconv.c" <<'EOF'
+#include <iconv.h>
+int main(void) {
+  iconv_t cd = iconv_open("UTF-8", "UTF-8");
+  if (cd == (iconv_t)-1) return 1;
+  return iconv_close(cd);
+}
+EOF
+"${toolchain}/clang" \
+  -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_PROCESS_CLOCKS \
+  "${build_dir}/check-iconv.c" \
+  $(PKG_CONFIG_PATH="${prefix}/lib/pkgconfig" pkg-config --cflags --libs libiconv) \
+  -lwasi-emulated-signal -lwasi-emulated-process-clocks \
+  -o "${build_dir}/check-iconv.wasm" || {
+    echo "WASI libiconv compile/link smoke test failed" >&2
+    exit 1
+  }
+test -s "${build_dir}/check-iconv.wasm"
+printf '%s\n' "${prefix}"

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+probe_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+repository_dir="$(cd "${probe_dir}/.." && pwd)"
+manifest="$(mktemp)"
+output="$(mktemp -d)"
+trap 'rm -f "${manifest}"; rm -rf "${output}"' EXIT
+
+cd "${probe_dir}"
+if [[ ! -d "${repository_dir}/playground/node_modules/@ruby/4.0-wasm-wasi" ]]; then
+  echo "Ruby WASM runtime is missing. Run npm ci in playground/ first." >&2
+  exit 1
+fi
+
+bundle check
+bundle exec ruby "${repository_dir}/generator_compatibility/build_probe_manifest.rb" > "${manifest}"
+node --no-warnings "${probe_dir}/probe_view_component_wasm.mjs" "${manifest}" "${output}"
