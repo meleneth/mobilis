@@ -109,72 +109,50 @@ module Mobilis
         changed
       end
 
-      # Returns the synchronously renamed source, or nil when the edit is
-      # ambiguous. All references are selected from the *previous* Prism AST.
+      # Compare successive Prism ASTs to find an isolated edit of one service
+      # declaration. Reuse the same atomic identity-aware rename used by the
+      # visual builder, rather than guessing dependent offsets from a text diff.
+      #
+      # A paste with unrelated changes is not an implicit refactor. Keeping
+      # that distinction protects deliberate DSL edits from accidental rewrites.
       def propagate_service_rename(edited_source)
         return nil unless parse_result.errors.empty?
         return nil if edited_source == source
 
-        before, after = source.b, edited_source.b
-        prefix = 0
-        limit = [before.bytesize, after.bytesize].min
-        prefix += 1 while prefix < limit && before.getbyte(prefix) == after.getbyte(prefix)
-        suffix = 0
-        while suffix < limit - prefix &&
-              before.getbyte(before.bytesize - suffix - 1) == after.getbyte(after.bytesize - suffix - 1)
-          suffix += 1
-        end
-        original_end = before.bytesize - suffix
-        delta = after.bytesize - before.bytesize
-        old_nodes = declaration_nodes
-        matches = old_nodes.each_with_index.filter_map do |node, index|
-          literal = name_node(node)
-          next unless literal
-          range = literal.content_loc
-          index if prefix >= range.start_offset && original_end <= range.end_offset
-        end
-        return nil unless matches.length == 1
-
-        index = matches.first
-        original_node = old_nodes[index]
-        old_name = name_node(original_node).unescaped
         updated_document = self.class.new(edited_source)
         return nil unless updated_document.parse_result.errors.empty?
 
-        updated_node = updated_document.send(:declaration_nodes)[index]
-        return nil unless updated_node && original_node.name == updated_node.name
+        old_nodes = declaration_nodes
+        new_nodes = updated_document.send(:declaration_nodes)
+        return nil unless old_nodes.length == new_nodes.length
 
-        updated_literal = updated_document.send(:name_node, updated_node)
-        return nil unless updated_literal
+        candidates = old_nodes.zip(new_nodes).filter_map do |original, updated|
+          next unless original.name == updated.name
 
-        new_name = updated_literal.unescaped
-        return nil if new_name.empty? || new_name == old_name
-        return nil unless declarations.count { |declaration| normalize_name(declaration.name) == normalize_name(old_name) } == 1
-        return nil if updated_document.declarations.any? { |declaration|
-          declaration.id != updated_node.location.start_offset.to_s &&
-            normalize_name(declaration.name) == normalize_name(new_name)
-        }
+          old_literal = name_node(original)
+          new_literal = updated_document.send(:name_node, updated)
+          next unless old_literal && new_literal
+          next if old_literal.unescaped == new_literal.unescaped
 
-        # String literals inside the DSL body are implicit bindings when
-        # they have the same value as a unique service declaration. This
-        # includes custom DSL calls and local aliases, not only the four
-        # built-in relationship keywords. Never rewrite comments, source
-        # outside the DSL body, or encoded embedded document payloads.
-        edits = service_name_literals(old_name).filter_map do |literal|
-          start_offset = literal.content_loc.start_offset
-          end_offset = literal.content_loc.end_offset
-          next unless end_offset <= prefix || start_offset >= original_end
-
-          shift = start_offset >= original_end ? delta : 0
-          [start_offset + shift, end_offset + shift, escape_string(new_name, literal)]
+          [original, old_literal, new_literal]
         end
+        return nil unless candidates.length == 1
 
-        result = edits.sort_by { |offset,| -offset }.reduce(edited_source) do |current, (start_offset, end_offset, replacement)|
-          replace_in(current, start_offset, end_offset, replacement)
-        end
-        return nil unless self.class.new(result).analyze.valid?
+        original_node, old_literal, new_literal = candidates.first
+        old_start = old_literal.content_loc.start_offset
+        old_end = old_literal.content_loc.end_offset
+        new_start = new_literal.content_loc.start_offset
+        new_end = new_literal.content_loc.end_offset
 
-        result
+        # Excluding the edited string's contents must leave the exact same
+        # source bytes. This distinguishes a single keystroke from a paste
+        # that modifies multiple independent expressions.
+        return nil unless source.byteslice(0, old_start) == edited_source.byteslice(0, new_start)
+        return nil unless source.byteslice(old_end..) == edited_source.byteslice(new_end..)
+
+        rename_with_references(original_node.location.start_offset.to_s, new_literal.unescaped)
+      rescue ArgumentError
+        nil
       end
 
       # Collect literal occurrences, not textual matches. Their exact source
