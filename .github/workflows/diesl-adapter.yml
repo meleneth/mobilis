@@ -1,0 +1,26 @@
+name: Diesl source adapter parity
+
+on:
+  push:
+    branches: [diesl-source-adapter]
+  pull_request:
+    paths:
+      - 'lib/mobilis/browser/diesl_editor.rb'
+      - 'spec/mobilis/browser/diesl_editor_spec.rb'
+      - 'Gemfile'
+      - '.github/workflows/diesl-adapter.yml'
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    container: ruby:4.0.10-trixie
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build prerequisites
+        run: apt-get update && apt-get install -y --no-install-recommends git build-essential pkg-config
+      - name: Install Ruby dependencies
+        run: bundle install
+      - name: Check adapter Ruby syntax
+        run: ruby -c lib/mobilis/browser/diesl_editor.rb && ruby -c spec/mobilis/browser/diesl_editor_spec.rb
+      - name: Run source adapter parity with existing Mobilis AST tests
+        run: bundle exec rspec spec/mobilis/browser/source_document_spec.rb spec/mobilis/browser/diesl_editor_spec.rb
