@@ -190,7 +190,11 @@ module MobilisPlayground
 
       container = target.call(:closest, ".service-card") || target.call(:closest, ".service-inspector")
 
-      id = (container[:dataset][:serviceId] || container[:dataset][:sourceId]).to_s
+      id = if class_member?(container[:classList], "service-card")
+             container[:dataset][:serviceId].to_s
+           else
+             container[:dataset][:sourceId].to_s
+           end
       if class_member?(classes, "service-name")
         visual_edit do
           renamed = source_document.rename(id, target[:value].to_s)

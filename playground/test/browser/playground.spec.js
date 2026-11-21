@@ -7,6 +7,33 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Mobilis Browser Playground" })).toBeVisible({ timeout: 120_000 });
 });
 
+test("form typing updates the Ruby source, inspector and Mermaid without blurring", async ({ page }) => {
+  const name = page.locator(".service-card .service-name").nth(1);
+  await name.click();
+  await name.press("End");
+  await name.press("x");
+  await expect(name).toBeFocused();
+  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(/redis\\("cachex"\\)/);
+  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(/connect\\(from: "cachex", to: "database"\\)/);
+  await expect(page.locator("#service-inspector-panels")).toContainText("cachex");
+  await expect(page.locator("#architecture-canvas")).toContainText("Redis: cachex");
+  await name.press("y");
+  await expect(name).toBeFocused();
+  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(/redis\\("cachexy"\\)/);
+});
+
+test("inspector property editing updates the DSL before blur", async ({ page }) => {
+  await page.getByLabel("New service name").fill("api");
+  await page.locator("#new-service-type").selectOption("rails");
+  await page.getByRole("button", { name: "Add service" }).click();
+  const card = page.locator(".service-card").filter({ has: page.locator('.service-name[value="api"]') });
+  await card.locator(".select-service").click();
+  const inspector = page.locator(".service-inspector:not(.hidden)");
+  const control = inspector.locator('.inspector-service-property[data-property="api"]');
+  await control.check();
+  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(/rails\\("api", api: true\\)/);
+});
+
 test("synchronizes visual and Ruby editing, including Rails authoring", async ({ page }) => {
   await page.getByLabel("New service name").fill("web");
   await page.locator("#new-service-type").selectOption("rails");
