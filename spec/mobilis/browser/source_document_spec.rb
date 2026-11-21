@@ -111,6 +111,38 @@ RSpec.describe Mobilis::Browser::SourceDocument do
       .to raise_error(ArgumentError, /already declared/)
   end
 
+  it "propagates a single DSL keystroke through the same atomic rename as the builder" do
+    original = <<~RUBY
+      Mobilis::DSL.build("browser-demo") do
+        postgres("database")
+        redis("casz")
+        connect(from: "casz", to: "database")
+      end
+    RUBY
+    document = described_class.new(original)
+    edited = original.sub('redis("casz")', 'redis("cas2z")')
+
+    synchronized = document.propagate_service_rename(edited)
+
+    expect(synchronized).to include('redis("cas2z")')
+    expect(synchronized).to include('connect(from: "cas2z", to: "database")')
+    expect(described_class.new(synchronized).analyze).to be_valid
+  end
+
+  it "does not infer a rename when a paste changes anything outside the declaration" do
+    original = <<~RUBY
+      Mobilis::DSL.build("demo") do
+        postgres("database")
+        redis("cache")
+        connect(from: "cache", to: "database")
+      end
+    RUBY
+    edited = original.sub('redis("cache")', 'redis("cache2")')
+      .sub('connect(from: "cache"', 'connect(from: "cache2"')
+
+    expect(described_class.new(original).propagate_service_rename(edited)).to be_nil
+  end
+
   it "changes only the service call when changing type" do
     document = described_class.new(source)
     changed = document.change_type(document.analyze.declarations.first.id, :redis)
