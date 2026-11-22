@@ -45,7 +45,7 @@ module Mobilis
             add_env_only_var("#{broker}_KAFKA_PORT", realized_env.reserve_external_port)
           end
         else
-          []
+          Array.new
         end
         add_compose_raw_var("KAFKA_LISTENERS", "PLAINTEXT://:9092,CONTROLLER://:9093#{',HOST://:9094' if host}")
         add_compose_raw_var("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://#{name}:9092#{",HOST://localhost:#{@host_port_vars.first.value}" if host}")
