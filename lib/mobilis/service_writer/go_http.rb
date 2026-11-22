@@ -207,7 +207,7 @@ module Mobilis
       end
 
       def write_kafka
-        File.write("internal/app/kafka.go", File.read(File.expand_path("../templates/kafka/go.go", __dir__)))
+        File.write("internal/app/kafka.go", File.read(File.expand_path("../templates/kafka/go.go", File.dirname(File.expand_path(__FILE__)))))
       end
 
       def write_pubsub
