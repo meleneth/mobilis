@@ -69,6 +69,30 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Mobilis Browser Playground" })).toBeVisible({ timeout: 120_000 });
 });
 
+test("browser workspace imports the manifest generated from the Diesl DSL block", async ({ page }) => {
+  const policy = await page.evaluate(async () => (await import("/editor-policy.js")).workspacePolicy);
+  expect(policy.root).toBe("/workspace");
+  expect(policy.source).toEqual({path: "mobilis.rb", last_valid: ".mobilis/last-valid.rb"});
+  expect(policy.git.branch).toBe("main");
+  expect(policy.git.author).toEqual({name: "Mobilis Playground", email: "playground@mobilis.local"});
+  expect(policy.generated).toEqual([{path: "generate"}]);
+});
+
+test("Diesl string collection fields round-trip between block source and both forms", async ({ page }) => {
+  await page.getByLabel("New service name").fill("files");
+  await page.locator("#new-service-type").selectOption("s3");
+  await page.getByRole("button", { name: "Add service" }).click();
+  const card = page.locator(".service-card").filter({has: page.locator('.service-name[value="files"]')});
+  const buckets = card.locator('.service-property[data-property="buckets"]');
+  await expect(buckets).toBeVisible();
+  await buckets.fill("images, backups");
+  await buckets.blur();
+  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(/s3\("files", buckets: \["images", "backups"\]\)/);
+  await card.locator(".select-service").click();
+  const inspector = page.locator(".service-inspector:not(.hidden)");
+  await expect(inspector.locator('.inspector-service-property[data-property="buckets"]')).toHaveValue("images, backups");
+});
+
 test("system starting port round-trips through the builder and DSL", async ({ page }) => {
   const port = page.getByRole("spinbutton", { name: "Starting port" });
   const editor = page.getByLabel("Mobilis Ruby DSL");
