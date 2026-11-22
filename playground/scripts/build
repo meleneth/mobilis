@@ -77,8 +77,12 @@ cp -R "${diesl_lib}/." "${staging_dir}/src/lib/"
 cp -R "${carbn_lib}/." "${staging_dir}/src/lib/"
 # Serialize the *actual* Diesl workspace block as a browser ESM module.
 # This removes duplicate path, Git author and generated-root configuration.
-ruby -I"${repository_dir}/lib" -I"${diesl_lib}" -I"${carbn_lib}" -rjson -rmobilis/browser/diesl_editor -e '
-  manifest = Mobilis::Browser::DIESL_EDITOR.workspace.manifest
+ruby -I"${repository_dir}/lib" -I"${diesl_lib}" -rjson -rdiesl -rmobilis/browser/workspace_policy -e '
+  codec = Class.new do
+    def self.unpack(_payload) = nil
+    def self.replace(_payload, _path, _content) = nil
+  end
+  manifest = Mobilis::Browser::WorkspacePolicy.manifest(codec:)
   abort "Expected exactly one generated root" unless manifest.fetch(:generated).length == 1
   abort "Expected Git policy" unless manifest.fetch(:git)
   File.write(ARGV.fetch(0), "export const workspacePolicy = Object.freeze(" + JSON.generate(manifest) + ");")
