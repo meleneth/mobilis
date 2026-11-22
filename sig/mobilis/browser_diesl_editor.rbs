@@ -1,7 +1,7 @@
 module Mobilis
   module Browser
     module WorkspacePolicy
-      def self.configure: (Diesl::Workspace::Builder builder, codec: untyped) -> Diesl::Workspace::Builder
+      def self.configure: (Diesl::Workspace::Builder builder, codec: untyped) -> void
       def self.manifest: (codec: untyped) -> Hash[Symbol, untyped]
     end
 
