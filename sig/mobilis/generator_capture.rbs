@@ -1,5 +1,6 @@
 module Mobilis
   module GeneratorCapture
+    def self.define: (String name) { () [self: Definition] -> untyped } -> Definition
     class Definition
       WORKSPACE_TOKEN: String
       REPOSITORY_TOKEN: String
@@ -8,7 +9,7 @@ module Mobilis
       attr_reader generator_version: String?
       attr_reader fixture_name: String?
       attr_reader fixture_path: String?
-      attr_reader command_parts: Array[String]?
+      attr_reader command_parts: Array[String]
       attr_reader argument_list: Array[String]
       attr_reader environment_variables: Hash[String, String]
       attr_reader runtime_metadata: Hash[String, String]
