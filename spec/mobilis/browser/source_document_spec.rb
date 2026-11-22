@@ -49,7 +49,8 @@ RSpec.describe Mobilis::Browser::SourceDocument do
       # ☃️ source heading
       Mobilis::DSL.build("unicode") do
         postgres("database")
-        connect(from: "database", to: "database")
+        redis("session")
+        connect(from: "session", to: "database")
       end
     RUBY
     document = described_class.new(unicode)
