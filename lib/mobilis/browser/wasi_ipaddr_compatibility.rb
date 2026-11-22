@@ -13,7 +13,8 @@ module Mobilis
       def self.load!
         require "socket"
       rescue LoadError => error
-        raise unless error.path && %w[socket socket.so].include?(error.path)
+        missing_feature = error.path
+        raise unless missing_feature.is_a?(String) && %w[socket socket.so].include?(missing_feature)
 
         unless defined?(::Socket)
           Object.const_set(:BasicSocket, Class.new) unless defined?(::BasicSocket)
