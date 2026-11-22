@@ -1,7 +1,6 @@
-import { createGitCapability } from "/git-capability.js";
+import { createWorkspaceHistory, createWorkspaceRevision } from "/diesl/workspace-history.js";
 const WORKSPACE_DIRECTORY = "/workspace";
 const GENERATED_DIRECTORY = "/generated-project";
-const STAGING_GENERATED_DIRECTORY = "/generated-project-next";
 const SOURCE_PATH = "mobilis.rb";
 const LAST_VALID_PATH = ".mobilis/last-valid.rb";
 const GITIGNORE = ".mobilis/\n";
@@ -10,8 +9,15 @@ const AUTHOR = { name: "Mobilis Playground", email: "playground@mobilis.local" }
 export function createWorkspaceController() {
   const fs = new window.LightningFS("mobilis-workspace-v1");
   const pfs = fs.promises;
-  const gitCapability = createGitCapability({ fs, pfs, git: window.git, author: AUTHOR });
-  let generatedCommitReady = false;
+  const historyCapability = createWorkspaceHistory({
+    fs, pfs, git: window.git, author: AUTHOR,
+    root: WORKSPACE_DIRECTORY, generatedRepository: GENERATED_DIRECTORY,
+    generatedMirror: "generate"
+  });
+  const revisionCapability = createWorkspaceRevision({
+    fs, pfs, git: window.git, root: WORKSPACE_DIRECTORY,
+    sourcePath: SOURCE_PATH, lastValidPath: LAST_VALID_PATH
+  });
   let queue = Promise.resolve();
   let initialized = false;
   let attached = false;
@@ -82,96 +88,28 @@ export function createWorkspaceController() {
       });
     },
 
-    // Mobilis owns every phase and commit message. Diesl provides only the
-    // repository-neutral Git capability. Publish the generated repository
-    // atomically once all actual generation commits have succeeded.
+    // Diesl owns the byte-safe Git phase history, atomic publication and
+    // export. Mobilis supplies its generator phase deltas and UI events.
     persistGeneratedHistory(serializedSteps) {
-      generatedCommitReady = false;
-      const job = enqueue(async () => {
-        const steps = JSON.parse(serializedSteps);
-        if (!Array.isArray(steps) || steps.length < 2) {
-          throw new Error("Generator must supply multiple real commit phases.");
+      return enqueue(async () => {
+        try {
+          const result = await historyCapability.publish(JSON.parse(serializedSteps));
+          if (attached) await refreshView();
+          document.dispatchEvent(new CustomEvent("mobilis:generation-complete", {
+            detail: result
+          }));
+        } catch (error) {
+          document.dispatchEvent(new CustomEvent("mobilis:generation-failed", {
+            detail: {error: error.message || String(error)}
+          }));
+          throw error;
         }
-
-        await removeTree(STAGING_GENERATED_DIRECTORY);
-        await mkdirp(STAGING_GENERATED_DIRECTORY);
-        await gitCapability.initialize(STAGING_GENERATED_DIRECTORY);
-        const finalFiles = new Map();
-        for (const [index, step] of steps.entries()) {
-          if (typeof step.message !== "string" || !step.message.startsWith("[mobilis] ")) {
-            throw new Error(`Invalid Mobilis commit message at phase ${index}`);
-          }
-          if (!step.writes || typeof step.writes !== "object" || !Array.isArray(step.deletes)) {
-            throw new Error(`Invalid Mobilis checkpoint delta at phase ${index}`);
-          }
-          const writes = Object.fromEntries(
-            Object.entries(step.writes).map(([name, value]) => {
-              validateRelativePath(name);
-              return [name, decodeBase64(value)];
-            })
-          );
-          for (const name of step.deletes) validateRelativePath(name);
-          await gitCapability.checkpoint(STAGING_GENERATED_DIRECTORY, {
-            message: step.message, writes, deletes: step.deletes
-          });
-          for (const name of step.deletes) finalFiles.delete(name);
-          for (const [name, bytes] of Object.entries(writes)) finalFiles.set(name, bytes);
-        }
-
-        // The generated repository is distinct from the editable DSL
-        // workspace, exactly as with native Mobilis generation.
-        await removeTree(GENERATED_DIRECTORY);
-        await pfs.rename(STAGING_GENERATED_DIRECTORY, GENERATED_DIRECTORY);
-
-        // Mirror the resulting artifacts into the author's working tree for
-        // inspection. Those files are not part of the generated Git history.
-        const destination = `${WORKSPACE_DIRECTORY}/generate`;
-        const temporary = `${WORKSPACE_DIRECTORY}/.mobilis/generate-next`;
-        await removeTree(temporary);
-        await mkdirp(temporary);
-        for (const [name, bytes] of [...finalFiles.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-          const target = `${temporary}/${name}`;
-          await mkdirp(parent(target));
-          await pfs.writeFile(target, bytes);
-        }
-        await removeTree(destination);
-        await pfs.rename(temporary, destination);
-        generatedCommitReady = true;
-        await flush();
-        if (attached) await refreshView();
-        document.dispatchEvent(new CustomEvent("mobilis:generation-complete", {
-          detail: { commits: steps.length, files: finalFiles.size }
-        }));
-      });
-      return job.catch(error => {
-        generatedCommitReady = false;
-        document.dispatchEvent(new CustomEvent("mobilis:generation-failed", {
-          detail: { error: error.message || String(error) }
-        }));
-        throw error;
       });
     },
 
     downloadGeneratedProject() {
       return enqueue(async () => {
-        if (!generatedCommitReady) {
-          throw new Error("The generated project's Git history is not ready for export.");
-        }
-        await flush();
-        const log = await gitCapability.log(GENERATED_DIRECTORY);
-        if (log.length < 2) throw new Error("Generated project lacks incremental Git history.");
-        const entries = {};
-        async function collect(directory, relative = "") {
-          for (const name of (await pfs.readdir(directory)).sort()) {
-            const absolute = `${directory}/${name}`;
-            const filename = relative ? `${relative}/${name}` : name;
-            const stat = await pfs.stat(absolute);
-            if (stat.isDirectory()) await collect(absolute, filename);
-            else entries[filename] = encodeBase64(new Uint8Array(await pfs.readFile(absolute)));
-          }
-        }
-        await collect(GENERATED_DIRECTORY);
-        if (!entries[".git/HEAD"]) throw new Error("Generated Git metadata missing.");
+        const entries = await historyCapability.exportGenerated();
         await window.MobilisDownloads.project(entries, "mobilis-project.zip");
       });
     },
@@ -290,28 +228,18 @@ export function createWorkspaceController() {
   }
 
   async function checkout(oid) {
-    const matrix = await statusMatrix();
-    if (matrix.some(([, head, worktree, stage]) => !(head === 1 && worktree === 1 && stage === 1))) {
-      throw new Error("Commit or discard working-tree changes before restoring a revision.");
-    }
-    if (window.MobilisDocuments?.hasUnsavedChanges()) {
-      throw new Error("Save or discard the open embedded document before restoring a revision.");
-    }
-
-    const previous = await window.git.resolveRef({ fs, dir: WORKSPACE_DIRECTORY, ref: "HEAD" });
-    await window.git.checkout({ fs, dir: WORKSPACE_DIRECTORY, ref: oid, noUpdateHead: true, force: true, nonBlocking: true });
-    try {
-      const source = await readTextIfPresent(SOURCE_PATH);
-      if (!source) throw new Error("The selected revision does not contain mobilis.rb.");
-      const detail = { source, accepted: false, valid: false, error: null };
-      document.dispatchEvent(new CustomEvent("mobilis:workspace-checkout", { detail }));
-      if (!detail.accepted) throw new Error(detail.error || "Ruby rejected the checked-out project.");
-      await writeTextIfChanged(LAST_VALID_PATH, source);
-    } catch (error) {
-      await window.git.checkout({ fs, dir: WORKSPACE_DIRECTORY, ref: previous, noUpdateHead: true, force: true, nonBlocking: true });
-      throw new Error(`Checkout was rolled back: ${error.message || String(error)}`);
-    }
-    await flush();
+    await revisionCapability.restore(oid, {
+      guard: () => {
+        if (window.MobilisDocuments?.hasUnsavedChanges())
+          throw new Error("Save or discard the open embedded document before restoring a revision.");
+      },
+      validate: source => {
+        const detail = {source, accepted: false, valid: false, error: null};
+        document.dispatchEvent(new CustomEvent("mobilis:workspace-checkout", {detail}));
+        if (!detail.accepted)
+          throw new Error(detail.error || "Ruby rejected the checked-out project.");
+      }
+    });
     await refreshView();
   }
 
