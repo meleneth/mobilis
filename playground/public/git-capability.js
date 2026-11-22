@@ -3,7 +3,7 @@
 export function createGitCapability({ fs, pfs, git, author }) {
   function checkPath(name) {
     if (typeof name !== "string" || !name ||
-        name.startsWith("/") ||
+        name.startsWith("/") || name.includes("\\") || name.includes("\\0") ||
         name.split("/").some(part => !part || part === "." || part === ".." || part === ".git")) {
       throw new Error(`Unsafe Git path: ${name}`);
     }
