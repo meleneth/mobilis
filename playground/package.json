@@ -4,6 +4,7 @@
   "scripts": {
     "build:css": "tailwindcss -i assets/application.css -o public/application.css --minify",
     "test:browser": "playwright test",
+    "test:git": "node --test test/git-capability.test.mjs",
     "test": "playwright test"
   },
   "dependencies": {
