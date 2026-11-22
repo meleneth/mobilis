@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "json"
-require "diesl"
 require "prism"
 
 module Mobilis
@@ -42,6 +41,9 @@ module Mobilis
       attr_reader :source, :parse_result
 
       def initialize(source)
+        # The native Mobilis generator does not require browser authoring gems.
+        # Load Diesl only when the browser SourceDocument is instantiated.
+        require "diesl"
         @source = source
         # Diesl owns parsing, revisioning and source-range replacement.
         # Mobilis only interprets the parsed tree as a system definition.
