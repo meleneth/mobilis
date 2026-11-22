@@ -1,0 +1,35 @@
+module Mobilis
+  class GeneratorCapabilities
+    attr_reader browser_generation: bool
+    attr_reader local_generation: bool
+    attr_reader reason: String?
+    def self.new: (browser_generation: bool, local_generation: bool, reason: String?) -> GeneratorCapabilities
+    def self.browser: () -> GeneratorCapabilities
+    def self.local_only: (String reason) -> GeneratorCapabilities
+  end
+
+  module ContainerVersions
+    GRAFBASE_GATEWAY: String
+    GRAFBASE_CLI: String
+    GOOGLE_CLOUD_EMULATORS: String
+    KAFKA: String
+  end
+
+  module Base
+    class ServiceWriter
+      def self.generator_capabilities: () -> Mobilis::GeneratorCapabilities
+      def write_image_ownership: () -> void
+    end
+  end
+
+  module Browser
+    class SemanticRuntime
+      attr_reader invocation_count: Integer
+      attr_reader total_duration_ms: Float
+      attr_reader last_duration_ms: Float
+      attr_reader last_label: String?
+      def initialize: () -> void
+      def measure: [T] (String label) { () -> T } -> T
+    end
+  end
+end
