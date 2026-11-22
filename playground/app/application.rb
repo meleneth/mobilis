@@ -496,6 +496,10 @@ module MobilisPlayground
 
     def semantic_request(label)
       @runtime.measure(label) { yield }
+      # DOM events use their detail object for responses. Returning arbitrary
+      # Ruby arrays here forces ruby.wasm to convert nested Ruby objects to JS,
+      # masking the original generation error with a bridge TypeError.
+      nil
     ensure
       replace("runtime-metrics-region", render_runtime_metrics) if element("runtime-metrics-region")
     end
