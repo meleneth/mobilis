@@ -11,7 +11,7 @@ default:
 variables:
   BUNDLE_JOBS: "4"
   BUNDLE_RETRY: "2"
-  DIESL_REF: "ffdaabc0e06aeecf92947969bc69f4d623d1912e"
+  CARBN_REF: "2425bdfc2b0611ccc0a1a2cb55a2fbb655a170bb"
 
 .ruby_job:
   image: ruby:4.0.10-trixie
@@ -51,13 +51,14 @@ browser_workspace:
   script:
     - node --check playground/public/workspace.js
     - node --check playground/public/application.js
-    - node --check playground/public/git-capability.js
-    - grep -Fq "$DIESL_REF" Dockerfile.playground
-    - git clone --quiet https://github.com/meleneth/diesl.git /tmp/diesl
-    - git -C /tmp/diesl checkout --quiet "$DIESL_REF"
-    - test "$(git -C /tmp/diesl rev-parse HEAD)" = "$DIESL_REF"
-    - node --test /tmp/diesl/browser/test/workspace-history.test.mjs
-    - cd playground && npm ci && npm run test:git
+    - grep -Fq "$CARBN_REF" Dockerfile.playground
+    - git clone --quiet https://github.com/meleneth/carbn.git /tmp/carbn
+    - git -C /tmp/carbn checkout --quiet "$CARBN_REF"
+    - test "$(git -C /tmp/carbn rev-parse HEAD)" = "$CARBN_REF"
+    - node --check /tmp/carbn/browser/git-capability.js
+    - node --check /tmp/carbn/browser/workspace-history.js
+    - node --test /tmp/carbn/test/workspace-history.test.mjs
+    - cd playground && npm ci
 
 docs:
   image: node:24-trixie
