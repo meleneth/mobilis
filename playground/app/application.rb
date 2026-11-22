@@ -103,6 +103,10 @@ module MobilisPlayground
       archive_handler = proc { |event| semantic_request("embedded document commit") { handle_archive_commit(event) } }
       checkout_handler = proc { |event| semantic_request("workspace checkout") { handle_workspace_checkout(event) } }
       rename_sync_handler = proc { |event| @sync_service_renames = event[:detail][:enabled].to_s == "true" }
+      source_blur_handler = proc do |event|
+        @session.end_source_edit if event[:target][:id].to_s == "dsl-source"
+        nil
+      end
       generated_handler = proc do |event|
         commits = event[:detail][:commits].to_i
         files = event[:detail][:files].to_i
@@ -121,6 +125,7 @@ module MobilisPlayground
         semantic_request("generator compatibility shim") { handle_generator_compatibility(event) }
       end
       document.addEventListener("mobilis:source-input", &input_handler)
+      document.addEventListener("focusout", &source_blur_handler)
       document.addEventListener("mobilis:generation-complete", &generated_handler)
       document.addEventListener("mobilis:generation-failed", &generation_failure_handler)
       document.addEventListener("mobilis:rename-sync-toggle", &rename_sync_handler)
@@ -130,7 +135,7 @@ module MobilisPlayground
       document.addEventListener("mobilis:workspace-checkout", &checkout_handler)
       document.addEventListener("mobilis:generator-compatibility", &compatibility_handler)
       @event_handlers.concat(
-        [input_handler, generated_handler, generation_failure_handler, rename_sync_handler, click_handler, change_handler, archive_handler, checkout_handler, compatibility_handler]
+        [input_handler, source_blur_handler, generated_handler, generation_failure_handler, rename_sync_handler, click_handler, change_handler, archive_handler, checkout_handler, compatibility_handler]
       )
     end
 
