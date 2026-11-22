@@ -1,4 +1,5 @@
 import { createWorkspaceHistory, createWorkspaceRevision } from "/carbn/workspace-history.js";
+import { createWorkingTree } from "/carbn/working-tree.js";
 import { workspacePolicy } from "/editor-policy.js";
 
 // Generated from DIESL_EDITOR.workspace.manifest at build time.
@@ -22,6 +23,7 @@ export function createWorkspaceController() {
     fs, pfs, git: window.git, root: WORKSPACE_DIRECTORY,
     sourcePath: SOURCE_PATH, lastValidPath: LAST_VALID_PATH
   });
+  const workingTree = createWorkingTree({fs, pfs, git: window.git, author: AUTHOR, root: WORKSPACE_DIRECTORY});
   let queue = Promise.resolve();
   let initialized = false;
   let attached = false;
@@ -35,9 +37,7 @@ export function createWorkspaceController() {
     async initialize() {
       await mkdirp(WORKSPACE_DIRECTORY);
       await mkdirp(path(LAST_VALID_PATH, true));
-      if (!(await exists(`${WORKSPACE_DIRECTORY}/.git`))) {
-        await window.git.init({ fs, dir: WORKSPACE_DIRECTORY, defaultBranch: workspacePolicy.git.branch });
-      }
+      await workingTree.initialize({branch: workspacePolicy.git.branch});
       controller.bootstrapSource = await readTextIfPresent(SOURCE_PATH);
       controller.bootstrapValidSource = await readTextIfPresent(LAST_VALID_PATH);
       controller.hasBootstrapSource = controller.bootstrapSource.length > 0;
@@ -57,7 +57,7 @@ export function createWorkspaceController() {
         await writeTextIfChanged(SOURCE_PATH, source);
         await writeTextIfChanged(".gitignore", GITIGNORE);
         if (valid) await writeTextIfChanged(LAST_VALID_PATH, source);
-        await ensureInitialCommit();
+        await workingTree.ensureInitialCommit({paths: [SOURCE_PATH, ".gitignore"], message: "Initialize Mobilis project"});
         await flush();
         if (attached) await refreshView();
       });
@@ -139,24 +139,7 @@ export function createWorkspaceController() {
 
     downloadWorkspace() {
       return enqueue(async () => {
-        await flush();
-        if (!(await hasHead())) throw new Error("Workspace has no Git history.");
-        const entries = {};
-        async function collect(directory, relative = "") {
-          for (const name of (await pfs.readdir(directory)).sort()) {
-            const absolute = `${directory}/${name}`;
-            const filepath = relative ? `${relative}/${name}` : name;
-            const stat = await pfs.stat(absolute);
-            if (stat.isDirectory()) {
-              await collect(absolute, filepath);
-            } else {
-              entries[filepath] = encodeBase64(new Uint8Array(await pfs.readFile(absolute)));
-            }
-          }
-        }
-        await collect(WORKSPACE_DIRECTORY);
-        if (!entries[".git/HEAD"]) throw new Error("Git HEAD is missing from workspace archive.");
-        if (!entries[SOURCE_PATH]) throw new Error("Workspace source is missing from archive.");
+        const entries = await workingTree.export({requiredPaths: [SOURCE_PATH]});
         await window.MobilisDownloads.project(entries, "mobilis-workspace.zip");
       });
     }
@@ -199,42 +182,15 @@ export function createWorkspaceController() {
     });
   }
 
-  async function ensureInitialCommit() {
-    if (await hasHead()) return;
-    await window.git.add({ fs, dir: WORKSPACE_DIRECTORY, filepath: SOURCE_PATH });
-    await window.git.add({ fs, dir: WORKSPACE_DIRECTORY, filepath: ".gitignore" });
-    await window.git.commit({
-      fs,
-      dir: WORKSPACE_DIRECTORY,
-      message: "Initialize Mobilis project",
-      author: AUTHOR
-    });
-  }
-
   async function stageAll() {
-    const matrix = await statusMatrix();
-    for (const [filepath, , worktree] of matrix) {
-      if (worktree === 0) {
-        await window.git.remove({ fs, dir: WORKSPACE_DIRECTORY, filepath });
-      } else {
-        await window.git.add({ fs, dir: WORKSPACE_DIRECTORY, filepath });
-      }
-    }
-    await flush();
+    await workingTree.stageAll();
     await refreshView();
   }
 
   async function commit() {
     const input = document.getElementById("workspace-commit-message");
-    const message = input?.value.trim() || "";
-    if (!message) throw new Error("Enter a commit message before committing.");
-    const matrix = await statusMatrix();
-    if (!matrix.some(([, head, , stage]) => head !== stage)) {
-      throw new Error("There are no staged changes to commit.");
-    }
-    await window.git.commit({ fs, dir: WORKSPACE_DIRECTORY, message, author: AUTHOR });
+    await workingTree.commit(input?.value.trim() || "");
     if (input) input.value = "";
-    await flush();
     await refreshView();
   }
 
@@ -323,7 +279,7 @@ export function createWorkspaceController() {
 
   async function refreshView() {
     if (!attached) return;
-    const matrix = await statusMatrix();
+    const matrix = await workingTree.status();
     const changed = matrix.filter(([, head, worktree, stage]) => !(head === 1 && worktree === 1 && stage === 1));
     const summary = document.getElementById("workspace-summary");
     if (summary) summary.textContent = changed.length === 0 ? "Clean working tree" : `${changed.length} changed file${changed.length === 1 ? "" : "s"}`;
@@ -355,11 +311,11 @@ export function createWorkspaceController() {
     const target = document.getElementById("workspace-history");
     if (!target) return;
     target.replaceChildren();
-    if (!(await hasHead())) {
+    if (!(await workingTree.hasHead())) {
       target.append(textElement("p", "No commits yet."));
       return;
     }
-    const entries = await window.git.log({ fs, dir: WORKSPACE_DIRECTORY, depth: 20 });
+    const entries = await workingTree.history(20);
     for (const entry of entries) {
       const row = document.createElement("div");
       row.className = "rounded border border-line p-2";
@@ -383,34 +339,9 @@ export function createWorkspaceController() {
       target.textContent = "Select a changed file to inspect it.";
       return;
     }
-    const before = await readHeadFile(selectedPath);
+    const before = await workingTree.readHead(selectedPath);
     const after = await readBytesIfPresent(selectedPath);
     target.textContent = lineDiff(selectedPath, before, after);
-  }
-
-  async function readHeadFile(filepath) {
-    if (!(await hasHead())) return null;
-    try {
-      const result = await window.git.readBlob({ fs, dir: WORKSPACE_DIRECTORY, oid: "HEAD", filepath });
-      return result.blob;
-    } catch (error) {
-      if (error.code === "NotFoundError" || error.code === "ResolveTreeError") return null;
-      throw error;
-    }
-  }
-
-  function statusMatrix() {
-    return window.git.statusMatrix({ fs, dir: WORKSPACE_DIRECTORY });
-  }
-
-  async function hasHead() {
-    try {
-      await window.git.resolveRef({ fs, dir: WORKSPACE_DIRECTORY, ref: "HEAD" });
-      return true;
-    } catch (error) {
-      if (error.code === "NotFoundError" || error.code === "ResolveRefError") return false;
-      throw error;
-    }
   }
 
   async function readTextIfPresent(relative) {
