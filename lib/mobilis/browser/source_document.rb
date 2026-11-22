@@ -336,6 +336,7 @@ module Mobilis
         archive = archives.find { |candidate| candidate.id == id.to_s }
         raise ArgumentError, "Embedded archive declaration is no longer present" unless archive
         raise ArgumentError, "Dynamic embedded archive payloads cannot be safely rewritten" unless archive.editable && archive.payload
+        raise ArgumentError, "Embedded archive payload location is unavailable" unless archive.payload_start_offset && archive.payload_end_offset
 
         payload = Mobilis::EmbeddedArchive.replace(archive.payload, path, content)
         changed = replace(archive.payload_start_offset, archive.payload_end_offset, payload)
