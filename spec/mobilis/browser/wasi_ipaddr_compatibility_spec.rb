@@ -20,10 +20,15 @@ RSpec.describe Mobilis::Browser::WasiIpAddrCompatibility do
 
   it "supports numeric IPAddr without silently providing networking when socket is absent" do
     program = <<~RUBY
+      # Model a WASI process, not whichever native Socket objects Ruby or
+      # an installed startup library happened to preload.
+      [:Socket, :IPSocket, :BasicSocket].each do |name|
+        Object.send(:remove_const, name) if Object.const_defined?(name, false)
+      end
       module Kernel
         alias original_require require
         def require(feature)
-          if feature == "socket" && !$LOADED_FEATURES.include?("socket.rb")
+          if feature == "socket" || feature == "socket.so"
             error = LoadError.new("cannot load such file -- socket")
             error.define_singleton_method(:path) { "socket" }
             raise error
@@ -46,7 +51,7 @@ RSpec.describe Mobilis::Browser::WasiIpAddrCompatibility do
     RUBY
 
     lib = File.expand_path("../../../lib", __dir__)
-    output, status = Open3.capture2e(RbConfig.ruby, "-I", lib, "-e", program)
+    output, status = Open3.capture2e(RbConfig.ruby, "--disable-gems", "-I", lib, "-e", program)
     expect(status.success?).to eq(true), output
   end
 end
