@@ -42,6 +42,7 @@ export function createGitCapability({ fs, pfs, git, author }) {
       if (typeof message !== "string" || !message.trim()) {
         throw new Error("A Git checkpoint requires a commit message");
       }
+      let staged = 0;
       const names = Object.keys(writes);
       const removed = new Set(deletes);
       for (const name of [...names, ...removed]) checkPath(name);
@@ -56,6 +57,7 @@ export function createGitCapability({ fs, pfs, git, author }) {
           if (error.code !== "ENOENT") throw error;
         }
         await git.remove({ fs, dir: root, filepath: name });
+        staged += 1;
       }
       for (const name of names.sort()) {
         const path = `${root}/${name}`;
@@ -66,12 +68,24 @@ export function createGitCapability({ fs, pfs, git, author }) {
           await pfs.writeFile(path, bytes);
           if (!(await git.isIgnored({ fs, dir: root, filepath: name }))) {
             await git.add({ fs, dir: root, filepath: name });
+            staged += 1;
           }
         }
       }
-      const matrix = await git.statusMatrix({ fs, dir: root });
-      if (!matrix.some(([, head, , stage]) => head !== stage)) {
-        throw new Error(`Generator emitted an empty Git checkpoint: ${message}`);
+      if (!staged) throw new Error(`Generator emitted no trackable changes: ${message}`);
+      let unborn = false;
+      try {
+        await git.resolveRef({ fs, dir: root, ref: "HEAD" });
+      } catch (error) {
+        unborn = (error?.code === "NotFoundError" || error?.name === "NotFoundError") &&
+          /refs\\/heads\\//.test(String(error.message));
+        if (!unborn) throw error;
+      }
+      if (!unborn) {
+        const matrix = await git.statusMatrix({ fs, dir: root });
+        if (!matrix.some(([, head, , stage]) => head !== stage)) {
+          throw new Error(`Generator emitted an empty Git checkpoint: ${message}`);
+        }
       }
       return git.commit({ fs, dir: root, message, author });
     },
