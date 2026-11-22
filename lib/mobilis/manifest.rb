@@ -109,44 +109,10 @@ module Mobilis
       @generation_execution = nil
     end
 
-    # Write every artifact that Mobilis can produce without invoking Git,
-    # Docker, or generated-project commands. This is the generation path used
-    # by constrained runtimes such as ruby.wasm; it deliberately uses the same
-    # realized nodes, plugins, service writers, and compose emitters as the
-    # native materializer.
+    # Compatibility API: generate files without exporting Git checkpoints.
+    # It uses exactly the same generation plan as the browser path.
     def materialize_static
-      capabilities = Mobilis::Browser::Capabilities.project(system)
-      unless capabilities.browser_generation
-        raise ArgumentError, "This project requires local generation. #{capabilities.reason}"
-      end
-
-      @static_generation = true
-      directory_service.chdir_start
-      directory_service.mkdir_generate
-      directory_service.mkdir_compose
-      directory_service.chdir_generate
-      write_gitignore
-      write_readme
-      run_plugin_hooks :create_builder_images
-      run_plugin_hooks :hook_before_services_written
-      emit_all_services
-      run_plugin_hooks :hook_after_services_written
-      emit_compose_wrappers
-      emit_env_files
-      write_overrides_for(:test)
-      write_overrides_for(:development)
-      write_overrides_for(:production)
-      write_commands_file
-      write_mobilis_system
-      write_dc_helpers
-      write_devcontainer
-      run_plugin_hooks :hook_after_dc_helpers
-      write_kubernetes if system.kubernetes_deployment
-      directory_service.chdir_generate
-      Dir.pwd
-    ensure
-      directory_service.chdir_start
-      @static_generation = false
+      materialize_browser(on_checkpoint: ->(_message, _writes, _deletes) {})
     end
 
     def kubernetes_universes
@@ -393,8 +359,6 @@ module Mobilis
     end
 
     def commit_all(message)
-      return if @static_generation
-
       if @generation_execution
         @generation_execution.commit(message)
       else
