@@ -56,6 +56,7 @@ module Mobilis
     end
 
     def to_h
+      # @type var result: Mobilis::system_record
       result = {
         name: "mobilis",
         meta_project_name: meta_project_name,
