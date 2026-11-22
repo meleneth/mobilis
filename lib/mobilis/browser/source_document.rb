@@ -556,12 +556,21 @@ module Mobilis
         raise ArgumentError, "Invalid #{property}: #{error.message}"
       end
 
-      # JSON-originated option hashes use string keys; preserve the existing
-      # Mobilis representation while letting Diesl serialize Ruby literals.
+      # Mobilis's relationship options historically serialize map keys as
+      # strings, even when the caller passed symbols. Preserve that domain
+      # convention while Diesl owns the actual Ruby literal serialization.
       def ruby_literal(value)
-        @diesl_source.encode(value)
+        @diesl_source.encode(stringify_map_keys(value))
       rescue Diesl::UnsafeEdit => error
         raise ArgumentError, error.message
+      end
+
+      def stringify_map_keys(value)
+        case value
+        when Array then value.map { |entry| stringify_map_keys(entry) }
+        when Hash then value.to_h { |key, entry| [key.to_s, stringify_map_keys(entry)] }
+        else value
+        end
       end
 
       def optional_keyword_range(node, element)
