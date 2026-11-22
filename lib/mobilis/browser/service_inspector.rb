@@ -71,7 +71,10 @@ module Mobilis
           Dependency.new(target: target.name, kind: slot.name, source_id: nil, relationship: :reference) if target.is_a?(Mobilis::Base::Node)
         end
         plural = node.class.ref_list_registry.flat_map do |slot|
-          Array(node.public_send(slot.name)).filter_map do |target|
+          targets = node.public_send(slot.name)
+          next [] unless targets.is_a?(Array)
+
+          targets.filter_map do |target|
             Dependency.new(target: target.name, kind: slot.name, source_id: nil, relationship: :reference) if target.is_a?(Mobilis::Base::Node)
           end
         end
