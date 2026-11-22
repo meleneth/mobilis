@@ -372,9 +372,7 @@ module Mobilis
       end
 
       def root_call
-        parse_result.value.statements.body.find do |node|
-          node.is_a?(Prism::CallNode) && %i[build generate].include?(node.name) && node.receiver
-        end
+        @diesl_source.root_calls(name: %i[build generate]).find(&:receiver)
       end
 
       def declaration_nodes
