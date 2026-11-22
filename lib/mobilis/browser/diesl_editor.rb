@@ -74,10 +74,9 @@ module Mobilis
         entity kind, label: kind.to_s.tr("_", " ").capitalize, creatable: true do
           field :name, type: :string, required: true
           Mobilis::Browser::SourceDocument::PROPERTY_SCHEMAS.fetch(kind, {}).each do |property, specification|
-            # Array-valued properties require Diesl's upcoming collection
-            # field renderer. SourceDocument already supports editing them.
-            next if specification.fetch(:kind) == :strings
-
+            # Keep the schema complete, including collection-valued fields.
+            # Rendering is a separate concern, but the editor definition must
+            # describe every supported source transformation.
             field property, type: specification.fetch(:kind)
           end
         end
