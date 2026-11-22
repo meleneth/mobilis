@@ -70,4 +70,11 @@ cp -R "${temple_path}/lib" "${staging_dir}/gems/temple"
 cp -R "${thor_path}/lib" "${staging_dir}/gems/thor"
 cp -R "${tilt_path}/lib" "${staging_dir}/gems/tilt"
 ruby scripts/build_application.rb "${staging_dir}" public
+ruby -rjson -e '
+  manifest = JSON.parse(File.read(ARGV.fetch(0)))
+  paths = manifest.fetch("filesystem").fetch("files").map { |entry| entry.fetch("path") }
+  %w[src/lib/diesl.rb src/lib/carbn.rb src/lib/mobilis/browser/diesl_editor.rb].each do |path|
+    abort "Browser application is missing required library: #{path}" unless paths.include?(path)
+  end
+' public/mobilis-app-manifest.json
 ruby scripts/verify_runtime_compatibility.rb public/runtime-config.json public/mobilis-app-manifest.json
