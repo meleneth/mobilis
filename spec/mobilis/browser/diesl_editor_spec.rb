@@ -32,6 +32,29 @@ RSpec.describe "Diesl/Mobilis source adapter parity" do
     expect(editor.adapted_session(source:).analysis).to be_valid
   end
 
+  it "routes system ports and synchronized service names through the Diesl adapter" do
+    source = <<~RUBY
+      Mobilis::DSL.build("adapter-ports", starting_port: 11_000) do
+        redis("cache")
+        postgres("db")
+        connect(from: "cache", to: "db")
+      end
+    RUBY
+    session = editor.adapted_session(source:)
+    expect(session.apply(operation: :update_starting_port, value: "12000",
+      expected_revision: session.revision)).to be(true)
+    expect(session.source).to include("starting_port: 12000")
+    id = session.analysis.declarations.find { |item| item.name == "cache" }.id
+    expect(session.apply(operation: :rename_service_with_references, id:, name: "sessions",
+      expected_revision: session.revision)).to be(true)
+    expect(session.source).to include('redis("sessions")')
+    expect(session.source).to include('from: "sessions"')
+    session.undo
+    expect(session.source).to include('redis("cache")')
+    session.redo
+    expect(session.source).to include('redis("sessions")')
+  end
+
   it "matches the original source document for service creation and renaming" do
     added = apply(source, :add_service, type: :redis, name: "cache")
     expect(added).to eq(document(source).add(:redis, "cache"))
