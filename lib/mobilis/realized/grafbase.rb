@@ -26,6 +26,10 @@ module Mobilis
           target = edge[:target]
           next if target.is_a?(Mobilis::Node::OtelCollector)
 
+          unless target.is_a?(Mobilis::Base::Node)
+            raise ArgumentError, "#{name} has an invalid GraphQL subgraph dependency"
+          end
+
           provider = realized_env.realized_node_for_config_node(target)
           unless provider.is_a?(Mobilis::Realized::FastAPI) && provider.config_node.graphql_subgraph_name
             raise ArgumentError, "#{name} requires connected FastAPI GraphQL subgraphs"
