@@ -13,9 +13,10 @@ module Mobilis
 
       attr_reader :analysis, :topology
 
-      def initialize(analysis, topology)
+      def initialize(analysis, topology, property_schemas: SourceDocument::PROPERTY_SCHEMAS)
         @analysis = analysis
         @topology = topology
+        @property_schemas = property_schemas
       end
 
       def services
@@ -38,7 +39,7 @@ module Mobilis
           name: node.name,
           type: topology_node.type,
           declaration:,
-          editable_properties: declaration ? SourceDocument::PROPERTY_SCHEMAS.fetch(declaration.type, {}) : {},
+          editable_properties: declaration ? @property_schemas.fetch(declaration.type, {}) : {},
           configuration: configuration(node),
           outgoing:,
           incoming:,
