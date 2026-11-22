@@ -1,0 +1,35 @@
+module Mobilis
+  module Kubernetes
+    class Declaration
+      attr_reader base_domain: String
+      attr_reader exposures: Array[{ name: String, root: bool }]
+      def initialize: (String wildcard) -> void
+      def self.dns_label?: (untyped value) -> bool
+      def istio: () { (Istio) -> untyped } -> untyped
+      def to_h: () -> { domain: String, exposures: Array[{ name: String, root: bool }] }
+      def self.from_h: (Hash[Symbol, untyped] hash) -> Declaration
+
+      class Istio
+        def initialize: (Array[{ name: String, root: bool }] exposures) -> void
+        def expose: (String name, ?root: bool) -> untyped
+      end
+    end
+
+    class Universe
+      ENVIRONMENTS: Hash[String, String]
+      attr_reader project: String
+      attr_reader environment: String
+      attr_reader namespace: String
+      attr_reader domain: String
+      attr_reader services: Array[Mobilis::Base::RealizedNode]
+      attr_reader public_services: Hash[String, String]
+      attr_reader realized_env: Mobilis::RealizedEnv
+      def initialize: (Mobilis::RealizedEnv realized_env, Declaration declaration) -> void
+      def labels: (?String? service) -> Hash[String, String]
+      def persistent_storage?: () -> bool
+      def self.validate_collisions!: (Array[Universe] universes) -> void
+      private
+      def validate_label!: (String value, String kind) -> void
+    end
+  end
+end
