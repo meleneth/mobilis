@@ -45,7 +45,9 @@ module Mobilis
         else
           hash.fetch(:content)
         end
-        new(hash[:path], content, executable: hash[:executable] == true)
+        raise ArgumentError, "File content must be a String" unless content.is_a?(String)
+
+        new(hash.fetch(:path), content, executable: hash[:executable] == true)
       end
 
       def self.decode_base64(payload)
