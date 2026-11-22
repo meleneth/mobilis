@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "fileutils"
-require "digest"
+require "mobilis/generation/execution"
 
 module Mobilis
   # here it is, the main class that actually orchestratest the entire
@@ -9,6 +9,7 @@ module Mobilis
   class Manifest
     include Mobilis::PrettyPrint::PrettyPrintable
     attr_reader :system, :realized_envs, :directory_service, :git_repo, :plugins
+    attr_writer :git_repo
 
     def initialize(system, suppress_plugins: false, directory_service: Mobilis::Services::Directory.new)
       @system = system
@@ -55,74 +56,33 @@ module Mobilis
     end
 
     def materialize
-      require "git"
-      directory_service.chdir_start
-      directory_service.mkdir_generate
-      directory_service.mkdir_compose
-      directory_service.chdir_generate
-      write_gitignore
-      write_readme
-      @git_repo = Git.init(".")
-      commit_all("Basic project files")
-      run_plugin_hooks :create_builder_images
-      run_plugin_hooks :hook_before_services_written
-      emit_all_services
-      run_plugin_hooks :hook_after_services_written
-      emit_compose_wrappers
-      emit_env_files
-      write_overrides_for(:test)
-      write_overrides_for(:development)
-      write_overrides_for(:production)
-      commit_all("Compose overrides")
-      write_commands_file
-      commit_all("Commands file")
-      write_mobilis_system
-      commit_all("Mobilis system config")
-      write_dc_helpers
-      commit_all("docker compose helper scripts")
-      commit_all("devcontainer configuration") if write_devcontainer
-      Mobilis::Util.run_command(["./dc_test", "build"])
-      run_plugin_hooks :hook_after_dc_helpers
-      run_plugin_hooks :hook_create_rails_models
-      run_plugin_hooks :hook_after_rails_models_created
-      run_plugin_hooks :hook_run_commands
-      write_kubernetes if system.kubernetes_deployment
+      run_generation(Mobilis::Generation::Native.new(self))
     end
 
-    # Run the actual Mobilis generation steps, including Rails AppGenerator,
-    # while delegating commit objects to the browser's Git implementation.
-    # Each checkpoint carries the actual filesystem at that point in time.
-    # Unsupported host-command hooks are rejected, never silently omitted.
     def materialize_browser(on_checkpoint:)
-      raise ArgumentError, "Checkpoint callback required" unless on_checkpoint
-
-      capability = Mobilis::Browser::Capabilities.project(system)
-      unless capability.browser_generation
-        raise ArgumentError, "Browser generation cannot run host-dependent models or configuration: #{capability.reason}"
+      capabilities = Mobilis::Browser::Capabilities.project(system)
+      unless capabilities.browser_generation
+        raise ArgumentError, "Browser generation cannot run host-dependent models or configuration: #{capabilities.reason}"
       end
 
-      @browser_generation = true
-      @browser_checkpoint = on_checkpoint
-      @browser_previous_files = {}
+      run_generation(Mobilis::Generation::Browser.new(self, on_checkpoint: on_checkpoint))
+    end
+
+    # One ordered generation plan. Adapters only supply environmental
+    # capabilities; writers, plugins and commit boundaries remain Mobilis's.
+    def run_generation(execution)
+      raise ArgumentError, "Generation already active" if @generation_execution
+
+      @generation_execution = execution
       directory_service.chdir_start
       directory_service.mkdir_generate
       directory_service.mkdir_compose
       directory_service.chdir_generate
       write_gitignore
       write_readme
+      execution.prepare_repository
       commit_all("Basic project files")
-
-      # Unlike native generation, create the Rails builder definition without
-      # running Docker. The Rails writer runs the real generator in CRuby/WASM.
-      @plugins.each do |plugin|
-        next unless plugin.is_a?(Mobilis::Plugin::RailsBuilder)
-
-        directory_service.mkdir_rails_builder
-        directory_service.chdir_rails_builder
-        plugin.create_rails_builder_dockerfile
-        directory_service.chdir_generate
-        commit_all("Add rails builder Dockerfile")
-      end
+      execution.create_builder_images
       run_plugin_hooks :hook_before_services_written
       emit_all_services
       run_plugin_hooks :hook_after_services_written
@@ -139,18 +99,14 @@ module Mobilis
       write_dc_helpers
       commit_all("docker compose helper scripts")
       commit_all("devcontainer configuration") if write_devcontainer
-      run_plugin_hooks :hook_after_dc_helpers
+      execution.after_helpers
       write_kubernetes if system.kubernetes_deployment
-      # Some hooks mutate files without an explicit commit boundary. Do not
-      # export an uncommitted working tree as if it were a complete project.
-      commit_all("Final generated artifacts")
+      execution.finish
       directory_service.chdir_generate
       Dir.pwd
     ensure
-      directory_service.chdir_start
-      @browser_generation = false
-      @browser_checkpoint = nil
-      @browser_previous_files = nil
+      directory_service.chdir_start if execution.browser?
+      @generation_execution = nil
     end
 
     # Write every artifact that Mobilis can produce without invoking Git,
@@ -437,34 +393,18 @@ module Mobilis
     end
 
     def commit_all(message)
-      if @browser_generation
-        root = File.join(directory_service.instance_variable_get(:@start_position), "generate")
-        paths = Dir.glob("**/*", File::FNM_DOTMATCH, base: root)
-          .reject { |path| path == "." || path == ".." || File.directory?(File.join(root, path)) }
-          .sort
-        writes = {}
-        versions = {}
-        paths.each do |path|
-          contents = File.binread(File.join(root, path))
-          fingerprint = Digest::SHA256.hexdigest(contents)
-          versions[path] = fingerprint
-          writes[path] = contents if @browser_previous_files[path] != fingerprint
-        end
-        deletes = (@browser_previous_files.keys - versions.keys).sort
-        # Native Git refuses empty commits. Preserve that semantic instead
-        # of manufacturing a history entry without a tree delta.
-        return if writes.empty? && deletes.empty?
-
-        @browser_checkpoint.call("[mobilis] #{message}", writes, deletes)
-        @browser_previous_files = versions
-        return
-      end
       return if @static_generation
 
-      require "git"
-      puts " -- git commit: #{message} --"
-      @git_repo.add(all: true)
-      @git_repo.commit("[mobilis] #{message}")
+      if @generation_execution
+        @generation_execution.commit(message)
+      else
+        # Retain the legacy direct-call behavior for writers/tests that
+        # already installed a native Git repository.
+        require "git"
+        puts " -- git commit: #{message} --"
+        @git_repo.add(all: true)
+        @git_repo.commit("[mobilis] #{message}")
+      end
     end
 
     def setup_plugins
@@ -603,9 +543,8 @@ module Mobilis
             directory_service.mkdir_project(realized_node)
             directory_service.chdir_project(realized_node)
             writer = realized_node.service_writer.new(self, realized_env, realized_node)
-            if @browser_generation && writer.is_a?(Mobilis::ServiceWriter::Rails)
-              writer.write_browser
-              commit_all("add Rails project #{realized_node.name}")
+            if @generation_execution
+              @generation_execution.write_service(writer, realized_node)
             else
               writer.write
             end

@@ -91,6 +91,11 @@ module Mobilis
         Dir.chdir generate_dir
       end
 
+      # Explicit generation root for repository adapters.
+      def generate_root
+        generate_dir
+      end
+
       def chdir_localgems
         Dir.chdir localgems_dir
       end
