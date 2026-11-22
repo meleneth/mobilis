@@ -17,7 +17,9 @@ module Mobilis
       def initialize(starting_port, reservation_count: 1)
         @next_port = starting_port
         @reservation_count = reservation_count
+        # @type ivar @reserved_ports: Hash[Integer, bool]
         @reserved_ports = {}
+        # @type ivar @preferred_sequences: Hash[String, Array[Integer]]
         @preferred_sequences = {}
       end
 
