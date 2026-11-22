@@ -100,11 +100,17 @@ manifest_url = config["application_manifest_url"]
 if manifest_url != "/mobilis-app-manifest.json":
     sys.exit(f"Unexpected application manifest URL: {manifest_url}")
 manifest = json.loads((root / manifest_url.lstrip("/")).read_text())
-# The image must contain the exact content-addressed application archive,
-# rather than merely an unrelated old tarball.
-archives = list(root.glob("mobilis-app-*.tar"))
-if len(archives) != 1 or not archives[0].is_file() or archives[0].stat().st_size == 0:
-    sys.exit("Expected exactly one packaged Mobilis browser application")
+artifact = manifest["artifact"]
+archive_url = artifact["url"]
+archive_sha = artifact["sha256"]
+if len(archive_sha) != 64 or archive_url != f"/mobilis-app-{archive_sha}.tar":
+    sys.exit(f"Invalid content-addressed application URL: {archive_url}")
+archive = root / archive_url.lstrip("/")
+if not archive.is_file() or archive.stat().st_size != artifact["size"]:
+    sys.exit(f"Missing or incorrectly sized Mobilis application: {archive}")
+with archive.open("rb") as stream:
+    if hashlib.file_digest(stream, "sha256").hexdigest() != archive_sha:
+        sys.exit(f"Mobilis application SHA-256 mismatch: {archive}")
 print(f"Verified WASM {sha}: {wasm.stat().st_size:,} raw bytes, "
       f"{brotli.stat().st_size:,} Brotli bytes "
       f"({brotli.stat().st_size / 1048576:.1f} MiB)")
