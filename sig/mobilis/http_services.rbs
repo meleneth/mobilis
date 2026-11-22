@@ -8,7 +8,11 @@ module Mobilis
     class FastAPI < Mobilis::Base::Node
       attr_reader port: Integer
       attr_reader publish_port: bool
-      def initialize: (String name, ?port: Integer, ?publish_port: bool, **untyped args) -> void
+      attr_reader graphql_subgraph_name: String?
+      def initialize: (String name, ?port: Integer, ?publish_port: bool, ?graphql_subgraph_name: String?, **untyped args) -> void
+      def graphql_subgraph: (String name, ?source: String?) -> self
+      def local_package: (String name) ?{ (Mobilis::Model::LocalPythonPackage) -> untyped } -> Mobilis::Model::LocalPythonPackage
+      def use_local_package: (Mobilis::Model::LocalPythonPackage package) -> Mobilis::Model::LocalPythonPackage
       def package_name: () -> String
       def add_sqlalchemy_model: (String name, ?table: String?) ?{ (Mobilis::Model::SQLAlchemy::Model) -> untyped } -> Mobilis::Model::SQLAlchemy::Model
     end
