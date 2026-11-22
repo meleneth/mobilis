@@ -47,7 +47,7 @@ module MobilisKubernetesDeploy
     query!("get", "virtualservices.networking.istio.io", "-A", "-o", "json").fetch("items").each do |route|
       next if route.dig("metadata", "namespace") == NAMESPACE && expected.all? { |key, value| route.dig("metadata", "labels", key) == value }
       collisions = hosts.select do |host|
-        route.fetch("spec").fetch("hosts", []).any? { |existing| existing == host || (existing.start_with?("*.") && host.end_with?(existing.delete_prefix("*"))) || existing == "*" }
+        route.fetch("spec").fetch("hosts") { Array.new }.any? { |existing| existing == host || (existing.start_with?("*.") && host.end_with?(existing.delete_prefix("*"))) || existing == "*" }
       end
       abort "Hostname collision: #{collisions.join(", ")}" unless collisions.empty?
     end
