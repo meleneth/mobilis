@@ -89,15 +89,15 @@ through the `js` bridge. Moving it to a Worker would require a new DOM protocol,
 not an artifact-delivery change. The VM is resident but idle: there is no Ruby
 polling or scheduled workload.
 
-## Diesl browser workspace ownership
+## Carbn browser workspace infrastructure
 
 The playground preserves the existing `mobilis-workspace-v1` IndexedDB
 filesystem and all authoring Git history. Its browser controller delegates
 domain-neutral generated Git phase commits, atomic generated-tree publication,
 Git-object ZIP export, and guarded revision checkout to the pinned
-`Diesl` `workspace-history.js` module. The module and its shared
-`git-capability.js` are copied as immutable build inputs from the same Diesl
-revision as the Ruby source adapter.
+`Carbn` `workspace-history.js` module. That module and its shared
+`git-capability.js` are copied from the same pinned Carbn revision as the
+reactive Ruby library. Diesl remains responsible for editing and DSL policy.
 
 Mobilis retains the workspace UI, generator-specific phase validation,
 compatibility operations, and Ruby semantic validation callback for restores.
@@ -105,7 +105,7 @@ A rejected revision restores both the previous worktree and the last-valid
 Ruby source snapshot. Generated repository publication keeps the previous
 artifacts and Git objects if a new publication fails.
 
-The Docker build runs Diesl's Node history/rollback regression suite, and
+The Docker build runs Carbn's Node history/rollback regression suite, and
 Internal GitLab CI independently checks both the JavaScript syntax and the pinned
 history tests. Full Playwright tests still require a working browser runtime.
 
