@@ -100,7 +100,8 @@ module Mobilis
           next unless from
 
           service.extra_depends_on.each do |dependency|
-            target = dependency[:target] || find_service(dependency[:name])
+            target = dependency[:target]
+            target = find_service(dependency[:name]) unless target.is_a?(Mobilis::Base::Node)
             next unless target.is_a?(Mobilis::Base::Node)
 
             relationship = source_relationship(service, target)
@@ -118,10 +119,12 @@ module Mobilis
       def reference_targets(service)
         singular = service.class.ref_attr_registry.flat_map do |slot|
           target = service.public_send(slot.name)
-          target ? [[slot.name, target]] : []
+          target.is_a?(Mobilis::Base::Node) ? [[slot.name, target]] : []
         end
         plural = service.class.ref_list_registry.flat_map do |slot|
-          Array(service.public_send(slot.name)).map { |target| [slot.name, target] }
+          Array(service.public_send(slot.name)).filter_map do |target|
+            [slot.name, target] if target.is_a?(Mobilis::Base::Node)
+          end
         end
         singular + plural
       end
