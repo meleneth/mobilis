@@ -24,16 +24,16 @@ cp node_modules/@isomorphic-git/lightning-fs/LICENSE public/vendor/lightning-fs/
 cp "${repository_dir}/spec/fixtures/browser/postgres-compose.yml" public/parity/
 ruby scripts/build_embedded_fixture.rb public/parity/embedded-source.rb
 ruby scripts/build_examples.rb "${repository_dir}/scripts" public/examples
-# Import the exact pinned Diesl workspace engine and its shared Git capability.
-diesl_browser="${DIESL_LIB_DIR:-}/../browser/public"
-if [[ ! -f "${diesl_browser}/workspace-history.js" || ! -f "${diesl_browser}/git-capability.js" ]]; then
-  echo "Pinned Diesl browser workspace modules are missing" >&2
+# Load the exact pinned Carbn browser Git and workspace engine.
+carbn_browser="${CARBN_LIB_DIR:-}/../browser"
+if [[ ! -f "${carbn_browser}/workspace-history.js" || ! -f "${carbn_browser}/git-capability.js" ]]; then
+  echo "Pinned Carbn browser Git modules are missing" >&2
   exit 1
 fi
-mkdir -p public/diesl
-cp "${diesl_browser}/workspace-history.js" "${diesl_browser}/git-capability.js" public/diesl/
-# Exercise Diesl's Git/history transaction engine before publishing browser assets.
-node --test "${DIESL_LIB_DIR}/../browser/test/workspace-history.test.mjs"
+mkdir -p public/carbn
+cp "${carbn_browser}/workspace-history.js" "${carbn_browser}/git-capability.js" public/carbn/
+# Verify Carbn workspace history/rollback before packaging the browser.
+node --test "${CARBN_LIB_DIR}/../test/workspace-history.test.mjs"
 
 runtime_path="${RUBY_WASM_RUNTIME_SOURCE:-node_modules/@ruby/4.0-wasm-wasi/dist/ruby+stdlib.wasm}"
 if [[ ! -f "${runtime_path}" ]]; then
