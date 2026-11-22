@@ -36,7 +36,7 @@ module Mobilis
         end
 
         # @type var editable_properties: Hash[Symbol, untyped]
-        editable_properties = declaration ? @property_schemas.fetch(declaration.type) { {} } : {}
+        editable_properties = declaration ? @property_schemas.fetch(declaration.type) { Hash.new } : Hash.new
 
         Service.new(
           id: topology_node.id,
