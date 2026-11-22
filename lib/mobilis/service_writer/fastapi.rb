@@ -114,14 +114,14 @@ module Mobilis
 
       def write_kafka
         FileUtils.mkdir_p("vendor")
-        FileUtils.cp(File.expand_path("../vendor/kafka_python-3.0.11-py3-none-any.whl", __dir__), "vendor/")
-        FileUtils.cp(File.expand_path("../vendor/prometheus_client-0.26.0-py3-none-any.whl", __dir__), "vendor/")
-        File.write("#{@package_dir}/kafka_client.py", File.read(File.expand_path("../templates/kafka/python.py", __dir__)))
+        FileUtils.cp(File.expand_path("../vendor/kafka_python-3.0.11-py3-none-any.whl", File.dirname(File.expand_path(__FILE__))), "vendor/")
+        FileUtils.cp(File.expand_path("../vendor/prometheus_client-0.26.0-py3-none-any.whl", File.dirname(File.expand_path(__FILE__))), "vendor/")
+        File.write("#{@package_dir}/kafka_client.py", File.read(File.expand_path("../templates/kafka/python.py", File.dirname(File.expand_path(__FILE__)))))
       end
 
       def write_redis_wheel
         FileUtils.mkdir_p("vendor")
-        FileUtils.cp(File.expand_path("../vendor/redis-7.2.0-py3-none-any.whl", __dir__), "vendor/")
+        FileUtils.cp(File.expand_path("../vendor/redis-7.2.0-py3-none-any.whl", File.dirname(File.expand_path(__FILE__))), "vendor/")
       end
 
       def write_app
