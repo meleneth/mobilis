@@ -1,0 +1,25 @@
+module Mobilis
+  module Kubernetes
+    class Generator
+      REGISTRY: String
+      attr_reader manifest: Mobilis::Manifest
+      attr_reader root: String
+      def initialize: (Mobilis::Manifest manifest, String root) -> void
+      def write: () -> untyped
+      def builds_for: (Mobilis::Kubernetes::Universe universe) -> Array[Hash[Symbol, untyped]]
+      def image_for: (Mobilis::Kubernetes::Universe universe, Mobilis::Base::RealizedNode node) -> String
+      def resources_for: (Mobilis::Kubernetes::Universe universe) -> Array[Hash[String, untyped]]
+      private
+      def resource: (Mobilis::Kubernetes::Universe universe, String api, String kind, String name, untyped spec, ?service: String?, ?namespaced: bool) -> Hash[String, untyped]
+      def ports_for: (Mobilis::Base::RealizedNode node) -> Array[Integer]
+      def port_name: (Mobilis::Base::RealizedNode node, Integer port) -> String
+      def target_port_for: (Mobilis::Base::RealizedNode node, Integer port) -> Integer
+      def environment_for: (Mobilis::Base::RealizedNode node) -> Array[Hash[String, String]]
+      def configuration_for: (Mobilis::Kubernetes::Universe universe, Mobilis::Base::RealizedNode node) -> [Array[Hash[String, untyped]], Array[Hash[String, untyped]], Array[Hash[String, untyped]]]
+      def alloy_config: (Mobilis::Kubernetes::Universe universe, Mobilis::Realized::Alloy node) -> String
+      def alloy_rbac: (Mobilis::Kubernetes::Universe universe, Mobilis::Realized::Alloy node) -> Array[Hash[String, untyped]]
+      def istio_resources: (Mobilis::Kubernetes::Universe universe) -> Array[Hash[String, untyped]]
+      def deployment_helper: () -> String
+    end
+  end
+end
