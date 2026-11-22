@@ -1,31 +1,41 @@
-# Diesl authoring migration (source adapter stage)
+# Diesl and Carbn integration (live playground)
 
-This branch does **not** alter the live Mobilis browser. It establishes a
-tested domain-adapter boundary before the UI and workspace migration.
+The live playground now loads the pinned Diesl and Carbn libraries into its
+CRuby/WASM application artifact. The two libraries are fetched at reviewed Git
+commits in `Dockerfile.playground`, and the build stages their original pure-Ruby
+`lib/` trees. No Rails server or browser-side DSL interpreter is introduced.
 
-- `Mobilis::Browser::DieslSourceDocument` forwards permitted operations to
-  the existing `SourceDocument`, with no rewritten Prism algorithms.
-- `Diesl::SourceAdapter` enforces source revisions, validates both source
-  and transformation output through the *real* Mobilis semantic model, and
-  exposes domain analysis.
-- `Diesl::AdaptedSession` retains invalid drafts separately, and supplies
-  source-aware undo/redo for structured operations.
-- `DIESL_EDITOR` declares all Mobilis service types and supported scalar
-  fields alongside the workspace: generated artifacts are what Git stages.
-  Embedded archive metadata is declared; content editing is delegated to
-  Mobilis's proven codec and source edit.
-- The `source_document` parity suite checks changes against the unchanged
-  original implementation, preserving source comments and archive members.
+## Ownership after migration
 
-## Next gate
+- **Diesl** owns the live `AdaptedSession`, authoritative valid source and
+  invalid draft buffer, revision checks, structured edits and undo/redo history.
+  The Mobilis adapter translates supported domain operations into source edits.
+- **Carbn** owns transactional region invalidation. The active editor avoids a
+  textarea replacement on raw source input; history button state is updated in
+  place. Source focus/selection and DOM lifecycle remain browser-owned.
+- **Mobilis** retains its service graph semantics, Prism-located domain-specific
+  constructors, relationship rewrites, embedded archive codec, generator and
+  topology projections. The Haml renderer is retained until the separate real
+  ViewComponent/WASM compatibility gate passes.
+- **Browser workspace** still uses the existing LightningFS/isomorphic-git
+  implementation. Diesl's workspace schema describes its ownership policy;
+  moving the JavaScript workspace implementation is a distinct parity task.
 
-The next change should make the domain editor projection and its event handlers
-consume `DIESL_EDITOR.adapted_session` alongside the existing inspector,
-architecture and generation renderer. Add browser tests before removing any
-legacy controllers. Array-valued `buckets` properties, source-driven
-relationship controls and validated generated-output checkout require explicit
-DSL/UI support; none is claimed by this stage.
+The duplicate Mobilis `SourceHistory` and
+`MobilisPlayground::ProjectionInvalidator` implementations and their unit
+specifications have been removed. Do not delete `SourceDocument` without first
+extracting and replacing the Mobilis domain transformations it still owns.
 
-Run `bundle exec rspec spec/mobilis/browser/diesl_editor_spec.rb` under the
-repository's pinned Ruby/Bundler environment. The separate Diesl Gemfile pin
-must be updated deliberately when its API changes.
+## Verification gates
+
+- `bundle exec rspec spec/mobilis/browser/diesl_editor_spec.rb
+  spec/mobilis/browser/source_document_spec.rb`
+- `ruby -c playground/app/application.rb`
+- `cd playground && npm test` against a successfully built container
+- Test source typing, invalid-draft recovery, structured undo/redo, archive
+  edits, example loading, Git checkout, builder focus and graph projection.
+- Rebuild with `docker compose up --build` to stage the new pinned Ruby libs.
+
+For host builds outside Docker, set `DIESL_LIB_DIR` and `CARBN_LIB_DIR` to
+the `lib/` directories of checkouts at the exact pinned SHAs in
+`Dockerfile.playground`, then run `playground/scripts/build`.
