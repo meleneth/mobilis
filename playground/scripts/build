@@ -32,6 +32,8 @@ if [[ ! -f "${diesl_browser}/workspace-history.js" || ! -f "${diesl_browser}/git
 fi
 mkdir -p public/diesl
 cp "${diesl_browser}/workspace-history.js" "${diesl_browser}/git-capability.js" public/diesl/
+# Exercise Diesl's Git/history transaction engine before publishing browser assets.
+node --test "${DIESL_LIB_DIR}/../browser/test/workspace-history.test.mjs"
 
 runtime_path="${RUBY_WASM_RUNTIME_SOURCE:-node_modules/@ruby/4.0-wasm-wasi/dist/ruby+stdlib.wasm}"
 if [[ ! -f "${runtime_path}" ]]; then
