@@ -28,7 +28,7 @@ RSpec.describe Mobilis::Browser::WasiIpAddrCompatibility do
       module Kernel
         alias original_require require
         def require(feature)
-          if feature == "socket" || feature == "socket.so"
+          if %w[socket socket.so].include?(feature) && !$LOADED_FEATURES.include?("socket.rb")
             error = LoadError.new("cannot load such file -- socket")
             error.define_singleton_method(:path) { "socket" }
             raise error
