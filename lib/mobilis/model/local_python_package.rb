@@ -98,7 +98,15 @@ module Mobilis
             Mobilis::Model::File.from_h(path:, content:, executable:)
           end
         end
-        new(name, dependencies:, files:)
+        # Ruby Array#all? establishes the runtime contract, while the map
+        # gives Steep concrete element types at the deserialization boundary.
+        # @type var checked_dependencies: Array[String]
+        checked_dependencies = dependencies.map do |dependency|
+          raise ArgumentError, "Python package dependency must be a String" unless dependency.is_a?(String)
+
+          dependency
+        end
+        new(name, dependencies: checked_dependencies, files:)
       end
     end
   end
