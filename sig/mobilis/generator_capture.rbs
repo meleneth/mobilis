@@ -1,5 +1,6 @@
 module Mobilis
   module GeneratorCapture
+    def define: (String name) { () [self: Definition] -> untyped } -> Definition
     def self.define: (String name) { () [self: Definition] -> untyped } -> Definition
     class Definition
       WORKSPACE_TOKEN: String
