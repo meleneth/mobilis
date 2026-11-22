@@ -287,7 +287,7 @@ module Mobilis
       end
 
       def deployment_helper
-        File.read(File.join(__dir__, "deploy.rb"))
+        File.read(File.join(File.dirname(File.expand_path(__FILE__)), "deploy.rb"))
       end
     end
   end
