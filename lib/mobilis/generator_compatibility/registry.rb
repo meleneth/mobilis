@@ -6,6 +6,7 @@ module Mobilis
 
     class Registry
       def initialize
+        # @type ivar @entries: Hash[Array[String], CapturedFileCreation]
         @entries = {}
       end
 
