@@ -62,7 +62,7 @@ module Mobilis
         }
         wrapper[:services]["#{name}-composer"] = composer
         wrapper[:services][name][:depends_on]["#{name}-composer"] = {condition: "service_completed_successfully"}
-        wrapper[:volumes] = {"#{name}-schema" => {}}
+        wrapper[:volumes] = {"#{name}-schema" => Hash.new}
         wrapper
       end
     end
