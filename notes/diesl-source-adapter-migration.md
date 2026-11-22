@@ -13,13 +13,14 @@ commits in `Dockerfile.playground`, and the build stages their original pure-Rub
 - **Carbn** owns transactional region invalidation. The active editor avoids a
   textarea replacement on raw source input; history button state is updated in
   place. Source focus/selection and DOM lifecycle remain browser-owned.
-- **Mobilis** retains its service graph semantics, Prism-located domain-specific
-  constructors, relationship rewrites, embedded archive codec, generator and
-  topology projections. The Haml renderer is retained until the separate real
-  ViewComponent/WASM compatibility gate passes.
-- **Browser workspace** still uses the existing LightningFS/isomorphic-git
-  implementation. Diesl's workspace schema describes its ownership policy;
-  moving the JavaScript workspace implementation is a distinct parity task.
+- **Mobilis** retains its service graph semantics, domain-specific constructor
+  and relationship rewrites, embedded archive codec, generator, and topology
+  projections. Haml/Turbo remains the deliberately small presentation adapter:
+  it is not another implementation of source editing or state invalidation.
+- **Browser workspace** keeps existing LightningFS persistence and local UI,
+  but consumes Carbn's Git/history/rollback primitives and a static policy
+  module generated from the authoritative Diesl `workspace do ... end` block.
+  The existing IndexedDB namespace is preserved.
 
 The duplicate Mobilis `SourceHistory` and
 `MobilisPlayground::ProjectionInvalidator` implementations and their unit
@@ -29,21 +30,28 @@ extracting and replacing the Mobilis domain transformations it still owns.
 ## SourceDocument consolidation
 
 `SourceDocument` now delegates Prism parsing, revision hashes, literal
-interpretation, and syntax-checked source byte replacement to `Diesl::Source`.
+interpretation, syntax-checked source byte replacement, Unicode-safe line
+ranges, direct block-child discovery, nested subtree traversal, and literal
+keyword projections to `Diesl::Source`. A pruning affordance avoids traversing
+opaque embedded archive calls when collecting source-owned references.
 Mobilis still owns its domain-specific service graph declarations, relationship
 and service rewrite policies, archive operations, and semantic evaluation.
 Regression cases cover multibyte source offsets and the historical nested
 relationship-map serialization convention.
 
-The legacy `SourceDocument` must not be deleted: the Diesl adapter still calls
-its Mobilis-specific transformations. Further reductions should be driven by
-parity tests, not by raw line count.
+The Mobilis `SourceDocument` must not be deleted: the Diesl adapter still calls
+its Mobilis-specific transformations. Both builder and inspector forms now
+derive fields, collection kinds, and defaults from the Diesl editor block
+schema. Removing domain behavior simply to reduce line count is not a goal.
 
 **Workspace boundary (history gap closed):** Carbn now owns the reusable
 byte-safe Git checkpoint, multi-phase generated repository history, atomic
 publication/rollback, Git-object export, and guarded source revision restore.
 Mobilis delegates these operations to `/carbn/workspace-history.js`, staged
-from the pinned Carbn checkout. Diesl owns source editing and the declarative workspace policy. Mobilis still owns its workspace UI,
+from the pinned Carbn checkout. A build-time Ruby task generates
+`editor-policy.js` from the Diesl workspace block; browser paths, Git author,
+branch and generated mirror now come from that one declaration.
+Mobilis still owns its workspace UI,
 generator-specific validation, compatibility shim, interactive diff, and
 browser event wiring. Existing `mobilis-workspace-v1` IndexedDB state, source
 paths, and Git history remain unchanged. We do not replace the browser
