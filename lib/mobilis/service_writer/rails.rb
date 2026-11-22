@@ -47,7 +47,10 @@ module Mobilis
         args.concat(%w[--skip-bundle --skip-git --skip-ci])
         destination = File.expand_path("..", Dir.pwd)
         Mobilis::Browser::FileSystemCompatibility.without_posix_permissions do
-          ::Rails::Generators::AppGenerator.start(args, destination_root: destination)
+          # Rails is loaded dynamically and does not provide RBS for its generator API.
+          # Keep this runtime-only integration at the framework boundary.
+          generator = Object.const_get("Rails::Generators::AppGenerator")
+          generator.public_send(:start, args, destination_root: destination)
         end
         raise "Rails generator did not write config/application.rb" unless File.file?("config/application.rb")
         raise "Rails generator did not write Gemfile" unless File.file?("Gemfile")
