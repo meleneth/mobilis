@@ -15,7 +15,8 @@ module Mobilis
         begin
           Dir.mktmpdir("mobilis-generator-capture") do |temporary_root|
             workspace = File.join(temporary_root, "workspace")
-            copy_fixture(definition.fixture_path, workspace)
+            fixture_path = definition.fixture_path or raise ArgumentError, "Generator capture fixture path is missing"
+            copy_fixture(fixture_path, workspace)
             before = Snapshot.capture(workspace)
             command = definition.command_parts.map { |part| expand(part, definition, workspace) }
             environment = definition.environment_variables.transform_values do |value|
