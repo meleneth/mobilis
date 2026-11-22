@@ -17,6 +17,8 @@ module Mobilis
 
       def add_service(type:, name:) = @document.add(type, name)
       def rename_service(id:, name:) = @document.rename(id, name)
+      def rename_service_with_references(id:, name:) = @document.rename_with_references(id, name)
+      def update_starting_port(value:) = @document.update_starting_port(value)
       def change_service_type(id:, type:) = @document.change_type(id, type)
       def remove_service(id:) = @document.remove(id)
       def update_service_property(id:, property:, value:) = @document.update_property(id, property, value)
@@ -41,6 +43,8 @@ module Mobilis
       operations: {
         add_service: :add_service,
         rename_service: :rename_service,
+        rename_service_with_references: :rename_service_with_references,
+        update_starting_port: :update_starting_port,
         change_service_type: :change_service_type,
         remove_service: :remove_service,
         update_service_property: :update_service_property,
