@@ -7,9 +7,9 @@ module Mobilis
         write_app_py
         if @realized_node.connected_nodes(Mobilis::Realized::Kafka).any?
           FileUtils.mkdir_p("vendor")
-          FileUtils.cp(File.expand_path("../vendor/kafka_python-3.0.11-py3-none-any.whl", __dir__), "vendor/")
-          FileUtils.cp(File.expand_path("../vendor/redis-7.2.0-py3-none-any.whl", __dir__), "vendor/")
-          File.write("kafka_client.py", File.read(File.expand_path("../templates/kafka/python.py", __dir__)))
+          FileUtils.cp(File.expand_path("../vendor/kafka_python-3.0.11-py3-none-any.whl", File.dirname(File.expand_path(__FILE__))), "vendor/")
+          FileUtils.cp(File.expand_path("../vendor/redis-7.2.0-py3-none-any.whl", File.dirname(File.expand_path(__FILE__))), "vendor/")
+          File.write("kafka_client.py", File.read(File.expand_path("../templates/kafka/python.py", File.dirname(File.expand_path(__FILE__)))))
         end
         @realized_node.each_model_of_type(Mobilis::Model::File, &:write_file)
         @manifest.commit_all("add flask project #{@realized_node.name}")
