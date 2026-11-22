@@ -111,7 +111,10 @@ module Mobilis
         )
         raise ArgumentError, "Embedded archive payload is not strict Base64" unless valid
 
-        payload.unpack1("m0") || raise(ArgumentError, "Embedded archive payload could not be decoded")
+        decoded = payload.unpack1("m0")
+        raise ArgumentError, "Embedded archive payload could not be decoded" unless decoded.is_a?(String)
+
+        decoded
       end
 
       def normalize_entries(files)
@@ -213,7 +216,7 @@ module Mobilis
           validate_tar_header!(header)
           path = tar_path(header)
           raise ArgumentError, "Duplicate embedded archive member #{path}" if members.key?(path)
-          type = header.byteslice(156, 1)
+          type = required_byteslice(header, 156, 1)
           raise ArgumentError, "Unsupported tar entry type #{type.inspect} for #{path}" unless ["0", "\0"].include?(type)
 
           size = octal_field(header, 124, 12, "size")
