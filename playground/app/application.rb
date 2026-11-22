@@ -127,7 +127,7 @@ module MobilisPlayground
       target = event[:detail][:target]
 
       edited = target[:value].to_s
-      if @sync_service_renames && !@diagram_stale
+      if event[:detail][:replaceAll].to_s != "true" && @sync_service_renames && !@diagram_stale
         synchronized = source_document.propagate_service_rename(edited)
         if synchronized && synchronized != edited
           selection_start = target[:selectionStart].to_i
@@ -154,7 +154,7 @@ module MobilisPlayground
         @status = "Source is invalid. The last valid visual model is preserved."
         persist_source(valid: false)
       end
-      update_regions(:system, :validation)
+      update_regions(*(event[:detail][:replaceAll].to_s == "true" ? [:source, :system, :validation] : [:system, :validation]))
       render_diagram
       refresh_selection
     end
