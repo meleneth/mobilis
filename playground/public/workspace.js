@@ -163,7 +163,7 @@ export function createWorkspaceController() {
     const runUiOperation = operation => { void enqueue(operation).catch(() => {}); };
     document.getElementById("workspace-refresh")?.addEventListener("click", () => runUiOperation(refreshView));
     document.getElementById("workspace-stage")?.addEventListener("click", () => runUiOperation(stageAll));
-    document.getElementById("workspace-download")?.addEventListener("click", () => runUiOperation(() => controller.downloadWorkspace()));
+    document.getElementById("workspace-download")?.addEventListener("click", () => { void controller.downloadWorkspace().catch(() => {}); });
     document.getElementById("workspace-commit")?.addEventListener("click", () => runUiOperation(commit));
     document.getElementById("apply-generator-compatibility")?.addEventListener("click", event => {
       const root = document.getElementById("compatibility-root")?.value.trim() || "";
