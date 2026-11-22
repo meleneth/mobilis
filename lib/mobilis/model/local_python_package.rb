@@ -83,8 +83,20 @@ module Mobilis
         files = records.map do |record|
           raise ArgumentError, "Python package file must be a Hash" unless record.is_a?(Hash)
 
-          # A serialized record is validated at the File deserialization boundary.
-          Mobilis::Model::File.from_h(record)
+          path = record[:path]
+          raise ArgumentError, "Python package file path must be a String" unless path.is_a?(String)
+          executable = record[:executable] == true
+          if record.key?(:content_base64)
+            encoded = record[:content_base64]
+            raise ArgumentError, "Python package file content_base64 must be a String" unless encoded.is_a?(String)
+
+            Mobilis::Model::File.from_h(path:, content_base64: encoded, executable:)
+          else
+            content = record[:content]
+            raise ArgumentError, "Python package file content must be a String" unless content.is_a?(String)
+
+            Mobilis::Model::File.from_h(path:, content:, executable:)
+          end
         end
         new(name, dependencies:, files:)
       end
