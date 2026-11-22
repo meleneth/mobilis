@@ -5,6 +5,38 @@ import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { execFileSync } from "node:child_process";
 
+test("catalog exposes every packaged numbered example and preserves exact bytes", async ({ page }) => {
+  const catalog = await (await page.request.get("/examples/index.json")).json();
+  const options = page.getByLabel("Load numbered example").locator("option");
+  expect(catalog.length).toBeGreaterThanOrEqual(26);
+  await expect(options).toHaveCount(catalog.length + 1);
+  for (const entry of catalog) {
+    expect(entry.file).toMatch(/^[0-9]{2}_[a-z0-9_]+\\.rb$/);
+    expect((await page.request.get(`/examples/${entry.file}`)).ok()).toBe(true);
+  }
+});
+
+test("example choice asks for confirmation and cancellation preserves the authored DSL", async ({ page }) => {
+  const editor = page.getByLabel("Mobilis Ruby DSL");
+  const source = await editor.inputValue();
+  page.once("dialog", async dialog => {
+    expect(dialog.message()).toMatch(/Are you sure/);
+    await dialog.dismiss();
+  });
+  await page.getByLabel("Load numbered example").selectOption("01_mobilis_initial_system.rb");
+  await expect(editor).toHaveValue(source);
+  await expect(page.getByLabel("Load numbered example")).toHaveValue("");
+});
+
+test("confirmed numbered example replaces source without propagating unrelated service renames", async ({ page }) => {
+  const name = "01_mobilis_initial_system.rb";
+  const raw = await (await page.request.get(`/examples/${name}`)).text();
+  page.once("dialog", dialog => dialog.accept());
+  await page.getByLabel("Load numbered example").selectOption(name);
+  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(raw);
+  await expect(page.getByLabel("Load numbered example")).toHaveValue("");
+});
+
 test.beforeEach(async ({ page }) => {
   page.on("console", message => console.log(`[browser:${message.type()}] ${message.text()}`));
   page.on("pageerror", error => console.error(`[browser:error] ${error.stack || error}`));
