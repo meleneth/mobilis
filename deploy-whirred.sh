@@ -2,7 +2,6 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PUBLIC_DIR="${PUBLIC_DIR:-${ROOT}/playground/public}"
 DIST_DIR="${DIST_DIR:-${ROOT}/dist/mobilis}"
 REMOTE="${WHIRRED_HOST:-whirred.io}"
 REMOTE_DIR="${WHIRRED_DIR:-dist/mobilis}"
@@ -10,6 +9,7 @@ IMAGE="${WHIRRED_IMAGE:-mobilis-staging}"
 SERVICE="${WHIRRED_SERVICE:-mobilis-staging}"
 COMPOSE_DIR="${WHIRRED_COMPOSE_DIR:-/www/docker-stuff}"
 PROXY_SERVICE="${WHIRRED_PROXY_SERVICE:-caddy}"
+SOURCE_IMAGE="${WHIRRED_SOURCE_IMAGE:-}"
 
 # Preserve normal SSH aliases and identities when the host configuration is
 # usable. Sandboxed hosts can expose an SSH system include with ownership that
@@ -28,36 +28,91 @@ for arg in "${SSH_ARGS[@]}"; do
   RSYNC_RSH+=" ${quoted_arg}"
 done
 
-for command in rsync ssh docker; do
-  # docker itself only runs on the remote machine, so do not require it locally.
-  if [[ "$command" == docker ]]; then continue; fi
+for command in rsync ssh docker python3; do
   if ! command -v "$command" >/dev/null 2>&1; then
     printf 'Missing required command: %s\n' "$command" >&2
     exit 1
   fi
 done
 
-# This deploy script intentionally does not generate the Ruby WASM runtime,
-# install dependencies, build JavaScript/CSS, or run the playground build.
-# Package precisely the already-built web assets.
-for file in index.html application.js application.css runtime-config.json mobilis-app-manifest.json; do
-  if [[ ! -s "${PUBLIC_DIR}/${file}" ]]; then
-    printf 'Missing built asset: %s\nBuild the playground locally before deployment.\n' "${PUBLIC_DIR}/${file}" >&2
-    exit 1
+# The normal playground build publishes to the nginx image, not the host's
+# playground/public directory. Extract the finished, already-built assets.
+# This script performs no compilation or asset generation, locally or remotely.
+if [[ -z "$SOURCE_IMAGE" ]]; then
+  SOURCE_IMAGE="$(cd "$ROOT" && docker compose images -q playground 2>/dev/null | head -n 1)"
+  if [[ -z "$SOURCE_IMAGE" ]] && docker image inspect mobilis-playground >/dev/null 2>&1; then
+    SOURCE_IMAGE="mobilis-playground"
   fi
-done
-if ! compgen -G "${PUBLIC_DIR}/vendor/ruby-*.wasm" >/dev/null; then
-  printf 'Missing content-addressed Ruby WASM runtime under %s/vendor/\n' "$PUBLIC_DIR" >&2
-  exit 1
 fi
-if ! compgen -G "${PUBLIC_DIR}/mobilis-app-*.tar" >/dev/null; then
-  printf 'Missing packaged Mobilis browser application under %s/\n' "$PUBLIC_DIR" >&2
+if [[ -z "$SOURCE_IMAGE" ]] || ! docker image inspect "$SOURCE_IMAGE" >/dev/null 2>&1; then
+  printf 'No locally built playground image found. Run docker compose build playground, or set WHIRRED_SOURCE_IMAGE to an existing image.\\n' >&2
   exit 1
 fi
 
+STAGING_DIR="$(mktemp -d)"
+CONTAINER=""
+cleanup() {
+  if [[ -n "$CONTAINER" ]]; then
+    docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
+  fi
+  rm -rf "$STAGING_DIR"
+}
+trap cleanup EXIT
+
+CONTAINER="$(docker create "$SOURCE_IMAGE")"
+docker cp "$CONTAINER:/usr/share/nginx/html/." "$STAGING_DIR/"
+docker rm "$CONTAINER" >/dev/null
+CONTAINER=""
+
+# Verify exactly the runtime requested by the browser, including both the
+# raw content-addressed WASM and its precompressed Brotli representation.
+# Reject a CDN runtime or an image lacking the deterministic app archive.
+python3 - "$STAGING_DIR" <<'PY'
+import hashlib
+import json
+import pathlib
+import sys
+
+root = pathlib.Path(sys.argv[1])
+for name in ("index.html", "application.js", "application.css",
+             "runtime-config.json", "mobilis-app-manifest.json"):
+    path = root / name
+    if not path.is_file() or path.stat().st_size == 0:
+        sys.exit(f"Missing built asset in playground image: {name}")
+
+config = json.loads((root / "runtime-config.json").read_text())
+runtime = config["runtime"]
+sha = runtime["sha256"]
+url = runtime["url"]
+expected_url = f"/vendor/ruby-{sha}.wasm"
+if len(sha) != 64 or url != expected_url:
+    sys.exit(f"Expected content-addressed local WASM URL {expected_url}, got {url}")
+wasm = root / url.lstrip("/")
+if not wasm.is_file() or wasm.stat().st_size != runtime["size"]:
+    sys.exit(f"Missing or incorrectly sized Ruby WASM: {wasm}")
+if hashlib.file_digest(wasm.open("rb"), "sha256").hexdigest() != sha:
+    sys.exit(f"Ruby WASM SHA-256 mismatch: {wasm}")
+brotli = pathlib.Path(str(wasm) + ".br")
+if not brotli.is_file() or brotli.stat().st_size == 0:
+    sys.exit(f"Missing precompressed Brotli runtime: {brotli}")
+
+manifest_url = config["application_manifest_url"]
+if manifest_url != "/mobilis-app-manifest.json":
+    sys.exit(f"Unexpected application manifest URL: {manifest_url}")
+manifest = json.loads((root / manifest_url.lstrip("/")).read_text())
+# The image must contain the exact content-addressed application archive,
+# rather than merely an unrelated old tarball.
+archives = list(root.glob("mobilis-app-*.tar"))
+if len(archives) != 1 or not archives[0].is_file() or archives[0].stat().st_size == 0:
+    sys.exit("Expected exactly one packaged Mobilis browser application")
+print(f"Verified WASM {sha}: {wasm.stat().st_size:,} raw bytes, "
+      f"{brotli.stat().st_size:,} Brotli bytes "
+      f"({brotli.stat().st_size / 1048576:.1f} MiB)")
+PY
+
 mkdir -p "$DIST_DIR"
-rsync -a --delete "${PUBLIC_DIR}/" "${DIST_DIR}/"
-cp "${ROOT}/playground/nginx.conf" "${DIST_DIR}/nginx.conf"
+rsync -a --delete "$STAGING_DIR/" "$DIST_DIR/"
+cp "$ROOT/playground/nginx.conf" "$DIST_DIR/nginx.conf"
 cat >"${DIST_DIR}/Dockerfile" <<'DOCKERFILE'
 FROM nginx:1.30.6-trixie
 COPY nginx.conf /etc/nginx/conf.d/default.conf
