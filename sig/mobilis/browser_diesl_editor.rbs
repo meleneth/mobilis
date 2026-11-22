@@ -1,0 +1,27 @@
+module Mobilis
+  module Browser
+    module WorkspacePolicy
+      def self.configure: (Diesl::Workspace::Builder builder, codec: untyped) -> Diesl::Workspace::Builder
+      def self.manifest: (codec: untyped) -> Hash[Symbol, untyped]
+    end
+
+    class DieslSourceDocument
+      def initialize: (String source) -> void
+      def analyze: () -> SourceDocument::Analysis
+      def add_service: (type: Symbol | String, name: String) -> String
+      def rename_service: (id: String, name: String) -> String
+      def rename_service_with_references: (id: String, name: String) -> String
+      def update_starting_port: (value: untyped) -> String
+      def change_service_type: (id: String, type: Symbol | String) -> String
+      def remove_service: (id: String) -> String
+      def update_service_property: (id: String, property: Symbol | String, value: untyped) -> String
+      def add_relationship: (from: String, to: String, ?kind: Symbol, ?properties: Hash[Symbol, untyped]) -> String
+      def update_relationship: (id: String, property: Symbol | String, value: untyped) -> String
+      def remove_relationship: (id: String) -> String
+      def commit_embedded_document: (id: String, path: String, content: String, parent_revision: String) -> String
+    end
+
+    DIESL_SOURCE_ADAPTER: Diesl::SourceAdapter
+    DIESL_EDITOR: Diesl::Editor
+  end
+end
