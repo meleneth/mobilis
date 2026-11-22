@@ -1,0 +1,27 @@
+module Mobilis
+  module Browser
+    class AuthoringBundle
+      def initialize: (String source, Mobilis::System system) -> void
+      def files: () -> Hash[String, String]
+      private
+      def readme: () -> String
+    end
+
+    class Generator
+      Result: singleton(Data)
+      def initialize: (?workspace: String) -> void
+      def call: (Mobilis::System system) -> untyped
+    end
+
+    class Capabilities
+      HOST_DEPENDENT_MODELS: Array[singleton(Object)]
+      def self.for_system: (Mobilis::System system) -> Hash[String, untyped]
+      def self.unsupported_reasons: (Mobilis::Base::Node node) -> Array[String]
+      def self.project: (Mobilis::System system) -> untyped
+    end
+
+    module WasiIpAddrCompatibility
+      def self.load!: () -> untyped
+    end
+  end
+end
