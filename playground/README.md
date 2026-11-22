@@ -126,6 +126,22 @@ The script tags the image with the current commit, pushes it to
 waits for the rollout. `REGISTRY`, `KUBE_CONTEXT`, `NAMESPACE`, `DEPLOYMENT`,
 `CONTAINER`, and `ROLLOUT_TIMEOUT` may be overridden through the environment.
 
+## Numbered example DSLs
+
+The **Example** selector in the toolbar lists the checked-in `scripts/[0-9][0-9]_*.rb`
+files. `playground/scripts/build_examples.rb` copies their exact UTF-8 Ruby
+source into static `public/examples/` assets and generates a catalog on every
+playground build. No alternate DSL representation or external request is involved.
+
+Selecting an example asks **“Are you sure?”** before replacing the current
+`mobilis.rb`. Cancel leaves the current source untouched. Confirmed replacement
+uses the existing Ruby source analysis, projection, and IndexedDB persistence
+flow, without service-name propagation across unrelated scripts. An example
+that cannot be evaluated in browser WASM remains available verbatim in the editor
+and can still be downloaded; examples using native-only generators or extra
+runtime dependencies are not automatically made browser-generatable by loading
+them.
+
 ## Authoring and local generation
 
 All DSL service methods discovered in `Mobilis::DSL::DSLContext` appear in the
