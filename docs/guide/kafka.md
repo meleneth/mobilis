@@ -51,7 +51,7 @@ processed event IDs in the same transaction as its state update. It must be
 safe when the event is redelivered after a crash between DB commit and Kafka
 offset commit.
 
-The [Galactic Exchange demonstration](../../scripts/26_galactic_exchange.rb)
+The [Galactic Exchange demonstration](https://github.com/meleneth/mobilis/blob/core/scripts/26_galactic_exchange.rb)
 generates a Go trading API, Python matcher, Rails portfolio projection,
 FastAPI market projection, Redis leaderboard, and an executable replay check.
 Run its generator with an empty output directory argument to preserve any
