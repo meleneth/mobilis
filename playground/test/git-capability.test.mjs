@@ -37,7 +37,7 @@ test("a caller owns the generated repository and every authentic commit boundary
   });
 
   const log = await capability.log("/generated");
-  assert.deepEqual(log.map(entry => entry.commit.message), [
+  assert.deepEqual(log.map(entry => entry.commit.message.trimEnd()), [
     "[mobilis] Compose overrides",
     "[mobilis] add Rails project web",
     "[mobilis] Basic project files"
