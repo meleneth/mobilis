@@ -1,0 +1,65 @@
+module Mobilis
+  module Browser
+    class ServiceInspector
+      class Dependency
+        attr_reader target: String
+        attr_reader kind: Symbol
+        attr_reader source_id: String?
+        attr_reader relationship: Symbol?
+        def self.new: (target: String, kind: Symbol, source_id: String?, relationship: Symbol?) -> Dependency
+      end
+      class Service
+        attr_reader id: String
+        attr_reader name: String
+        attr_reader type: String
+        attr_reader declaration: SourceDocument::Declaration?
+        attr_reader editable_properties: Hash[Symbol, untyped]
+        attr_reader configuration: String
+        attr_reader outgoing: Array[SourceDocument::Relationship]
+        attr_reader incoming: Array[SourceDocument::Relationship]
+        attr_reader dependencies: Array[Dependency]
+        attr_reader references: Array[Dependency]
+        def self.new: (**untyped kwargs) -> Service
+      end
+      attr_reader analysis: SourceDocument::Analysis
+      attr_reader topology: Topology
+      def initialize: (SourceDocument::Analysis analysis, Topology topology, ?property_schemas: Hash[Symbol, Hash[Symbol, untyped]]) -> void
+      def services: () -> Array[Service]
+      private
+      def build_service: (Topology::Node node) -> Service
+      def configuration: (Mobilis::Base::Node node) -> String
+      def dependencies: (Mobilis::Base::Node node) -> Array[Dependency]
+      def references: (Mobilis::Base::Node node) -> Array[Dependency]
+      def relationship_targets: (SourceDocument::Relationship relationship) -> Array[String]
+      def find_node: (untyped name) -> Mobilis::Base::Node?
+      def normalize_name: (untyped name) -> String
+    end
+
+    class VirtualDocument
+      class Document
+        attr_reader id: String
+        attr_reader kind: Symbol
+        attr_reader parent_id: String?
+        attr_reader name: String
+        attr_reader path: String?
+        attr_reader content_type: String
+        attr_reader revision: String
+        attr_reader dirty: bool
+        attr_reader editable: bool
+        attr_reader content_base64: String?
+        attr_reader archive_id: String?
+        attr_reader parent_revision: String?
+        def self.new: (**untyped kwargs) -> Document
+      end
+      attr_reader analysis: SourceDocument::Analysis
+      def initialize: (SourceDocument::Analysis analysis) -> void
+      def documents: () -> Array[Document]
+      def archives: () -> Array[Document]
+      def members: (String archive_id) -> Array[Document]
+      private
+      def source_document: () -> Document
+      def archive_documents: () -> Array[Document]
+      def member_id: (String archive_id, String path) -> String
+    end
+  end
+end
