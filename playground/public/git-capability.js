@@ -78,7 +78,7 @@ export function createGitCapability({ fs, pfs, git, author }) {
         await git.resolveRef({ fs, dir: root, ref: "HEAD" });
       } catch (error) {
         unborn = (error?.code === "NotFoundError" || error?.name === "NotFoundError") &&
-          /refs\\/heads\\//.test(String(error.message));
+          String(error.message).includes("refs/heads/");
         if (!unborn) throw error;
       }
       if (!unborn) {
