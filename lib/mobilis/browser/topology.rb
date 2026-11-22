@@ -117,12 +117,17 @@ module Mobilis
       end
 
       def reference_targets(service)
+        # @type var singular: Array[[Symbol, Mobilis::Base::Node]]
         singular = service.class.ref_attr_registry.flat_map do |slot|
           target = service.public_send(slot.name)
           target.is_a?(Mobilis::Base::Node) ? [[slot.name, target]] : []
         end
+        # @type var plural: Array[[Symbol, Mobilis::Base::Node]]
         plural = service.class.ref_list_registry.flat_map do |slot|
-          Array(service.public_send(slot.name)).filter_map do |target|
+          targets = service.public_send(slot.name)
+          next [] unless targets.is_a?(Array)
+
+          targets.filter_map do |target|
             [slot.name, target] if target.is_a?(Mobilis::Base::Node)
           end
         end
