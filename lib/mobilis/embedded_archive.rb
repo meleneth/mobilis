@@ -198,6 +198,7 @@ module Mobilis
       def read_tar(tar)
         raise ArgumentError, "Embedded archive is not a complete tar stream" unless tar.bytesize >= 2 * BLOCK_SIZE && (tar.bytesize % BLOCK_SIZE).zero?
 
+        # @type var members: Hash[String, [String, Integer]]
         members = {}
         offset = 0
         terminated = false
