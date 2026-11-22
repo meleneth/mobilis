@@ -311,7 +311,7 @@ test("browses, commits, reopens, undoes, and conflict-checks embedded documents"
 
 test("generates real files and navigates the read-only browser", async ({ page }) => {
   await page.getByRole("button", { name: "Generate project" }).click();
-  await expect(page.locator("#diagnostics-region")).toContainText(/Generated \d+ files locally with Mobilis/);
+  await expect(page.locator("#diagnostics-region")).toContainText(/Generated \d+ files with \d+ committed Mobilis phases\. ZIP ready\./);
 
   await page.getByRole("button", { name: "compose/database.yml" }).click();
   const expected = await page.evaluate(() => fetch("/parity/postgres-compose.yml").then(response => response.text()));
@@ -339,7 +339,7 @@ test("exports a generated Redis/PostgreSQL workspace with inspectable piecemeal 
   await expect(page.locator("#workspace-history")).toContainText("Rename Redis service");
 
   await page.getByRole("button", { name: "Generate project" }).click();
-  await expect(page.locator("#diagnostics-region")).toContainText(/Generated \d+ files locally with Mobilis/);
+  await expect(page.locator("#diagnostics-region")).toContainText(/Generated \d+ files with \d+ committed Mobilis phases\. ZIP ready\./);
   await expect(page.locator("#workspace-files")).toContainText("generate/development-compose.yml");
   await page.getByRole("button", { name: "Stage all" }).click();
   await page.getByLabel("Git commit message").fill("Generate Redis and PostgreSQL infrastructure");
@@ -407,7 +407,7 @@ test("generates Rails, Redis and PostgreSQL with real per-phase Git history in t
   await expect(page.locator("#architecture-canvas")).toContainText("PostgreSQL: database");
 
   await page.getByRole("button", { name: "Generate project" }).click();
-  await expect(page.locator("#diagnostics-region")).toContainText(/Generated \d+ files locally with Mobilis/);
+  await expect(page.locator("#diagnostics-region")).toContainText(/Generated \d+ files with \d+ committed Mobilis phases\. ZIP ready\./);
   await expect(page.locator("#files-region")).toContainText("web/config/application.rb");
   await expect(page.locator("#files-region")).toContainText("web/Gemfile");
   await expect(page.locator("#files-region")).toContainText("compose/database.yml");
@@ -462,7 +462,7 @@ test("isolates Mermaid failures from project generation", async ({ page }) => {
   await expect(page.locator(".diagram-render-error")).toContainText("Architecture rendering failed");
 
   await page.getByRole("button", { name: "Generate project" }).click();
-  await expect(page.locator("#diagnostics-region")).toContainText(/Generated \d+ files locally with Mobilis/);
+  await expect(page.locator("#diagnostics-region")).toContainText(/Generated \d+ files with \d+ committed Mobilis phases\. ZIP ready\./);
 });
 
 async function readDownload(download) {
