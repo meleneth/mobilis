@@ -102,9 +102,10 @@ module Mobilis
       end
 
       module HasPorts
+        def realized_env: () -> Mobilis::RealizedEnv
         def add_env_only_var: (String envfile_name, untyped value) -> Mobilis::Primitives::EmitVar
         def port_maps: () -> Array[Mobilis::Primitives::PortMap]
-        def register_external_port: (Integer internal_port_no, String env_var, String memo) -> Mobilis::Primitives::PortMap
+        def register_external_port: (Integer internal_port_no, String env_var, String memo, ?preferred_port: Integer?, ?allocation_key: String?) -> Mobilis::Primitives::PortMap
         def compose_ports: () -> Mobilis::Compose::Ports
         def compose_ports_override: () -> Mobilis::Compose::Ports
       end
