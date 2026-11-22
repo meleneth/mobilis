@@ -1,0 +1,80 @@
+# Realized infrastructure types and their writer counterparts.
+module Mobilis
+  module Realized
+    class Kafka < Mobilis::Base::ImageForm
+      INTERNAL_PORT: Integer
+      HOST_PORT: Integer
+      def initialize: (Mobilis::RealizedEnv env, Mobilis::Node::Kafka node) -> void
+      def config_node: () -> Mobilis::Node::Kafka
+      def broker_count: () -> Integer
+      def broker_names: () -> Array[String]
+      def broker_name: (Integer index) -> String
+      def bootstrap_servers: () -> String
+      def min_insync_replicas: () -> Integer
+      def service_writer: () -> singleton(Mobilis::ServiceWriter::Kafka)
+      def service_wrapped_compose: () -> Hash[Symbol, untyped]
+    end
+
+    class Cassandra < Mobilis::Base::ImageForm
+      PORT: Integer
+      attr_reader source_image: String
+      def initialize: (Mobilis::RealizedEnv env, Mobilis::Node::Cassandra node) -> void
+      def config_node: () -> Mobilis::Node::Cassandra
+      def service_writer: () -> singleton(Mobilis::ServiceWriter::Cassandra)
+      def dependant_services_require_restart?: () -> bool
+      def connection_values: () -> Hash[String, String]
+    end
+
+    class GooglePubSub < Mobilis::Base::ImageForm
+      PORT: Integer
+      def initialize: (Mobilis::RealizedEnv env, Mobilis::Node::GooglePubSub node) -> void
+      def config_node: () -> Mobilis::Node::GooglePubSub
+      def service_writer: () -> singleton(Mobilis::ServiceWriter::GooglePubSub)
+      def dependant_services_require_restart?: () -> bool
+    end
+
+    class Grafbase < Mobilis::Base::ImageForm
+      attr_reader subgraphs: Array[Mobilis::Realized::FastAPI]
+      attr_reader collector: Mobilis::Realized::OtelCollector?
+      def initialize: (Mobilis::RealizedEnv env, Mobilis::Node::Grafbase node) -> void
+      def exposed_port_no: () -> Integer
+      def after_all_nodes_realized: () -> void
+      def service_writer: () -> singleton(Mobilis::ServiceWriter::Grafbase)
+      def service_wrapped_compose: () -> Hash[Symbol, untyped]
+    end
+
+    class Airflow < Mobilis::Base::BuildForm
+      COMPONENTS: Hash[String, String]
+      attr_reader database: Mobilis::Realized::PostgreSQL
+      attr_reader broker: Mobilis::Realized::Redis
+      attr_reader collector: Mobilis::Realized::OtelCollector?
+      def initialize: (Mobilis::RealizedEnv env, Mobilis::Node::Airflow node) -> void
+      def config_node: () -> Mobilis::Node::Airflow
+      def service_writer: () -> singleton(Mobilis::ServiceWriter::Airflow)
+      def after_all_nodes_realized: () -> void
+      def service_wrapped_compose: () -> Hash[Symbol, untyped]
+    end
+  end
+
+  module ServiceWriter
+    class Kafka < Mobilis::Base::ServiceWriter
+      def write: () -> void
+    end
+    class Cassandra < Mobilis::Base::ServiceWriter
+      def write: () -> void
+      private
+      def validate_schema!: (String schema) -> void
+    end
+    class GooglePubSub < Mobilis::Base::ServiceWriter
+      def write: () -> void
+    end
+    class Grafbase < Mobilis::Base::ServiceWriter
+      def write: () -> void
+    end
+    class Airflow < Mobilis::Base::ServiceWriter
+      VERSION: String
+      PYTHON: String
+      def write: () -> void
+    end
+  end
+end
