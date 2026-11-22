@@ -8,7 +8,7 @@ require "open3"
 abort "Usage: ./deploy-kubernetes [dev|test|prod]" if ARGV.size > 1
 ENVIRONMENT = ARGV.fetch(0, "dev")
 abort "Expected dev, test, or prod" unless %w[dev test prod].include?(ENVIRONMENT)
-Dir.chdir(__dir__)
+Dir.chdir(File.dirname(File.expand_path(__FILE__)))
 DIRECTORY = "kubernetes/#{ENVIRONMENT}"
 UNIVERSE = JSON.parse(File.read("#{DIRECTORY}/universe.json"))
 CONTEXT = ENV.fetch("MOBILIS_KUBE_CONTEXT", "kind-devastation")
