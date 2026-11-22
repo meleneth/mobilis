@@ -11,7 +11,7 @@ default:
 variables:
   BUNDLE_JOBS: "4"
   BUNDLE_RETRY: "2"
-  CARBN_REF: "2425bdfc2b0611ccc0a1a2cb55a2fbb655a170bb"
+  CARBN_REF: "73743b578d2784151593a7ee63bcd99d240bffa2"
 
 .ruby_job:
   image: ruby:4.0.10-trixie
@@ -57,6 +57,7 @@ browser_workspace:
     - test "$(git -C /tmp/carbn rev-parse HEAD)" = "$CARBN_REF"
     - node --check /tmp/carbn/browser/git-capability.js
     - node --check /tmp/carbn/browser/workspace-history.js
+    - node --check /tmp/carbn/browser/working-tree.js
     - node --test /tmp/carbn/test/workspace-history.test.mjs
 
 docs:
