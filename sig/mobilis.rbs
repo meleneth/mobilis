@@ -121,7 +121,7 @@ module Mobilis
     class DSLContext
       attr_reader system: Mobilis::System
       def initialize: (Mobilis::System system) -> void
-      def deploy_kubernetes: (String domain) ?{ (Mobilis::Kubernetes::Declaration) -> untyped } -> Mobilis::Kubernetes::Declaration
+      def deploy_kubernetes: (String domain) ?{ () [self: Mobilis::Kubernetes::Declaration] -> untyped } -> Mobilis::Kubernetes::Declaration
       def airflow: (String name) ?{ (Mobilis::Node::Airflow) -> untyped } -> Mobilis::Node::Airflow
       def cassandra: (String name) ?{ (Mobilis::Node::Cassandra) -> untyped } -> Mobilis::Node::Cassandra
       def google_pubsub: (String name, ?project: String, ?publish_port: bool) ?{ (Mobilis::Node::GooglePubSub) -> untyped } -> Mobilis::Node::GooglePubSub
