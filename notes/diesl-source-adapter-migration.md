@@ -39,11 +39,11 @@ The legacy `SourceDocument` must not be deleted: the Diesl adapter still calls
 its Mobilis-specific transformations. Further reductions should be driven by
 parity tests, not by raw line count.
 
-**Workspace boundary (history gap closed):** Diesl now owns the reusable
+**Workspace boundary (history gap closed):** Carbn now owns the reusable
 byte-safe Git checkpoint, multi-phase generated repository history, atomic
 publication/rollback, Git-object export, and guarded source revision restore.
-Mobilis delegates these operations to `/diesl/workspace-history.js`, staged
-from the pinned Diesl checkout. Mobilis still owns its workspace UI,
+Mobilis delegates these operations to `/carbn/workspace-history.js`, staged
+from the pinned Carbn checkout. Diesl owns source editing and the declarative workspace policy. Mobilis still owns its workspace UI,
 generator-specific validation, compatibility shim, interactive diff, and
 browser event wiring. Existing `mobilis-workspace-v1` IndexedDB state, source
 paths, and Git history remain unchanged. We do not replace the browser
