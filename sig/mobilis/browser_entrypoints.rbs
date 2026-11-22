@@ -8,7 +8,12 @@ module Mobilis
     end
 
     class Generator
-      Result: singleton(Data)
+      class Result
+        attr_reader root: String
+        attr_reader files: Hash[String, String]
+        attr_reader steps: Array[untyped]
+        def self.new: (root: String, files: Hash[String, String], steps: Array[untyped]) -> Result
+      end
       def initialize: (?workspace: String) -> void
       def call: (Mobilis::System system) -> untyped
     end
