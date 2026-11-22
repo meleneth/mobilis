@@ -1,14 +1,9 @@
 module Mobilis
   module Realized
     class HTTPApplication
-      attr_reader database: Mobilis::Realized::PostgreSQL?
-      attr_reader collector: Mobilis::Realized::OtelCollector?
       attr_reader cassandra: Mobilis::Realized::Cassandra?
       attr_reader pubsub: Mobilis::Realized::GooglePubSub?
       attr_reader kafka: Mobilis::Realized::Kafka?
-      def exposed_port_no: () -> Integer
-      def after_all_nodes_realized: () -> untyped
-      def otel_enabled?: () -> bool
     end
   end
 end
