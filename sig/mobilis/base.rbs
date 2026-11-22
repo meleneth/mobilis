@@ -97,7 +97,9 @@ module Mobilis
       def compose_overrides: () -> untyped
       def compose_command: () -> untyped
       def set_command: (String command) -> Array[String]
-      def set_healthcheck_command: (String command) -> untyped
+      def set_healthcheck_command: (String command, ?interval: String, ?timeout: String, ?retries: Integer, ?start_period: String) -> untyped
+      def declare_storage: (String name, String path, ?size: String, ?fs_group: Integer?) -> untyped
+      def storage_requirements: () -> Array[{name: String, path: String, size: String, fs_group: Integer?}]
       def compose_healthcheck: () -> untyped
       def register_depends_on: (Mobilis::Base::RealizedNode realized_node, ?force_skip_health_checks: bool, ?override: bool) -> Mobilis::compose_depends_on_entry
     end
