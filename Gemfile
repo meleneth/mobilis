@@ -31,4 +31,4 @@ gem "awesome_print", "~> 1.9"
 gem "foreman", "~> 0.90.0"
 
 # Migration gate: source-backed editing for the browser playground.
-gem "diesl", git: "https://github.com/meleneth/diesl.git", ref: "4e8c26178a54307e6d3c69d46244637152dd30d7", group: [:development, :test, :playground]
+gem "diesl", git: "https://github.com/meleneth/diesl.git", ref: "0d19a36744e8615aa61f633a415d5735c12888fc", group: [:development, :test, :playground]
