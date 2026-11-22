@@ -374,7 +374,10 @@ module MobilisPlayground
     end
 
     def report_error(error)
-      @errors = ["#{error.class}: #{error.message}"]
+      # Ruby WASM exceptions must retain their origin. A message alone hides
+      # whether a generator failure came from Rails, Mobilis or filesystem I/O.
+      trace = Array(error.backtrace).first(18)
+      @errors = [["#{error.class}: #{error.message}", *trace].join("\n")]
       @status = "The requested action failed."
       update_regions(:validation)
     end
