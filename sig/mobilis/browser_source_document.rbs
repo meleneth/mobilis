@@ -30,8 +30,8 @@ module Mobilis
         attr_reader name: String
         attr_reader editable: bool
         attr_reader payload: String?
-        attr_reader payload_start_offset: Integer
-        attr_reader payload_end_offset: Integer
+        attr_reader payload_start_offset: Integer?
+        attr_reader payload_end_offset: Integer?
         attr_reader start_offset: Integer
         attr_reader end_offset: Integer
         attr_reader parent_revision: String
