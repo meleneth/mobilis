@@ -32,6 +32,16 @@ RSpec.describe "Diesl/Mobilis source adapter parity" do
     expect(editor.adapted_session(source:).analysis).to be_valid
   end
 
+  it "uses exactly the same Diesl workspace block for the static JS policy and live editor" do
+    manifest = Mobilis::Browser::WorkspacePolicy.manifest(codec: Mobilis::EmbeddedArchive)
+    expect(manifest).to eq(editor.workspace.manifest)
+    expect(manifest.fetch(:root)).to eq("/workspace")
+    expect(manifest.fetch(:generated)).to eq([{path: "generate"}])
+    expect(manifest.fetch(:git).fetch(:author)).to eq(
+      name: "Mobilis Playground", email: "playground@mobilis.local"
+    )
+  end
+
   it "drives every builder service and property field from the declared Diesl block schema" do
     definitions = editor.entities
     expect(definitions.keys).to match_array(Mobilis::Browser::SourceDocument::SERVICE_TYPES)
