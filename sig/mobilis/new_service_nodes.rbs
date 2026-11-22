@@ -1,0 +1,78 @@
+# Typed contracts for service types added after the original Mobilis RBS catalog.
+module Mobilis
+  module Node
+    class Kafka < Mobilis::Base::Node
+      TOPIC_NAME: Regexp
+      GROUP_NAME: Regexp
+      attr_reader topics: Array[{ name: String, partitions: Integer, retention_ms: Integer, cleanup_policy: String, replication_factor: Integer }]
+      attr_reader publish_port: bool
+      attr_reader brokers: Integer
+      def initialize: (String name, ?topics: Array[untyped], ?publish_port: bool, ?brokers: Integer, **untyped kwargs) -> void
+      def topic: (String name, partitions: Integer, retention_ms: Integer, ?cleanup_policy: String, ?replication_factor: Integer?) -> self
+      def validate_connection!: (publish: untyped, subscribe: untyped) -> [Array[String], Array[{ topic: String, group: String }]]
+      def to_h: () -> Mobilis::serialized_record
+    end
+
+    class Cassandra < Mobilis::Base::Node
+      IDENTIFIER: Regexp
+      attr_reader datacenter_name: String
+      attr_reader keyspace_name: String?
+      attr_reader schema_path: String?
+      attr_reader version_tag: String?
+      def initialize: (String name, ?datacenter_name: String, ?keyspace_name: String?, ?schema_path: String?, ?version_tag: String?, **untyped kwargs) -> void
+      def datacenter: (String value) -> self
+      def keyspace: (String value) -> self
+      def schema_file: (String path) -> self
+      def version: (String tag) -> self
+      def to_h: () -> Mobilis::serialized_record
+    end
+
+    class GooglePubSub < Mobilis::Base::Node
+      RESOURCE_ID: Regexp
+      PROJECT_ID: Regexp
+      attr_reader project_id: String
+      attr_reader topics: Array[String]
+      attr_reader subscriptions: Array[{ name: String, topic: String }]
+      attr_reader publish_port: bool
+      def initialize: (String name, ?project_id: String, ?topics: Array[String], ?subscriptions: Array[untyped], ?publish_port: bool, **untyped kwargs) -> void
+      def project: (String value) -> self
+      def topic: (String value) -> self
+      def subscription: (String name, topic: String) -> self
+      def validate_connection!: (publish: untyped, subscribe: untyped) -> [Array[String], Array[String]]
+      def to_h: () -> Mobilis::serialized_record
+      private
+      def resource_id!: (String value, String kind) -> String
+    end
+
+    class Airflow < Mobilis::Base::Node
+      def initialize: (String name, ?isolated_packages: bool, **untyped kwargs) -> void
+      def isolate_local_packages!: () -> bool
+      def isolated_packages?: () -> bool
+      def local_package: (String name) ?{ (Mobilis::Model::LocalPythonPackage) -> untyped } -> Mobilis::Model::LocalPythonPackage
+      def use_local_package: (Mobilis::Model::LocalPythonPackage package) -> Mobilis::Model::LocalPythonPackage
+      def dag: (String name, source: String) -> untyped
+      def to_h: () -> Mobilis::serialized_record
+    end
+
+    class Grafbase < Mobilis::Base::Node
+      attr_reader port: Integer?
+      def initialize: (String name, ?port: Integer?, **untyped kwargs) -> void
+      def to_h: () -> Mobilis::serialized_record
+    end
+  end
+
+  module Model
+    class LocalPythonPackage
+      attr_reader name: String
+      attr_reader dependencies: Array[String]
+      attr_reader files: Array[Mobilis::Model::File]
+      def initialize: (String name, ?dependencies: Array[String], ?files: Array[Mobilis::Model::File]) -> void
+      def module_name: () -> String
+      def write_file: (String path, String content) -> self
+      def depends_on: (String requirement) -> self
+      def write_files: (String root) -> void
+      def to_h: () -> Mobilis::serialized_record
+      def self.from_h: (Mobilis::serialized_record hash) -> Mobilis::Model::LocalPythonPackage
+    end
+  end
+end
