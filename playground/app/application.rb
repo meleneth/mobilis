@@ -252,7 +252,7 @@ module MobilisPlayground
       else
         handle_button(id)
       end
-    rescue ArgumentError, KeyError, RuntimeError, TypeError => error
+    rescue ArgumentError, KeyError, RuntimeError, TypeError, LoadError => error
       report_error(error)
     end
 

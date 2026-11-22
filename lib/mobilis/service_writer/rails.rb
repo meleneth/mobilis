@@ -28,6 +28,8 @@ module Mobilis
         # Unlike the Rails CLI, Mobilis loads the generator directly inside
         # Ruby WASM. Initialize RubyGems before Rails evaluates Gem::Version.
         require "rubygems"
+        require "mobilis/browser/wasi_ipaddr_compatibility"
+        Mobilis::Browser::WasiIpAddrCompatibility.load!
         require "rails/generators/rails/app/app_generator"
 
         args = [realized_node.name]
