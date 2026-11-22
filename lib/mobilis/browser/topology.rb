@@ -120,7 +120,13 @@ module Mobilis
         # @type var singular: Array[[Symbol, Mobilis::Base::Node]]
         singular = service.class.ref_attr_registry.flat_map do |slot|
           target = service.public_send(slot.name)
-          target.is_a?(Mobilis::Base::Node) ? [[slot.name, target]] : []
+          if target.is_a?(Mobilis::Base::Node)
+            # @type var edge: [Symbol, Mobilis::Base::Node]
+            edge = [slot.name, target]
+            [edge]
+          else
+            []
+          end
         end
         # @type var plural: Array[[Symbol, Mobilis::Base::Node]]
         plural = service.class.ref_list_registry.flat_map do |slot|
