@@ -34,7 +34,11 @@ module Mobilis
         :id, :name, :editable, :payload, :payload_start_offset, :payload_end_offset,
         :start_offset, :end_offset, :parent_revision, :bundle
       )
-      Analysis = Data.define(:source, :system, :declarations, :relationships, :archives, :errors) do
+      Analysis = Data.define(:source, :system, :declarations, :relationships, :archives, :errors)
+
+      # Keep the instance method on the actual Data subclass, so Steep does
+      # not associate it with the surrounding SourceDocument class.
+      class Analysis
         def valid? = errors.empty?
       end
 
