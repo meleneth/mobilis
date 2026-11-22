@@ -27,8 +27,8 @@ RUN git clone --quiet https://github.com/meleneth/carbn.git /opt/carbn \
   && cd /opt/carbn && git checkout --quiet 2425bdfc2b0611ccc0a1a2cb55a2fbb655a170bb \
   && test "$(git rev-parse HEAD)" = "2425bdfc2b0611ccc0a1a2cb55a2fbb655a170bb"
 RUN git clone --quiet https://github.com/meleneth/diesl.git /opt/diesl \
-  && cd /opt/diesl && git checkout --quiet 56e358d967fe900052370571b51dab454111ad60 \
-  && test "$(git rev-parse HEAD)" = "56e358d967fe900052370571b51dab454111ad60"
+  && cd /opt/diesl && git checkout --quiet eeeca58c8a2d568221b0344514eafb86dda5654e \
+  && test "$(git rev-parse HEAD)" = "eeeca58c8a2d568221b0344514eafb86dda5654e"
 RUN ruby -I/opt/diesl/lib -I/opt/carbn/lib -r diesl -r carbn -e \
   'abort "Diesl/Carbn API mismatch" unless Diesl::Editor.respond_to?(:define) && Carbn::Graph.respond_to?(:define) && Carbn::Store.respond_to?(:new)'
 ENV DIESL_LIB_DIR=/opt/diesl/lib CARBN_LIB_DIR=/opt/carbn/lib
