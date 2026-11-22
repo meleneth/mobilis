@@ -1,0 +1,22 @@
+# Browser-only filesystem adapters for Ruby/WASI.
+# Keep their contracts visible to Steep without weakening checks elsewhere.
+module Mobilis
+  module Browser
+    module FileSystemCompatibility
+      module IgnoreUnsupportedFileChmod
+        def chmod: (*untyped arguments) -> untyped
+      end
+
+      module IgnoreUnsupportedFileUtilsChmod
+        def chmod: (*untyped arguments, **untyped keywords) -> untyped
+      end
+
+      module ProbeWritableDirectory
+        def writable?: (String path) -> bool
+      end
+
+      def self.active?: () -> bool
+      def self.without_posix_permissions: () { () -> untyped } -> untyped
+    end
+  end
+end
