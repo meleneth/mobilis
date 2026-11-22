@@ -59,14 +59,17 @@ module Mobilis
     # Only the authoring/record schema lives here. Domain interpretation and
     # source transforms stay in SourceDocument; this never executes generators.
     DIESL_EDITOR = Diesl::Editor.define do
-      workspace(&Mobilis::Browser::WorkspacePolicy.definition(codec: Mobilis::EmbeddedArchive))
+      workspace do
+        Mobilis::Browser::WorkspacePolicy.configure(self, codec: Mobilis::EmbeddedArchive)
+      end
 
       source_adapter Mobilis::Browser::DIESL_SOURCE_ADAPTER
 
       Mobilis::Browser::SourceDocument::SERVICE_TYPES.each do |kind|
         entity kind, label: kind.to_s.tr("_", " ").capitalize, creatable: true do
           field :name, type: :string, required: true
-          Mobilis::Browser::SourceDocument::PROPERTY_SCHEMAS.fetch(kind, {}).each do |property, specification|
+          schema = Mobilis::Browser::SourceDocument::PROPERTY_SCHEMAS.fetch(kind) { {} }
+          schema.each_pair do |property, specification|
             # Keep the schema complete, including collection-valued fields.
             # Rendering is a separate concern, but the editor definition must
             # describe every supported source transformation.
