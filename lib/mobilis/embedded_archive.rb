@@ -40,6 +40,7 @@ module Mobilis
         entries = normalize_entries(files)
         validate_metadata!(entries, entrypoint, dependencies)
         manifest = manifest_for(entries, entrypoint, dependencies)
+        # @type var members: Array[[String, String, bool]]
         members = [[MANIFEST_PATH, JSON.generate(manifest) + "\n", false]]
         members.concat(entries.map { |entry| [entry.path, entry.content, entry.executable] })
         tar = build_tar(members)
@@ -110,7 +111,7 @@ module Mobilis
         )
         raise ArgumentError, "Embedded archive payload is not strict Base64" unless valid
 
-        payload.unpack1("m0")
+        payload.unpack1("m0") || raise(ArgumentError, "Embedded archive payload could not be decoded")
       end
 
       def normalize_entries(files)
@@ -199,6 +200,7 @@ module Mobilis
         terminated = false
         while offset + BLOCK_SIZE <= tar.bytesize
           header = tar.byteslice(offset, BLOCK_SIZE)
+          raise ArgumentError, "Truncated embedded archive tar header" unless header
           offset += BLOCK_SIZE
           if header == "\0" * BLOCK_SIZE
             second = tar.byteslice(offset, BLOCK_SIZE)
@@ -221,6 +223,7 @@ module Mobilis
           raise ArgumentError, "Truncated embedded archive member #{path}" if offset + padded_size(size) > tar.bytesize
 
           content = tar.byteslice(offset, size)
+          raise ArgumentError, "Truncated embedded archive member #{path}" unless content
           offset += padded_size(size)
           members[path] = [content, mode]
           raise ArgumentError, "Embedded archive has too many entries" if members.length > MAX_ENTRIES + 1
@@ -283,23 +286,31 @@ module Mobilis
         while split && (path.bytesize - split - 1 > 100)
           split = path.rindex("/", split - 1)
         end
-        raise ArgumentError, "Embedded archive path is too long: #{path}" unless split && path.byteslice(0, split).bytesize <= 155
+        raise ArgumentError, "Embedded archive path is too long: #{path}" unless split
 
-        [path.byteslice(split + 1, path.bytesize), path.byteslice(0, split)]
+        prefix = path.byteslice(0, split)
+        name = path.byteslice(split + 1, path.bytesize)
+        raise ArgumentError, "Embedded archive path is too long: #{path}" unless prefix && name && prefix.bytesize <= 155
+
+        [name, prefix]
       end
 
       def tar_path(header)
-        name = null_terminated(header.byteslice(0, 100))
-        prefix = null_terminated(header.byteslice(345, 155))
+        name = null_terminated(required_byteslice(header, 0, 100))
+        prefix = null_terminated(required_byteslice(header, 345, 155))
         validate_path!(prefix.empty? ? name : "#{prefix}/#{name}")
       end
 
+      def required_byteslice(value, offset, length)
+        value.byteslice(offset, length) || raise(ArgumentError, "Truncated embedded archive tar field")
+      end
+
       def null_terminated(value)
-        value.split("\0", 2).first
+        value.split("\0", 2).first || ""
       end
 
       def octal_field(header, offset, length, label)
-        value = null_terminated(header.byteslice(offset, length)).strip
+        value = null_terminated(required_byteslice(header, offset, length)).strip
         raise ArgumentError, "Invalid tar #{label}" unless value.match?(/\A[0-7]+\z/)
 
         value.to_i(8)
