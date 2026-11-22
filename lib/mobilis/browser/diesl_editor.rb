@@ -77,7 +77,7 @@ module Mobilis
             # Keep the schema complete, including collection-valued fields.
             # Rendering is a separate concern, but the editor definition must
             # describe every supported source transformation.
-            field property, type: specification.fetch(:kind)
+            field property, type: specification.fetch(:kind), default: specification.fetch(:default)
           end
         end
       end
