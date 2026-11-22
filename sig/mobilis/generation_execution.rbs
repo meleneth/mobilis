@@ -1,0 +1,30 @@
+module Mobilis
+  module Generation
+    class Execution
+      attr_reader manifest: Mobilis::Manifest
+      def initialize: (Mobilis::Manifest manifest) -> void
+      def browser?: () -> bool
+      def prepare_repository: () -> void
+      def create_builder_images: () -> untyped
+      def write_service: (Mobilis::Base::ServiceWriter writer, Mobilis::Base::RealizedNode node) -> untyped
+      def after_helpers: () -> untyped
+      def finish: () -> void
+    end
+
+    class Native < Execution
+      def prepare_repository: () -> untyped
+      def after_helpers: () -> untyped
+      def commit: (String message) -> untyped
+    end
+
+    class Browser < Execution
+      def initialize: (Mobilis::Manifest manifest, on_checkpoint: ^(String, Hash[String, String], Array[String]) -> untyped) -> void
+      def browser?: () -> bool
+      def prepare_repository: () -> void
+      def create_builder_images: () -> untyped
+      def write_service: (Mobilis::Base::ServiceWriter writer, Mobilis::Base::RealizedNode node) -> untyped
+      def finish: () -> untyped
+      def commit: (String message) -> untyped
+    end
+  end
+end
