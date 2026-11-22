@@ -108,14 +108,14 @@ test("keeps repeated DSL string literals synchronized without requiring a Ruby v
   const initial = await editor.inputValue();
   // An independent literal in the DSL body is an implicit reference, but
   // strings outside the block and the project identifier are not.
-  const withAlias = initial.replace('redis("cache")', 'redis("cache")\\n  label = "cache"');
+  const withAlias = initial.replace('redis("cache")', 'redis("cache")\n  label = "cache"');
   await editor.fill(withAlias);
   await expect(page.locator("#diagnostics-region")).toContainText("Source is valid");
 
   await editor.fill(withAlias.replace('redis("cache")', 'redis("canhe")'));
-  await expect(editor).toHaveValue(/redis\\("canhe"\\)/);
+  await expect(editor).toHaveValue(/redis\("canhe"\)/);
   await expect(editor).toHaveValue(/label = "canhe"/);
-  await expect(editor).toHaveValue(/connect\\(from: "canhe", to: "database"\\)/);
+  await expect(editor).toHaveValue(/connect\(from: "canhe", to: "database"\)/);
   await expect(page.locator("#architecture-canvas")).toContainText("Redis: canhe");
 });
 
@@ -201,8 +201,8 @@ test("does not rewrite unrelated equal strings during service rename", async ({ 
   await editor.fill(source.replace('"browser-demo"', '"cache"'));
   await expect(page.locator("#diagnostics-region")).toContainText("Source is valid");
   await editor.fill((await editor.inputValue()).replace('redis("cache")', 'redis("cache2")'));
-  await expect(editor).toHaveValue(/generate\\("cache"/);
-  await expect(editor).toHaveValue(/connect\\(from: "cache2", to: "database"\\)/);
+  await expect(editor).toHaveValue(/generate\("cache"/);
+  await expect(editor).toHaveValue(/connect\(from: "cache2", to: "database"\)/);
 });
 
 
