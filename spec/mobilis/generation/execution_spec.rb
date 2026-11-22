@@ -38,6 +38,25 @@ RSpec.describe "Mobilis generation execution parity" do
       .sort.to_h { |path| [path, File.binread(File.join(root, path))] }
   end
 
+  it "uses the same generation plan for the legacy no-Git static entry point" do
+    Dir.mktmpdir do |directory|
+      build_system = -> { Mobilis::DSL.build("static-parity") { postgres("database") } }
+      browser = Mobilis::Browser::Generator.new(workspace: File.join(directory, "browser")).call(build_system.call)
+
+      workspace = File.join(directory, "static")
+      FileUtils.mkdir_p(workspace)
+      manifest = Mobilis::Manifest.new(build_system.call, directory_service: Mobilis::Services::Directory.new(workspace))
+      caller_directory = Dir.pwd
+      begin
+        root = manifest.materialize_static
+      ensure
+        Dir.chdir(caller_directory)
+      end
+      expect(read_files(root)).to eq(browser.files)
+      expect(File.directory?(File.join(root, ".git"))).to be(false)
+    end
+  end
+
   it "produces identical content and commit boundaries for native and browser executors" do
     Dir.mktmpdir do |directory|
       build_system = lambda do
