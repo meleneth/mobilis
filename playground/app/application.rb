@@ -437,11 +437,7 @@ module MobilisPlayground
         :builder,
         declarations: @analysis.declarations,
         service_types: Mobilis::Browser::DIESL_EDITOR.entities.keys,
-        property_schemas: Mobilis::Browser::DIESL_EDITOR.entities.transform_values { |schema|
-          schema.fields.reject { |field| field.name == :name }.to_h { |field|
-            [field.name, {kind: field.type, default: field.default}]
-          }
-        },
+        property_schemas: diesl_property_schemas,
         inspector_services:,
         capabilities:,
         starting_port: @analysis.system.starting_port,
@@ -479,7 +475,16 @@ module MobilisPlayground
     end
 
     def service_inspector
-      Mobilis::Browser::ServiceInspector.new(@analysis, @topology)
+      Mobilis::Browser::ServiceInspector.new(@analysis, @topology, property_schemas: diesl_property_schemas)
+    end
+
+    # One declarative field schema feeds both visual editing surfaces.
+    def diesl_property_schemas
+      @diesl_property_schemas ||= Mobilis::Browser::DIESL_EDITOR.entities.transform_values do |schema|
+        schema.fields.reject { |field| field.name == :name }.to_h do |field|
+          [field.name, {kind: field.type, default: field.default}]
+        end
+      end
     end
 
     def render_diagram
