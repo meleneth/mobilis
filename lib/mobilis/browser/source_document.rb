@@ -262,7 +262,7 @@ module Mobilis
         anchor = relationship_nodes.first&.location&.start_offset || block.closing_loc.start_offset
         insertion = line_start(anchor)
         leading = source.byteslice(insertion, anchor - insertion)
-        raise ArgumentError, "Service insertion requires a declaration on its own line" unless leading.match?(/\A[ \t]*\z/)
+        raise ArgumentError, "Service insertion requires a declaration on its own line" unless leading && leading.match?(/\A[ \t]*\z/)
 
         indent = declaration_nodes.first&.then { |node| source.byteslice(line_start(node.location.start_offset)...node.location.start_offset) } || "#{leading}  "
         replace(insertion, insertion, "#{indent}#{type}(#{name.dump})\n")
@@ -331,7 +331,7 @@ module Mobilis
 
         archive = archives.find { |candidate| candidate.id == id.to_s }
         raise ArgumentError, "Embedded archive declaration is no longer present" unless archive
-        raise ArgumentError, "Dynamic embedded archive payloads cannot be safely rewritten" unless archive.editable
+        raise ArgumentError, "Dynamic embedded archive payloads cannot be safely rewritten" unless archive.editable && archive.payload
 
         payload = Mobilis::EmbeddedArchive.replace(archive.payload, path, content)
         changed = replace(archive.payload_start_offset, archive.payload_end_offset, payload)
@@ -436,7 +436,8 @@ module Mobilis
         return [] unless keyword_hash
 
         keyword_hash.elements.filter_map do |element|
-          next unless %i[from to candidate shadow].include?(keyword_name(element))
+          name = keyword_name(element)
+          next unless name && %i[from to candidate shadow].include?(name)
 
           value = literal_value(element.value)
           normalize_name(value) unless value == :dynamic
@@ -479,7 +480,8 @@ module Mobilis
         when :string
           value.to_s.dump
         when :strings
-          Array(value).flat_map { |entry| entry.to_s.split(",") }.map(&:strip).reject(&:empty?).map(&:dump).join(", ").then { |items| "[#{items}]" }
+          entries = value.is_a?(Array) ? value : [value]
+          entries.flat_map { |entry| entry.to_s.split(",") }.map(&:strip).reject(&:empty?).map(&:dump).join(", ").then { |items| "[#{items}]" }
         else
           raise ArgumentError, "Unknown property kind #{kind}"
         end
