@@ -40,7 +40,10 @@ RSpec.describe "Mobilis generation execution parity" do
 
   it "uses the same generation plan for the legacy no-Git static entry point" do
     Dir.mktmpdir do |directory|
-      build_system = -> { Mobilis::DSL.build("static-parity") { postgres("database") } }
+      definition = Mobilis::DSL.build("static-parity") { postgres("database") }.to_json
+      # Rehydrate independently without regenerating random node IDs. The
+      # serialized system is itself part of the generated file set.
+      build_system = -> { Mobilis::System.from_json(definition) }
       browser = Mobilis::Browser::Generator.new(workspace: File.join(directory, "browser")).call(build_system.call)
 
       workspace = File.join(directory, "static")
@@ -59,13 +62,14 @@ RSpec.describe "Mobilis generation execution parity" do
 
   it "produces identical content and commit boundaries for native and browser executors" do
     Dir.mktmpdir do |directory|
-      build_system = lambda do
-        Mobilis::DSL.build("parity-stack", starting_port: 11_000) do
-          postgres("database")
-          redis("cache")
-          connect(from: "cache", to: "database")
-        end
-      end
+      definition = Mobilis::DSL.build("parity-stack", starting_port: 11_000) do
+        postgres("database")
+        redis("cache")
+        connect(from: "cache", to: "database")
+      end.to_json
+      # Manifest expansion may mutate the model, so execute distinct copies
+      # with identical persisted IDs rather than minting different UUIDs.
+      build_system = -> { Mobilis::System.from_json(definition) }
 
       browser = Mobilis::Browser::Generator.new(workspace: File.join(directory, "browser")).call(build_system.call)
       native_dir = File.join(directory, "native")
