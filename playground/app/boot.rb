@@ -10,8 +10,10 @@ raise "Ruby WASM native JSON generator API mismatch" unless JSON::Ext::Generator
 
 require "js"
 require "mobilis/browser_runtime"
+require "diesl"
+require "carbn"
+require "mobilis/browser/diesl_editor"
 require "renderer"
-require "projection_invalidator"
 require "application"
 
 MobilisPlayground::Application.new.start
