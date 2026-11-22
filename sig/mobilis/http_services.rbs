@@ -95,6 +95,11 @@ module Mobilis
       def write_database: () -> untyped
       def write_models: () -> untyped
       def write_telemetry: () -> untyped
+      def write_kafka: () -> untyped
+      def write_redis_wheel: () -> untyped
+      def write_graphql_support: () -> untyped
+      def write_cassandra: () -> untyped
+      def write_pubsub: () -> untyped
     end
     class GoHTTP < Mobilis::Base::ServiceWriter
       def realized_node: () -> Mobilis::Realized::GoHTTP
@@ -104,6 +109,8 @@ module Mobilis
       def write_main: () -> untyped
       def write_app: () -> untyped
       def write_telemetry: () -> untyped
+      def write_kafka: () -> untyped
+      def write_pubsub: () -> untyped
     end
     class Envoy < Mobilis::Base::ServiceWriter
       def realized_node: () -> Mobilis::Realized::Envoy
