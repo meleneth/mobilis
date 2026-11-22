@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import LightningFS from "@isomorphic-git/lightning-fs";
-import * as git from "isomorphic-git";
+import git from "isomorphic-git";
 import { createGitCapability } from "../public/git-capability.js";
 
 const author = { name: "Mobilis Test", email: "test@mobilis.local" };
@@ -9,7 +9,7 @@ const encode = value => new TextEncoder().encode(value);
 const decode = value => new TextDecoder().decode(value);
 
 test("a caller owns the generated repository and every authentic commit boundary", async () => {
-  const fs = new LightningFS("mobilis-git-capability-test", { wipe: true });
+  const fs = new LightningFS("mobilis-git-capability-test", { db: new LightningFS.MemoryBackend() });
   const pfs = fs.promises;
   await pfs.mkdir("/generated");
   const capability = createGitCapability({ fs, pfs, git, author });
