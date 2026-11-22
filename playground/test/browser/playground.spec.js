@@ -37,6 +37,31 @@ test("confirmed numbered example replaces source without propagating unrelated s
   await expect(page.getByLabel("Load numbered example")).toHaveValue("");
 });
 
+test("Diesl history preserves raw source edits with Carbn projections", async ({ page }) => {
+  const editor = page.getByLabel("Mobilis Ruby DSL");
+  const original = await editor.inputValue();
+  const revised = original.replace('redis("cache")', 'redis("cache2")')
+    .replace('from: "cache"', 'from: "cache2"');
+
+  await expect(page.locator("#undo-source")).toBeDisabled();
+  await editor.fill(revised);
+  await expect(page.locator("#architecture-canvas")).toContainText("Redis: cache2");
+  await expect(page.locator("#undo-source")).toBeEnabled();
+
+  await page.locator("#undo-source").click();
+  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(original);
+  await expect(page.locator("#architecture-canvas")).toContainText("Redis: cache");
+  await expect(page.locator("#redo-source")).toBeEnabled();
+
+  await page.locator("#redo-source").click();
+  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(revised);
+
+  await editor.fill("Mobilis::DSL.build(");
+  await expect(page.locator("#diagnostics-region")).toContainText("Source or generation error");
+  await page.locator("#undo-source").click();
+  await expect(page.getByLabel("Mobilis Ruby DSL")).toHaveValue(revised);
+});
+
 test.beforeEach(async ({ page }) => {
   page.on("console", message => console.log(`[browser:${message.type()}] ${message.text()}`));
   page.on("pageerror", error => console.error(`[browser:error] ${error.stack || error}`));
