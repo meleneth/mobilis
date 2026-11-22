@@ -95,9 +95,11 @@ The playground preserves the existing `mobilis-workspace-v1` IndexedDB
 filesystem and all authoring Git history. Its browser controller delegates
 domain-neutral generated Git phase commits, atomic generated-tree publication,
 Git-object ZIP export, and guarded revision checkout to the pinned
-`Carbn` `workspace-history.js` module. That module and its shared
-`git-capability.js` are copied from the same pinned Carbn revision as the
-reactive Ruby library. Diesl remains responsible for editing and DSL policy.
+`Carbn` `workspace-history.js` module. Carbn's `working-tree.js` also
+owns ordinary authoring Git initialization, status, staging, commits, history,
+and full workspace ZIP export. All three browser Git modules are copied from
+the same pinned Carbn revision as the reactive Ruby library. Diesl remains
+responsible for editing and DSL policy.
 
 The workspace root, source and recovery paths, generated mirror, and Git
 identity are no longer duplicated in JavaScript. During the playground build,
