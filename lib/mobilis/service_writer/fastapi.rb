@@ -26,6 +26,7 @@ module Mobilis
               assert response.headers["content-type"] == "application/json"
         PYTHON
         File.write("#{@package_dir}/__init__.py", "")
+        # @type var wheel_names: Array[String]
         wheel_names = []
         wheel_names.concat(["kafka_python-3.0.11-py3-none-any.whl", "prometheus_client-0.26.0-py3-none-any.whl"]) if realized_node.kafka
         wheel_names << "redis-7.2.0-py3-none-any.whl" if realized_node.connected_nodes(Mobilis::Realized::Redis).any?
