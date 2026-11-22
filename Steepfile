@@ -5,6 +5,9 @@ target :lib do
   ignore "spec/**/*"
 
   library "fileutils"
+  library "base64"
+  library "digest"
+  library "find"
   library "singleton"
   library "forwardable"
   library "logger"
