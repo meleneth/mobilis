@@ -25,6 +25,10 @@ RSpec.describe Mobilis::Browser::WasiIpAddrCompatibility do
       [:Socket, :IPSocket, :BasicSocket].each do |name|
         Object.send(:remove_const, name) if Object.const_defined?(name, false)
       end
+      $LOADED_FEATURES.delete_if do |feature|
+        feature == "socket.rb" || feature.end_with?("/socket.rb") ||
+          feature == "socket.so" || feature.end_with?("/socket.so")
+      end
       module Kernel
         alias original_require require
         def require(feature)
