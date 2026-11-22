@@ -29,14 +29,15 @@ module Mobilis
           mv /schema/supergraph.graphql.tmp /schema/supergraph.graphql
         SHELL
         File.chmod(0o755, "compose.sh")
-        telemetry = if realized_node.collector
+        collector = realized_node.collector
+        telemetry = if collector
                       <<~TOML
                         [telemetry]
                         service_name = "#{realized_node.name}"
 
                         [telemetry.exporters.otlp]
                         enabled = true
-                        endpoint = "#{realized_node.collector.internal_url}"
+                        endpoint = "#{collector.internal_url}"
                         protocol = "http"
 
                         [telemetry.tracing]
