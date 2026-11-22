@@ -46,7 +46,8 @@ schema. Removing domain behavior simply to reduce line count is not a goal.
 
 **Workspace boundary (history gap closed):** Carbn now owns the reusable
 byte-safe Git checkpoint, authoring working-tree lifecycle, staging and
-commits, multi-phase generated repository history, atomic publication/rollback,
+commits, atomic snapshot publication, multi-phase generated repository history,
+and atomic publication/rollback,
 Git-object export, and guarded source revision restore.
 Mobilis delegates these operations to `/carbn/workspace-history.js`, staged
 from the pinned Carbn checkout. A build-time Ruby task generates
