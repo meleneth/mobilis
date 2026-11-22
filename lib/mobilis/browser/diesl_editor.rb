@@ -68,7 +68,7 @@ module Mobilis
       Mobilis::Browser::SourceDocument::SERVICE_TYPES.each do |kind|
         entity kind, label: kind.to_s.tr("_", " ").capitalize, creatable: true do
           field :name, type: :string, required: true
-          schema = Mobilis::Browser::SourceDocument::PROPERTY_SCHEMAS.fetch(kind) { {} }
+          schema = Mobilis::Browser::SourceDocument::PROPERTY_SCHEMAS.fetch(kind) { Hash.new }
           schema.keys.each do |property|
             specification = schema.fetch(property)
             # Keep the schema complete, including collection-valued fields.
