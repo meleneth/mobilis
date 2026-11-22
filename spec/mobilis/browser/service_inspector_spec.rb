@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "mobilis/browser/diesl_editor"
 
 RSpec.describe Mobilis::Browser::ServiceInspector do
   let(:analysis) do
@@ -29,6 +30,18 @@ RSpec.describe Mobilis::Browser::ServiceInspector do
       "type" => "Mobilis::Node::Rails",
       "api_mode" => true
     )
+  end
+
+  it "honors Diesl field metadata provided by the live editor instead of duplicate UI rules" do
+    topology = Mobilis::Browser::Topology.from_analysis(analysis)
+    fields = Mobilis::Browser::DIESL_EDITOR.entities.fetch(:rails).fields
+    properties = {rails: fields.reject { |field| field.name == :name }.to_h { |field|
+      [field.name, {kind: field.type, default: field.default}]
+    }}
+    projected = described_class.new(analysis, topology, property_schemas: properties).services
+    web = projected.find { |service| service.name == "web" }
+    expect(web.editable_properties).to eq(api: {kind: :boolean, default: false})
+    expect(projected.find { |service| service.name == "cache" }.editable_properties).to be_empty
   end
 
   it "keeps semantic connections, operational dependencies, and references distinct" do
