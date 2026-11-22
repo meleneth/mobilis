@@ -1,0 +1,57 @@
+# Embedded archive's public value objects and internal tar codec.
+module Mobilis
+  class EmbeddedArchive
+    FORMAT: String
+    VERSION: Integer
+    MANIFEST_PATH: String
+    BLOCK_SIZE: Integer
+    MAX_ENCODED_SIZE: Integer
+    MAX_DECODED_SIZE: Integer
+    MAX_FILE_SIZE: Integer
+    MAX_ENTRIES: Integer
+
+    class Entry
+      attr_reader path: String
+      attr_reader content: String
+      attr_reader content_type: String
+      attr_reader sha256: String
+      attr_reader executable: bool
+      def self.new: (path: String, content: String, content_type: String, sha256: String, executable: bool) -> Entry
+    end
+
+    class Bundle
+      attr_reader entries: Array[Entry]
+      attr_reader entrypoint: String?
+      attr_reader dependencies: Array[String]
+      attr_reader payload: String?
+      def initialize: (entries: Array[Entry], entrypoint: String?, dependencies: Array[String], ?payload: String?) -> void
+      def files: () -> Hash[String, String]
+      def entry: (String path) -> Entry?
+    end
+
+    def self.pack: (files: Hash[String, untyped], ?entrypoint: String?, ?dependencies: Array[String]) -> String
+    def self.unpack: (String payload) -> Bundle
+    def self.replace: (String payload, String path, String content) -> String
+
+    # The manifest is read from JSON; its entries have runtime-validated shapes.
+    private
+    def self.strict_encode64: (String content) -> String
+    def self.strict_decode64: (String payload) -> String
+    def self.normalize_entries: (Hash[String, untyped] files) -> Array[Entry]
+    def self.validate_metadata!: (Array[Entry] entries, String? entrypoint, Array[String] dependencies) -> void
+    def self.manifest_for: (Array[Entry] entries, String? entrypoint, Array[String] dependencies) -> Hash[Symbol, untyped]
+    def self.build_tar: (Array[[String, String, bool]] members) -> String
+    def self.tar_header: (String path, Integer size, Integer mode) -> String
+    def self.read_tar: (String tar) -> Hash[String, [String, Integer]]
+    def self.validate_tar_header!: (String header) -> void
+    def self.validate_manifest!: (Hash[Symbol, untyped] manifest, Hash[String, [String, Integer]] members) -> void
+    def self.validate_path!: (String path) -> String
+    def self.split_tar_path: (String path) -> [String, String]
+    def self.tar_path: (String header) -> String
+    def self.null_terminated: (String value) -> String
+    def self.octal_field: (String header, Integer offset, Integer length, String label) -> Integer
+    def self.write_field: (String header, Integer offset, Integer length, String value) -> String
+    def self.padded_size: (Integer size) -> Integer
+    def self.content_type: (String content) -> String
+  end
+end
