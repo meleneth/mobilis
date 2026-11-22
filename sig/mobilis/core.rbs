@@ -42,6 +42,9 @@ module Mobilis
     class PortAllocator
       def initialize: (Integer starting_port, ?reservation_count: Integer) -> void
       def reserve: (?preferred_port: Integer?, ?allocation_key: String?) -> Integer
+      private
+      def reserve_preferred: (Integer preferred_port, String? allocation_key) -> Integer
+      def validate_port!: (Integer port) -> void
     end
     attr_reader system: Mobilis::System
     attr_reader environment: Mobilis::ExecutionEnvironment
