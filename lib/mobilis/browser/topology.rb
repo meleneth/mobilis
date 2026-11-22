@@ -41,7 +41,8 @@ module Mobilis
       attr_reader :nodes, :edges
 
       def self.from_analysis(analysis)
-        new(analysis.system, declarations: analysis.declarations, relationships: analysis.relationships)
+        system = analysis.system or raise ArgumentError, "Cannot build topology from invalid source analysis"
+        new(system, declarations: analysis.declarations, relationships: analysis.relationships)
       end
 
       def initialize(system, declarations: [], relationships: [])
@@ -100,8 +101,10 @@ module Mobilis
 
           service.extra_depends_on.each do |dependency|
             target = dependency[:target] || find_service(dependency[:name])
+            next unless target.is_a?(Mobilis::Base::Node)
+
             relationship = source_relationship(service, target)
-            add_edge(results, from, nodes_by_service_id[target&.id], explicit_relationship(dependency), relationship)
+            add_edge(results, from, nodes_by_service_id[target.id], explicit_relationship(dependency), relationship)
           end
 
           reference_targets(service).each do |slot, target|
