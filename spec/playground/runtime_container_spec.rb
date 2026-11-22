@@ -10,7 +10,7 @@ RSpec.describe "playground Ruby WASM runtime container" do
 
   it "keeps compilation in the dedicated runtime image" do
     expect(runtime_dockerfile).to include("native_wasm/bin/build build")
-    expect(runtime_dockerfile).to include("type=cache,id=mobilis-native-wasm-build-v3")
+    expect(runtime_dockerfile).to include("type=cache,id=mobilis-native-wasm-build-v5-json-single-ext")
     expect(application_dockerfile).not_to include("rbwasm build")
     expect(application_dockerfile).to include("COPY --from=ruby_runtime /runtime/ruby+stdlib.wasm")
   end
@@ -29,7 +29,7 @@ RSpec.describe "playground Ruby WASM runtime container" do
 
   it "uses Debian Trixie throughout the playground container build" do
     expect(runtime_dockerfile).to include("FROM ruby:4.0.10-trixie AS build")
-    expect(application_dockerfile).to include("FROM node:22.12.0-trixie AS node")
+    expect(application_dockerfile).to include("FROM node:22.23.5-trixie AS node")
     expect(application_dockerfile).to include("FROM ruby:4.0.10-trixie AS build")
     expect(application_dockerfile).to include("FROM nginx:1.30.6-trixie")
     expect(runtime_dockerfile).not_to include("bookworm")
