@@ -31,7 +31,7 @@ window.MobilisRuntimeDiagnostics = {
   runtime: null,
   application: null
 };
-installEventGate();
+installEventGate();\n    void initializeExampleSelector();
 window.MobilisDownloads = {
   file(name, base64) {
     const bytes = Uint8Array.from(atob(base64), character => character.charCodeAt(0));
@@ -306,6 +306,55 @@ const formFocus = {
   }
 };
 
+async function initializeExampleSelector() {
+  const selector = document.getElementById("load-example");
+  if (!selector) return;
+  try {
+    const response = await fetch("/examples/index.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`Example catalog HTTP ${response.status}`);
+    const examples = await response.json();
+    if (!Array.isArray(examples) || !examples.length) throw new Error("Empty example catalog");
+    selector.replaceChildren(new Option("Choose numbered example…", ""));
+    for (const example of examples) {
+      if (!/^[0-9]{2}_[a-z0-9_]+\.rb$/.test(example.file)) throw new Error("Invalid example filename");
+      const item = document.createElement("option");
+      item.value = example.file;
+      item.textContent = example.label;
+      selector.append(item);
+    }
+    selector.disabled = false;
+  } catch (error) {
+    selector.replaceChildren(new Option("Examples unavailable", ""));
+    selector.disabled = true;
+    console.error("Cannot load numbered examples:", error);
+  }
+}
+
+async function loadNumberedExample(selector) {
+  const name = selector.value;
+  selector.value = "";
+  if (!name || !/^[0-9]{2}_[a-z0-9_]+\.rb$/.test(name)) return;
+  if (!window.confirm("Are you sure? This replaces the current Ruby DSL source.")) return;
+  selector.disabled = true;
+  try {
+    const response = await fetch(`/examples/${name}`);
+    if (!response.ok) throw new Error(`Example ${name} HTTP ${response.status}`);
+    const source = await response.text();
+    const editor = document.getElementById("dsl-source");
+    if (!editor) throw new Error("Ruby DSL editor is missing");
+    window.MobilisDocuments.parentChanged();
+    editor.value = source;
+    document.dispatchEvent(new CustomEvent("mobilis:source-input", {
+      detail: { target: editor, replaceAll: true }
+    }));
+  } catch (error) {
+    console.error("Cannot load numbered example:", error);
+    window.alert(`Unable to load ${name}: ${error.message}`);
+  } finally {
+    selector.disabled = false;
+  }
+}
+
 function installEventGate() {
   document.addEventListener("input", event => {
     if (event.target.id === "embedded-document-editor") {
@@ -324,7 +373,7 @@ function installEventGate() {
     formFocus.restore(snapshot);
   });
 
-  document.addEventListener("change", event => {
+  document.addEventListener("change", event => {\n    if (event.target.id === "load-example") {\n      void loadNumberedExample(event.target);\n      return;\n    }
     if (event.target.id === "system-starting-port") {
       document.dispatchEvent(new CustomEvent("mobilis:semantic-change", { detail: { target: event.target } }));
       return;
