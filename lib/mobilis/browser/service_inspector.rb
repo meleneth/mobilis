@@ -26,7 +26,8 @@ module Mobilis
       private
 
       def build_service(topology_node)
-        node = analysis.system.config_nodes.fetch(topology_node.service_id)
+        system = analysis.system or raise ArgumentError, "Cannot inspect a source document without a valid system"
+        node = system.config_nodes.fetch(topology_node.service_id)
         declaration = analysis.declarations.find { |candidate| candidate.id == topology_node.source_id }
         outgoing = analysis.relationships.select { |relationship| relationship.from == node.name }
         incoming = analysis.relationships.select do |relationship|
@@ -83,7 +84,8 @@ module Mobilis
       end
 
       def find_node(name)
-        analysis.system.config_nodes.values.find { |node| node.name == normalize_name(name) }
+        system = analysis.system or raise ArgumentError, "Cannot inspect a source document without a valid system"
+        system.config_nodes.values.find { |node| node.name == normalize_name(name) }
       end
 
       def normalize_name(name)
