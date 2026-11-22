@@ -4,6 +4,16 @@ require "json"
 
 module MobilisPlayground
   class Application
+    REGION_RENDERERS = {
+      :"editor-region" => :render_editor,
+      :"builder-region" => :render_builder,
+      :"inspector-region" => :render_inspector,
+      :"architecture-region" => :render_architecture,
+      :"diagnostics-region" => :render_diagnostics,
+      :"files-region" => :render_files,
+      :"file-content-region" => :render_file_content
+    }.freeze
+
     INITIAL_SOURCE = <<~RUBY
       # Everything in this editor stays in your browser.
       require "mobilis"
@@ -18,17 +28,36 @@ module MobilisPlayground
 
     def initialize(renderer: Renderer.new)
       @renderer = renderer
-      @projections = ProjectionInvalidator.new
+      graph = Carbn::Graph.define do
+        state :source, initial: 0
+        state :system, initial: 0
+        state :validation, initial: 0
+        state :generation, initial: 0
+        state :generated_files, initial: 0
+        state :selected_file, initial: 0
+        region :"editor-region", depends_on: [:source]
+        region :"builder-region", depends_on: [:system]
+        region :"inspector-region", depends_on: [:system]
+        region :"architecture-region", depends_on: [:system, :validation]
+        region :"diagnostics-region", depends_on: [:validation, :generation]
+        region :"files-region", depends_on: [:generated_files, :selected_file]
+        region :"file-content-region", depends_on: [:generated_files, :selected_file]
+      end
+      @reactivity = Carbn::Store.new(graph)
+      @reactivity.subscribe do |regions, _revision|
+        regions.each { |region| replace(region.to_s, __send__(REGION_RENDERERS.fetch(region))) }
+      end
       @runtime = Mobilis::Browser::SemanticRuntime.new
       @generator_compatibility = Mobilis::Browser::GeneratorCompatibility.new
-      @history = Mobilis::Browser::SourceHistory.new
       @sync_service_renames = true
       bootstrap_source = workspace_property(:bootstrapSource)
       bootstrap_valid_source = workspace_property(:bootstrapValidSource)
       @source = bootstrap_source.empty? ? INITIAL_SOURCE : bootstrap_source
       current = @runtime.measure("initialize") { source_document.analyze }
       fallback = bootstrap_valid_source.empty? ? INITIAL_SOURCE : bootstrap_valid_source
-      @analysis = current.valid? ? current : self.class.source_document(fallback).analyze
+      @session = Mobilis::Browser::DIESL_EDITOR.adapted_session(source: current.valid? ? @source : fallback)
+      @session.type_source(@source, expected_revision: @session.revision) unless current.valid?
+      @analysis = @session.analysis
       @topology = Mobilis::Browser::Topology.from_analysis(@analysis)
       @diagram_stale = !current.valid?
       @errors = current.errors
@@ -138,19 +167,19 @@ module MobilisPlayground
         end
       end
 
-      @source = edited
-      analysis = source_document.analyze
-      if analysis.valid?
+      @session.type_source(edited, expected_revision: @session.revision)
+      @source = @session.draft_source
+      if @session.draft_valid?
+        analysis = @session.analysis
         @analysis = analysis
         @topology = Mobilis::Browser::Topology.from_analysis(analysis)
         @diagram_stale = false
-        @history.reset
         @errors = []
         @status = "Source is valid. Visual model updated locally."
         persist_source(valid: true)
       else
         @diagram_stale = true
-        @errors = analysis.errors
+        @errors = [@session.draft_error]
         @status = "Source is invalid. The last valid visual model is preserved."
         persist_source(valid: false)
       end
@@ -165,10 +194,10 @@ module MobilisPlayground
       analysis = self.class.source_document(changed).analyze
       raise ArgumentError, analysis.errors.join("\n") unless analysis.valid?
 
-      @source = changed
-      @analysis = analysis
-      @topology = Mobilis::Browser::Topology.from_analysis(analysis)
-      @history.reset
+      @session = Mobilis::Browser::DIESL_EDITOR.adapted_session(source: changed)
+      @source = @session.source
+      @analysis = @session.analysis
+      @topology = Mobilis::Browser::Topology.from_analysis(@analysis)
       @diagram_stale = false
       @errors = []
       @status = "Checked out Git revision and refreshed the validated project."
@@ -185,7 +214,7 @@ module MobilisPlayground
     def handle_change(event)
       target = event[:detail][:target]
       if target[:id].to_s == "system-starting-port"
-        visual_edit(label: "starting port") { source_document.update_starting_port(target[:value].to_s) }
+        visual_edit(operation: :update_starting_port, value: target[:value].to_s)
         return
       end
 
@@ -205,7 +234,7 @@ module MobilisPlayground
                      target[:dataset][:property].to_s
                    end
         value = target[:type].to_s == "checkbox" ? target[:checked].to_s == "true" : target[:value].to_s
-        visual_edit { source_document.update_relationship(relationship_id, property, value) }
+        visual_edit(operation: :update_relationship, id: relationship_id, property:, value:)
         return
       end
 
@@ -217,16 +246,13 @@ module MobilisPlayground
              container[:dataset][:sourceId].to_s
            end
       if class_member?(classes, "service-name")
-        visual_edit do
-          @sync_service_renames ? source_document.rename_with_references(id, target[:value].to_s) :
-                                  source_document.rename(id, target[:value].to_s)
-        end
+        visual_edit(operation: (@sync_service_renames ? :rename_service_with_references : :rename_service), id:, name: target[:value].to_s)
       elsif class_member?(classes, "service-type")
-        visual_edit { source_document.change_type(id, target[:value].to_s) }
+        visual_edit(operation: :change_service_type, id:, type: target[:value].to_s)
       elsif class_member?(classes, "service-property") || class_member?(classes, "inspector-service-property")
         property = target[:dataset][:property].to_s
         value = target[:type].to_s == "checkbox" ? target[:checked].to_s == "true" : target[:value].to_s
-        visual_edit { source_document.update_property(id, property, value) }
+        visual_edit(operation: :update_service_property, id:, property:, value:)
       end
     rescue ArgumentError, KeyError, RuntimeError, TypeError => error
       report_error(error)
@@ -238,16 +264,16 @@ module MobilisPlayground
       id = target[:id].to_s
       if class_member?(target[:classList], "remove-service")
         card = target.call(:closest, ".service-card")
-        visual_edit { source_document.remove(card[:dataset][:serviceId].to_s) }
+        visual_edit(operation: :remove_service, id: card[:dataset][:serviceId].to_s)
       elsif class_member?(target[:classList], "remove-relationship")
         editor = target.call(:closest, ".relationship-editor")
-        visual_edit { source_document.remove_relationship(editor[:dataset][:relationshipId].to_s) }
+        visual_edit(operation: :remove_relationship, id: editor[:dataset][:relationshipId].to_s)
       elsif class_member?(target[:classList], "add-relationship")
         editor = target.call(:closest, ".new-relationship")
         from = editor[:dataset][:from].to_s
         to = editor.call(:querySelector, ".new-relationship-target")[:value].to_s
         kind = editor.call(:querySelector, ".new-relationship-kind")[:value].to_s
-        visual_edit { source_document.add_relationship(from:, to:, kind:) }
+        visual_edit(operation: :add_relationship, from:, to:, kind:)
       elsif class_member?(target[:classList], "file-link")
         @selected_file = target[:dataset][:path].to_s
         update_regions(:selected_file)
@@ -263,13 +289,13 @@ module MobilisPlayground
       when "add-service"
         type = element("new-service-type")[:value].to_s
         name = element("new-service-name")[:value].to_s
-        visual_edit { source_document.add(type, name) }
+        visual_edit(operation: :add_service, type:, name:)
       when "add-connection"
         from = element("dependency-from")[:value].to_s
         to = element("dependency-to")[:value].to_s
         raise ArgumentError, "A service cannot depend on itself" if from == to
 
-        visual_edit { source_document.add_relationship(from:, to:) }
+        visual_edit(operation: :add_relationship, from:, to:)
       when "generate-button" then generate
       when "download-dsl" then download_dsl
       when "download-authoring-bundle" then download_authoring_bundle
@@ -280,50 +306,38 @@ module MobilisPlayground
       end
     end
 
-    def visual_edit(label: "structured edit")
-      changed = yield
-      analysis = self.class.source_document(changed).analyze
-      raise ArgumentError, analysis.errors.join("\n") unless analysis.valid?
-
-      @history.record(@source, changed, label:)
-      @source = changed
-      @analysis = analysis
-      @topology = Mobilis::Browser::Topology.from_analysis(analysis)
-      @diagram_stale = false
-      @errors = []
-      @status = "Visual edit applied surgically to Ruby source."
-      persist_source(valid: true)
-      update_regions(:source, :system, :validation)
-      render_diagram
-      refresh_selection
+    def visual_edit(operation:, **arguments)
+      @session.apply(operation:, expected_revision: @session.revision, **arguments)
+      refresh_valid_session("Visual edit applied surgically to Ruby source.")
     end
 
     def handle_archive_commit(event)
       detail = event[:detail]
-      changed = source_document.commit_embedded_archive(
-        detail[:archiveId].to_s,
-        detail[:path].to_s,
-        detail[:content].to_s,
+      visual_edit(
+        operation: :commit_embedded_document,
+        id: detail[:archiveId].to_s,
+        path: detail[:path].to_s,
+        content: detail[:content].to_s,
         parent_revision: detail[:parentRevision].to_s
       )
-      visual_edit(label: "embedded document edit") { changed }
       JS.global[:MobilisDocuments].call(:committed)
-    rescue ArgumentError, KeyError, RuntimeError, TypeError => error
+    rescue ArgumentError, KeyError, RuntimeError, TypeError, Diesl::Conflict, Diesl::UnsafeEdit, Diesl::InvalidSource => error
       report_error(error)
       JS.global[:MobilisDocuments].call(:commitFailed, error.message)
     end
 
     def restore_history(direction)
-      changed = @history.public_send(direction, @source)
-      analysis = self.class.source_document(changed).analyze
-      raise ArgumentError, analysis.errors.join("\n") unless analysis.valid?
+      @session.public_send(direction)
+      refresh_valid_session("Ruby source edit #{direction == :undo ? "undone" : "redone"}.")
+    end
 
-      @source = changed
-      @analysis = analysis
-      @topology = Mobilis::Browser::Topology.from_analysis(analysis)
+    def refresh_valid_session(status)
+      @source = @session.draft_source
+      @analysis = @session.analysis
+      @topology = Mobilis::Browser::Topology.from_analysis(@analysis)
       @diagram_stale = false
       @errors = []
-      @status = "Structured source edit #{direction == :undo ? "undone" : "redone"}."
+      @status = status
       persist_source(valid: true)
       update_regions(:source, :system, :validation)
       render_diagram
@@ -385,8 +399,8 @@ module MobilisPlayground
     end
 
     def update_regions(*changes)
-      @projections.affected(*changes).each do |region, method_name|
-        replace(region, __send__(method_name))
+      @reactivity.transaction do
+        changes.each { |name| @reactivity.set(name, @reactivity.get(name) + 1) }
       end
     end
 
@@ -427,7 +441,7 @@ module MobilisPlayground
     end
 
     def render_editor
-      @renderer.render(:editor, source: @source, history: @history, sync_service_renames: @sync_service_renames)
+      @renderer.render(:editor, source: @source, history: @session.history, sync_service_renames: @sync_service_renames)
     end
 
     def render_architecture
@@ -532,7 +546,7 @@ module MobilisPlayground
     end
 
     def current_source_valid?
-      self.class.source_document(@source).analyze.valid?
+      @session.draft_valid?
     end
   end
 end
