@@ -7,8 +7,9 @@ module Mobilis
       attr_reader group: String?
       attr_reader path: String?
       attr_reader require_name: String?
+      attr_reader version: String?
 
-      def initialize: (String name, ?git: String?, ?branch: String?, ?group: String?, ?path: String?, ?require_name: String?) -> void
+      def initialize: (String name, ?git: String?, ?branch: String?, ?group: String?, ?path: String?, ?require_name: String?, ?version: String?) -> void
       def bundle_add_args: () -> Array[String]
       def gemfile_line: () -> String
       def to_h: () -> Mobilis::serialized_record
@@ -40,6 +41,7 @@ module Mobilis
       def write_file: () -> Integer
       def ppx_fields: (untyped dsl) -> untyped
       def self.from_h: (Mobilis::file_model_record hash) -> Mobilis::Model::File
+      def self.decode_base64: (String payload) -> String
     end
 
     class Script
