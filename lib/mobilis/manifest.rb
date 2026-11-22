@@ -96,14 +96,9 @@ module Mobilis
     def materialize_browser(on_checkpoint:)
       raise ArgumentError, "Checkpoint callback required" unless on_checkpoint
 
-      incompatible = system.config_nodes.values.flat_map do |node|
-        node.models.filter_map do |model|
-          "#{node.name}: #{model.class}" if model.is_a?(Mobilis::Model::RunCommand) ||
-            model.is_a?(Mobilis::Model::RubyGem) || model.is_a?(Mobilis::Model::Rails::Model)
-        end
-      end
-      unless incompatible.empty?
-        raise ArgumentError, "Browser generation cannot run host-dependent models: #{incompatible.join(', ')}"
+      capability = Mobilis::Browser::Capabilities.project(system)
+      unless capability.browser_generation
+        raise ArgumentError, "Browser generation cannot run host-dependent models or configuration: #{capability.reason}"
       end
 
       @browser_generation = true
