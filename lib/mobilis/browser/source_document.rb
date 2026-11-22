@@ -387,21 +387,11 @@ module Mobilis
       end
 
       def declaration_nodes
-        body = root_call&.block&.body
-        return [] unless body.is_a?(Prism::StatementsNode)
-
-        body.body.select do |node|
-          node.is_a?(Prism::CallNode) && node.receiver.nil? && SERVICE_TYPES.include?(node.name)
-        end
+        @diesl_source.direct_calls(within: root_call&.block, name: SERVICE_TYPES).reject { |node| node.receiver }
       end
 
       def relationship_nodes
-        body = root_call&.block&.body
-        return [] unless body.is_a?(Prism::StatementsNode)
-
-        body.body.select do |node|
-          node.is_a?(Prism::CallNode) && node.receiver.nil? && %i[connect route].include?(node.name)
-        end
+        @diesl_source.direct_calls(within: root_call&.block, name: %i[connect route]).reject { |node| node.receiver }
       end
 
       def relationships
@@ -445,17 +435,7 @@ module Mobilis
       end
 
       def archive_nodes
-        each_prism_node(root_call&.block).select do |node|
-          node.is_a?(Prism::CallNode) && node.name == :embedded_archive
-        end
-      end
-
-      def each_prism_node(node, result = [])
-        return result unless node
-
-        result << node
-        node.compact_child_nodes.each { |child| each_prism_node(child, result) }
-        result
+        @diesl_source.calls(name: :embedded_archive, within: root_call&.block)
       end
 
       def relationship_names(node)
@@ -476,15 +456,11 @@ module Mobilis
       end
 
       def keyword_properties(node)
-        keyword_elements(node).to_h do |element|
-          key = keyword_name(element)
-          [key, literal_value(element.value)]
-        end
+        @diesl_source.keyword_values(node)
       end
 
       def keyword_elements(node)
-        keyword_hash = node.arguments&.arguments&.find { |argument| argument.is_a?(Prism::KeywordHashNode) }
-        keyword_hash ? keyword_hash.elements : []
+        @diesl_source.keyword_elements(node)
       end
 
       # Preserve the Mobilis projection's :dynamic marker while delegating
@@ -496,8 +472,7 @@ module Mobilis
       end
 
       def keyword_name(element)
-        raw = element.key.respond_to?(:value) ? element.key.value : element.key.slice.delete_suffix(":")
-        raw.to_sym
+        @diesl_source.keyword_name(element)
       end
 
       def property_source(value, kind)
