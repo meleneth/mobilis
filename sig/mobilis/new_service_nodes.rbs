@@ -9,7 +9,7 @@ module Mobilis
       attr_reader brokers: Integer
       def initialize: (String name, ?topics: Array[untyped], ?publish_port: bool, ?brokers: Integer, **untyped kwargs) -> void
       def topic: (String name, partitions: Integer, retention_ms: Integer, ?cleanup_policy: String, ?replication_factor: Integer?) -> self
-      def validate_connection!: (publish: untyped, subscribe: untyped) -> [Array[String], Array[{ topic: String, group: String }]]
+      def validate_connection!: (publish: String | Array[String] | nil, subscribe: Array[Hash[Symbol | String, String]] | nil) -> [Array[String], Array[{ topic: String, group: String }]]
       def to_h: () -> Mobilis::serialized_record
     end
 
