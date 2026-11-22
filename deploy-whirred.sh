@@ -39,10 +39,11 @@ done
 # playground/public directory. Extract the finished, already-built assets.
 # This script performs no compilation or asset generation, locally or remotely.
 if [[ -z "$SOURCE_IMAGE" ]]; then
-  SOURCE_IMAGE="$(cd "$ROOT" && docker compose images -q playground 2>/dev/null | head -n 1)"
-  if [[ -z "$SOURCE_IMAGE" ]] && docker image inspect mobilis-playground >/dev/null 2>&1; then
-    SOURCE_IMAGE="mobilis-playground"
-  fi
+  # Compose's "images" command describes containers and may report an old
+  # running container even after a new image was built. Use the built image
+  # tag instead. Respect COMPOSE_PROJECT_NAME and compose's project name.
+  PROJECT_NAME="$(cd "$ROOT" && docker compose config --format json | python3 -c 'import json,sys; print(json.load(sys.stdin)["name"])')"
+  SOURCE_IMAGE="${PROJECT_NAME}-playground"
 fi
 if [[ -z "$SOURCE_IMAGE" ]] || ! docker image inspect "$SOURCE_IMAGE" >/dev/null 2>&1; then
   printf 'No locally built playground image found. Run docker compose build playground, or set WHIRRED_SOURCE_IMAGE to an existing image.\n' >&2
@@ -63,6 +64,31 @@ CONTAINER="$(docker create "$SOURCE_IMAGE")"
 docker cp "$CONTAINER:/usr/share/nginx/html/." "$STAGING_DIR/"
 docker rm "$CONTAINER" >/dev/null
 CONTAINER=""
+
+# Legacy playground images may contain the raw content-addressed WASM
+# without compressed sidecars. Produce them locally when absent. This is
+# compression only: no Ruby or application compilation, and nothing on whirred
+# runs the compressor.
+WASM_PATH="$(python3 - "$STAGING_DIR/runtime-config.json" "$STAGING_DIR" <<'PY'
+import json
+import pathlib
+import sys
+
+config = json.loads(pathlib.Path(sys.argv[1]).read_text())
+url = config["runtime"]["url"]
+if not url.startswith("/vendor/ruby-") or not url.endswith(".wasm") or ".." in url:
+    sys.exit(f"Invalid local WASM URL: {url}")
+print(pathlib.Path(sys.argv[2]) / url.lstrip("/"))
+PY
+)"
+if [[ -s "$WASM_PATH" && ! -s "${WASM_PATH}.br" ]]; then
+  if ! command -v node >/dev/null 2>&1; then
+    printf 'Missing Brotli sidecar for %s; install Node.js for local compression or rebuild the playground image.\\n' "$WASM_PATH" >&2
+    exit 1
+  fi
+  printf 'Brotli artifact absent from image %s; compressing existing WASM locally (no compilation).\\n' "$SOURCE_IMAGE"
+  node "$ROOT/playground/scripts/compress-wasm.mjs" "$WASM_PATH"
+fi
 
 # Verify exactly the runtime requested by the browser, including both the
 # raw content-addressed WASM and its precompressed Brotli representation.
