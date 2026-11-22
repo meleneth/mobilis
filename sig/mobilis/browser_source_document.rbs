@@ -66,11 +66,37 @@ module Mobilis
       def add_relationship: (from: String, to: String, ?kind: Symbol, ?properties: Hash[Symbol, untyped]) -> String
       def update_relationship: (String id, Symbol | String property, untyped value) -> String
       def remove_relationship: (String id) -> String
-      def update_archive_member: (String id, String path, String content, parent_revision: String) -> String
+      def commit_embedded_archive: (String id, String path, String content, parent_revision: String) -> String
       def revision: () -> String
       def declarations: () -> Array[Declaration]
       def relationships: () -> Array[Relationship]
       def archives: () -> Array[ArchiveDeclaration]
+      private
+      def invalid_analysis: (Array[String] errors) -> Analysis
+      def evaluate: () -> untyped
+      def root_call: () -> untyped
+      def declaration_nodes: () -> Array[untyped]
+      def relationship_nodes: () -> Array[untyped]
+      def archive_nodes: () -> Array[untyped]
+      def relationship_names: (untyped node) -> Array[String]
+      def name_node: (untyped node) -> untyped
+      def keyword_properties: (untyped node) -> Hash[Symbol, untyped]
+      def keyword_elements: (untyped node) -> Array[untyped]
+      def literal_value: (untyped node) -> untyped
+      def keyword_name: (untyped element) -> Symbol?
+      def property_source: (untyped value, Symbol kind) -> String
+      def editable_declaration: (String id) -> [Declaration, untyped]
+      def editable_relationship: (String id) -> [Relationship, untyped]
+      def relationship_property_source: (Symbol property, untyped value) -> String
+      def ruby_literal: (untyped value) -> String
+      def stringify_map_keys: (untyped value) -> untyped
+      def optional_keyword_range: (untyped node, untyped element) -> [Integer, Integer]
+      def escape_string: (String value, untyped string_node) -> String
+      def line_start: (Integer offset) -> Integer
+      def line_range: (Integer start_offset, Integer end_offset) -> [Integer, Integer]
+      def normalize_name: (untyped name) -> String
+      def replace: (Integer start_offset, Integer end_offset, String replacement) -> String
+      def replace_in: (String content, Integer start_offset, Integer end_offset, String replacement) -> String
     end
   end
 end
