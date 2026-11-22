@@ -13,7 +13,7 @@ module Mobilis
         builder.git branch: "main", author_name: "Mobilis Playground",
           author_email: "playground@mobilis.local", stage: [:generated]
         builder.embedded :embedded_archive, codec:
-        builder
+        nil
       end
 
       def self.manifest(codec:)
