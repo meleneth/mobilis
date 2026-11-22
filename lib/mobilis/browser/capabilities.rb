@@ -33,7 +33,7 @@ module Mobilis
 
       def self.unsupported_reasons(node)
         reasons = node.models.filter_map do |model|
-          "Browser cannot execute #{model.class} for #{node.name}." if HOST_DEPENDENT_MODELS.any? { |klass| model.is_a?(klass) }
+          "Browser cannot execute #{model.class} for #{node.name}." if model.is_a?(Object) && HOST_DEPENDENT_MODELS.any? { |klass| model.is_a?(klass) }
         end
         return reasons unless node.is_a?(Mobilis::Node::Rails)
 
