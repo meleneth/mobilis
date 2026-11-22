@@ -373,7 +373,11 @@ function installEventGate() {
     formFocus.restore(snapshot);
   });
 
-  document.addEventListener("change", event => {\n    if (event.target.id === "load-example") {\n      void loadNumberedExample(event.target);\n      return;\n    }
+  document.addEventListener("change", event => {
+    if (event.target.id === "load-example") {
+      void loadNumberedExample(event.target);
+      return;
+    }
     if (event.target.id === "system-starting-port") {
       document.dispatchEvent(new CustomEvent("mobilis:semantic-change", { detail: { target: event.target } }));
       return;
@@ -510,7 +514,8 @@ async function boot() {
     const loadPaths = application.manifest.filesystem.load_paths.map(path => JSON.stringify(path)).join(", ");
     const bootFeature = JSON.stringify(application.manifest.filesystem.boot_feature);
     vm.eval(`$LOAD_PATH.unshift(${loadPaths}); require ${bootFeature}`);
-    window.MobilisWorkspace.attach();\n    await initializeExampleSelector();
+    window.MobilisWorkspace.attach();
+    await initializeExampleSelector();
     diagnostics.timings.rubyApplicationLoadMs = elapsed(rubyStarted);
     diagnostics.timings.totalInitializationMs = elapsed(totalStarted);
     diagnostics.phase = "ready";
