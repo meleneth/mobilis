@@ -12,7 +12,6 @@ module Mobilis
     GRAFBASE_GATEWAY: String
     GRAFBASE_CLI: String
     GOOGLE_CLOUD_EMULATORS: String
-    KAFKA: String
   end
 
   module Base
