@@ -3,14 +3,6 @@ module Mobilis
     class SQLDatabase < Mobilis::Base::Node
     end
 
-    class FastAPI < Mobilis::Base::Node
-      attr_reader graphql_subgraph_name: String?
-      def graphql_subgraph: (String name, ?source: String?) -> self
-      def package_name: () -> String
-      def local_package: (String name) ?{ (Mobilis::Model::LocalPythonPackage) -> untyped } -> Mobilis::Model::LocalPythonPackage
-      def use_local_package: (Mobilis::Model::LocalPythonPackage package) -> Mobilis::Model::LocalPythonPackage
-    end
-
     class Ruby < Mobilis::Base::Node
       def add_gem: (String name, **untyped options) -> Mobilis::Model::RubyGem
       def local_gem: (String name, ?path: String?, ?require_name: String?) { (Mobilis::Model::LocalGem gem) -> untyped } -> Mobilis::Model::LocalGem
