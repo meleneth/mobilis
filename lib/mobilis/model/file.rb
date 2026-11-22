@@ -37,7 +37,14 @@ module Mobilis
       end
 
       def self.from_h(hash)
-        content = hash.key?(:content_base64) ? decode_base64(hash[:content_base64]) : hash[:content]
+        content = if hash.key?(:content_base64)
+          encoded = hash[:content_base64]
+          raise ArgumentError, "File content_base64 must be a String" unless encoded.is_a?(String)
+
+          decode_base64(encoded)
+        else
+          hash.fetch(:content)
+        end
         new(hash[:path], content, executable: hash[:executable] == true)
       end
 
@@ -48,7 +55,7 @@ module Mobilis
         ))
         raise ArgumentError, "File content_base64 is not strict Base64" unless valid
 
-        payload.unpack1("m0")
+        payload.unpack1("m0") || raise(ArgumentError, "File content_base64 could not be decoded")
       end
 
       def ppx_fields(dsl)
