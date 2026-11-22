@@ -49,7 +49,9 @@ module Mobilis
           details = compose.clean_shrunk
           # These service fragments are shared across Compose environments.
           # Compose itself supplies the environment-scoped project label.
-          details[:labels] = (details[:labels] || {}).merge(
+          existing_labels = details[:labels]
+          raise ArgumentError, "Compose labels must be a mapping" if existing_labels && !existing_labels.is_a?(Hash)
+          details[:labels] = (existing_labels || {}).merge(
             "app.kubernetes.io/managed-by" => "mobilis",
             "mobilis.io/project" => meta_project_name,
             "mobilis.io/service" => name
