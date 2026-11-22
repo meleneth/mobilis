@@ -68,11 +68,11 @@ module Mobilis
       def references(node)
         singular = node.class.ref_attr_registry.filter_map do |slot|
           target = node.public_send(slot.name)
-          Dependency.new(target: target.name, kind: slot.name, source_id: nil, relationship: :reference) if target
+          Dependency.new(target: target.name, kind: slot.name, source_id: nil, relationship: :reference) if target.is_a?(Mobilis::Base::Node)
         end
         plural = node.class.ref_list_registry.flat_map do |slot|
-          Array(node.public_send(slot.name)).map do |target|
-            Dependency.new(target: target.name, kind: slot.name, source_id: nil, relationship: :reference)
+          Array(node.public_send(slot.name)).filter_map do |target|
+            Dependency.new(target: target.name, kind: slot.name, source_id: nil, relationship: :reference) if target.is_a?(Mobilis::Base::Node)
           end
         end
         singular + plural
