@@ -13,6 +13,17 @@ RSpec.describe "playground static server" do
     expect(configuration).to include("style-src 'self' 'unsafe-inline'")
   end
 
+  it "negotiates precompressed immutable Ruby WASM while preserving its WASM MIME type" do
+    expect(configuration).to include("map \$http_accept_encoding \$ruby_wasm_encoding")
+    expect(configuration).to include("~*br br;")
+    expect(configuration).to include("~*gzip gzip;")
+    expect(configuration).to include('location ~* "^/vendor/ruby-[a-f0-9]{64}\\.wasm$"')
+    expect(configuration).to include('try_files $uri$ruby_wasm_suffix $uri =404;')
+    expect(configuration).to include('add_header Vary "Accept-Encoding" always;')
+    expect(configuration).to include('add_header Content-Encoding $ruby_wasm_encoding always;')
+    expect(configuration).to include("default_type application/wasm;")
+  end
+
   it "serves WebAssembly with its registered MIME type" do
     expect(configuration).to include("application/wasm wasm")
   end

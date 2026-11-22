@@ -51,6 +51,17 @@ if [[ "${COPY_LOCAL_RUBY_WASM:-0}" == "1" ]]; then
   runtime_sha256="$(sha256sum "${runtime_path}" | cut -d' ' -f1)"
   runtime_url="/vendor/ruby-${runtime_sha256}.wasm"
   mkdir -p public/vendor
+  # Avoid leaving stale content-addressed runtimes in repeated local builds.
+  rm -f public/vendor/ruby-*.wasm public/vendor/ruby-*.wasm.br public/vendor/ruby-*.wasm.gz
+  if [[ "${REQUIRE_PRECOMPRESSED_RUBY_WASM:-0}" == "1" ]]; then
+    test -s "${runtime_path}.br" || { echo "Missing precompressed Brotli runtime" >&2; exit 1; }
+    test -s "${runtime_path}.gz" || { echo "Missing precompressed gzip runtime" >&2; exit 1; }
+  fi
+  for suffix in br gz; do
+    if [[ -f "${runtime_path}.${suffix}" ]]; then
+      cp "${runtime_path}.${suffix}" "public${runtime_url}.${suffix}"
+    fi
+  done
   cp "${runtime_path}" "public${runtime_url}"
   test -s "public${runtime_url}"
   export RUBY_WASM_RUNTIME_URL="${runtime_url}"
