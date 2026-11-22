@@ -1,0 +1,57 @@
+module Mobilis
+  module GeneratorCapture
+    class Definition
+      WORKSPACE_TOKEN: String
+      REPOSITORY_TOKEN: String
+      attr_reader name: String
+      attr_reader generator_name: String?
+      attr_reader generator_version: String?
+      attr_reader fixture_name: String?
+      attr_reader fixture_path: String?
+      attr_reader command_parts: Array[String]?
+      attr_reader argument_list: Array[String]
+      attr_reader environment_variables: Hash[String, String]
+      attr_reader runtime_metadata: Hash[String, String]
+      attr_reader repository_path: String?
+      def initialize: (String name) -> void
+      def generator: (String name, version: String) -> String
+      def fixture: (String name, path: String) -> String
+      def repository: (path: String) -> String
+      def command: (*untyped parts) -> Array[String]
+      def arguments: (*untyped values) -> Array[String]
+      def environment: (Hash[untyped, untyped] values) -> Hash[String, String]
+      def runtime: (Hash[untyped, untyped] values) -> Hash[String, String]
+      def validate!: () -> self
+    end
+
+    class Snapshot
+      attr_reader entries: Array[Hash[String, untyped]]
+      def initialize: (Array[Hash[String, untyped]] entries) -> void
+      def self.capture: (String root) -> Snapshot
+      def self.file_record: (String relative_path, String absolute_path, File::Stat status) -> Hash[String, untyped]
+      def self.mode: (File::Stat status) -> String
+      def fingerprint: () -> String
+      def delta_to: (Snapshot other) -> Array[Hash[String, untyped]]
+    end
+
+    class Runner
+      def run: (Definition definition) -> Hash[String, untyped]
+      def write: (Hash[String, untyped] record, String path) -> Integer
+      private
+      def copy_fixture: (String source, String destination) -> void
+      def normalize_output: (String output, String workspace) -> String
+      def expand: (String value, Definition definition, String workspace) -> String
+      def build_record: (Definition definition, Snapshot before, Snapshot after, untyped status, String stdout, String stderr, String workspace) -> Hash[String, untyped]
+    end
+
+    class Comparison
+      def compare: (Hash[String, untyped] baseline, Hash[String, untyped] variant) -> Hash[String, untyped]
+      private
+      def validate_pair!: (Hash[String, untyped] baseline, Hash[String, untyped] variant) -> void
+      def index: (Hash[String, untyped] record) -> Hash[String, Hash[String, untyped]]
+      def difference: (Hash[String, Hash[String, untyped]] left, Hash[String, Hash[String, untyped]] right) -> Array[Hash[String, untyped]]
+      def changed_in_both: (Hash[String, Hash[String, untyped]] left, Hash[String, Hash[String, untyped]] right) -> Array[Hash[String, untyped]]
+      def summarize: (Hash[String, untyped] entry) -> Hash[String, untyped]
+    end
+  end
+end
