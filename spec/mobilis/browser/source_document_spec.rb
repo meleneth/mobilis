@@ -44,6 +44,21 @@ RSpec.describe Mobilis::Browser::SourceDocument do
     expect(described_class.new(changed).analyze).to be_valid
   end
 
+  it "uses byte offsets when inserting after Unicode source content" do
+    unicode = <<~RUBY
+      # ☃️ source heading
+      Mobilis::DSL.build("unicode") do
+        postgres("database")
+        connect(from: "database", to: "database")
+      end
+    RUBY
+    document = described_class.new(unicode)
+    added = document.add(:redis, "cache")
+    expect(added).to include("# ☃️ source heading")
+    expect(added).to include("  postgres(\"database\")\n  redis(\"cache\")\n")
+    expect(described_class.new(added).analyze).to be_valid
+  end
+
   it "preserves string-keyed nested relationship literals when encoding through Diesl" do
     document = described_class.new(source)
     literal = document.send(:ruby_literal, {topics: [{group: "consumer"}]})
