@@ -26,7 +26,7 @@ ruby scripts/build_embedded_fixture.rb public/parity/embedded-source.rb
 ruby scripts/build_examples.rb "${repository_dir}/scripts" public/examples
 # Load the exact pinned Carbn browser Git and workspace engine.
 carbn_browser="${CARBN_LIB_DIR:-}/../browser"
-if [[ ! -f "${carbn_browser}/workspace-history.js" || ! -f "${carbn_browser}/git-capability.js" ]]; then
+if [[ ! -f "${carbn_browser}/workspace-history.js" || ! -f "${carbn_browser}/git-capability.js" || ! -f "${carbn_browser}/working-tree.js" ]]; then
   echo "Pinned Carbn browser Git modules are missing" >&2
   exit 1
 fi
@@ -34,7 +34,7 @@ fi
 rm -rf public/diesl
 rm -f public/git-capability.js
 mkdir -p public/carbn
-cp "${carbn_browser}/workspace-history.js" "${carbn_browser}/git-capability.js" public/carbn/
+cp "${carbn_browser}/workspace-history.js" "${carbn_browser}/git-capability.js" "${carbn_browser}/working-tree.js" public/carbn/
 # Verify Carbn workspace history/rollback before packaging the browser.
 node --test "${CARBN_LIB_DIR}/../test/workspace-history.test.mjs"
 
