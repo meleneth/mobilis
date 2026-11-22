@@ -23,6 +23,7 @@ cp node_modules/@isomorphic-git/lightning-fs/dist/lightning-fs.min.js public/ven
 cp node_modules/@isomorphic-git/lightning-fs/LICENSE public/vendor/lightning-fs/
 cp "${repository_dir}/spec/fixtures/browser/postgres-compose.yml" public/parity/
 ruby scripts/build_embedded_fixture.rb public/parity/embedded-source.rb
+ruby scripts/build_examples.rb "${repository_dir}/scripts" public/examples
 
 runtime_path="${RUBY_WASM_RUNTIME_SOURCE:-node_modules/@ruby/4.0-wasm-wasi/dist/ruby+stdlib.wasm}"
 if [[ ! -f "${runtime_path}" ]]; then
