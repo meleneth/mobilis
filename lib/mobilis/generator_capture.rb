@@ -11,7 +11,7 @@ module Mobilis
 
     def define(name, &block)
       definition = Definition.new(name)
-      definition.instance_eval(&block)
+      definition.instance_exec(&block)
       definition.validate!
     end
   end
