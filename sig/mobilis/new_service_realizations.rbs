@@ -58,20 +58,25 @@ module Mobilis
 
   module ServiceWriter
     class Kafka < Mobilis::Base::ServiceWriter
+      def realized_node: () -> Mobilis::Realized::Kafka
       def write: () -> void
     end
     class Cassandra < Mobilis::Base::ServiceWriter
+      def realized_node: () -> Mobilis::Realized::Cassandra
       def write: () -> void
       private
       def validate_schema!: (String schema) -> void
     end
     class GooglePubSub < Mobilis::Base::ServiceWriter
+      def realized_node: () -> Mobilis::Realized::GooglePubSub
       def write: () -> void
     end
     class Grafbase < Mobilis::Base::ServiceWriter
+      def realized_node: () -> Mobilis::Realized::Grafbase
       def write: () -> void
     end
     class Airflow < Mobilis::Base::ServiceWriter
+      def realized_node: () -> Mobilis::Realized::Airflow
       VERSION: String
       PYTHON: String
       def write: () -> void
