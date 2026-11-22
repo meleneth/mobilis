@@ -190,6 +190,7 @@ module MobilisPlayground
       end
       update_regions(*(event[:detail][:replaceAll].to_s == "true" ? [:source, :system, :validation] : [:system, :validation]))
       render_diagram
+      refresh_history_controls
       refresh_selection
     end
 
@@ -488,6 +489,25 @@ module MobilisPlayground
       end
       diagram = Mobilis::Browser::MermaidDiagram.new(@topology).source
       JS.global[:MobilisDiagram].call(:render, diagram, JSON.generate(nodes: nodes, edges: edges))
+    end
+
+    # Never replace the active textarea on input just to refresh undo controls.
+    # Diesl tracks typing transactions; update the two buttons in place.
+    def refresh_history_controls
+      history = @session.history
+      {
+        "undo-source" => ["Undo", history.undo_entries, !@session.draft_valid?],
+        "redo-source" => ["Redo", history.redo_entries, false]
+      }.each do |id, (verb, entries, invalid_draft)|
+        button = element(id)
+        next unless button
+
+        entry = entries.last
+        label = entry ? "#{verb} #{entry.label}" : (invalid_draft ? "Undo invalid Ruby draft" : verb)
+        button[:disabled] = entries.empty? && !invalid_draft
+        button[:textContent] = label
+        button[:title] = label
+      end
     end
 
     def refresh_selection
