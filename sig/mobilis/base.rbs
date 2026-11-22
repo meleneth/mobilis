@@ -8,6 +8,7 @@ module Mobilis
 
       def initialize: (String name, ?id: String?, ?extra_depends_on: Array[Mobilis::node_ref_dependency], **untyped refs) -> void
 
+      def embedded_archive: (String name, payload: String, ?destination_prefix: String?) -> untyped
       def run_command: (String command, String commit_message) -> Mobilis::Model::RunCommand
       def env_var_alias: (String local_name, String service_name) -> Mobilis::Model::EnvVarAlias
       def to_h: () -> Mobilis::serialized_record
