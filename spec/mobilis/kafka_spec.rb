@@ -4,6 +4,13 @@ require "spec_helper"
 require "tmpdir"
 
 RSpec.describe "Kafka generation" do
+  it "ships a syntactically valid Ruby client template without requiring Kafka gems in Mobilis" do
+    template = File.expand_path("../../lib/mobilis/templates/kafka/ruby.rb.template", __dir__)
+    source = File.read(template)
+    expect(RubyVM::InstructionSequence.compile(source, template)).to be_a(RubyVM::InstructionSequence)
+    expect(source).to include("module MobilisKafka", 'require "rdkafka"', "Kafka consumer handler is required")
+  end
+
   def topology
     system = Mobilis::System.new("exchange")
     dsl = Mobilis::DSL::DSLContext.new(system)
