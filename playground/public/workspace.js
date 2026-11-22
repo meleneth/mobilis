@@ -1,4 +1,4 @@
-import { createWorkspaceHistory, createWorkspaceRevision } from "/diesl/workspace-history.js";
+import { createWorkspaceHistory, createWorkspaceRevision } from "/carbn/workspace-history.js";
 const WORKSPACE_DIRECTORY = "/workspace";
 const GENERATED_DIRECTORY = "/generated-project";
 const SOURCE_PATH = "mobilis.rb";
