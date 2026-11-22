@@ -19,11 +19,11 @@ module Mobilis
         unless defined?(::Socket)
           Object.const_set(:BasicSocket, Class.new) unless defined?(::BasicSocket)
           unless defined?(::IPSocket)
-            Object.const_set(:IPSocket, Class.new(::BasicSocket) do
-              def self.getaddress(_host)
-                raise NotImplementedError, "DNS/network access is unavailable in Ruby WASM"
-              end
-            end)
+            shim = Class.new(::BasicSocket)
+            shim.define_singleton_method(:getaddress) do |_host|
+              raise NotImplementedError, "DNS/network access is unavailable in Ruby WASM"
+            end
+            Object.const_set(:IPSocket, shim)
           end
           Object.const_set(:Socket, Class.new(::IPSocket))
         end
