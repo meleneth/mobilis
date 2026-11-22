@@ -11,7 +11,7 @@ default:
 variables:
   BUNDLE_JOBS: "4"
   BUNDLE_RETRY: "2"
-  CARBN_REF: "73743b578d2784151593a7ee63bcd99d240bffa2"
+  CARBN_REF: "2e26eeea593919d67e99403fb995392ff6e17384"
 
 .ruby_job:
   image: ruby:4.0.10-trixie
