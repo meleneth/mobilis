@@ -80,11 +80,13 @@ module MobilisPlayground
         @status = "Generated #{files} files with #{commits} committed Mobilis phases. ZIP ready."
         @errors = []
         update_regions(:generation)
+        nil # DOM event callbacks must not return Ruby arrays into the JS bridge.
       end
       generation_failure_handler = proc do |event|
         @status = "Project generation failed while writing Git history."
         @errors = [event[:detail][:error].to_s]
         update_regions(:validation)
+        nil
       end
       compatibility_handler = proc do |event|
         semantic_request("generator compatibility shim") { handle_generator_compatibility(event) }
