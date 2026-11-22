@@ -116,8 +116,10 @@ module Mobilis
       def ports_for(node)
         # @type var ports: Array[Integer]
         ports = []
-        exposed = node.exposed_port_no
-        ports << exposed if exposed.is_a?(Integer)
+        if node.respond_to?(:exposed_port_no)
+          exposed = node.public_send(:exposed_port_no)
+          ports << exposed if exposed.is_a?(Integer)
+        end
         if node.respond_to?(:internal_port_no)
           internal = node.public_send(:internal_port_no)
           ports << internal if internal.is_a?(Integer)
