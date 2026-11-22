@@ -64,6 +64,7 @@ module Mobilis
         raise ArgumentError, "Checkpoint callback required" unless on_checkpoint
 
         @on_checkpoint = on_checkpoint
+        # @type ivar @previous_files: Hash[String, String]
         @previous_files = {}
       end
 
@@ -105,7 +106,9 @@ module Mobilis
         paths = Dir.glob("**/*", File::FNM_DOTMATCH, base: root)
           .reject { |path| path == "." || path == ".." || File.directory?(File.join(root, path)) }
           .sort
+        # @type var writes: Hash[String, String]
         writes = {}
+        # @type var current: Hash[String, String]
         current = {}
         paths.each do |path|
           bytes = File.binread(File.join(root, path))
