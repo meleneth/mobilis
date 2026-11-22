@@ -17,4 +17,6 @@ target :lib do
   library 'yaml'
   library "json"
   library "socket"
+  library "diesl"
+  library "prism"
 end
