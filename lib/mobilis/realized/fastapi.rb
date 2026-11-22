@@ -4,6 +4,8 @@ module Mobilis
   module Realized
     class FastAPI < HTTPApplication
       def initialize(env, node)
+        raise ArgumentError, "FastAPI realization requires a FastAPI node" unless node.is_a?(Mobilis::Node::FastAPI)
+
         super
         if node.has_model_class?(Mobilis::Model::LocalPythonPackage)
           set_compose_build_context(".")
@@ -11,7 +13,9 @@ module Mobilis
         end
         if node.graphql_subgraph_name
           schema_path = "src/#{node.package_name}/graphql_schema.py"
-          schema = node.models.grep(Mobilis::Model::File).find { |model| model.path == schema_path }
+          schema = node.models.find do |model|
+            model.is_a?(Mobilis::Model::File) && model.path == schema_path
+          end
           raise ArgumentError, "GraphQL schema source is missing for #{node.name}" unless schema
 
           set_healthcheck_command("python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:#{exposed_port_no}/health', timeout=2)\"",
