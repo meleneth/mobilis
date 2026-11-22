@@ -1,7 +1,7 @@
 GIT
   remote: https://github.com/meleneth/diesl.git
-  revision: 4e8c26178a54307e6d3c69d46244637152dd30d7
-  ref: 4e8c26178a54307e6d3c69d46244637152dd30d7
+  revision: 0d19a36744e8615aa61f633a415d5735c12888fc
+  ref: 0d19a36744e8615aa61f633a415d5735c12888fc
   specs:
     diesl (0.1.0)
       prism (>= 1.0)
