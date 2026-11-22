@@ -260,7 +260,7 @@ module Mobilis
         raise ArgumentError, "Source must contain a Mobilis::DSL.generate or .build block" unless block
 
         insertion = relationship_nodes.first&.location&.start_offset || block.closing_loc.start_offset
-        indent = declaration_nodes.first&.then { |node| source[line_start(node.location.start_offset)...node.location.start_offset] } || "  "
+        indent = declaration_nodes.first&.then { |node| source.byteslice(line_start(node.location.start_offset)...node.location.start_offset) } || "  "
         replace(insertion, insertion, "#{indent}#{type}(#{name.dump})\n")
       end
 
@@ -547,7 +547,7 @@ module Mobilis
         raise ArgumentError, "Relationship option is no longer present" unless index
 
         previous_end = index.zero? ? node.opening_loc.end_offset : elements[index - 1].location.end_offset
-        comma = source.index(",", previous_end)
+        comma = source.b.index(",", previous_end)
         raise ArgumentError, "Cannot safely locate relationship option separator" unless comma && comma < element.location.start_offset
 
         [comma, element.location.end_offset]
