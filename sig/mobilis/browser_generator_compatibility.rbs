@@ -1,0 +1,10 @@
+module Mobilis
+  module Browser
+    class GeneratorCompatibility
+      DEFAULT_CORPUS_ROOT: String
+      def initialize: (?corpus_root: String) -> void
+      def manifests: () -> Array[Hash[Symbol, untyped]]
+      def plan: (generator: String, version: String, arguments: Array[String], encoded_files: Hash[String, String?]) -> Hash[Symbol, untyped]
+    end
+  end
+end
