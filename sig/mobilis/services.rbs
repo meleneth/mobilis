@@ -5,7 +5,8 @@ module Mobilis
     end
 
     class Directory
-      def initialize: () -> void
+      def initialize: (?String root) -> void
+      def generate_root: () -> String
       def chdir_start: () -> Integer
       def chdir_project: (Mobilis::Services::_NamedProject project) -> Integer
       def chdir_rails_builder: () -> Integer
