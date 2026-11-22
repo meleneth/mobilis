@@ -63,7 +63,7 @@ module Mobilis
             archive_id: archive.id,
             parent_revision: archive.parent_revision
           )
-          members = archive.bundle.entries.map do |entry|
+          members = (archive.bundle&.entries || []).map do |entry|
             Document.new(
               id: member_id(archive.id, entry.path),
               kind: :member,
