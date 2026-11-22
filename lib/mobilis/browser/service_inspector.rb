@@ -35,12 +35,15 @@ module Mobilis
             .compact.map { |name| normalize_name(name) }.include?(node.name)
         end
 
+        # @type var editable_properties: Hash[Symbol, untyped]
+        editable_properties = declaration ? @property_schemas.fetch(declaration.type) { {} } : {}
+
         Service.new(
           id: topology_node.id,
           name: node.name,
           type: topology_node.type,
           declaration:,
-          editable_properties: declaration ? @property_schemas.fetch(declaration.type, {}) : {},
+          editable_properties:,
           configuration: configuration(node),
           outgoing:,
           incoming:,
