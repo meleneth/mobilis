@@ -1,6 +1,7 @@
 {
   "name": "mobilis-browser-playground",
   "private": true,
+  "type": "module",
   "scripts": {
     "build:css": "tailwindcss -i assets/application.css -o public/application.css --minify",
     "test:browser": "playwright test",
