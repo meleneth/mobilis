@@ -45,8 +45,9 @@ derive fields, collection kinds, and defaults from the Diesl editor block
 schema. Removing domain behavior simply to reduce line count is not a goal.
 
 **Workspace boundary (history gap closed):** Carbn now owns the reusable
-byte-safe Git checkpoint, multi-phase generated repository history, atomic
-publication/rollback, Git-object export, and guarded source revision restore.
+byte-safe Git checkpoint, authoring working-tree lifecycle, staging and
+commits, multi-phase generated repository history, atomic publication/rollback,
+Git-object export, and guarded source revision restore.
 Mobilis delegates these operations to `/carbn/workspace-history.js`, staged
 from the pinned Carbn checkout. A build-time Ruby task generates
 `editor-policy.js` from the Diesl workspace block; browser paths, Git author,
