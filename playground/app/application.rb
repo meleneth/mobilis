@@ -436,8 +436,12 @@ module MobilisPlayground
       html = @renderer.render(
         :builder,
         declarations: @analysis.declarations,
-        service_types: Mobilis::Browser::SourceDocument::SERVICE_TYPES,
-        property_schemas: Mobilis::Browser::SourceDocument::PROPERTY_SCHEMAS,
+        service_types: Mobilis::Browser::DIESL_EDITOR.entities.keys,
+        property_schemas: Mobilis::Browser::DIESL_EDITOR.entities.transform_values do |schema|
+          schema.fields.reject { |field| field.name == :name }.to_h do |field|
+            [field.name, {kind: field.type, default: field.default}]
+          end
+        end,
         inspector_services:,
         capabilities:,
         starting_port: @analysis.system.starting_port,
