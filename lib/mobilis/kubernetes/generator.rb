@@ -169,9 +169,13 @@ module Mobilis
       end
 
       def configuration_for(universe, node)
+        # @type var data: Hash[String, String]
         data = {}
+        # @type var volumes: Array[Hash[String, untyped]]
         volumes = []
+        # @type var mounts: Array[Hash[String, untyped]]
         mounts = []
+        # @type var configs: Array[Hash[String, untyped]]
         configs = []
         node.storage_requirements.each do |storage|
           volume_name = "state-#{storage.fetch(:name)}"
@@ -181,7 +185,7 @@ module Mobilis
               {"accessModes" => ["ReadWriteOnce"], "resources" => {"requests" => {"storage" => storage.fetch(:size)}}}, service: node.name)
             volumes << {"name" => volume_name, "persistentVolumeClaim" => {"claimName" => claim_name}}
           else
-            volumes << {"name" => volume_name, "emptyDir" => {}}
+            volumes << {"name" => volume_name, "emptyDir" => Hash.new}
           end
           mounts << {"name" => volume_name, "mountPath" => storage.fetch(:path)}
         end
