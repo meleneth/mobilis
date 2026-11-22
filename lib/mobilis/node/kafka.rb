@@ -41,8 +41,10 @@ module Mobilis
 
       # subscribe: [{topic: "events", group: "projection"}]
       def validate_connection!(publish:, subscribe:)
-        publishes = publish.is_a?(Array) ? publish.map { |item| item.to_s } : (publish ? [publish.to_s] : [])
+        # @type var publishes: Array[String]
+        publishes = publish.is_a?(Array) ? publish.map { |item| item.to_s } : (publish ? [publish.to_s] : Array.new)
         subscriptions = subscribe || []
+        # @type var consumes: Array[{topic: String, group: String}]
         consumes = subscriptions.map do |item|
           raise ArgumentError, "Kafka subscription needs topic: and group:" unless item.is_a?(Hash)
 
@@ -50,7 +52,9 @@ module Mobilis
           group = (item[:group] || item["group"] || raise(KeyError, "key not found: :group")).to_s
           raise ArgumentError, "Invalid Kafka group ID: #{group}" unless GROUP_NAME.match?(group)
 
-          {topic: topic_name, group: group}
+          # @type var subscription: {topic: String, group: String}
+          subscription = {topic: topic_name, group: group}
+          subscription
         end
         raise ArgumentError, "Kafka connection needs publish: or subscribe:" if publishes.empty? && consumes.empty?
         unknown = (publishes + consumes.map { |item| item[:topic] }).uniq - topics.map { |item| item[:name] }
