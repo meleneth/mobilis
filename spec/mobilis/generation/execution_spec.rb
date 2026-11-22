@@ -40,16 +40,20 @@ RSpec.describe "Mobilis generation execution parity" do
 
   it "produces identical content and commit boundaries for native and browser executors" do
     Dir.mktmpdir do |directory|
-      system = Mobilis::DSL.build("parity-stack", starting_port: 11_000) do
-        postgres("database")
-        redis("cache")
-        connect(from: "cache", to: "database")
+      build_system = lambda do
+        Mobilis::DSL.build("parity-stack", starting_port: 11_000) do
+          postgres("database")
+          redis("cache")
+          connect(from: "cache", to: "database")
+        end
       end
 
-      browser = Mobilis::Browser::Generator.new(workspace: File.join(directory, "browser")).call(system)
+      browser = Mobilis::Browser::Generator.new(workspace: File.join(directory, "browser")).call(build_system.call)
       native_dir = File.join(directory, "native")
       FileUtils.mkdir_p(native_dir)
-      manifest = Mobilis::Manifest.new(system, directory_service: Mobilis::Services::Directory.new(native_dir))
+      # Manifest plugin expansion can mutate realized state. Use independent
+      # declarations for both executions, like real separate CLI/browser runs.
+      manifest = Mobilis::Manifest.new(build_system.call, directory_service: Mobilis::Services::Directory.new(native_dir))
       execution = RecordingNative.new(manifest)
       caller_directory = Dir.pwd
       begin
