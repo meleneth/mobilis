@@ -1,17 +1,67 @@
+# Runs on your internal GitLab runner only. No GitHub Actions.
+# Ruby follows the repository's pinned browser/runtime compatibility baseline.
+stages:
+  - verify
+  - test
+
 default:
   tags:
     - docker
 
-image: ruby:3.4.2
+variables:
+  BUNDLE_JOBS: "4"
+  BUNDLE_RETRY: "2"
+  DIESL_REF: "ffdaabc0e06aeecf92947969bc69f4d623d1912e"
 
-before_script:
-  - apt-get update && apt-get install -y git
-  - bundle install
+.ruby_job:
+  image: ruby:4.0.10-trixie
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends git build-essential pkg-config
+    - bundle install
 
 rspec:
+  extends: .ruby_job
+  stage: test
   script:
-    - bin/rspec
+    - bundle exec rspec
 
 steep:
+  extends: .ruby_job
+  stage: test
   script:
     - bundle exec steep check
+
+diesl_parity:
+  extends: .ruby_job
+  stage: verify
+  script:
+    - ruby -c lib/mobilis/browser/diesl_editor.rb
+    - ruby -c spec/mobilis/browser/diesl_editor_spec.rb
+    - ruby -c playground/app/application.rb
+    - ruby -c playground/app/boot.rb
+    - ruby -c playground/scripts/build_examples.rb
+    - bundle exec ruby -Ilib -e 'require "mobilis"; abort "Diesl eagerly loaded by native Mobilis" if $LOADED_FEATURES.any? { |entry| entry.end_with?("/diesl.rb") }'
+    - bundle exec rspec spec/mobilis/browser/source_document_spec.rb spec/mobilis/browser/diesl_editor_spec.rb
+
+browser_workspace:
+  image: node:22-trixie
+  stage: verify
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends git
+  script:
+    - node --check playground/public/workspace.js
+    - node --check playground/public/application.js
+    - node --check playground/public/git-capability.js
+    - grep -Fq "$DIESL_REF" Dockerfile.playground
+    - git clone --quiet https://github.com/meleneth/diesl.git /tmp/diesl
+    - git -C /tmp/diesl checkout --quiet "$DIESL_REF"
+    - test "$(git -C /tmp/diesl rev-parse HEAD)" = "$DIESL_REF"
+    - node --test /tmp/diesl/browser/test/workspace-history.test.mjs
+    - cd playground && npm ci && npm run test:git
+
+docs:
+  image: node:24-trixie
+  stage: test
+  script:
+    - npm ci
+    - npm run docs:check
