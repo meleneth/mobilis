@@ -389,6 +389,12 @@ test("exports a generated Redis/PostgreSQL workspace with inspectable piecemeal 
 });
 
 test("generates Rails, Redis and PostgreSQL with real per-phase Git history in the downloaded project", async ({ page }) => {
+  const bridgeErrors = [];
+  page.on("pageerror", error => {
+    if (/JS::Object#call|JS\.try_convert|not a JS::Object like object/.test(error.stack || error.message)) {
+      bridgeErrors.push(error.stack || error.message);
+    }
+  });
   const source = [
     'require "mobilis"',
     '',
@@ -451,6 +457,7 @@ test("generates Rails, Redis and PostgreSQL with real per-phase Git history in t
     expect(git("ls-tree", "-r", "--name-only", "HEAD")).toContain("compose/database.yml");
     const earliest = `HEAD~${messages.length - 1}`;
     expect(git("ls-tree", "-r", "--name-only", earliest)).not.toContain("web/config/application.rb");
+    expect(bridgeErrors, "Ruby/JS event bridge must not emit conversion errors after generation").toEqual([]);
   } finally {
     await zip.close();
     await rm(root, { recursive: true, force: true });
