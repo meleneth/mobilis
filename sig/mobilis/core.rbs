@@ -6,8 +6,10 @@ module Mobilis
   class System
     attr_reader config_nodes: Hash[String, Mobilis::Base::Node]
     attr_reader meta_project_name: String
+    attr_reader starting_port: Integer
+    attr_accessor kubernetes_deployment: Mobilis::Kubernetes::Declaration?
 
-    def initialize: (String meta_project_name) -> void
+    def initialize: (String meta_project_name, ?starting_port: Integer) -> void
     def <<: (Mobilis::Base::Node config_node) -> Mobilis::Base::Node
     def []: (String id) -> Mobilis::Base::Node?
     def each_config_node: () { (Mobilis::Base::Node config_node) -> void } -> Array[Mobilis::Base::Node]
@@ -37,11 +39,16 @@ module Mobilis
   end
 
   class RealizedEnv
+    class PortAllocator
+      def initialize: (Integer starting_port, ?reservation_count: Integer) -> void
+      def reserve: (?preferred_port: Integer?, ?allocation_key: String?) -> Integer
+    end
     attr_reader system: Mobilis::System
     attr_reader environment: Mobilis::ExecutionEnvironment
     attr_reader realized_nodes: Array[Mobilis::Base::RealizedNode]
 
-    def initialize: (Mobilis::System system, Mobilis::ExecutionEnvironment environment) -> void
+    def initialize: (Mobilis::System system, Mobilis::ExecutionEnvironment environment, ?port_allocator: PortAllocator?) -> void
+    def reserve_external_port: (?preferred_port: Integer?, ?allocation_key: String?) -> Integer
     def to_s: () -> String
     def <<: (Mobilis::Base::RealizedNode realized_node) -> Array[Mobilis::Base::RealizedNode]
     def realized_node_for_config_node: (Mobilis::Base::Node system_node) -> Mobilis::Base::RealizedNode?
@@ -73,7 +80,14 @@ module Mobilis
     attr_reader git_repo: untyped
     attr_reader plugins: Array[Mobilis::Base::Plugin | Mobilis::Base::RealizedNodePlugin]
 
-    def initialize: (Mobilis::System system, ?suppress_plugins: bool) -> void
+    def initialize: (Mobilis::System system, ?suppress_plugins: bool, ?directory_service: Mobilis::Services::Directory) -> void
+    def git_repo=: (untyped repo) -> untyped
+    def materialize_browser: (on_checkpoint: ^(String, Hash[String, String], Array[String]) -> untyped) -> String
+    def materialize_static: () -> String
+    def run_generation: (Mobilis::Generation::Execution execution) -> String
+    def kubernetes_universes: () -> Array[Mobilis::Kubernetes::Universe]
+    def write_kubernetes: () -> untyped
+    def kubernetes_readme_section: () -> String
     def add_plugin: (Mobilis::Base::Plugin | Mobilis::Base::RealizedNodePlugin plugin) -> Array[Mobilis::Base::Plugin | Mobilis::Base::RealizedNodePlugin]
     def realized_production_env: () -> Mobilis::RealizedEnv
     def realized_env: (Symbol | String | Mobilis::ExecutionEnvironment target_env) -> Mobilis::RealizedEnv
