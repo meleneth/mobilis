@@ -106,7 +106,7 @@ Ruby source snapshot. Generated repository publication keeps the previous
 artifacts and Git objects if a new publication fails.
 
 The Docker build runs Diesl's Node history/rollback regression suite, and
-GitHub CI independently checks both the JavaScript syntax and the pinned
+Internal GitLab CI independently checks both the JavaScript syntax and the pinned
 history tests. Full Playwright tests still require a working browser runtime.
 
 ## Persistent local workspace
