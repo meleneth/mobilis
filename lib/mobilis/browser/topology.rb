@@ -93,6 +93,7 @@ module Mobilis
 
       def build_edges
         nodes_by_service_id = nodes.to_h { |node| [node.service_id, node] }
+        # @type var results: Array[Edge]
         results = []
 
         system.config_nodes.each_value do |service|
