@@ -75,6 +75,14 @@ if [[ ! -f "${diesl_lib}/diesl.rb" || ! -f "${carbn_lib}/carbn.rb" ]]; then
 fi
 cp -R "${diesl_lib}/." "${staging_dir}/src/lib/"
 cp -R "${carbn_lib}/." "${staging_dir}/src/lib/"
+# Serialize the *actual* Diesl workspace block as a browser ESM module.
+# This removes duplicate path, Git author and generated-root configuration.
+ruby -I"${repository_dir}/lib" -I"${diesl_lib}" -I"${carbn_lib}" -rjson -rmobilis/browser/diesl_editor -e '
+  manifest = Mobilis::Browser::DIESL_EDITOR.workspace.manifest
+  abort "Expected exactly one generated root" unless manifest.fetch(:generated).length == 1
+  abort "Expected Git policy" unless manifest.fetch(:git)
+  File.write(ARGV.fetch(0), "export const workspacePolicy = Object.freeze(" + JSON.generate(manifest) + ");\\n")
+' public/editor-policy.js
 cp -R "${repository_dir}/generator_compatibility/captures" "${staging_dir}/src/generator_compatibility/captures"
 cp -R "${playground_dir}/app" "${staging_dir}/src/playground/app"
 cp -R "${playground_dir}/templates" "${staging_dir}/src/playground/templates"
