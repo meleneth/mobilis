@@ -192,7 +192,7 @@ module Mobilis
 
       def update_starting_port(value)
         raw = value.to_s.strip
-        raise ArgumentError, "Starting port must be an integer between 1 and 65535" unless /\\A[0-9]+\\z/.match?(raw)
+        raise ArgumentError, "Starting port must be an integer between 1 and 65535" unless /\A[0-9]+\z/.match?(raw)
 
         number = Integer(raw, 10)
         raise ArgumentError, "Starting port must be an integer between 1 and 65535" unless (1..65_535).cover?(number)
