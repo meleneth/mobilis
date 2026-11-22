@@ -12,6 +12,7 @@ target :lib do
   library "forwardable"
   library "logger"
   library "open3"
+  library "tmpdir"
   library "shellwords"
   library 'yaml'
   library "json"
