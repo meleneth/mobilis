@@ -18,7 +18,7 @@ module Mobilis
       private
 
       def write_kafka
-        File.write("kafka_client.rb", File.read(File.expand_path("../templates/kafka/ruby.rb", File.dirname(File.expand_path(__FILE__)))))
+        File.write("kafka_client.rb", File.read(File.expand_path("../templates/kafka/ruby.rb.template", File.dirname(File.expand_path(__FILE__)))))
       end
 
       def write_local_gems
