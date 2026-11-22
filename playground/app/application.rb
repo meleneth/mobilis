@@ -491,7 +491,8 @@ module MobilisPlayground
       records = steps.map do |step|
         {
           message: step.fetch(:message),
-          files: step.fetch(:files).transform_values { |content| encode64(content) }
+          writes: step.fetch(:writes).transform_values { |content| encode64(content) },
+          deletes: step.fetch(:deletes)
         }
       end
       JS.global[:MobilisWorkspace].call(:persistGeneratedHistory, JSON.generate(records))
