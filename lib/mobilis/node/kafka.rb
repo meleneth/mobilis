@@ -41,13 +41,13 @@ module Mobilis
 
       # subscribe: [{topic: "events", group: "projection"}]
       def validate_connection!(publish:, subscribe:)
-        publishes = Array(publish).map(&:to_s)
-        consumes = Array(subscribe).map do |item|
+        publishes = publish.is_a?(Array) ? publish.map { |item| item.to_s } : (publish ? [publish.to_s] : [])
+        subscriptions = subscribe || []
+        consumes = subscriptions.map do |item|
           raise ArgumentError, "Kafka subscription needs topic: and group:" unless item.is_a?(Hash)
 
-          entry = item.transform_keys(&:to_sym)
-          topic_name = entry.fetch(:topic).to_s
-          group = entry.fetch(:group).to_s
+          topic_name = (item[:topic] || item["topic"] || raise(KeyError, "key not found: :topic")).to_s
+          group = (item[:group] || item["group"] || raise(KeyError, "key not found: :group")).to_s
           raise ArgumentError, "Invalid Kafka group ID: #{group}" unless GROUP_NAME.match?(group)
 
           {topic: topic_name, group: group}
