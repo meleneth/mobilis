@@ -66,7 +66,7 @@ module Mobilis
                          "mobilis.io/service" => name}
         environment = base.fetch(:environment, [])
         raise ArgumentError, "Airflow Compose environment must be a list" unless environment.is_a?(Array)
-        depends_on = base.fetch(:depends_on) { {} }
+        depends_on = base.fetch(:depends_on) { Hash.new }
         raise ArgumentError, "Airflow Compose depends_on must be a mapping" unless depends_on.is_a?(Hash)
         # @type var services: Hash[String, Hash[Symbol, untyped]]
         services = {}
@@ -99,7 +99,7 @@ module Mobilis
           end
           services[service_name] = component
         end
-        {services: services, volumes: {"#{name}-logs" => {}}}
+        {services: services, volumes: {"#{name}-logs" => Hash.new}}
       end
     end
   end
