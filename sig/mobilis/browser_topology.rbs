@@ -1,0 +1,58 @@
+module Mobilis
+  module Browser
+    class Topology
+      class Node
+        attr_reader id: String
+        attr_reader service_id: String
+        attr_reader type: String
+        attr_reader name: String
+        attr_reader label: String
+        attr_reader category: Symbol
+        attr_reader source_id: String?
+        attr_reader start_offset: Integer?
+        attr_reader end_offset: Integer?
+        def self.new: (**untyped attributes) -> Node
+      end
+      class Edge
+        attr_reader from: String
+        attr_reader to: String
+        attr_reader relationship: String?
+        attr_reader source_id: String?
+        attr_reader start_offset: Integer?
+        attr_reader end_offset: Integer?
+        def self.new: (**untyped attributes) -> Edge
+      end
+      TYPE_METADATA: Hash[String, [String, Symbol]]
+      attr_reader nodes: Array[Node]
+      attr_reader edges: Array[Edge]
+      def initialize: (Mobilis::System system, ?declarations: Array[SourceDocument::Declaration], ?relationships: Array[SourceDocument::Relationship]) -> void
+      def self.from_analysis: (SourceDocument::Analysis analysis) -> Topology
+      def empty?: () -> bool
+      def node: (String id) -> Node?
+      private
+      attr_reader system: Mobilis::System
+      attr_reader declarations: Array[SourceDocument::Declaration]
+      attr_reader relationships: Array[SourceDocument::Relationship]
+      def build_nodes: () -> Array[Node]
+      def build_edges: () -> Array[Edge]
+      def reference_targets: (Mobilis::Base::Node service) -> Array[[Symbol, Mobilis::Base::Node]]
+      def add_edge: (Array[Edge] results, Node? from, Node? to, String? relationship, SourceDocument::Relationship? source_relationship) -> void
+      def source_relationship: (Mobilis::Base::Node service, Mobilis::Base::Node? target) -> SourceDocument::Relationship?
+      def explicit_relationship: (Mobilis::node_ref_dependency dependency) -> String?
+      def find_service: (String? name) -> Mobilis::Base::Node?
+      def normalize_name: (untyped name) -> String
+      def safe_id: (String type, String name, Integer occurrence) -> String
+      def humanize: (Symbol | String value) -> String
+    end
+
+    class MermaidDiagram
+      SHAPES: Hash[Symbol, [String, String]]
+      CLASS_DEFINITIONS: Hash[Symbol, String]
+      attr_reader topology: Topology
+      def initialize: (Topology topology) -> void
+      def source: () -> String
+      private
+      def escape: (String value) -> String
+    end
+  end
+end
