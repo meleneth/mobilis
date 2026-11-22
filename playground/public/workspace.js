@@ -1,5 +1,7 @@
+import { createGitCapability } from "/git-capability.js";
 const WORKSPACE_DIRECTORY = "/workspace";
 const GENERATED_DIRECTORY = "/generated-project";
+const STAGING_GENERATED_DIRECTORY = "/generated-project-next";
 const SOURCE_PATH = "mobilis.rb";
 const LAST_VALID_PATH = ".mobilis/last-valid.rb";
 const GITIGNORE = ".mobilis/\n";
@@ -8,6 +10,8 @@ const AUTHOR = { name: "Mobilis Playground", email: "playground@mobilis.local" }
 export function createWorkspaceController() {
   const fs = new window.LightningFS("mobilis-workspace-v1");
   const pfs = fs.promises;
+  const gitCapability = createGitCapability({ fs, pfs, git: window.git, author: AUTHOR });
+  let generatedCommitReady = false;
   let queue = Promise.resolve();
   let initialized = false;
   let attached = false;
@@ -78,74 +82,83 @@ export function createWorkspaceController() {
       });
     },
 
-    // The CLI initializes Git inside generate/, not in the authoring DSL
-    // repository. Maintain the same separation here: the generated ZIP's
-    // root is a genuine Git repository with Mobilis's actual phase history.
+    // Mobilis owns every phase and commit message. Diesl provides only the
+    // repository-neutral Git capability. Publish the generated repository
+    // atomically once all actual generation commits have succeeded.
     persistGeneratedHistory(serializedSteps) {
-      return enqueue(async () => {
+      generatedCommitReady = false;
+      const job = enqueue(async () => {
         const steps = JSON.parse(serializedSteps);
-        if (!Array.isArray(steps) || steps.length === 0) {
-          throw new Error("Generator supplied no commit checkpoints.");
+        if (!Array.isArray(steps) || steps.length < 2) {
+          throw new Error("Generator must supply multiple real commit phases.");
         }
-        await removeTree(GENERATED_DIRECTORY);
-        await mkdirp(GENERATED_DIRECTORY);
-        await window.git.init({ fs, dir: GENERATED_DIRECTORY, defaultBranch: "main" });
 
-        let previous = new Set();
+        await removeTree(STAGING_GENERATED_DIRECTORY);
+        await mkdirp(STAGING_GENERATED_DIRECTORY);
+        await gitCapability.initialize(STAGING_GENERATED_DIRECTORY);
+        const finalFiles = new Map();
         for (const [index, step] of steps.entries()) {
           if (typeof step.message !== "string" || !step.message.startsWith("[mobilis] ")) {
-            throw new Error(`Invalid generator checkpoint #${index} message`);
+            throw new Error(`Invalid Mobilis commit message at phase ${index}`);
           }
-          const files = step.files || {};
-          const next = new Set(Object.keys(files));
-          for (const name of next) validateRelativePath(name);
-          for (const name of previous) {
-            if (next.has(name)) continue;
-            await pfs.unlink(`${GENERATED_DIRECTORY}/${name}`);
-            await window.git.remove({ fs, dir: GENERATED_DIRECTORY, filepath: name });
+          if (!step.writes || typeof step.writes !== "object" || !Array.isArray(step.deletes)) {
+            throw new Error(`Invalid Mobilis checkpoint delta at phase ${index}`);
           }
-          for (const name of [...next].sort()) {
-            const target = `${GENERATED_DIRECTORY}/${name}`;
-            await mkdirp(parent(target));
-            const bytes = decodeBase64(files[name]);
-            let existing = null;
-            try { existing = new Uint8Array(await pfs.readFile(target)); } catch (error) {
-              if (error.code !== "ENOENT") throw error;
-            }
-            if (!existing || !bytesEqual(existing, bytes)) {
-              await pfs.writeFile(target, bytes);
-              await window.git.add({ fs, dir: GENERATED_DIRECTORY, filepath: name });
-            }
-          }
-          const matrix = await window.git.statusMatrix({ fs, dir: GENERATED_DIRECTORY });
-          if (matrix.some(([, head, , stage]) => head !== stage)) {
-            await window.git.commit({ fs, dir: GENERATED_DIRECTORY, message: step.message, author: AUTHOR });
-          }
-          previous = next;
+          const writes = Object.fromEntries(
+            Object.entries(step.writes).map(([name, value]) => {
+              validateRelativePath(name);
+              return [name, decodeBase64(value)];
+            })
+          );
+          for (const name of step.deletes) validateRelativePath(name);
+          await gitCapability.checkpoint(STAGING_GENERATED_DIRECTORY, {
+            message: step.message, writes, deletes: step.deletes
+          });
+          for (const name of step.deletes) finalFiles.delete(name);
+          for (const [name, bytes] of Object.entries(writes)) finalFiles.set(name, bytes);
         }
 
-        // Also expose the final artifacts as changes in the DSL author's
-        // independent workspace, without contaminating generated Git history.
-        const finalFiles = steps.at(-1).files;
+        // The generated repository is distinct from the editable DSL
+        // workspace, exactly as with native Mobilis generation.
+        await removeTree(GENERATED_DIRECTORY);
+        await pfs.rename(STAGING_GENERATED_DIRECTORY, GENERATED_DIRECTORY);
+
+        // Mirror the resulting artifacts into the author's working tree for
+        // inspection. Those files are not part of the generated Git history.
         const destination = `${WORKSPACE_DIRECTORY}/generate`;
-        await removeTree(destination);
-        await mkdirp(destination);
-        for (const name of Object.keys(finalFiles).sort()) {
-          validateRelativePath(name);
-          const target = `${destination}/${name}`;
+        const temporary = `${WORKSPACE_DIRECTORY}/.mobilis/generate-next`;
+        await removeTree(temporary);
+        await mkdirp(temporary);
+        for (const [name, bytes] of [...finalFiles.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+          const target = `${temporary}/${name}`;
           await mkdirp(parent(target));
-          await pfs.writeFile(target, decodeBase64(finalFiles[name]));
+          await pfs.writeFile(target, bytes);
         }
-
+        await removeTree(destination);
+        await pfs.rename(temporary, destination);
+        generatedCommitReady = true;
         await flush();
         if (attached) await refreshView();
+        document.dispatchEvent(new CustomEvent("mobilis:generation-complete", {
+          detail: { commits: steps.length, files: finalFiles.size }
+        }));
+      });
+      return job.catch(error => {
+        generatedCommitReady = false;
+        document.dispatchEvent(new CustomEvent("mobilis:generation-failed", {
+          detail: { error: error.message || String(error) }
+        }));
+        throw error;
       });
     },
 
     downloadGeneratedProject() {
       return enqueue(async () => {
+        if (!generatedCommitReady) {
+          throw new Error("The generated project's Git history is not ready for export.");
+        }
         await flush();
-        const log = await window.git.log({ fs, dir: GENERATED_DIRECTORY });
+        const log = await gitCapability.log(GENERATED_DIRECTORY);
         if (log.length < 2) throw new Error("Generated project lacks incremental Git history.");
         const entries = {};
         async function collect(directory, relative = "") {
