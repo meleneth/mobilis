@@ -254,7 +254,7 @@ module MobilisPlayground
         value = target[:type].to_s == "checkbox" ? target[:checked].to_s == "true" : target[:value].to_s
         visual_edit(operation: :update_service_property, id:, property:, value:)
       end
-    rescue ArgumentError, KeyError, RuntimeError, TypeError => error
+    rescue ArgumentError, KeyError, RuntimeError, TypeError, Diesl::Conflict, Diesl::UnsafeEdit, Diesl::InvalidSource => error
       report_error(error)
     end
 
@@ -280,7 +280,7 @@ module MobilisPlayground
       else
         handle_button(id)
       end
-    rescue ArgumentError, KeyError, RuntimeError, TypeError, LoadError => error
+    rescue ArgumentError, KeyError, RuntimeError, TypeError, LoadError, Diesl::Conflict, Diesl::UnsafeEdit, Diesl::InvalidSource => error
       report_error(error)
     end
 
