@@ -1,5 +1,9 @@
 # Mobilis
 
+> [!WARNING]
+> **Deprecated development branch.** `beware_of_scary_monsters` has been superseded by [`core`](https://github.com/meleneth/mobilis/tree/core). Its changes, along with the Diesl/Carbn browser editor migration, were integrated into `core` on November 21, 2026. Do not base new work or deployments on this branch. This branch is retained for historical reference only.
+
+
 Mobilis scaffolds multi-service projects from a Ruby DSL, including application
 source, Docker Compose environments, and optional Kubernetes resources.
 
