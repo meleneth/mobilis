@@ -52,6 +52,16 @@ staging_dir="$(mktemp -d)"
 trap 'rm -rf "${staging_dir}"' EXIT
 mkdir -p "${staging_dir}/src/playground" "${staging_dir}/src/generator_compatibility" "${staging_dir}/gems"
 cp -R "${repository_dir}/lib" "${staging_dir}/src/lib"
+# Diesl and Carbn execute as ordinary pure-Ruby sources in the WASM app.
+# Build inputs must explicitly provide exact, pinned checkouts.
+diesl_lib="${DIESL_LIB_DIR:-}"
+carbn_lib="${CARBN_LIB_DIR:-}"
+if [[ ! -f "${diesl_lib}/diesl.rb" || ! -f "${carbn_lib}/carbn.rb" ]]; then
+  echo "Diesl and Carbn source paths required: set DIESL_LIB_DIR and CARBN_LIB_DIR" >&2
+  exit 1
+fi
+cp -R "${diesl_lib}/." "${staging_dir}/src/lib/"
+cp -R "${carbn_lib}/." "${staging_dir}/src/lib/"
 cp -R "${repository_dir}/generator_compatibility/captures" "${staging_dir}/src/generator_compatibility/captures"
 cp -R "${playground_dir}/app" "${staging_dir}/src/playground/app"
 cp -R "${playground_dir}/templates" "${staging_dir}/src/playground/templates"
