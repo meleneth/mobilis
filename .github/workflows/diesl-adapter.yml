@@ -37,7 +37,7 @@ jobs:
   browser-workspace:
     runs-on: ubuntu-latest
     env:
-      DIESL_REF: 18523d162c79e172a32108fb7914fbaeb5d80f7e
+      DIESL_REF: ffdaabc0e06aeecf92947969bc69f4d623d1912e
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
