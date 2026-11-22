@@ -30,6 +30,9 @@ if [[ ! -f "${carbn_browser}/workspace-history.js" || ! -f "${carbn_browser}/git
   echo "Pinned Carbn browser Git modules are missing" >&2
   exit 1
 fi
+# Do not ship obsolete Diesl/legacy Git assets from a prior local build.
+rm -rf public/diesl
+rm -f public/git-capability.js
 mkdir -p public/carbn
 cp "${carbn_browser}/workspace-history.js" "${carbn_browser}/git-capability.js" public/carbn/
 # Verify Carbn workspace history/rollback before packaging the browser.
