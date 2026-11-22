@@ -1,0 +1,76 @@
+module Mobilis
+  module Browser
+    class SourceDocument
+      SERVICE_TYPES: Array[Symbol]
+      PROPERTY_SCHEMAS: Hash[Symbol, Hash[Symbol, { kind: Symbol, default: untyped }]]
+
+      class Declaration
+        attr_reader id: String
+        attr_reader type: Symbol
+        attr_reader name: String
+        attr_reader editable: bool
+        attr_reader start_offset: Integer
+        attr_reader end_offset: Integer
+        attr_reader properties: Hash[Symbol, untyped]
+        def self.new: (**untyped attributes) -> Declaration
+      end
+      class Relationship
+        attr_reader id: String
+        attr_reader kind: Symbol
+        attr_reader from: String
+        attr_reader to: String
+        attr_reader editable: bool
+        attr_reader start_offset: Integer
+        attr_reader end_offset: Integer
+        attr_reader properties: Hash[Symbol, untyped]
+        def self.new: (**untyped attributes) -> Relationship
+      end
+      class ArchiveDeclaration
+        attr_reader id: String
+        attr_reader name: String
+        attr_reader editable: bool
+        attr_reader payload: String?
+        attr_reader payload_start_offset: Integer
+        attr_reader payload_end_offset: Integer
+        attr_reader start_offset: Integer
+        attr_reader end_offset: Integer
+        attr_reader parent_revision: String
+        attr_reader bundle: Mobilis::EmbeddedArchive::Bundle?
+        def self.new: (**untyped attributes) -> ArchiveDeclaration
+      end
+      class Analysis
+        attr_reader source: String
+        attr_reader system: Mobilis::System?
+        attr_reader declarations: Array[Declaration]
+        attr_reader relationships: Array[Relationship]
+        attr_reader archives: Array[ArchiveDeclaration]
+        attr_reader errors: Array[String]
+        def self.new: (**untyped attributes) -> Analysis
+        def valid?: () -> bool
+      end
+
+      attr_reader source: String
+      attr_reader parse_result: untyped
+      def initialize: (String source) -> void
+      def analyze: () -> Analysis
+      def rename: (String id, String name) -> String
+      def rename_with_references: (String id, String name) -> String
+      def propagate_service_rename: (String edited_source) -> String?
+      def service_name_literals: (String name) -> Array[untyped]
+      def starting_port_editable?: () -> bool
+      def update_starting_port: (untyped value) -> String
+      def change_type: (String id, Symbol | String type) -> String
+      def remove: (String id) -> String
+      def update_property: (String id, Symbol | String property, untyped value) -> String
+      def add: (Symbol | String type, String name) -> String
+      def add_relationship: (from: String, to: String, ?kind: Symbol, ?properties: Hash[Symbol, untyped]) -> String
+      def update_relationship: (String id, Symbol | String property, untyped value) -> String
+      def remove_relationship: (String id) -> String
+      def update_archive_member: (String id, String path, String content, parent_revision: String) -> String
+      def revision: () -> String
+      def declarations: () -> Array[Declaration]
+      def relationships: () -> Array[Relationship]
+      def archives: () -> Array[ArchiveDeclaration]
+    end
+  end
+end
