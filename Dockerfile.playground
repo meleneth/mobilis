@@ -21,6 +21,16 @@ RUN cd playground && bundle _4.0.20_ config set --local frozen true \
 COPY playground/package.json playground/package-lock.json ./playground/
 RUN cd playground && npm ci
 
+# Pin the reusable editor and reactive libraries at their reviewed commits.
+# These are build-time sources only; nginx serves no Git checkout.
+RUN git clone --quiet https://github.com/meleneth/carbn.git /opt/carbn \
+  && cd /opt/carbn && git checkout --quiet 467477e2e0d78e65e82ebc855a69f860f186621e \
+  && test "$(git rev-parse HEAD)" = "467477e2e0d78e65e82ebc855a69f860f186621e"
+RUN git clone --quiet https://github.com/meleneth/diesl.git /opt/diesl \
+  && cd /opt/diesl && git checkout --quiet eb2ce37ebbcf85f158cd6dfb541946622ee51e88 \
+  && test "$(git rev-parse HEAD)" = "eb2ce37ebbcf85f158cd6dfb541946622ee51e88"
+ENV DIESL_LIB_DIR=/opt/diesl/lib CARBN_LIB_DIR=/opt/carbn/lib
+
 COPY lib ./lib
 COPY scripts ./scripts
 COPY generator_compatibility/captures ./generator_compatibility/captures
