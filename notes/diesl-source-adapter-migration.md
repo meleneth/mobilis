@@ -39,11 +39,15 @@ The legacy `SourceDocument` must not be deleted: the Diesl adapter still calls
 its Mobilis-specific transformations. Further reductions should be driven by
 parity tests, not by raw line count.
 
-**Workspace boundary:** Diesl's existing browser workspace does not yet
-implement Mobilis's complete generation-phase Git history, checkout, and restore
-contract. Keep `playground/public/workspace.js` until those capabilities have
-feature-for-feature parity and can preserve existing `mobilis-workspace-v1`
-IndexedDB state. Do not silently replace the filesystem name or discard commits.
+**Workspace boundary (history gap closed):** Diesl now owns the reusable
+byte-safe Git checkpoint, multi-phase generated repository history, atomic
+publication/rollback, Git-object export, and guarded source revision restore.
+Mobilis delegates these operations to `/diesl/workspace-history.js`, staged
+from the pinned Diesl checkout. Mobilis still owns its workspace UI,
+generator-specific validation, compatibility shim, interactive diff, and
+browser event wiring. Existing `mobilis-workspace-v1` IndexedDB state, source
+paths, and Git history remain unchanged. We do not replace the browser
+filesystem name or discard existing commits.
 
 ## Verification gates
 
