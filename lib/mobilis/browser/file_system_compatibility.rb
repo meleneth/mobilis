@@ -7,7 +7,7 @@ module Mobilis
         def chmod(*arguments)
           super
         rescue Errno::ENOSYS, Errno::ENOTSUP
-          raise unless Mobilis::Browser::FileSystemCompatibility.active?
+          Kernel.raise unless Mobilis::Browser::FileSystemCompatibility.active?
 
           0
         end
@@ -17,7 +17,7 @@ module Mobilis
         def chmod(*arguments, **keywords)
           super
         rescue Errno::ENOSYS, Errno::ENOTSUP
-          raise unless Mobilis::Browser::FileSystemCompatibility.active?
+          Kernel.raise unless Mobilis::Browser::FileSystemCompatibility.active?
 
           arguments.first
         end
