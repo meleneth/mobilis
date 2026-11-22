@@ -20,7 +20,7 @@ module Mobilis
         steps = []
         root = Mobilis::Browser::FileSystemCompatibility.without_posix_permissions do
           Mobilis::Manifest.new(system, directory_service: directory).materialize_browser(
-            on_checkpoint: ->(message, files) { steps << {message:, files:} }
+            on_checkpoint: ->(message, writes, deletes) { steps << {message:, writes:, deletes:} }
           )
         end
         files = Dir.glob("**/*", File::FNM_DOTMATCH, base: root)
