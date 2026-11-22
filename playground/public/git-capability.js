@@ -64,7 +64,9 @@ export function createGitCapability({ fs, pfs, git, author }) {
         if (await changed(path, bytes)) {
           await ensureParent(path);
           await pfs.writeFile(path, bytes);
-          await git.add({ fs, dir: root, filepath: name });
+          if (!(await git.isIgnored({ fs, dir: root, filepath: name }))) {
+            await git.add({ fs, dir: root, filepath: name });
+          }
         }
       }
       const matrix = await git.statusMatrix({ fs, dir: root });
