@@ -559,14 +559,11 @@ module Mobilis
       end
 
       def line_start(offset)
-        source.rindex("\n", offset - 1)&.+(1) || 0
+        @diesl_source.line_start(offset)
       end
 
       def line_range(start_offset, end_offset)
-        start_offset = line_start(start_offset)
-        end_offset = source.index("\n", end_offset) || end_offset
-        end_offset += 1 if end_offset < source.length
-        [start_offset, end_offset]
+        @diesl_source.line_range(start_offset, end_offset)
       end
 
       def normalize_name(name)
