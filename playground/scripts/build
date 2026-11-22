@@ -24,6 +24,14 @@ cp node_modules/@isomorphic-git/lightning-fs/LICENSE public/vendor/lightning-fs/
 cp "${repository_dir}/spec/fixtures/browser/postgres-compose.yml" public/parity/
 ruby scripts/build_embedded_fixture.rb public/parity/embedded-source.rb
 ruby scripts/build_examples.rb "${repository_dir}/scripts" public/examples
+# Import the exact pinned Diesl workspace engine and its shared Git capability.
+diesl_browser="${DIESL_LIB_DIR:-}/../browser/public"
+if [[ ! -f "${diesl_browser}/workspace-history.js" || ! -f "${diesl_browser}/git-capability.js" ]]; then
+  echo "Pinned Diesl browser workspace modules are missing" >&2
+  exit 1
+fi
+mkdir -p public/diesl
+cp "${diesl_browser}/workspace-history.js" "${diesl_browser}/git-capability.js" public/diesl/
 
 runtime_path="${RUBY_WASM_RUNTIME_SOURCE:-node_modules/@ruby/4.0-wasm-wasi/dist/ruby+stdlib.wasm}"
 if [[ ! -f "${runtime_path}" ]]; then
