@@ -88,7 +88,7 @@ module Mobilis
       def envfile_vars: () -> Mobilis::Compose::Environment
 
       def port_maps: () -> Array[Mobilis::Primitives::PortMap]
-      def register_external_port: (Integer internal_port_no, String env_var, String memo) -> Mobilis::Primitives::PortMap
+      def register_external_port: (Integer internal_port_no, String env_var, String memo, ?preferred_port: Integer?, ?allocation_key: String?) -> Mobilis::Primitives::PortMap
       def compose_ports: () -> Mobilis::Compose::Ports
       def compose_ports_override: () -> Mobilis::Compose::Ports
       def compose_volumes: () -> Mobilis::Compose::Volume
