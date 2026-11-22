@@ -1,0 +1,66 @@
+module Mobilis
+  module GeneratorCompatibility
+    class UnsupportedInvocationError < KeyError
+    end
+    class InvalidCaptureError < ArgumentError
+    end
+    class WorkspaceConflictError < StandardError
+    end
+    class UnsafePathError < ArgumentError
+    end
+
+    class CapturedFileCreation
+      attr_reader required_paths: Array[String]
+      def initialize: (Hash[String, untyped] capture, ?required_paths: Array[String]) -> void
+      def apply: (untyped workspace) -> Hash[Symbol, Array[String]]
+      def target_paths: () -> Array[String]
+      private
+      def entries: () -> Array[Hash[String, untyped]]
+      def validate_capture!: () -> void
+      def decode: (Hash[String, untyped] record) -> String
+    end
+
+    class Registry
+      def initialize: () -> void
+      def register: (generator: String, version: String, arguments: Array[String], transformation: CapturedFileCreation) -> self
+      def apply: (generator: String, version: String, arguments: Array[String], workspace: untyped) -> Hash[Symbol, Array[String]]
+      private
+      def invocation_key: (String generator, String version, Array[String] arguments) -> Array[String]
+    end
+
+    class Catalog
+      class Invocation
+        attr_reader generator: String
+        attr_reader version: String
+        attr_reader arguments: Array[String]
+        attr_reader required_paths: Array[String]
+        attr_reader target_paths: Array[String]
+        def self.new: (**untyped kwargs) -> Invocation
+      end
+      attr_reader invocations: Array[Invocation]
+      def self.from_corpus: (String corpus_root) -> Catalog
+      def initialize: (?registry: Registry) -> void
+      def register: (generator: String, version: String, arguments: Array[String], transformation: CapturedFileCreation) -> self
+      def apply: (generator: String, version: String, arguments: Array[String], workspace: untyped) -> Hash[Symbol, Array[String]]
+    end
+
+    class MemoryWorkspace
+      attr_reader writes: Hash[String, {content: String, mode: String?}]
+      def initialize: (?Hash[String, String] files) -> void
+      def exist?: (String path) -> bool
+      def file?: (String path) -> bool
+      def read: (String path) -> String
+      def write: (String path, String content, ?mode: String?) -> untyped
+    end
+
+    class DirectoryWorkspace
+      def initialize: (String root) -> void
+      def exist?: (String path) -> bool
+      def file?: (String path) -> bool
+      def read: (String path) -> String
+      def write: (String path, String content, ?mode: String?) -> untyped
+      private
+      def resolve: (String path) -> String
+    end
+  end
+end
