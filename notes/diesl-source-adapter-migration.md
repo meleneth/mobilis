@@ -26,6 +26,25 @@ The duplicate Mobilis `SourceHistory` and
 specifications have been removed. Do not delete `SourceDocument` without first
 extracting and replacing the Mobilis domain transformations it still owns.
 
+## SourceDocument consolidation
+
+`SourceDocument` now delegates Prism parsing, revision hashes, literal
+interpretation, and syntax-checked source byte replacement to `Diesl::Source`.
+Mobilis still owns its domain-specific service graph declarations, relationship
+and service rewrite policies, archive operations, and semantic evaluation.
+Regression cases cover multibyte source offsets and the historical nested
+relationship-map serialization convention.
+
+The legacy `SourceDocument` must not be deleted: the Diesl adapter still calls
+its Mobilis-specific transformations. Further reductions should be driven by
+parity tests, not by raw line count.
+
+**Workspace boundary:** Diesl's existing browser workspace does not yet
+implement Mobilis's complete generation-phase Git history, checkout, and restore
+contract. Keep `playground/public/workspace.js` until those capabilities have
+feature-for-feature parity and can preserve existing `mobilis-workspace-v1`
+IndexedDB state. Do not silently replace the filesystem name or discard commits.
+
 ## Verification gates
 
 - `bundle exec rspec spec/mobilis/browser/diesl_editor_spec.rb
