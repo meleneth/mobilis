@@ -5,7 +5,7 @@
 # loads the Mobilis portion of that canonical require list while preserving the
 # same implementation files and marks the native entrypoint as satisfied for
 # downloaded definitions that begin with `require "mobilis"`.
-mobilis_entrypoint = File.expand_path("../mobilis.rb", __dir__)
+mobilis_entrypoint = File.expand_path("../mobilis.rb", File.dirname(File.expand_path(__FILE__)))
 mobilis_loader = File.readlines(mobilis_entrypoint).drop(7).join
 eval(mobilis_loader, TOPLEVEL_BINDING, mobilis_entrypoint, 8) # rubocop:disable Security/Eval
 $LOADED_FEATURES << mobilis_entrypoint unless $LOADED_FEATURES.include?(mobilis_entrypoint)
