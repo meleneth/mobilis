@@ -17,6 +17,7 @@ module Mobilis
         FileUtils.mkdir_p(@workspace)
 
         directory = Mobilis::Services::Directory.new(@workspace)
+        # @type var steps: Array[{message: String, writes: Hash[String, String], deletes: Array[String]}]
         steps = []
         root = Mobilis::Browser::FileSystemCompatibility.without_posix_permissions do
           Mobilis::Manifest.new(system, directory_service: directory).materialize_browser(
