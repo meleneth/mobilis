@@ -81,7 +81,7 @@ ruby -I"${repository_dir}/lib" -I"${diesl_lib}" -I"${carbn_lib}" -rjson -rmobili
   manifest = Mobilis::Browser::DIESL_EDITOR.workspace.manifest
   abort "Expected exactly one generated root" unless manifest.fetch(:generated).length == 1
   abort "Expected Git policy" unless manifest.fetch(:git)
-  File.write(ARGV.fetch(0), "export const workspacePolicy = Object.freeze(" + JSON.generate(manifest) + ");\\n")
+  File.write(ARGV.fetch(0), "export const workspacePolicy = Object.freeze(" + JSON.generate(manifest) + ");")
 ' public/editor-policy.js
 cp -R "${repository_dir}/generator_compatibility/captures" "${staging_dir}/src/generator_compatibility/captures"
 cp -R "${playground_dir}/app" "${staging_dir}/src/playground/app"
