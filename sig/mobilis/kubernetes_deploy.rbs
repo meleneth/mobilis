@@ -1,0 +1,14 @@
+# This is a standalone generated executable. Its namespace is deliberately
+# independent of the Mobilis library loaded by the generator.
+module MobilisKubernetesDeploy
+  ENVIRONMENT: String
+  DIRECTORY: String
+  UNIVERSE: Hash[String, untyped]
+  CONTEXT: String
+  KUBECTL: Array[String]
+  NAMESPACE: String
+
+  def self.run!: (*String args) -> void
+  def self.query!: (*String args, ?allow_missing: bool) -> untyped
+  def self.execute: () -> void
+end
