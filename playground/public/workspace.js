@@ -65,29 +65,14 @@ export function createWorkspaceController() {
 
     persistGenerated(serializedFiles) {
       return enqueue(async () => {
-        const files = JSON.parse(serializedFiles);
-        const destination = `${WORKSPACE_DIRECTORY}/generate`;
-        const temporary = `${WORKSPACE_DIRECTORY}/.mobilis/generate-next`;
-        const backup = `${WORKSPACE_DIRECTORY}/.mobilis/generate-previous`;
-        await removeTree(temporary);
-        await removeTree(backup);
-        await mkdirp(temporary);
-        for (const name of Object.keys(files).sort()) {
-          validateRelativePath(name);
-          const target = `${temporary}/${name}`;
-          await mkdirp(parent(target));
-          await pfs.writeFile(target, decodeBase64(files[name]));
-        }
-        const hadDestination = await exists(destination);
-        if (hadDestination) await pfs.rename(destination, backup);
-        try {
-          await pfs.rename(temporary, destination);
-        } catch (error) {
-          if (hadDestination && await exists(backup)) await pfs.rename(backup, destination);
-          throw error;
-        }
-        await removeTree(backup);
-        await flush();
+        const files = Object.fromEntries(Object.entries(JSON.parse(serializedFiles)).map(
+          ([name, base64]) => [name, decodeBase64(base64)]
+        ));
+        await workingTree.replaceFiles({
+          directory: workspacePolicy.generated[0].path,
+          scratch: LAST_VALID_PATH.split("/")[0] + "/generated-snapshot",
+          files
+        });
         if (attached) await refreshView();
       });
     },
@@ -380,22 +365,6 @@ export function createWorkspaceController() {
         throw error;
       }
     }
-  }
-
-  async function removeTree(target) {
-    let stat;
-    try {
-      stat = await pfs.stat(target);
-    } catch (error) {
-      if (error.code === "ENOENT") return;
-      throw error;
-    }
-    if (!stat.isDirectory()) {
-      await pfs.unlink(target);
-      return;
-    }
-    for (const entry of await pfs.readdir(target)) await removeTree(`${target}/${entry}`);
-    await pfs.rmdir(target);
   }
 
   async function exists(target) {
