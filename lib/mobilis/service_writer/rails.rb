@@ -39,7 +39,10 @@ module Mobilis
           else raise ArgumentError, "Unsupported Rails database #{realized_node.primary_database.class}"
           end
         end
-        args.concat(%w[--skip-bundle --skip-git])
+        # Rails' CI template shells out to git to discover the default branch.
+        # Browser WASM has no host process execution, and the generated
+        # project's Git history belongs to Mobilis, not Rails.
+        args.concat(%w[--skip-bundle --skip-git --skip-ci])
         destination = File.expand_path("..", Dir.pwd)
         Mobilis::Browser::FileSystemCompatibility.without_posix_permissions do
           ::Rails::Generators::AppGenerator.start(args, destination_root: destination)
