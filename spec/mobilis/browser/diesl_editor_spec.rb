@@ -32,6 +32,21 @@ RSpec.describe "Diesl/Mobilis source adapter parity" do
     expect(editor.adapted_session(source:).analysis).to be_valid
   end
 
+  it "drives every builder service and property field from the declared Diesl block schema" do
+    definitions = editor.entities
+    expect(definitions.keys).to match_array(Mobilis::Browser::SourceDocument::SERVICE_TYPES)
+    Mobilis::Browser::SourceDocument::PROPERTY_SCHEMAS.each do |service, properties|
+      fields = definitions.fetch(service).fields.to_h { |field| [field.name, field] }
+      expect(fields.fetch(:name).required).to be(true)
+      properties.each do |name, details|
+        field = fields.fetch(name)
+        expect(field.type).to eq(details.fetch(:kind))
+        expect(field.default).to eq(details.fetch(:default))
+      end
+    end
+    expect(definitions.fetch(:s3).fields.find { |field| field.name == :buckets }.type).to eq(:strings)
+  end
+
   it "routes system ports and synchronized service names through the Diesl adapter" do
     source = <<~RUBY
       Mobilis::DSL.build("adapter-ports", starting_port: 11_000) do
