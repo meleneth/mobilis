@@ -23,6 +23,33 @@ RSpec.describe Mobilis::Browser::SourceDocument do
     expect(analysis.declarations.first.to_h).to include(type: :postgres, name: "main-db", editable: true)
   end
 
+  it "delegates parse and revisions to Diesl without normalizing source bytes" do
+    document = described_class.new(source)
+    expect(document.parse_result).to be_a(Prism::ParseResult)
+    expect(document.revision).to eq(Diesl::Source.new(source).revision)
+    expect(document.analyze.source).to eq(source)
+  end
+
+  it "preserves source offsets for multibyte Ruby literals" do
+    unicode = <<~RUBY
+      # spacecraft 🪐
+      Mobilis::DSL.build("unicode") do
+        redis("mémoire")
+      end
+    RUBY
+    document = described_class.new(unicode)
+    changed = document.rename(document.analyze.declarations.first.id, "cache")
+    expect(changed).to include("# spacecraft 🪐")
+    expect(changed).to include('redis("cache")')
+    expect(described_class.new(changed).analyze).to be_valid
+  end
+
+  it "preserves string-keyed nested relationship literals when encoding through Diesl" do
+    document = described_class.new(source)
+    literal = document.send(:ruby_literal, {topics: [{group: "consumer"}]})
+    expect(literal).to eq('{"topics" => [{"group" => "consumer"}]}')
+  end
+
   it "round trips byte-identically without a visual change" do
     expect(described_class.new(source).analyze.source).to eq(source)
   end
