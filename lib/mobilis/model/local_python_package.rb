@@ -71,8 +71,22 @@ module Mobilis
       end
 
       def self.from_h(hash)
-        new(hash[:name], dependencies: hash[:dependencies] || [],
-            files: Array(hash[:files]).map { |file| Mobilis::Model::File.from_h(file) })
+        name = hash.fetch(:name)
+        dependencies = hash.fetch(:dependencies, [])
+        records = hash.fetch(:files, [])
+        raise ArgumentError, "Python package name must be a String" unless name.is_a?(String)
+        unless dependencies.is_a?(Array) && dependencies.all? { |dependency| dependency.is_a?(String) }
+          raise ArgumentError, "Python package dependencies must be strings"
+        end
+        raise ArgumentError, "Python package files must be an Array" unless records.is_a?(Array)
+
+        files = records.map do |record|
+          raise ArgumentError, "Python package file must be a Hash" unless record.is_a?(Hash)
+
+          # A serialized record is validated at the File deserialization boundary.
+          Mobilis::Model::File.from_h(record)
+        end
+        new(name, dependencies:, files:)
       end
     end
   end
