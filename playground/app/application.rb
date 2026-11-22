@@ -437,11 +437,11 @@ module MobilisPlayground
         :builder,
         declarations: @analysis.declarations,
         service_types: Mobilis::Browser::DIESL_EDITOR.entities.keys,
-        property_schemas: Mobilis::Browser::DIESL_EDITOR.entities.transform_values do |schema|
-          schema.fields.reject { |field| field.name == :name }.to_h do |field|
+        property_schemas: Mobilis::Browser::DIESL_EDITOR.entities.transform_values { |schema|
+          schema.fields.reject { |field| field.name == :name }.to_h { |field|
             [field.name, {kind: field.type, default: field.default}]
-          end
-        end,
+          }
+        },
         inspector_services:,
         capabilities:,
         starting_port: @analysis.system.starting_port,
