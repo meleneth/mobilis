@@ -56,7 +56,7 @@ RSpec.describe Mobilis::Browser::SourceDocument do
     document = described_class.new(unicode)
     added = document.add(:redis, "cache")
     expect(added).to include("# ☃️ source heading")
-    expect(added).to include("  postgres(\"database\")\n  redis(\"cache\")\n")
+    expect(added).to include("  redis(\"session\")\n  redis(\"cache\")\n  connect(from: \"session\", to: \"database\")\n")
     expect(described_class.new(added).analyze).to be_valid
   end
 
