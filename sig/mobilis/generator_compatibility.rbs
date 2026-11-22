@@ -1,6 +1,6 @@
 module Mobilis
   module GeneratorCompatibility
-    class UnsupportedInvocationError < KeyError[untyped]
+    class UnsupportedInvocationError < KeyError[untyped, untyped]
     end
     class InvalidCaptureError < ArgumentError
     end
