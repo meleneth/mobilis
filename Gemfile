@@ -23,7 +23,7 @@ group :playground do
 end
 
 group :development do
-  gem "steep"
+  gem "steep", "~> 2.1.0"
 end
 
 gem "awesome_print", "~> 1.9"
