@@ -25,6 +25,9 @@ module Mobilis
       # approximation of a Rails skeleton. The browser owns Git, so Rails
       # itself must not create a nested repository.
       def write_browser
+        # Unlike the Rails CLI, Mobilis loads the generator directly inside
+        # Ruby WASM. Initialize RubyGems before Rails evaluates Gem::Version.
+        require "rubygems"
         require "rails/generators/rails/app/app_generator"
 
         args = [realized_node.name]
