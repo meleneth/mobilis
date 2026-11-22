@@ -58,7 +58,6 @@ browser_workspace:
     - node --check /tmp/carbn/browser/git-capability.js
     - node --check /tmp/carbn/browser/workspace-history.js
     - node --test /tmp/carbn/test/workspace-history.test.mjs
-    - cd playground && npm ci
 
 docs:
   image: node:24-trixie
