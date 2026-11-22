@@ -64,15 +64,19 @@ module Mobilis
         base[:restart] = "unless-stopped"
         base[:labels] = {"app.kubernetes.io/managed-by" => "mobilis", "mobilis.io/project" => meta_project_name,
                          "mobilis.io/service" => name}
-        base[:environment] ||= {}
+        environment = base.fetch(:environment, [])
+        raise ArgumentError, "Airflow Compose environment must be a list" unless environment.is_a?(Array)
+        depends_on = base.fetch(:depends_on, {})
+        raise ArgumentError, "Airflow Compose depends_on must be a mapping" unless depends_on.is_a?(Hash)
+        # @type var services: Hash[String, Hash[Symbol, untyped]]
         services = {}
         init_name = "#{name}-init"
         services[init_name] = base.merge(command: "version", restart: "no",
-                                         environment: (base[:environment] || []) + ["_AIRFLOW_DB_MIGRATE=true", "_AIRFLOW_WWW_USER_CREATE=true",
+                                         environment: environment + ["_AIRFLOW_DB_MIGRATE=true", "_AIRFLOW_WWW_USER_CREATE=true",
                                            "_AIRFLOW_WWW_USER_USERNAME=admin", "_AIRFLOW_WWW_USER_PASSWORD=admin"])
         COMPONENTS.each do |suffix, command|
           service_name = "#{name}#{suffix}"
-          deps = (base[:depends_on] || {}).merge(init_name => {condition: "service_completed_successfully"})
+          deps = depends_on.merge(init_name => {condition: "service_completed_successfully"})
           deps["#{name}"] = {condition: "service_healthy"} if suffix == "-worker"
           health = case suffix
                    when "" then "curl --fail http://localhost:8080/api/v2/version"
@@ -87,7 +91,12 @@ module Mobilis
                                             "AIRFLOW__TRACES__OTEL_SERVICE=#{service_name}",
                                             "AIRFLOW__METRICS__OTEL_SERVICE=#{service_name}"])
           component[:ports] = compose_ports.as_json if suffix.empty?
-          component[:environment] << "DUMB_INIT_SETSID=0" if suffix == "-worker"
+          if suffix == "-worker"
+            component_environment = component.fetch(:environment)
+            raise ArgumentError, "Airflow worker environment must be a list" unless component_environment.is_a?(Array)
+
+            component_environment << "DUMB_INIT_SETSID=0"
+          end
           services[service_name] = component
         end
         {services: services, volumes: {"#{name}-logs" => {}}}
