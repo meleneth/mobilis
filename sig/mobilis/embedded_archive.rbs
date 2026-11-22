@@ -48,6 +48,7 @@ module Mobilis
     def self.validate_path!: (String path) -> String
     def self.split_tar_path: (String path) -> [String, String]
     def self.tar_path: (String header) -> String
+    def self.required_byteslice: (String value, Integer offset, Integer length) -> String
     def self.null_terminated: (String value) -> String
     def self.octal_field: (String header, Integer offset, Integer length, String label) -> Integer
     def self.write_field: (String header, Integer offset, Integer length, String value) -> String
