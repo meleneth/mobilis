@@ -37,7 +37,9 @@ module Mobilis
       def self.from_h(hash)
         new(hash.fetch(:domain)).tap do |declaration|
           declaration.istio do
-            Array(hash[:exposures]).each { |exposure| expose exposure.fetch(:name), root: exposure.fetch(:root) }
+            hash.fetch(:exposures).each do |exposure|
+              expose exposure.fetch(:name), root: exposure.fetch(:root)
+            end
           end
         end
       end
