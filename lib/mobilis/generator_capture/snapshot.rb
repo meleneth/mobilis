@@ -13,6 +13,7 @@ module Mobilis
 
       def self.capture(root)
         root = File.expand_path(root)
+        # @type var records: Array[Hash[String, untyped]]
         records = []
 
         Find.find(root) do |absolute_path|
