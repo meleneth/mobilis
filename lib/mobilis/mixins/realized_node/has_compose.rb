@@ -51,7 +51,9 @@ module Mobilis
           # Compose itself supplies the environment-scoped project label.
           existing_labels = details[:labels]
           raise ArgumentError, "Compose labels must be a mapping" if existing_labels && !existing_labels.is_a?(Hash)
-          details[:labels] = (existing_labels || {}).merge(
+          # @type var labels: Hash[Mobilis::auto_key, Mobilis::auto_serial_value]
+          labels = existing_labels.is_a?(Hash) ? existing_labels : {}
+          details[:labels] = labels.merge(
             "app.kubernetes.io/managed-by" => "mobilis",
             "mobilis.io/project" => meta_project_name,
             "mobilis.io/service" => name
