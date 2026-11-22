@@ -28,5 +28,8 @@ jobs:
           ruby -c playground/app/boot.rb
           ruby -c lib/mobilis/browser/diesl_editor.rb
           ruby -c playground/scripts/build_examples.rb
+      - name: Native Mobilis require remains independent of Diesl
+        run: |
+          bundle exec ruby -Ilib -e 'require "mobilis"; abort "Diesl eagerly loaded by native Mobilis" if $LOADED_FEATURES.any? { |entry| entry.end_with?("/diesl.rb") }'
       - name: Run source adapter parity with existing Mobilis AST tests
         run: bundle exec rspec spec/mobilis/browser/source_document_spec.rb spec/mobilis/browser/diesl_editor_spec.rb
