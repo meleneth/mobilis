@@ -42,7 +42,7 @@ module Mobilis
 
           unsupported = build.keys - %i[context dockerfile args target labels]
           raise ArgumentError, "Unsupported Kubernetes build options for #{node.name}: #{unsupported}" unless unsupported.empty?
-          build_labels = build.fetch(:labels, {})
+          build_labels = build.fetch(:labels) { {} }
           raise ArgumentError, "Kubernetes build labels must be a mapping for #{node.name}" unless build_labels.is_a?(Hash)
           labels = build_labels.merge(
             "org.opencontainers.image.vendor" => "Mobilis", "mobilis.project" => universe.project,
@@ -163,7 +163,7 @@ module Mobilis
           raise ArgumentError, "Rails supports one OTEL Collector connection" if collectors.size > 1
           values["OTEL_EXPORTER_OTLP_ENDPOINT"] = collectors.first.internal_url if collectors.first
         end
-        values.sort.map { |name, value| {"name" => name, "value" => value} }
+        values.sort.map { |name, value| {"name" => name, "value" => value.to_s} }
       end
 
       def configuration_for(universe, node)
