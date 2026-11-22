@@ -1,3 +1,11 @@
+GIT
+  remote: https://github.com/meleneth/diesl.git
+  revision: 4e8c26178a54307e6d3c69d46244637152dd30d7
+  ref: 4e8c26178a54307e6d3c69d46244637152dd30d7
+  specs:
+    diesl (0.1.0)
+      prism (>= 1.0)
+
 PATH
   remote: .
   specs:
@@ -296,7 +304,6 @@ PLATFORMS
   arm-linux-gnu
   arm-linux-musl
   arm64-darwin
-  ruby
   x64-mingw-ucrt
   x86-linux-gnu
   x86-linux-musl
@@ -307,6 +314,7 @@ PLATFORMS
 DEPENDENCIES
   awesome_print (~> 1.9)
   debug (>= 1.10.0)
+  diesl!
   factory_bot (~> 6.5.1)
   foreman (~> 0.90.0)
   git (~> 3.0.0)
@@ -320,8 +328,8 @@ DEPENDENCIES
   standard
   state_machines-graphviz
   steep
-  super_diff (~> 0.15.0)
+  super_diff (~> 0.15.0, >= 0)
   webrick (~> 1.9.1)
 
 BUNDLED WITH
-   4.0.20
+  4.0.20
