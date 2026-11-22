@@ -24,8 +24,8 @@ RUN cd playground && npm ci
 # Pin the reusable editor and reactive libraries at their reviewed commits.
 # These are build-time sources only; nginx serves no Git checkout.
 RUN git clone --quiet https://github.com/meleneth/carbn.git /opt/carbn \
-  && cd /opt/carbn && git checkout --quiet 73743b578d2784151593a7ee63bcd99d240bffa2 \
-  && test "$(git rev-parse HEAD)" = "73743b578d2784151593a7ee63bcd99d240bffa2"
+  && cd /opt/carbn && git checkout --quiet 2e26eeea593919d67e99403fb995392ff6e17384 \
+  && test "$(git rev-parse HEAD)" = "2e26eeea593919d67e99403fb995392ff6e17384"
 RUN git clone --quiet https://github.com/meleneth/diesl.git /opt/diesl \
   && cd /opt/diesl && git checkout --quiet cfa582cd553a93a706e5fa5ebe23701915e9cf43 \
   && test "$(git rev-parse HEAD)" = "cfa582cd553a93a706e5fa5ebe23701915e9cf43"
