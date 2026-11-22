@@ -47,7 +47,9 @@ module Mobilis
           path = destination_prefix ? ::File.join(destination_prefix, entry.path) : entry.path
           [entry, path]
         end
-        existing_paths = models.grep(Mobilis::Model::File).map(&:path)
+        existing_paths = models.filter_map do |model|
+          model.path if model.is_a?(Mobilis::Model::File)
+        end
         conflict = paths.find { |_entry, path| existing_paths.include?(path) }
         raise ArgumentError, "Embedded archive member conflicts with existing file #{conflict.last}" if conflict
 
