@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "fileutils"
+require "digest"
 
 module Mobilis
   # here it is, the main class that actually orchestratest the entire
@@ -107,6 +108,7 @@ module Mobilis
 
       @browser_generation = true
       @browser_checkpoint = on_checkpoint
+      @browser_previous_files = {}
       directory_service.chdir_start
       directory_service.mkdir_generate
       directory_service.mkdir_compose
@@ -144,12 +146,16 @@ module Mobilis
       commit_all("devcontainer configuration") if write_devcontainer
       run_plugin_hooks :hook_after_dc_helpers
       write_kubernetes if system.kubernetes_deployment
+      # Some hooks mutate files without an explicit commit boundary. Do not
+      # export an uncommitted working tree as if it were a complete project.
+      commit_all("Final generated artifacts")
       directory_service.chdir_generate
       Dir.pwd
     ensure
       directory_service.chdir_start
       @browser_generation = false
       @browser_checkpoint = nil
+      @browser_previous_files = nil
     end
 
     # Write every artifact that Mobilis can produce without invoking Git,
@@ -438,10 +444,24 @@ module Mobilis
     def commit_all(message)
       if @browser_generation
         root = File.join(directory_service.instance_variable_get(:@start_position), "generate")
-        files = Dir.glob("**/*", File::FNM_DOTMATCH, base: root)
+        paths = Dir.glob("**/*", File::FNM_DOTMATCH, base: root)
           .reject { |path| path == "." || path == ".." || File.directory?(File.join(root, path)) }
-          .sort.to_h { |path| [path, File.binread(File.join(root, path))] }
-        @browser_checkpoint.call("[mobilis] #{message}", files)
+          .sort
+        writes = {}
+        versions = {}
+        paths.each do |path|
+          contents = File.binread(File.join(root, path))
+          fingerprint = Digest::SHA256.hexdigest(contents)
+          versions[path] = fingerprint
+          writes[path] = contents if @browser_previous_files[path] != fingerprint
+        end
+        deletes = (@browser_previous_files.keys - versions.keys).sort
+        # Native Git refuses empty commits. Preserve that semantic instead
+        # of manufacturing a history entry without a tree delta.
+        return if writes.empty? && deletes.empty?
+
+        @browser_checkpoint.call("[mobilis] #{message}", writes, deletes)
+        @browser_previous_files = versions
         return
       end
       return if @static_generation
