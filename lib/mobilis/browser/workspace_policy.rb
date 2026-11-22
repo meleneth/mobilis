@@ -2,25 +2,23 @@
 
 module Mobilis
   module Browser
-    # One block describes the whole persisted browser workspace. The real
-    # editor supplies the Mobilis archive codec; the static builder only needs
-    # a codec-shaped placeholder to serialize the transport-safe manifest.
+    # A shared policy configures both the browser editor and the static manifest.
+    # Diesl owns the builder and the persisted workspace schema.
     module WorkspacePolicy
-      def self.definition(codec:)
-        proc do
-          root "/workspace"
-          source "mobilis.rb", last_valid: ".mobilis/last-valid.rb"
-          storage :browser
-          generated "generate"
-          git branch: "main", author_name: "Mobilis Playground",
-            author_email: "playground@mobilis.local", stage: [:generated]
-          embedded :embedded_archive, codec:
-        end
+      def self.configure(builder, codec:)
+        builder.root "/workspace"
+        builder.source "mobilis.rb", last_valid: ".mobilis/last-valid.rb"
+        builder.storage :browser
+        builder.generated "generate"
+        builder.git branch: "main", author_name: "Mobilis Playground",
+          author_email: "playground@mobilis.local", stage: [:generated]
+        builder.embedded :embedded_archive, codec:
+        builder
       end
 
       def self.manifest(codec:)
         builder = Diesl::Workspace::Builder.new
-        builder.instance_eval(&definition(codec:))
+        configure(builder, codec:)
         builder.build.manifest
       end
     end
