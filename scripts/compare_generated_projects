@@ -1,0 +1,69 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Compare committed output, not incidental build artifacts or ignored secrets.
+# Usage: ruby scripts/compare_generated_projects NATIVE_GENERATE EXTRACTED_BROWSER_ZIP
+require "digest"
+require "open3"
+require "pathname"
+
+abort "Usage: ruby scripts/compare_generated_projects NATIVE_GENERATE EXTRACTED_BROWSER_ZIP" unless ARGV.length == 2
+
+def git(directory, *arguments)
+  output, error, status = Open3.capture3("git", "-C", directory, *arguments)
+  raise "Git command failed in #{directory}: #{error}" unless status.success?
+
+  output
+end
+
+def snapshot(directory)
+  files = git(directory, "ls-tree", "-rz", "--name-only", "HEAD").split("\0")
+  files.to_h do |name|
+    content = git(directory, "show", "HEAD:#{name}")
+    [name, Digest::SHA256.hexdigest(content)]
+  end
+end
+
+def history(directory)
+  git(directory, "log", "--reverse", "--format=%s").lines.map(&:strip)
+end
+
+native, browser = ARGV.map { |path| File.expand_path(path) }
+[native, browser].each do |root|
+  abort "Not a Git repository: #{root}" unless File.directory?(root)
+  abort "No Git history in #{root}" if git(root, "rev-list", "--count", "HEAD").strip == "0"
+end
+
+native_files = snapshot(native)
+browser_files = snapshot(browser)
+common = native_files.keys & browser_files.keys
+missing_in_browser = native_files.keys - browser_files.keys
+missing_in_native = browser_files.keys - native_files.keys
+different = common.reject { |path| native_files.fetch(path) == browser_files.fetch(path) }
+native_history = history(native)
+browser_history = history(browser)
+
+puts "Native: #{native_files.length} tracked files, #{native_history.length} commits"
+puts "Browser: #{browser_files.length} tracked files, #{browser_history.length} commits"
+puts "Matching content: #{common.length - different.length} files"
+{
+  "Only native" => missing_in_browser,
+  "Only browser" => missing_in_native,
+  "Different bytes" => different
+}.each do |title, paths|
+  puts "#{title}: #{paths.length}"
+  paths.sort.each { |path| puts "  #{path}" }
+end
+
+if native_history != browser_history
+  puts "Commit boundaries differ:"
+  puts "  Native: #{native_history.inspect}"
+  puts "  Browser: #{browser_history.inspect}"
+end
+
+if missing_in_browser.empty? && missing_in_native.empty? && different.empty? && native_history == browser_history
+  puts "PARITY: exact committed file bytes and commit messages"
+else
+  warn "PARITY FAILED: differences must be examined, not automatically ignored"
+  exit 1
+end
