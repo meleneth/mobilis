@@ -74,10 +74,24 @@ module MobilisPlayground
       archive_handler = proc { |event| semantic_request("embedded document commit") { handle_archive_commit(event) } }
       checkout_handler = proc { |event| semantic_request("workspace checkout") { handle_workspace_checkout(event) } }
       rename_sync_handler = proc { |event| @sync_service_renames = event[:detail][:enabled].to_s == "true" }
+      generated_handler = proc do |event|
+        commits = event[:detail][:commits].to_i
+        files = event[:detail][:files].to_i
+        @status = "Generated #{files} files with #{commits} committed Mobilis phases. ZIP ready."
+        @errors = []
+        update_regions(:generation)
+      end
+      generation_failure_handler = proc do |event|
+        @status = "Project generation failed while writing Git history."
+        @errors = [event[:detail][:error].to_s]
+        update_regions(:validation)
+      end
       compatibility_handler = proc do |event|
         semantic_request("generator compatibility shim") { handle_generator_compatibility(event) }
       end
       document.addEventListener("mobilis:source-input", &input_handler)
+      document.addEventListener("mobilis:generation-complete", &generated_handler)
+      document.addEventListener("mobilis:generation-failed", &generation_failure_handler)
       document.addEventListener("mobilis:rename-sync-toggle", &rename_sync_handler)
       document.addEventListener("mobilis:semantic-click", &click_handler)
       document.addEventListener("mobilis:semantic-change", &change_handler)
@@ -85,7 +99,7 @@ module MobilisPlayground
       document.addEventListener("mobilis:workspace-checkout", &checkout_handler)
       document.addEventListener("mobilis:generator-compatibility", &compatibility_handler)
       @event_handlers.concat(
-        [input_handler, rename_sync_handler, click_handler, change_handler, archive_handler, checkout_handler, compatibility_handler]
+        [input_handler, generated_handler, generation_failure_handler, rename_sync_handler, click_handler, change_handler, archive_handler, checkout_handler, compatibility_handler]
       )
     end
 
@@ -328,7 +342,7 @@ module MobilisPlayground
 
       @files = result.files
       @selected_file = @files.keys.first
-      @status = "Generated #{@files.length} files locally with Mobilis (#{result.steps.length} source checkpoints)."
+      @status = "Generated #{@files.length} files; committing #{result.steps.length} Mobilis phases..."
       persist_generated_history(result.steps)
       update_regions(:generated_files, :generation)
     end
