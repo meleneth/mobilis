@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "mobilis/browser/wasi_ipaddr_compatibility"
 require "open3"
 require "rbconfig"
 
