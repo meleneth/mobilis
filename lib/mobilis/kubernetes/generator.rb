@@ -38,10 +38,13 @@ module Mobilis
         universe.services.filter_map do |node|
           build = node.compose.clean_shrunk[:build]
           next unless build
+          raise ArgumentError, "Kubernetes build must be a mapping for #{node.name}" unless build.is_a?(Hash)
 
           unsupported = build.keys - %i[context dockerfile args target labels]
           raise ArgumentError, "Unsupported Kubernetes build options for #{node.name}: #{unsupported}" unless unsupported.empty?
-          labels = (build[:labels] || {}).merge(
+          build_labels = build.fetch(:labels, {})
+          raise ArgumentError, "Kubernetes build labels must be a mapping for #{node.name}" unless build_labels.is_a?(Hash)
+          labels = build_labels.merge(
             "org.opencontainers.image.vendor" => "Mobilis", "mobilis.project" => universe.project,
             "mobilis.environment" => universe.environment, "mobilis.service" => node.name
           )
@@ -70,14 +73,18 @@ module Mobilis
               {"type" => "ClusterIP", "selector" => universe.labels(node.name),
                "ports" => ports.map { |port| {"name" => port_name(node, port), "port" => port, "targetPort" => target_port_for(node, port)} }}, service: node.name)
           end
+          # @type var container: Hash[String, Mobilis::data_value]
           container = {"name" => node.name, "image" => image_for(universe, node),
                        "imagePullPolicy" => node.compose_build_context ? "Always" : "IfNotPresent",
                        "env" => environment_for(node), "volumeMounts" => mounts,
                        "ports" => ports.map { |port| {"name" => port_name(node, port), "containerPort" => target_port_for(node, port)} }}
           compose = node.compose.clean_shrunk
-          container["args"] = compose[:command] if compose[:command]
-          container["command"] = compose[:entrypoint] if compose[:entrypoint]
+          command = compose[:command]
+          entrypoint = compose[:entrypoint]
+          container["args"] = command if command.is_a?(String) || command.is_a?(Array)
+          container["command"] = entrypoint if entrypoint.is_a?(String) || entrypoint.is_a?(Array)
           container["readinessProbe"] = {"tcpSocket" => {"port" => target_port_for(node, ports.first)}, "initialDelaySeconds" => 5, "periodSeconds" => 30} unless ports.empty?
+          # @type var pod_spec: Hash[String, Mobilis::data_value]
           pod_spec = {"containers" => [container], "volumes" => volumes}
           groups = node.storage_requirements.filter_map { |storage| storage[:fs_group] }.uniq
           raise ArgumentError, "Conflicting storage groups for #{node.name}" if groups.size > 1
@@ -107,9 +114,14 @@ module Mobilis
       end
 
       def ports_for(node)
+        # @type var ports: Array[Integer]
         ports = []
-        ports << node.exposed_port_no if node.respond_to?(:exposed_port_no)
-        ports << node.internal_port_no if node.respond_to?(:internal_port_no)
+        exposed = node.exposed_port_no
+        ports << exposed if exposed.is_a?(Integer)
+        if node.respond_to?(:internal_port_no)
+          internal = node.public_send(:internal_port_no)
+          ports << internal if internal.is_a?(Integer)
+        end
         ports.concat([4317, 4318, 9464]) if node.is_a?(Mobilis::Realized::OtelCollector)
         ports << 4317 if node.is_a?(Mobilis::Realized::Jaeger)
         ports.uniq
@@ -277,6 +289,8 @@ module Mobilis
         })
         routes = universe.public_services.sort.map do |name, host|
           node = universe.services.find { |service| service.name == name }
+          raise ArgumentError, "No realized service for exposed host #{name}" unless node
+
           resource(universe, "networking.istio.io/v1", "VirtualService", name, {
             "hosts" => [host], "gateways" => ["mobilis"],
             "http" => [{"route" => [{"destination" => {"host" => "#{name}.#{universe.namespace}.svc.cluster.local",
