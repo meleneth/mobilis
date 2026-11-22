@@ -22,5 +22,11 @@ jobs:
         run: bundle install
       - name: Check adapter Ruby syntax
         run: ruby -c lib/mobilis/browser/diesl_editor.rb && ruby -c spec/mobilis/browser/diesl_editor_spec.rb
+      - name: Check live playground Ruby syntax
+        run: |
+          ruby -c playground/app/application.rb
+          ruby -c playground/app/boot.rb
+          ruby -c lib/mobilis/browser/diesl_editor.rb
+          ruby -c playground/scripts/build_examples.rb
       - name: Run source adapter parity with existing Mobilis AST tests
         run: bundle exec rspec spec/mobilis/browser/source_document_spec.rb spec/mobilis/browser/diesl_editor_spec.rb
