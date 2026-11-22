@@ -61,34 +61,10 @@ cleanup() {
 trap cleanup EXIT
 
 CONTAINER="$(docker create "$SOURCE_IMAGE")"
+printf 'Extracting prebuilt site from Docker image %s\\n' "$SOURCE_IMAGE"
 docker cp "$CONTAINER:/usr/share/nginx/html/." "$STAGING_DIR/"
 docker rm "$CONTAINER" >/dev/null
 CONTAINER=""
-
-# Legacy playground images may contain the raw content-addressed WASM
-# without compressed sidecars. Produce them locally when absent. This is
-# compression only: no Ruby or application compilation, and nothing on whirred
-# runs the compressor.
-WASM_PATH="$(python3 - "$STAGING_DIR/runtime-config.json" "$STAGING_DIR" <<'PY'
-import json
-import pathlib
-import sys
-
-config = json.loads(pathlib.Path(sys.argv[1]).read_text())
-url = config["runtime"]["url"]
-if not url.startswith("/vendor/ruby-") or not url.endswith(".wasm") or ".." in url:
-    sys.exit(f"Invalid local WASM URL: {url}")
-print(pathlib.Path(sys.argv[2]) / url.lstrip("/"))
-PY
-)"
-if [[ -s "$WASM_PATH" && ! -s "${WASM_PATH}.br" ]]; then
-  if ! command -v node >/dev/null 2>&1; then
-    printf 'Missing Brotli sidecar for %s; install Node.js for local compression or rebuild the playground image.\\n' "$WASM_PATH" >&2
-    exit 1
-  fi
-  printf 'Brotli artifact absent from image %s; compressing existing WASM locally (no compilation).\\n' "$SOURCE_IMAGE"
-  node "$ROOT/playground/scripts/compress-wasm.mjs" "$WASM_PATH"
-fi
 
 # Verify exactly the runtime requested by the browser, including both the
 # raw content-addressed WASM and its precompressed Brotli representation.
@@ -120,7 +96,9 @@ if hashlib.file_digest(wasm.open("rb"), "sha256").hexdigest() != sha:
     sys.exit(f"Ruby WASM SHA-256 mismatch: {wasm}")
 brotli = pathlib.Path(str(wasm) + ".br")
 if not brotli.is_file() or brotli.stat().st_size == 0:
-    sys.exit(f"Missing precompressed Brotli runtime: {brotli}")
+    sys.exit(f"Image does not contain precompressed Brotli runtime: {brotli}. "
+             "Rebuild the local playground image with docker compose build playground; "
+             "deployment will not recompress or compile artifacts.")
 
 manifest_url = config["application_manifest_url"]
 if manifest_url != "/mobilis-app-manifest.json":
