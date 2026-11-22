@@ -4,6 +4,9 @@
       %h2.text-sm.font-semibold.text-white Ruby DSL
       %p.text-xs.text-slate-500 Editable source of truth. Invalid input is preserved.
     .flex.items-center.gap-2
+      %label.text-xs.text-slate-300{for: "load-example"} Example
+      %select#load-example.max-w-48.rounded.border.border-line.bg-slate-950.px-2.py-1.text-xs.text-slate-200{aria: {label: "Load numbered example"}}
+        %option{value: ""} Loading examples…
       %button#undo-source.text-xs.text-slate-400.hover:text-white{type: "button", disabled: !history.undo?, title: history.undo_label}= history.undo_label ? "Undo #{history.undo_label}" : "Undo"
       %button#redo-source.text-xs.text-slate-400.hover:text-white{type: "button", disabled: !history.redo?, title: history.redo_label}= history.redo_label ? "Redo #{history.redo_label}" : "Redo"
       %label.flex.cursor-pointer.items-center.gap-1.text-xs.text-slate-300{title: "Keep literal service references in sync when renaming in the DSL"}
