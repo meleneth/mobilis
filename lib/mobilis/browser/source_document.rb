@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
-require "digest"
+require "diesl"
 require "prism"
 
 module Mobilis
@@ -43,13 +43,14 @@ module Mobilis
 
       def initialize(source)
         @source = source
-        @parse_result = Prism.parse(source)
+        # Diesl owns parsing, revisioning and source-range replacement.
+        # Mobilis only interprets the parsed tree as a system definition.
+        @diesl_source = Diesl::Source.new(source)
+        @parse_result = @diesl_source.parse_result
       end
 
       def analyze
-        syntax_errors = parse_result.errors.map do |error|
-          "#{error.message} (line #{error.location.start_line}, column #{error.location.start_column + 1})"
-        end
+        syntax_errors = @diesl_source.errors
         return invalid_analysis(syntax_errors) unless syntax_errors.empty?
 
         system = evaluate
@@ -343,9 +344,7 @@ module Mobilis
         changed
       end
 
-      def revision
-        Digest::SHA256.hexdigest(source)
-      end
+      def revision = @diesl_source.revision
 
       private
 
@@ -486,26 +485,12 @@ module Mobilis
         keyword_hash ? keyword_hash.elements : []
       end
 
+      # Preserve the Mobilis projection's :dynamic marker while delegating
+      # actual Ruby literal interpretation to Diesl.
       def literal_value(node)
-        case node
-        when Prism::StringNode then node.unescaped
-        when Prism::IntegerNode then node.value
-        when Prism::TrueNode then true
-        when Prism::FalseNode then false
-        when Prism::NilNode then nil
-        when Prism::ArrayNode
-          values = node.elements.map { |element| literal_value(element) }
-          values.include?(:dynamic) ? :dynamic : values
-        when Prism::HashNode, Prism::KeywordHashNode
-          values = node.elements.to_h do |element|
-            key = literal_value(element.key)
-            key = element.key.value if key == :dynamic && element.key.respond_to?(:value)
-            [key, literal_value(element.value)]
-          end
-          values.value?(:dynamic) ? :dynamic : values
-        when Prism::SymbolNode then node.unescaped.to_sym
-        else :dynamic
-        end
+        @diesl_source.literal(node)
+      rescue Diesl::UnsafeEdit
+        :dynamic
       end
 
       def keyword_name(element)
@@ -571,20 +556,12 @@ module Mobilis
         raise ArgumentError, "Invalid #{property}: #{error.message}"
       end
 
+      # JSON-originated option hashes use string keys; preserve the existing
+      # Mobilis representation while letting Diesl serialize Ruby literals.
       def ruby_literal(value)
-        case value
-        when String then value.dump
-        when Symbol then ":#{value}"
-        when Integer, Float then value.to_s
-        when true then "true"
-        when false then "false"
-        when nil then "nil"
-        when Array then "[#{value.map { |item| ruby_literal(item) }.join(", ")}]"
-        when Hash
-          "{#{value.map { |key, item| "#{ruby_literal(key.to_s)} => #{ruby_literal(item)}" }.join(", ")}}"
-        else
-          raise ArgumentError, "Cannot encode #{value.class} as a Ruby literal"
-        end
+        @diesl_source.encode(value)
+      rescue Diesl::UnsafeEdit => error
+        raise ArgumentError, error.message
       end
 
       def optional_keyword_range(node, element)
@@ -620,11 +597,12 @@ module Mobilis
       end
 
       def replace(start_offset, end_offset, replacement)
-        replace_in(source, start_offset, end_offset, replacement)
+        @diesl_source.replace(start_offset, end_offset, replacement, expected_revision: revision)
       end
 
       def replace_in(content, start_offset, end_offset, replacement)
-        content.byteslice(0, start_offset) + replacement + content.byteslice(end_offset, content.bytesize - end_offset).to_s
+        document = Diesl::Source.new(content)
+        document.replace(start_offset, end_offset, replacement, expected_revision: document.revision)
       end
     end
   end
