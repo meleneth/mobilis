@@ -259,8 +259,12 @@ module Mobilis
         block = root_call&.block
         raise ArgumentError, "Source must contain a Mobilis::DSL.generate or .build block" unless block
 
-        insertion = relationship_nodes.first&.location&.start_offset || block.closing_loc.start_offset
-        indent = declaration_nodes.first&.then { |node| source.byteslice(line_start(node.location.start_offset)...node.location.start_offset) } || "  "
+        anchor = relationship_nodes.first&.location&.start_offset || block.closing_loc.start_offset
+        insertion = line_start(anchor)
+        leading = source.byteslice(insertion, anchor - insertion)
+        raise ArgumentError, "Service insertion requires a declaration on its own line" unless leading.match?(/\A[ \t]*\z/)
+
+        indent = declaration_nodes.first&.then { |node| source.byteslice(line_start(node.location.start_offset)...node.location.start_offset) } || "#{leading}  "
         replace(insertion, insertion, "#{indent}#{type}(#{name.dump})\n")
       end
 
