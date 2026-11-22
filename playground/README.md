@@ -1,8 +1,10 @@
 # Mobilis Browser Playground
 
 The playground is a static browser application. CRuby runs through ruby.wasm;
-Ruby owns application state, Prism analysis, Haml rendering, DOM event handling,
-and Mobilis execution. Turbo Streams apply targeted updates. JavaScript only
+Ruby owns Mobilis semantics, Haml rendering, DOM event handling and generation.
+Diesl owns the resident source-editing session, invalid draft handling, revision
+guards and undo/redo; Carbn owns synchronous, transactional region invalidation.
+Turbo Streams apply targeted updates. JavaScript only
 boots WASM and Turbo, renders Ruby-derived architecture through Mermaid, and
 provides browser filesystem, local Git, download, and ZIP primitives.
 
@@ -24,8 +26,11 @@ contains the pinned runtime copied from the separately built artifact image and
 the independently packaged Mobilis application artifact. Once those assets load,
 authored source stays local and generation requires no outbound requests.
 
-For a host build, run `npm ci`, install the isolated `playground/Gemfile`, and
-run `playground/scripts/build`. Serve `playground/public/` over HTTP; browsers
+For a host build, run `npm ci`, install the isolated `playground/Gemfile`,
+then set `DIESL_LIB_DIR` and `CARBN_LIB_DIR` to the `lib/` paths of checkouts
+at the pinned revisions in `Dockerfile.playground` before running
+`playground/scripts/build`. Docker Compose resolves and verifies both pinned
+Git revisions automatically. Serve `playground/public/` over HTTP; browsers
 do not allow the WASM application to boot reliably from `file://` URLs.
 
 Host builds still default to the exact official CDN interpreter. To test a
@@ -58,7 +63,7 @@ ownership:
   image, copies the finished WASM module into nginx assets, and records the
   expected byte size, SHA-256, and Fetch integrity value. A missing runtime
   image is an explicit build failure; there is no silent CDN fallback.
-- The build stages Mobilis, the playground Ruby/Haml source, templates, and the
+- The build stages Mobilis, pinned Diesl and Carbn pure-Ruby libraries, the playground Ruby/Haml source, templates, and the
   pure-Ruby Haml, Temple, Thor, and Tilt libraries into a deterministic ustar
   archive. It preserves the normal filesystem layout and `$LOAD_PATH`; Ruby
   continues to use ordinary `require` calls.
