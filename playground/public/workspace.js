@@ -93,7 +93,14 @@ export function createWorkspaceController() {
     persistGeneratedHistory(serializedSteps) {
       return enqueue(async () => {
         try {
-          const result = await historyCapability.publish(JSON.parse(serializedSteps));
+          const steps = JSON.parse(serializedSteps);
+          if (!Array.isArray(steps) || steps.length < 2)
+            throw new Error("Generator must supply multiple real commit phases.");
+          for (const [index, step] of steps.entries()) {
+            if (typeof step?.message !== "string" || !step.message.startsWith("[mobilis] "))
+              throw new Error(`Invalid Mobilis commit message at phase ${index}`);
+          }
+          const result = await historyCapability.publish(steps);
           if (attached) await refreshView();
           document.dispatchEvent(new CustomEvent("mobilis:generation-complete", {
             detail: result
