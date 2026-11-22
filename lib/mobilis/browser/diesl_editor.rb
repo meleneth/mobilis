@@ -2,6 +2,7 @@
 
 require "diesl"
 require "mobilis"
+require "mobilis/browser/workspace_policy"
 
 module Mobilis
   module Browser
@@ -58,15 +59,7 @@ module Mobilis
     # Only the authoring/record schema lives here. Domain interpretation and
     # source transforms stay in SourceDocument; this never executes generators.
     DIESL_EDITOR = Diesl::Editor.define do
-      workspace do
-        root "/workspace"
-        source "mobilis.rb", last_valid: ".mobilis/last-valid.rb"
-        storage :browser
-        generated "generate"
-        git branch: "main", author_name: "Mobilis Playground",
-          author_email: "playground@mobilis.local", stage: [:generated]
-        embedded :embedded_archive, codec: Mobilis::EmbeddedArchive
-      end
+      workspace(&Mobilis::Browser::WorkspacePolicy.definition(codec: Mobilis::EmbeddedArchive))
 
       source_adapter Mobilis::Browser::DIESL_SOURCE_ADAPTER
 
