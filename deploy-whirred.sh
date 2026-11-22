@@ -45,7 +45,7 @@ if [[ -z "$SOURCE_IMAGE" ]]; then
   fi
 fi
 if [[ -z "$SOURCE_IMAGE" ]] || ! docker image inspect "$SOURCE_IMAGE" >/dev/null 2>&1; then
-  printf 'No locally built playground image found. Run docker compose build playground, or set WHIRRED_SOURCE_IMAGE to an existing image.\\n' >&2
+  printf 'No locally built playground image found. Run docker compose build playground, or set WHIRRED_SOURCE_IMAGE to an existing image.\n' >&2
   exit 1
 fi
 
