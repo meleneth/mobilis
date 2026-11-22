@@ -10,7 +10,9 @@ module Mobilis
     module_function
 
     def define(name, &block)
-      Definition.new(name).tap { |definition| definition.instance_eval(&block) }.validate!
+      definition = Definition.new(name)
+      definition.instance_eval(&block)
+      definition.validate!
     end
   end
 end
