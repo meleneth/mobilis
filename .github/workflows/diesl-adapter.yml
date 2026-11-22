@@ -33,3 +33,26 @@ jobs:
           bundle exec ruby -Ilib -e 'require "mobilis"; abort "Diesl eagerly loaded by native Mobilis" if $LOADED_FEATURES.any? { |entry| entry.end_with?("/diesl.rb") }'
       - name: Run source adapter parity with existing Mobilis AST tests
         run: bundle exec rspec spec/mobilis/browser/source_document_spec.rb spec/mobilis/browser/diesl_editor_spec.rb
+
+  browser-workspace:
+    runs-on: ubuntu-latest
+    env:
+      DIESL_REF: 18523d162c79e172a32108fb7914fbaeb5d80f7e
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify browser integration syntax
+        run: |
+          node --check playground/public/workspace.js
+          node --check playground/public/application.js
+      - name: Fetch the exact Diesl browser workspace revision
+        run: |
+          set -euo pipefail
+          grep -Fq "$DIESL_REF" Dockerfile.playground
+          git clone --quiet https://github.com/meleneth/diesl.git /tmp/diesl
+          git -C /tmp/diesl checkout --quiet "$DIESL_REF"
+          test "$(git -C /tmp/diesl rev-parse HEAD)" = "$DIESL_REF"
+      - name: Verify generated commit history and reversible checkout
+        run: node --test /tmp/diesl/browser/test/workspace-history.test.mjs
