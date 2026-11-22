@@ -110,6 +110,8 @@ module Mobilis
       end
 
       module HasVolumes
+        def storage_requirements: () -> Array[{name: String, path: String, size: String, fs_group: Integer?}]
+        def declare_storage: (String name, String path, ?size: String, ?fs_group: Integer?) -> untyped
         def compose_volumes: () -> Mobilis::Compose::Volume
         def compose_volumes_overrides: () -> Mobilis::Compose::Volume
         def add_volume: (String local_path, String container_path, ?override: bool) -> untyped
