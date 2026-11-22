@@ -165,21 +165,12 @@ module Mobilis
         block = root_call&.block
         return [] unless block
 
-        result = []
-        visit = lambda do |node|
-          next unless node
-
-          if node.is_a?(Prism::CallNode) && node.name == :embedded_archive
-            next
-          end
-
-          if node.is_a?(Prism::StringNode) && normalize_name(node.unescaped) == normalize_name(name)
-            result << node
-          end
-          node.compact_child_nodes.each { |child| visit.call(child) }
+        @diesl_source.nodes(
+          within: block.body,
+          prune: ->(node) { node.is_a?(Prism::CallNode) && node.name == :embedded_archive }
+        ).select do |node|
+          node.is_a?(Prism::StringNode) && normalize_name(node.unescaped) == normalize_name(name)
         end
-        visit.call(block.body)
-        result
       end
 
       # System-wide root arguments have their own editing affordances.
@@ -387,11 +378,11 @@ module Mobilis
       end
 
       def declaration_nodes
-        @diesl_source.direct_calls(within: root_call&.block, name: SERVICE_TYPES).reject { |node| node.receiver }
+        @diesl_source.block_calls(container: root_call, name: SERVICE_TYPES).reject { |node| node.receiver }
       end
 
       def relationship_nodes
-        @diesl_source.direct_calls(within: root_call&.block, name: %i[connect route]).reject { |node| node.receiver }
+        @diesl_source.block_calls(container: root_call, name: %i[connect route]).reject { |node| node.receiver }
       end
 
       def relationships
