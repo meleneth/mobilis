@@ -69,7 +69,8 @@ module Mobilis
         entity kind, label: kind.to_s.tr("_", " ").capitalize, creatable: true do
           field :name, type: :string, required: true
           schema = Mobilis::Browser::SourceDocument::PROPERTY_SCHEMAS.fetch(kind) { {} }
-          schema.each_pair do |property, specification|
+          schema.keys.each do |property|
+            specification = schema.fetch(property)
             # Keep the schema complete, including collection-valued fields.
             # Rendering is a separate concern, but the editor definition must
             # describe every supported source transformation.
