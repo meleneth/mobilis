@@ -4,8 +4,8 @@
       %h2.text-sm.font-semibold.text-white Ruby DSL
       %p.text-xs.text-slate-500 Editable source of truth. Invalid input is preserved.
     .flex.items-center.gap-2
-      %button#undo-source.text-xs.text-slate-400.hover:text-white{type: "button", disabled: !history.undo?, title: history.undo_label}= history.undo_label ? "Undo #{history.undo_label}" : "Undo"
-      %button#redo-source.text-xs.text-slate-400.hover:text-white{type: "button", disabled: !history.redo?, title: history.redo_label}= history.redo_label ? "Redo #{history.redo_label}" : "Redo"
+      %button#undo-source.text-xs.text-slate-400.hover:text-white{type: "button", disabled: !history.undo_entries.any?, title: history.undo_entries.last&.label}= history.undo_entries.last&.label ? "Undo #{history.undo_entries.last&.label}" : "Undo"
+      %button#redo-source.text-xs.text-slate-400.hover:text-white{type: "button", disabled: !history.redo_entries.any?, title: history.redo_entries.last&.label}= history.redo_entries.last&.label ? "Redo #{history.redo_entries.last&.label}" : "Redo"
       %label.flex.cursor-pointer.items-center.gap-1.text-xs.text-slate-300{title: "Keep literal service references in sync when renaming in the DSL"}
         %input#sync-service-renames.accent-teal-300{type: "checkbox", checked: sync_service_renames}
         Sync references
