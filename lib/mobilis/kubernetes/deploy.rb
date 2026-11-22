@@ -5,63 +5,69 @@
 require "json"
 require "open3"
 
-abort "Usage: ./deploy-kubernetes [dev|test|prod]" if ARGV.size > 1
-ENVIRONMENT = ARGV.fetch(0, "dev")
-abort "Expected dev, test, or prod" unless %w[dev test prod].include?(ENVIRONMENT)
-Dir.chdir(File.dirname(File.expand_path(__FILE__)))
-DIRECTORY = "kubernetes/#{ENVIRONMENT}"
-UNIVERSE = JSON.parse(File.read("#{DIRECTORY}/universe.json"))
-CONTEXT = ENV.fetch("MOBILIS_KUBE_CONTEXT", "kind-devastation")
-KUBECTL = ["kubectl", "--context", CONTEXT].freeze
-NAMESPACE = UNIVERSE.fetch("namespace")
+module MobilisKubernetesDeploy
+  abort "Usage: ./deploy-kubernetes [dev|test|prod]" if ARGV.size > 1
+  ENVIRONMENT = ARGV.fetch(0, "dev")
+  abort "Expected dev, test, or prod" unless %w[dev test prod].include?(ENVIRONMENT)
+  Dir.chdir(File.dirname(File.expand_path(__FILE__)))
+  DIRECTORY = "kubernetes/#{ENVIRONMENT}"
+  UNIVERSE = JSON.parse(File.read("#{DIRECTORY}/universe.json"))
+  CONTEXT = ENV.fetch("MOBILIS_KUBE_CONTEXT", "kind-devastation")
+  KUBECTL = ["kubectl", "--context", CONTEXT].freeze
+  NAMESPACE = UNIVERSE.fetch("namespace")
 
-# Use argv throughout: names, file paths, and build args are never shell code.
-def run!(*args)
-  puts "+ #{args.join(" ")}"
-  abort "Command failed: #{args.first}" unless system(*args)
-end
-
-def query!(*args, allow_missing: false)
-  output, error, status = Open3.capture3(*KUBECTL, *args)
-  return nil if allow_missing && !status.success? && error.include?("(NotFound)")
-  abort error unless status.success?
-  JSON.parse(output)
-end
-
-%w[gateways.networking.istio.io virtualservices.networking.istio.io].each do |crd|
-  query!("get", "crd", crd, "-o", "json")
-end
-query!("get", "deployment", "istiod", "-n", "istio-system", "-o", "json")
-query!("get", "deployment", "istio-ingressgateway", "-n", "istio-system", "-o", "json")
-
-expected = {"app.kubernetes.io/managed-by" => "mobilis", "mobilis.io/project" => UNIVERSE.fetch("project"),
-            "mobilis.io/environment" => ENVIRONMENT}
-namespace = query!("get", "namespace", NAMESPACE, "-o", "json", allow_missing: true)
-if namespace && !expected.all? { |key, value| namespace.dig("metadata", "labels", key) == value }
-  abort "Namespace collision: #{NAMESPACE} is not owned by this Mobilis project/environment"
-end
-
-hosts = UNIVERSE.fetch("public").values
-query!("get", "virtualservices.networking.istio.io", "-A", "-o", "json").fetch("items").each do |route|
-  next if route.dig("metadata", "namespace") == NAMESPACE && expected.all? { |key, value| route.dig("metadata", "labels", key) == value }
-  collisions = hosts.select do |host|
-    route.fetch("spec").fetch("hosts", []).any? { |existing| existing == host || (existing.start_with?("*.") && host.end_with?(existing.delete_prefix("*"))) || existing == "*" }
+  # Use argv throughout: names, file paths, and build args are never shell code.
+  def self.run!(*args)
+    puts "+ #{args.join(" ")}"
+    abort "Command failed: #{args.first}" unless system(*args)
   end
-  abort "Hostname collision: #{collisions.join(", ")}" unless collisions.empty?
+
+  def self.query!(*args, allow_missing: false)
+    output, error, status = Open3.capture3(*KUBECTL, *args)
+    return nil if allow_missing && !status.success? && error.include?("(NotFound)")
+    abort error unless status.success?
+    JSON.parse(output)
+  end
+
+  def self.execute
+    %w[gateways.networking.istio.io virtualservices.networking.istio.io].each do |crd|
+      query!("get", "crd", crd, "-o", "json")
+    end
+    query!("get", "deployment", "istiod", "-n", "istio-system", "-o", "json")
+    query!("get", "deployment", "istio-ingressgateway", "-n", "istio-system", "-o", "json")
+
+    expected = {"app.kubernetes.io/managed-by" => "mobilis", "mobilis.io/project" => UNIVERSE.fetch("project"),
+                "mobilis.io/environment" => ENVIRONMENT}
+    namespace = query!("get", "namespace", NAMESPACE, "-o", "json", allow_missing: true)
+    if namespace && !expected.all? { |key, value| namespace.dig("metadata", "labels", key) == value }
+      abort "Namespace collision: #{NAMESPACE} is not owned by this Mobilis project/environment"
+    end
+
+    hosts = UNIVERSE.fetch("public").values
+    query!("get", "virtualservices.networking.istio.io", "-A", "-o", "json").fetch("items").each do |route|
+      next if route.dig("metadata", "namespace") == NAMESPACE && expected.all? { |key, value| route.dig("metadata", "labels", key) == value }
+      collisions = hosts.select do |host|
+        route.fetch("spec").fetch("hosts", []).any? { |existing| existing == host || (existing.start_with?("*.") && host.end_with?(existing.delete_prefix("*"))) || existing == "*" }
+      end
+      abort "Hostname collision: #{collisions.join(", ")}" unless collisions.empty?
+    end
+
+    JSON.parse(File.read("#{DIRECTORY}/builds.json")).each do |entry|
+      build = entry.fetch("build")
+      args = ["docker", "build", "-t", entry.fetch("image")]
+      args.concat(["-f", File.join(build.fetch("context"), build.fetch("dockerfile"))]) if build["dockerfile"]
+      args.concat(["--target", build["target"]]) if build["target"]
+      (build["args"] || {}).each { |name, value| args.concat(["--build-arg", "#{name}=#{value}"]) }
+      (build["labels"] || {}).each { |name, value| args.concat(["--label", "#{name}=#{value}"]) }
+      run!(*args, build.fetch("context"))
+      run!("docker", "push", entry.fetch("image"))
+    end
+    run!(*KUBECTL, "apply", "-f", "#{DIRECTORY}/resources.yml")
+
+    selector = expected.map { |key, value| "#{key}=#{value}" }.join(",")
+    run!(*KUBECTL, "rollout", "status", "deployment", "-n", NAMESPACE, "-l", selector, "--timeout=300s")
+    UNIVERSE.fetch("public").each { |service, host| puts "#{service}: http://#{host}" }
+  end
 end
 
-JSON.parse(File.read("#{DIRECTORY}/builds.json")).each do |entry|
-  build = entry.fetch("build")
-  args = ["docker", "build", "-t", entry.fetch("image")]
-  args.concat(["-f", File.join(build.fetch("context"), build.fetch("dockerfile"))]) if build["dockerfile"]
-  args.concat(["--target", build["target"]]) if build["target"]
-  (build["args"] || {}).each { |name, value| args.concat(["--build-arg", "#{name}=#{value}"]) }
-  (build["labels"] || {}).each { |name, value| args.concat(["--label", "#{name}=#{value}"]) }
-  run!(*args, build.fetch("context"))
-  run!("docker", "push", entry.fetch("image"))
-end
-run!(*KUBECTL, "apply", "-f", "#{DIRECTORY}/resources.yml")
-
-selector = expected.map { |key, value| "#{key}=#{value}" }.join(",")
-run!(*KUBECTL, "rollout", "status", "deployment", "-n", NAMESPACE, "-l", selector, "--timeout=300s")
-UNIVERSE.fetch("public").each { |service, host| puts "#{service}: http://#{host}" }
+MobilisKubernetesDeploy.execute
