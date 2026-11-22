@@ -235,7 +235,7 @@ module Mobilis
       def update_property(id, property, value)
         declaration, node = editable_declaration(id)
         property = property.to_sym
-        schema = PROPERTY_SCHEMAS.fetch(declaration.type) { {} }.fetch(property) do
+        schema = PROPERTY_SCHEMAS.fetch(declaration.type) { Hash.new }.fetch(property) do
           raise ArgumentError, "#{declaration.type} does not expose #{property} as a visual property"
         end
         replacement = property_source(value, schema.fetch(:kind))
