@@ -10,6 +10,7 @@ RSpec.describe Mobilis::Browser::WasiIpAddrCompatibility do
     socket_class = Socket
 
     described_class.load!
+    require "ipaddr"
 
     expect(Socket).to equal(socket_class)
     expect(IPAddr.new("127.0.0.1").to_s).to eq("127.0.0.1")
@@ -21,7 +22,7 @@ RSpec.describe Mobilis::Browser::WasiIpAddrCompatibility do
       module Kernel
         alias original_require require
         def require(feature)
-          if feature == "socket"
+          if feature == "socket" && !$LOADED_FEATURES.include?("socket.rb")
             error = LoadError.new("cannot load such file -- socket")
             error.define_singleton_method(:path) { "socket" }
             raise error
