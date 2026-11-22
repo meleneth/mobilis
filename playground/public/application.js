@@ -31,7 +31,7 @@ window.MobilisRuntimeDiagnostics = {
   runtime: null,
   application: null
 };
-installEventGate();\n    void initializeExampleSelector();
+installEventGate();
 window.MobilisDownloads = {
   file(name, base64) {
     const bytes = Uint8Array.from(atob(base64), character => character.charCodeAt(0));
@@ -510,7 +510,7 @@ async function boot() {
     const loadPaths = application.manifest.filesystem.load_paths.map(path => JSON.stringify(path)).join(", ");
     const bootFeature = JSON.stringify(application.manifest.filesystem.boot_feature);
     vm.eval(`$LOAD_PATH.unshift(${loadPaths}); require ${bootFeature}`);
-    window.MobilisWorkspace.attach();
+    window.MobilisWorkspace.attach();\n    await initializeExampleSelector();
     diagnostics.timings.rubyApplicationLoadMs = elapsed(rubyStarted);
     diagnostics.timings.totalInitializationMs = elapsed(totalStarted);
     diagnostics.phase = "ready";
