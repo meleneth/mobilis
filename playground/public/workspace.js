@@ -1,10 +1,14 @@
 import { createWorkspaceHistory, createWorkspaceRevision } from "/carbn/workspace-history.js";
-const WORKSPACE_DIRECTORY = "/workspace";
+import { workspacePolicy } from "/editor-policy.js";
+
+// Generated from DIESL_EDITOR.workspace.manifest at build time.
+// Keep the separate generated Git repository as a Mobilis export detail.
+const WORKSPACE_DIRECTORY = workspacePolicy.root;
 const GENERATED_DIRECTORY = "/generated-project";
-const SOURCE_PATH = "mobilis.rb";
-const LAST_VALID_PATH = ".mobilis/last-valid.rb";
-const GITIGNORE = ".mobilis/\n";
-const AUTHOR = { name: "Mobilis Playground", email: "playground@mobilis.local" };
+const SOURCE_PATH = workspacePolicy.source.path;
+const LAST_VALID_PATH = workspacePolicy.source.last_valid;
+const GITIGNORE = `${LAST_VALID_PATH.split("/")[0]}/\n`;
+const AUTHOR = workspacePolicy.git.author;
 
 export function createWorkspaceController() {
   const fs = new window.LightningFS("mobilis-workspace-v1");
@@ -12,7 +16,7 @@ export function createWorkspaceController() {
   const historyCapability = createWorkspaceHistory({
     fs, pfs, git: window.git, author: AUTHOR,
     root: WORKSPACE_DIRECTORY, generatedRepository: GENERATED_DIRECTORY,
-    generatedMirror: "generate"
+    generatedMirror: workspacePolicy.generated[0].path
   });
   const revisionCapability = createWorkspaceRevision({
     fs, pfs, git: window.git, root: WORKSPACE_DIRECTORY,
@@ -32,7 +36,7 @@ export function createWorkspaceController() {
       await mkdirp(WORKSPACE_DIRECTORY);
       await mkdirp(path(LAST_VALID_PATH, true));
       if (!(await exists(`${WORKSPACE_DIRECTORY}/.git`))) {
-        await window.git.init({ fs, dir: WORKSPACE_DIRECTORY, defaultBranch: "main" });
+        await window.git.init({ fs, dir: WORKSPACE_DIRECTORY, defaultBranch: workspacePolicy.git.branch });
       }
       controller.bootstrapSource = await readTextIfPresent(SOURCE_PATH);
       controller.bootstrapValidSource = await readTextIfPresent(LAST_VALID_PATH);
