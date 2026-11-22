@@ -99,6 +99,13 @@ Git-object ZIP export, and guarded revision checkout to the pinned
 `git-capability.js` are copied from the same pinned Carbn revision as the
 reactive Ruby library. Diesl remains responsible for editing and DSL policy.
 
+The workspace root, source and recovery paths, generated mirror, and Git
+identity are no longer duplicated in JavaScript. During the playground build,
+Ruby serializes `Mobilis::Browser::DIESL_EDITOR.workspace.manifest` into
+`public/editor-policy.js`. The browser imports this immutable, domain-neutral
+policy and supplies it to Carbn's Git/workspace machinery. Rebuilding is
+required when the declarative workspace policy changes.
+
 Mobilis retains the workspace UI, generator-specific phase validation,
 compatibility operations, and Ruby semantic validation callback for restores.
 A rejected revision restores both the previous worktree and the last-valid
