@@ -55,7 +55,10 @@ module Mobilis
         ))
         raise ArgumentError, "File content_base64 is not strict Base64" unless valid
 
-        payload.unpack1("m0") || raise(ArgumentError, "File content_base64 could not be decoded")
+        decoded = payload.unpack1("m0")
+        raise ArgumentError, "File content_base64 could not be decoded" unless decoded.is_a?(String)
+
+        decoded
       end
 
       def ppx_fields(dsl)
