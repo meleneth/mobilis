@@ -219,6 +219,7 @@ module Mobilis
       def s3_storage_nodes: () -> Array[Mobilis::Realized::S3Storage]
     end
     class Rack < Mobilis::Base::ServiceWriter
+      def write_kafka: () -> untyped
       def realized_node: () -> Mobilis::Realized::Rack
       def write: () -> untyped
 
@@ -236,6 +237,7 @@ module Mobilis
       def ruby_version: () -> String
     end
     class Rails < Mobilis::Base::ServiceWriter
+      def write_browser: () -> untyped
       def realized_node: () -> Mobilis::Realized::Rails
       def write: () -> untyped
       def rails_builder: () -> Mobilis::Plugin::RailsBuilder
