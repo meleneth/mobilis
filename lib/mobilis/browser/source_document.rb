@@ -14,8 +14,8 @@ module Mobilis
       PROPERTY_SCHEMAS = {
         rails: {api: {kind: :boolean, default: false}},
         rack: {instances: {kind: :integer, default: 1}},
-        s3: {buckets: {kind: :strings, default: []}},
-        s3_storage: {buckets: {kind: :strings, default: []}},
+        s3: {buckets: {kind: :strings, default: Array.new}},
+        s3_storage: {buckets: {kind: :strings, default: Array.new}},
         kafka: {brokers: {kind: :integer, default: 1}, publish_port: {kind: :boolean, default: false}},
         google_pubsub: {project: {kind: :string, default: "mobilis-local"}, publish_port: {kind: :boolean, default: false}},
         fastapi: {port: {kind: :integer, default: 8000}, publish_port: {kind: :boolean, default: true}},
@@ -235,7 +235,7 @@ module Mobilis
       def update_property(id, property, value)
         declaration, node = editable_declaration(id)
         property = property.to_sym
-        schema = PROPERTY_SCHEMAS.fetch(declaration.type, {}).fetch(property) do
+        schema = PROPERTY_SCHEMAS.fetch(declaration.type) { {} }.fetch(property) do
           raise ArgumentError, "#{declaration.type} does not expose #{property} as a visual property"
         end
         replacement = property_source(value, schema.fetch(:kind))
