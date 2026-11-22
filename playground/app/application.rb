@@ -447,7 +447,7 @@ module MobilisPlayground
     end
 
     def render_editor
-      @renderer.render(:editor, source: @source, history: @session.history, sync_service_renames: @sync_service_renames)
+      @renderer.render(:editor, source: @source, history: @session.history, draft_valid: @session.draft_valid?, sync_service_renames: @sync_service_renames)
     end
 
     def render_architecture
